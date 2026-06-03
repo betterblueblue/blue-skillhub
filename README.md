@@ -9,6 +9,11 @@
 ├── ruleblade/          # 律刃 —— AI 编码行为准则
 │   ├── CLAUDE.md       # 可直接用于 Claude Code 的项目级行为准则
 │   └── README.md       # 律刃的迭代历程与设计文档
+├── web-search-mcp/     # 网搜 MCP —— 基于 MCP 协议的网页搜索服务器
+│   ├── dist/           # 编译产物
+│   ├── package.json
+│   ├── README.md       # 使用说明与配置文档
+│   └── web-search-mcp修复记录.md  # 修复与调优记录
 └── README.md           # 本文件
 ```
 
@@ -17,6 +22,7 @@
 这个仓库是我个人的 AI 技能与工具集合，主要包含：
 
 - **ruleblade/** —— 经过实验验证的 AI 编码行为准则（律刃 v3），用于指导 Claude Code 等 AI 助手在编码任务中的精准行为
+- **web-search-mcp/** —— 基于 [mrkrsl/web-search-mcp](https://github.com/mrkrsl/web-search-mcp) 改造优化的 MCP 网页搜索服务器（v0.3.2），新增 Google 搜索、代理支持、中文搜索优化等，适用于 CodeBuddy / Cursor / Claude Desktop 等客户端
 
 ## 使用方式
 
