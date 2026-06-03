@@ -14,6 +14,12 @@
 │   ├── package.json
 │   ├── README.md       # 使用说明与配置文档
 │   └── web-search-mcp修复记录.md  # 修复与调优记录
+├── vl-vision/          # VL Vision —— 通用 VL 识图工具
+│   ├── providers/      # VL 模型适配器（硅基流动等）
+│   ├── vl_vision.py    # 主入口
+│   ├── config.py       # 配置管理
+│   ├── SKILL.md        # Skill 说明与 Prompt 模板
+│   └── README.md       # 使用文档
 └── README.md           # 本文件
 ```
 
@@ -23,6 +29,7 @@
 
 - **ruleblade/** —— 经过实验验证的 AI 编码行为准则（律刃 v3），用于指导 Claude Code 等 AI 助手在编码任务中的精准行为
 - **web-search-mcp/** —— 基于 [mrkrsl/web-search-mcp](https://github.com/mrkrsl/web-search-mcp) 改造优化的 MCP 网页搜索服务器（v0.3.2），新增 Google 搜索、代理支持、中文搜索优化等，适用于 CodeBuddy / Cursor / Claude Desktop 等客户端
+- **vl-vision/** —— 通用 VL 识图工具，调用外部视觉语言模型 API，让不具备视觉能力的 LLM 也能识图。10 个预置 prompt 模板 + 自定义 prompt，支持 CLI 和 Agent 双模式调用
 
 ## 使用方式
 

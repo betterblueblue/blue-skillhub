@@ -1,18 +1,4 @@
-# Secrets
+__pycache__/
+*.pyc
 .env
-
-# Brainstorming artifacts
-.superpowers/
-
-# Generated batch content (keep archive files)
-blue-word-poster/output/batch-*/*.png
-blue-word-poster/output/batch-*/*.txt
-blue-word-poster/output/batch-*/douyin-copy.md
-blue-xhs-knowledge/output/batch-*/*.png
-blue-xhs-knowledge/output/batch-*/*.txt
-blue-xhs-knowledge/output/batch-*/xhs-copy.md
-
-# web-search-mcp
-web-search-mcp/node_modules/
-web-search-mcp/dist/
-web-search-mcp/package-lock.json
+node_modules/
