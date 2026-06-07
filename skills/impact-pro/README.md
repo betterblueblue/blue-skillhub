@@ -48,7 +48,7 @@ generic 是兜底能力，专属 profile 负责真实项目里更稳定的文件
 
 ## 验收状态
 
-当前 `impact-pro` 已完成六轮多栈静态验收，覆盖 T01-T12 用例。补齐 Level 1 profile 后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入可试用状态；但整体还没有达到成熟通用完成态，关键结论和执行阶段仍需要人工复核。
+当前 `impact-pro` 已完成六轮多栈静态验收和一轮前端运行时复测，覆盖 T01-T12 用例。补齐 Level 1 profile 后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入可试用状态；Nuxt/Vue 已补充通过 typecheck/lint，Next.js 已验证到编译/TypeScript 阶段但完整 build 仍依赖可用数据库。整体还没有达到成熟通用完成态，关键结论和执行阶段仍需要人工复核。
 
 多栈测试用例、评分标准和投产门槛见 [VALIDATION.md](VALIDATION.md)，实际验收记录见 [validation-runs/](validation-runs/)。
 

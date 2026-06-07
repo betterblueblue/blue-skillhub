@@ -144,7 +144,7 @@ commands:
   lint: npm run lint
 ```
 
-命令必须以 `package.json` scripts 为准；Nuxt 项目常见 `typecheck` 应作为验证候选，但缺依赖时只记录失败原因。
+命令必须以 `package.json` scripts 为准；Nuxt 项目常见 `typecheck` 应作为验证候选，存在 `typecheck` script 时优先执行 `npm run typecheck` 或对应包管理器命令。
 
 ## db_introspection
 

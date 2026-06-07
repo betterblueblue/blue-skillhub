@@ -12,8 +12,8 @@
 
 - `java-spring-mybatis` profile 已有 RuoYi 类真实项目经验，可视为 Level 2。
 - `node-express-prisma`、`python-fastapi-sqlmodel`、`frontend-react-vite` 已完成单项目首轮验证，当前为 Level 1。
-- `frontend-nextjs` 已完成 Next.js App Router 单项目首轮静态验证，当前为 Level 1。
-- `frontend-nuxt-vue` 已完成 Nuxt/Vue 单项目首轮静态验证，当前为 Level 1。
+- `frontend-nextjs` 已完成 Next.js App Router 单项目首轮静态验证，并补充运行时 build 复测；编译/TypeScript 阶段通过，预渲染因 DB 不可用失败，当前为 Level 1。
+- `frontend-nuxt-vue` 已完成 Nuxt/Vue 单项目首轮验证，并补充通过 typecheck/lint，当前为 Level 1。
 - `go-gin-gorm`、`dotnet-aspnet-efcore` 已完成单项目首轮验证，当前为 Level 1。
 - monorepo 和三类负向场景已完成静态规则验收。
 - `generic` profile 是兜底，不应替代专属 profile 的真实项目验收。
@@ -398,7 +398,8 @@
    - T08-T10 负向场景需要通过完整 agent 对话验证安全闸，而不是只做静态规则审查。
 
 2. **补运行时验证**
-   - Go/.NET/Next.js/Nuxt 样本需要在依赖和 SDK 齐全的环境复跑 build/test/typecheck。
+   - Go/.NET 样本需要在有 SDK 的环境复跑原生命令。
+   - Next.js 样本需要提供可用数据库后复跑完整 build。
    - 缺少 test/lint script 的样本必须在记录中标注限制，不能写成已验证。
 
 3. **补双变更矩阵**
