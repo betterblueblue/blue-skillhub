@@ -2,7 +2,7 @@
 
 - 测试日期：2026-06-07
 - 测试方式：真实 monorepo 静态验收 + 负向规则验收
-- 基于变更：强化 `SKILL.md` 安全闸、多 profile、证据账本；更新 light/design/implementation 模板
+- 基于变更：强化 `SKILL.md` 安全闸、多 profile、分析依据；更新 light/design/implementation 模板
 - 结论：**达到 10 用例矩阵的数量门槛，仍需真实对话与运行时复测后才能标记成熟通用**
 
 ## 第四轮新增评分
@@ -52,7 +52,7 @@
 - 证据不足先标注
 - 破坏性请求先拦截
 - 多 profile / monorepo 协作
-- 证据账本
+- 分析依据
 - 禁止 light 条件
 - 破坏性请求安全闸
 - DB 无权限降级策略
@@ -61,7 +61,7 @@
 
 新增：
 
-- light/design 的证据账本
+- light/design 的分析依据
 - 未确认项
 - Schema 来源
 - implementation 的破坏性操作确认、DB 权限标注

@@ -158,7 +158,7 @@ E2E 验证脚本已生成 → change-impact/用户个性签名/300-验证脚本/
 - Phase 2.5 改为初步风险预判，正式 light/full 判档延后到苏格拉底澄清之后
 - `yes/no` 执行确认升级为 `确认 Step N / 跳过 Step N`
 - 模糊确认、自动续跑、系统消息和历史授权不能替代当前用户 Step 级确认
-- 用户可要求简化文档，但不能跳过证据账本、preflight、Step 确认和验证方案
+- 用户可要求简化文档，但不能跳过分析依据、preflight、Step 确认和验证方案
 - 新增 `phase5-preflight.md` 和 `execution-record.md` 模板
 - 增加 P0/P1/P2/P3 问题优先级和多轮提问规则
 

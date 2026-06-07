@@ -16,7 +16,7 @@
 
 RuoYi 是多模块管理后台，包含 `ruoyi-admin`、`ruoyi-framework`、`ruoyi-system`、`ruoyi-quartz`、`ruoyi-generator`、`ruoyi-ui` 和 SQL 初始化脚本。该变更跨登录异步记录、DB schema、MyBatis XML、Controller 权限、前端列表/导出，符合生产级 full 复验场景。
 
-## 证据账本
+## 分析依据
 
 | 类型 | 证据 | 结论 |
 |------|------|------|

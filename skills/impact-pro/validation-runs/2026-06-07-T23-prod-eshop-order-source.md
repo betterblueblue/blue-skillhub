@@ -16,7 +16,7 @@
 
 eShopOnWeb 是分层 Clean Architecture 样例，包含 Web、PublicApi、BlazorAdmin、ApplicationCore、Infrastructure 和多层测试项目。订单变更触及 DDD aggregate、EF Core migration、owned value object、MVC controller、mediator handler、repository/specification 和测试。
 
-## 证据账本
+## 分析依据
 
 | 类型 | 证据 | 结论 |
 |------|------|------|
