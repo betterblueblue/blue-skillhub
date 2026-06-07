@@ -32,6 +32,8 @@
 
 `impact` 的多栈版本。面向已验证技术栈规则覆盖范围内的现有系统，未知栈会先用通用规则扫描，不直接冒充“已完整支持”。适合 Node、Python、Go、.NET、前端项目等多栈项目里的变更影响分析。
 
+上下文包能力的设计复盘见 [docs/impact-context-pack-design.md](docs/impact-context-pack-design.md)，里面记录了需求来源、方案取舍、实现效果和面试讲法。
+
 ### VL 识图
 
 [skills/vl-vision/](skills/vl-vision/)
