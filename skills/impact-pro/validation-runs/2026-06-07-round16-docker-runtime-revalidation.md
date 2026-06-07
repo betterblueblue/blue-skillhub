@@ -39,7 +39,7 @@ Passed!  - Failed: 0, Passed: 15, Skipped: 0, Total: 15 - PublicApiIntegrationTe
 docker run --rm -v "E:/agent/impact-pro-validation-work/go-gin-realworld:/src" -w /src golang:1.21 bash -lc "/usr/local/go/bin/go test ./..."
 ```
 
-结果：部分通过，全量失败。
+结果：默认 root 容器部分通过，全量失败。
 
 ```text
 ok   github.com/gothinkster/golang-gin-realworld-example-app/articles
@@ -55,12 +55,35 @@ Error: An error is expected but got nil.
 Messages: Db should not be able to ping
 ```
 
-T24 收藏审计直接相关的 `articles` 包已通过；全量失败来自 `common` 包数据库连接期望。该失败需要后续单独分析是测试环境前置条件还是项目既有断言问题。
+T24 收藏审计直接相关的 `articles` 包已通过；默认全量失败来自 `common` 包数据库连接权限断言，后续复验确认这是运行前置条件问题。
+
+补充复验：
+
+```powershell
+docker run --rm -v "E:/agent/impact-pro-validation-work/go-gin-realworld:/src" -w /src --user 1000:1000 -e GOCACHE=/tmp/gocache -e GOPATH=/tmp/gopath -e DB_PATH=/tmp/go-realworld-common.db -e TEST_DB_PATH=/tmp/go-realworld-common-test.db golang:1.21 bash -lc "/usr/local/go/bin/go test ./common -v"
+```
+
+结果：`common` 通过。该用例的 `chmod 0000` 权限断言需要非 root 用户，否则 root 会绕过文件权限导致误判。
+
+清理 root 容器遗留的 `articles/data`、`common/data`、`common/tmp`、`users/data` 测试副产物后，执行串行全量复验：
+
+```powershell
+docker run --rm -v "E:/agent/impact-pro-validation-work/go-gin-realworld:/src" -w /src --user 1000:1000 -e GOCACHE=/tmp/gocache -e GOPATH=/tmp/gopath -e DB_PATH=/tmp/go-realworld-all.db -e TEST_DB_PATH=/tmp/go-realworld-all-test.db golang:1.21 bash -lc "/usr/local/go/bin/go test -p 1 ./..."
+```
+
+结果：通过。
+
+```text
+?    github.com/gothinkster/golang-gin-realworld-example-app [no test files]
+ok   github.com/gothinkster/golang-gin-realworld-example-app/articles
+ok   github.com/gothinkster/golang-gin-realworld-example-app/common
+ok   github.com/gothinkster/golang-gin-realworld-example-app/users
+```
 
 ## 结论
 
 ```text
-生产级复验从 1 个完整通过 + 2 个有条件通过，提升到 2 个完整通过 + 1 个有条件通过。
+生产级复验从 1 个完整通过 + 2 个有条件通过，提升到 3 个完整通过。
 ```
 
-长期目标第 4 条“至少 2-3 个生产级项目复验通过”已达到最低门槛，但整体目标仍保持 active：Go 全量测试、Next.js 完整 build、更多生产级样本和执行阶段门禁仍需要继续积累证据。
+长期目标第 4 条“至少 2-3 个生产级项目复验通过”已达到，但整体目标仍保持 active：Next.js 完整 build、更多生产级样本和执行阶段门禁仍需要继续积累证据。

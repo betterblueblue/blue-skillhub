@@ -89,8 +89,8 @@ Error: An error is expected but got nil.
 Messages: Db should not be able to ping
 ```
 
-T24 收藏审计直接相关的 `articles` 包已通过；全量项目失败来自 `common` 包数据库连接期望，与本轮收藏 profile 发现无直接矛盾。该项目仍不能标为完整生产级通过。
+T24 收藏审计直接相关的 `articles` 包已通过。后续补充复验确认：默认 root 容器会绕过 `common/unit_test.go:39` 的 `chmod 0000` 权限断言，导致 `Db should not be able to ping` 误判；改用非 root 用户、临时 DB 路径，并用 `-p 1` 串行包执行后，全量 `go test -p 1 ./...` 通过。
 
 ## 结论
 
-有条件通过。`go-gin-gorm` profile 能在生产复杂度 Go 项目中定位 GORM association、AutoMigrate、API router、serializer、批量查询和测试入口；Docker Go 运行时已证明 T24 直接相关的 `articles` 包通过，但全量 `go test ./...` 仍因 `common` 包既有测试失败而不能升级为完整生产级通过。
+通过生产级复验。`go-gin-gorm` profile 能在生产复杂度 Go 项目中定位 GORM association、AutoMigrate、API router、serializer、批量查询和测试入口；Docker Go 运行时已证明 T24 直接相关的 `articles` 包通过，且在明确测试前置条件下全量 `go test -p 1 ./...` 通过。

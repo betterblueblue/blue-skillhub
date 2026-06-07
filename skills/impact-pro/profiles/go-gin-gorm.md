@@ -99,6 +99,8 @@ commands:
   lint: golangci-lint run
 ```
 
+容器复验注意：如果测试包含文件权限断言（如 `chmod 0000` 后期望 DB 连接失败），不要用 root 容器用户直接判断；优先使用非 root 用户、临时 `DB_PATH` / `TEST_DB_PATH`，必要时用 `go test -p 1 ./...` 避免包间共享测试库互相污染。
+
 ## db_introspection
 
 ```yaml

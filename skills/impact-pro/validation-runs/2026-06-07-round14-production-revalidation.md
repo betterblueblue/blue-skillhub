@@ -10,7 +10,7 @@
 |------|------|----|------|----------|------|------|
 | T22 | RuoYi-Vue | Java/Spring/MyBatis/Vue | 登录日志设备指纹 | 生产级 full + Maven compile | 93 | 通过 |
 | T23 | eShopOnWeb | ASP.NET Core/EF Core | 订单来源字段 | 生产级 full + Docker .NET test | 92 | 通过 |
-| T24 | Go RealWorld | Go/Gin/GORM | 收藏审计 | 生产复杂度 + Docker Go 相关包测试 | 89 | 有条件通过 |
+| T24 | Go RealWorld | Go/Gin/GORM | 收藏审计 | 生产级 full + Docker Go 全量测试 | 89 | 通过 |
 
 平均分：`91.33`
 
@@ -20,18 +20,18 @@ P0/P1：无。
 
 - RuoYi：`mvn -pl ruoyi-admin -am -DskipTests compile` 通过，`BUILD SUCCESS`。
 - eShopOnWeb：Docker `.NET SDK 8.0` 执行 `dotnet test eShopOnWeb.sln -v minimal` 通过，Unit/Integration/Functional/PublicApiIntegration 共 74 个测试通过。
-- Go RealWorld：Docker `golang:1.21` 执行 `/usr/local/go/bin/go test ./...`，`articles` 和 `users` 包通过；全量因 `common/unit_test.go:39` 既有数据库连接期望失败。
+- Go RealWorld：Docker `golang:1.21` 在非 root、临时 DB、`-p 1` 串行包前置条件下执行 `/usr/local/go/bin/go test -p 1 ./...` 通过；默认 root 容器会使 `common/unit_test.go:39` 权限断言失真。
 
 ## 阶段结论
 
 ```text
-生产级复验已有 2 个完整通过 + 1 个有条件通过。
+生产级复验已有 3 个完整通过。
 ```
 
-这证明 `impact-pro` 在更复杂项目上能继续做证据化影响分析。长期目标第 4 条已经达到最低门槛（至少 2 个生产级项目完整通过），但 Go RealWorld 仍是有条件通过，后续需要继续补全。
+这证明 `impact-pro` 在更复杂项目上能继续做证据化影响分析。长期目标第 4 条已达到，但整体目标仍不能标记完成：Next.js 完整 build、更多生产级样本和执行阶段门禁仍需要继续积累证据。
 
 ## 下一步
 
-1. 分析 Go RealWorld `common/unit_test.go:39` 的失败是否为测试环境前置条件或项目既有断言问题。
-2. 再补 1 个带真实前后端联动或权限/支付/订单状态的生产级项目，提高第 4 条证据余量。
+1. 再补 1-2 个带真实前后端联动或权限/支付/订单状态的生产级项目，提高第 4 条证据余量。
+2. 将 Go RealWorld 的非 root、临时 DB、串行包执行前置条件写入后续 profile 运行建议，避免 root 容器误判。
 3. 将 eShopOnWeb 的包安全告警记录为生产治理风险，不归因于 impact-pro profile。
