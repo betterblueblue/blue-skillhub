@@ -217,7 +217,8 @@ notes:
     - Next 项目可能是纯前端，也可能含 BFF/Server Actions/DB；不得因命中 frontend profile 就跳过服务端风险
     - 无 migration 文件时，只能从 seed 脚本和 SQL 查询推断 schema，必须标注为未确认
     - `npm test`、`npm run lint` 等命令必须以实际 scripts 为准；缺失时不可输出为已验证命令
-    - `next build` 编译通过但预渲染失败时，应拆分记录编译/类型检查结果和运行时依赖失败原因
+    - `next build` 编译通过但预渲染失败时，应拆分记录编译/类型检查结果和运行时依赖失败原因；补齐 DB/外部服务后必须复跑并记录最终结果
+    - 使用 `postgres(..., { ssl: 'require' })` 的项目，本地 Docker 复验需提供 SSL Postgres 或等价连接能力，不能用普通非 SSL Postgres 误判失败
     - Server Component/Client Component 边界容易被误改，实施前必须列出受影响文件的运行边界
   edge_cases:
     - 同仓多个 Next 示例或多 app workspace 时，先定位变更所在 package，再选择上下文根目录

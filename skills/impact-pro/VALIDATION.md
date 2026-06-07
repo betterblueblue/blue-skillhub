@@ -6,13 +6,13 @@
 
 **暂不建议按“成熟通用 Skill”投入无人监督使用。**
 
-当前 `impact-pro` 可以作为 **多栈可试用增强版** 使用，适合在真实项目中试跑和积累样本；Go RealWorld 已补齐 Docker 全量测试复验，但在没有完成 Next.js 完整 build、更多生产级运行时复验和执行阶段门禁复验前，不应宣称已达到成熟通用能力。
+当前 `impact-pro` 可以作为 **多栈可试用增强版** 使用，适合在真实项目中试跑和积累样本；Go RealWorld 已补齐 Docker 全量测试复验，Next.js 已补齐 DB 前置条件后的完整 build 复验，但在没有完成更多生产级运行时复验和执行阶段门禁复验前，不应宣称已达到成熟通用能力。
 
 理由：
 
 - `java-spring-mybatis` profile 已有 RuoYi 类真实项目经验，可视为 Level 2。
 - `node-express-prisma`、`python-fastapi-sqlmodel`、`frontend-react-vite` 已完成单项目首轮验证，当前为 Level 1。
-- `frontend-nextjs` 已完成 Next.js App Router 单项目首轮静态验证，并补充运行时 build 复测；编译/TypeScript 阶段通过，预渲染因 DB 不可用失败，当前为 Level 1。
+- `frontend-nextjs` 已完成 Next.js App Router 单项目首轮静态验证，并补充运行时 build 复测；补齐 SSL Postgres、schema 和 seed 数据后完整 build 通过，当前为 Level 1。
 - `frontend-nuxt-vue` 已完成 Nuxt/Vue 单项目首轮验证，并补充通过 typecheck/lint，当前为 Level 1。
 - `go-gin-gorm`、`dotnet-aspnet-efcore` 已完成单项目首轮验证，当前为 Level 1。
 - RuoYi、Node/Prisma、FastAPI、Go/Gin、.NET/EF Core、React/Vite、Next.js、Nuxt/Vue 和 monorepo 已补齐 full + light 双变更静态验收。
@@ -613,7 +613,7 @@
 
 2. **补运行时验证**
    - Go RealWorld 已确认全量测试需要非 root、临时 DB、`-p 1` 串行包执行；默认 root 容器会使 `common` 权限断言失真。
-   - Next.js 样本需要提供可用数据库后复跑完整 build。
+   - Next.js 样本已使用 SSL Postgres + seed 数据补齐完整 build；后续需扩展到生产级 Next 项目、Pages Router/API Routes 和不同 DB/ORM 组合。
    - 缺少 test/lint script 的样本必须在记录中标注限制，不能写成已验证。
 
 3. **补完整生产级通过样本**
