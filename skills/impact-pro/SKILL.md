@@ -1,26 +1,26 @@
 ---
 name: impact-pro
-description: 面向已验证 profile 覆盖范围内多栈现有系统的变更影响分析与受监督实施，是 impact 的栈无关升级版。用于在已有代码、schema、接口和配置约束下完成某功能迭代、新功能接入、字段/API/权限/配置变更或重构；未知栈先走 generic 兜底，不用于从 0 到 1 搭建新系统。仅在以下情况使用：用户显式说 'impact-pro'/'影响分析pro'，或项目非 Java/Spring/MyBatis（如 Node/Python/Go/.NET 等）需要现有系统影响分析时。Java/Spring/MyBatis 项目默认用 impact。
+description: 面向已验证技术栈规则覆盖范围内多栈现有系统的变更影响分析与用户确认下的实施，是 impact 的栈无关升级版。用于在已有代码、schema、接口和配置约束下完成某功能迭代、新功能接入、字段/API/权限/配置变更或重构；未知栈先用 generic 通用规则兜底，不用于从 0 到 1 搭建新系统。仅在以下情况使用：用户显式说 'impact-pro'/'影响分析pro'，或项目非 Java/Spring/MyBatis（如 Node/Python/Go/.NET 等）需要现有系统影响分析时。Java/Spring/MyBatis 项目默认用 impact。
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, mcp__dbhub__execute_sql, mcp__database__search_objects, mcp__database__describeTable
 ---
 
-> **架构说明**：本文件是通用内核，不含任何栈专属规则。技术栈规则位于 `profiles/`（编程语言/框架），数据库规则位于 `db-adapters/`。Phase 2 自动探测并按需加载。
+> **架构说明**：本文件是通用内核，不含任何栈专属规则。技术栈规则位于 `profiles/`，数据库规则位于 `db-adapters/`。Phase 2 自动探测并按需加载。
 
 # ImpactRadar — 现有系统多栈变更影响分析
 
 ## 目标
 
-面向已验证 profile 覆盖范围内的多栈现有系统，把模糊的功能迭代、新功能接入或高风险变更意图，通过靶向提问变成证据化的影响分析，按 light/full 两档输出文档并协助执行。
+面向已验证技术栈规则覆盖范围内的多栈现有系统，把模糊的功能迭代、新功能接入或高风险变更意图，通过靶向提问变成证据化的影响分析，按 light/full 两档输出文档并协助执行。
 
-本 Skill 不用于从 0 到 1 搭建新系统；它默认项目已经存在代码、schema、接口、配置、测试或运行约束。未知技术栈先使用 generic 兜底扫描并标注限制，不宣称任意技术栈都已稳定覆盖。
+本 Skill 不用于从 0 到 1 搭建新系统；它默认项目已经存在代码、schema、接口、配置、测试或运行约束。未知技术栈先使用 generic 通用规则扫描并标注限制，不宣称任意技术栈都已稳定覆盖。
 
 ## 核心原则
 
-1. **栈无关** — SKILL.md 内核零栈假设，所有栈规则在 `profiles/` 按需读取
+1. **栈无关** — SKILL.md 内核不预设技术栈，所有栈规则在 `profiles/` 按需读取
 2. **证据化分析** — 用工具发现真实上下文，不靠臆测
 3. **不替用户拍板** — 提供证据化的影响分析与选项，业务决策交给用户
 4. **两档模式** — light 简单改动走一页摘要，full 复杂变更走三文档
-5. **可扩展 profile** — 新技术栈只需加一个 profile 文件，无需改本内核
+5. **可扩展技术栈规则** — 新技术栈只需加一个规则文件，无需改本内核
 6. **证据不足先标注** — 找不到 schema/API/model/test 时必须写入未确认项，不得用猜测填空
 7. **破坏性请求先拦截** — DROP/DELETE/批量重构/删除接口/破坏兼容请求必须先做影响发现和确认，不能直接执行
 
@@ -29,11 +29,11 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, 
 ```
 impact-pro/
 ├── SKILL.md              # 通用内核（本文件）
-├── profiles/             # 技术栈 profile
-│   ├── _schema.md        # profile 统一接口定义
-│   ├── _template.md      # 新 profile 空白模板
-│   ├── generic.md         # 强兜底（任意栈）
-│   ├── java-spring-mybatis.md  # Java/Spring/MyBatis profile
+├── profiles/             # 技术栈规则
+│   ├── _schema.md        # 技术栈规则接口定义
+│   ├── _template.md      # 新技术栈规则模板
+│   ├── generic.md         # 通用兜底规则
+│   ├── java-spring-mybatis.md  # Java/Spring/MyBatis 规则
 │   ├── node-express-prisma.md
 │   ├── python-fastapi-sqlmodel.md
 │   ├── frontend-react-vite.md
@@ -41,7 +41,7 @@ impact-pro/
 │   ├── frontend-nuxt-vue.md
 │   ├── go-gin-gorm.md
 │   └── dotnet-aspnet-efcore.md
-├── db-adapters/          # 数据库 adapter
+├── db-adapters/          # 数据库适配器
 │   ├── generic-sql.md     # 通用 SQL 发现模板
 │   └── mysql.md          # MySQL 专用
 ├── templates/            # 文档模板（复用 impact v3.0）
@@ -62,9 +62,9 @@ impact-pro/
 
 测试失败的任何修复操作（Edit/Write/DDL/DML）都必须用户确认，不自动执行。
 
-## 行为准则门禁
+## 行为准则检查
 
-执行本 Skill 时必须优先满足下列门禁；门禁失败视为验收失败，不用分数抵消：
+执行本 Skill 时必须优先满足下列检查；检查不通过视为验收失败，不用分数抵消：
 
 1. **先思考，再编码**：实现前先说明假设、歧义、权衡和更简单方案；关键语义不清时先问，不用猜测填空。
 2. **简单优先**：只满足本次变更目标，不添加未要求的功能、抽象、配置项或推测性扩展。
@@ -78,7 +78,7 @@ impact-pro/
 
 ```
 Phase 1 意图捕获
-   → Phase 2 栈探测 + Profile 加载 + 上下文发现
+   → Phase 2 栈探测 + 技术栈规则加载 + 上下文发现
    → Phase 2.5 初步风险预判（不最终定档）
    → Phase 3 苏格拉底式探索（按选中维度提问）
    → Phase 3.5 正式判档 + 用户确认（light / full）
@@ -102,7 +102,7 @@ Phase 1 意图捕获
 
 若歧义会影响实现语义，先问；若可通过只读发现补证据，进入 Phase 2。
 
-## Phase 2: 栈探测 + Profile 加载 + 上下文发现
+## Phase 2: 栈探测 + 技术栈规则加载 + 上下文发现
 
 按顺序执行，不重复。
 
@@ -118,23 +118,23 @@ Phase 1 意图捕获
    - 读 `docker-compose.yml` → 识别 DB 类型
    - 读 datasource 配置 → 识别 DB 类型
 
-2. 按 `profiles/_schema.md` 的打分机制选出匹配 profile：
+2. 按 `profiles/_schema.md` 的打分机制选出匹配的技术栈规则：
    - 高置信命中（依赖命中 + 文件命中）→ 回显一行确认
-   - 低置信 / 无命中 → 加载 `profiles/generic.md`
-   - 多栈同仓 / monorepo → 列出候选 profile 和目录边界，不强行压成单 profile
+   - 低置信 / 无命中 → 加载 `profiles/generic.md` 通用规则
+   - 多栈同仓 / monorepo → 列出候选技术栈规则和目录边界，不强行压成单一规则
 
 3. 向用户确认：
    > "检测到 **[栈名]**，将加载 `profiles/[name].md` 中的专属规则。确认？"
 
-4. 多 profile 场景：
+4. 多技术栈规则场景：
    - 先按变更意图定位主目录（如 `backend/`、`frontend/`、`packages/api/`）
-   - 后端 + 前端共同受影响时，同时加载两个 profile
+   - 后端 + 前端共同受影响时，同时加载两个技术栈规则
    - 文档中按模块拆分影响范围、实施步骤和验证方案
    - 不允许只分析命中最高的一个 profile 后忽略另一个受影响模块
 
-### Step 2.2: Profile 加载
+### Step 2.2: 技术栈规则加载
 
-根据确认结果，Read 对应的 profile 文件：
+根据确认结果，读取对应的技术栈规则文件：
 
 - 读取 `profiles/[name].md` 获取：
   - `discovery_globs` — 查找哪些文件
@@ -146,13 +146,13 @@ Phase 1 意图捕获
   - `schema_queries` — schema 发现 SQL
   - `introspection_commands` — DB 检查命令
 
-### Step 2.3: 上下文发现（使用 profile 规则）
+### Step 2.3: 上下文发现（使用技术栈规则）
 
-按 `discovery_globs` 查找相关文件，用 profile 的分析维度扫描代码：
+按 `discovery_globs` 查找相关文件，用技术栈规则中的分析维度扫描代码：
 
 1. 扫描 `discovery_globs` 匹配的文件
-2. 按 profile 的 `style_axes` 提取风格特征（只描述，不下结论）
-3. 按 db-adapter 的 `schema_queries` 发现数据库 schema
+2. 按技术栈规则中的 `style_axes` 提取风格特征（只描述，不下结论）
+3. 按数据库适配器的 `schema_queries` 发现数据库 schema
 4. 构建上下文地图（影响文件、API 端点、依赖关系）
 5. 生成发现记录：
    - **已确认**：文件路径 / 命令输出 / DB 查询 / 测试结果
@@ -161,7 +161,7 @@ Phase 1 意图捕获
 
 **Token 保护**：文件读取上限 20 个，超出提示用户。
 
-### 维度判断（19 维度，Profile 可能已扩展）
+### 维度判断（19 维度，技术栈规则可能已扩展）
 
 根据意图推断涉及维度并交用户确认/调整：
 
@@ -204,7 +204,7 @@ Phase 1 意图捕获
 | P2 可默认 | 可按项目现有风格、代码约定或常见默认给建议 | 说明依据，不阻塞文档输出 |
 | P3 可延后 | 不影响需求/设计，可在实施前确认 | 放入实施前确认清单 |
 
-### 维度分组（Profile 可覆盖）
+### 维度分组（技术栈规则可覆盖）
 
 | 组 | 维度 | 优先级 |
 |----|------|--------|
@@ -269,7 +269,7 @@ Phase 1 意图捕获
 - DB schema、migration、索引、唯一约束、外键、存量数据或回填
 - API/DTO/OpenAPI/GraphQL 契约变更，或 generated client 需要再生成
 - 权限、认证、支付、订单、状态机、审计、风控等高风险业务逻辑
-- 跨模块、跨服务、前后端联动、monorepo 多 profile 共同实施
+- 跨模块、跨服务、前后端联动、monorepo 多技术栈规则共同实施
 - 缓存、消息队列、异步任务、文件存储、邮件/短信/第三方 API 等外部副作用
 - 删除、重命名、DROP、批量替换、破坏兼容、迁移旧接口
 - 证据不足但涉及 DB/API/权限/状态机等高风险区域
@@ -287,13 +287,13 @@ Phase 1 意图捕获
 
 - Agent 负责初判和正式建议，必须给证据
 - 用户负责复核确认、补充业务决策或要求升档
-- 用户可以要求简化 full 的文档形式，但不能把已触发 full 的高风险变更降为跳过安全闸的 light
+- 用户可以要求简化 full 的文档形式，但不能把已触发 full 的高风险变更降为跳过安全检查的 light
 
 > "这次变更看起来是 **[light / full]**（理由：…）。light 产一页影响摘要后直接执行；full 产三文档。确认走哪档？"
 
 **退出条件**：用户随时说「直接改 / 别写文档 / 简化」，可以简化文档形式，但不能跳过写操作确认和破坏性变更影响发现。
 
-### 破坏性请求安全闸
+### 破坏性请求保护
 
 当用户要求「直接删」「全部替换」「不用分析」「删旧接口」「DROP/RENAME 表字段」「批量重构」时：
 
@@ -321,14 +321,14 @@ change-impact/{需求名称}/
 └── 900-执行记录.md        # 基于 templates/execution-record.md，时间戳追加
 ```
 
-- **light** → `templates/light.md`，一页输出，确认后直接进 Phase 5
+- **light** → `templates/light.md`，一页输出，确认后进入 Phase 5 执行前检查
 - **full** → `templates/requirements.md` → `design.md` → `implementation.md`，**每份确认后再出下一份**
 
 **文件名合规化**：空格→下划线，去特殊字符，≤ 50 字符。
 
 ### 设计文档的「代码风格报告」
 
-每个风格项基于 profile 的 `style_axes` 提取，附**完整、未截断**的参考代码片段。
+每个风格项基于技术栈规则中的 `style_axes` 提取，附**完整、未截断**的参考代码片段。
 
 ### 分析依据与待确认问题
 
@@ -351,7 +351,7 @@ change-impact/{需求名称}/
 
 用户确认文档后进入。**所有「写类」操作逐项确认。**
 
-进入任何写操作前，先用 `templates/phase5-preflight.md` 完成执行前门禁核对；仓库状态、基线验证、Step 确认、回滚方式、执行记录路径和未确认项任一不满足时，不得执行写操作。
+进入任何写操作前，先用 `templates/phase5-preflight.md` 完成执行前检查；仓库状态、基线验证、Step 确认、回滚方式、执行记录路径和未确认项任一不满足时，不得执行写操作。
 
 ### 执行流程
 
@@ -383,7 +383,7 @@ change-impact/{需求名称}/
 
 ### 风格合规检查（自动执行）
 
-按 profile 的 `style_axes` 和 `validation_strategy` 跑 grep/Bash 检查。
+按技术栈规则中的 `style_axes` 和 `validation_strategy` 跑 grep/Bash 检查。
 
 ### 测试失败处理
 
@@ -412,10 +412,10 @@ change-impact/{需求名称}/
 
 ## 行为准则
 
-- **栈无关** — 本内核不含任何栈假设，所有规则来自 profile
+- **栈无关** — 本内核不含任何栈假设，所有规则来自技术栈规则文件
 - **影响分析须证据化** — 基于真实文件/代码/DB，不臆测
 - **不替用户拍板** — 给分析与选项，业务决策交用户
 - **输出语言跟随用户** — 中文问中文答，英文问英文答
 - **full 模式逐份确认文档，所有写操作逐项确认**
-- **可简化输出，不跳过安全闸** — 用户可要求简化 full 文档形式，但高风险触发项不能降成跳过证据、确认和验证的 light
+- **可简化输出，不跳过安全检查** — 用户可要求简化 full 文档形式，但高风险触发项不能降成跳过证据、确认和验证的 light
 - **测试失败先诊断** — 诊断自动，修复必须确认

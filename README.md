@@ -15,8 +15,8 @@ blue-skillhub/
 ├── mcp/                 🔍 网搜 —— MCP 网页搜索服务器（Google 首选 + 中文优化）
 │   └── web-search-mcp/
 └── skills/              🧩 Skill 合集
-    ├── impact/          📡 ImpactRadar —— 现有系统变更影响分析（Java/Spring/MyBatis，安全门禁已补强）
-    ├── impact-pro/      📡 ImpactRadar Pro —— 现有系统多栈变更影响分析（已验证 profile 覆盖范围内可用）
+    ├── impact/          📡 ImpactRadar —— 现有系统变更影响分析（Java/Spring/MyBatis，安全检查已补强）
+    ├── impact-pro/      📡 ImpactRadar Pro —— 现有系统多栈变更影响分析（已验证技术栈规则覆盖范围内可用）
     └── vl-vision/       👁️ 识图 —— 通用 VL 识图工具（突破纯文本 LLM 的视觉限制）
 ```
 
@@ -25,7 +25,7 @@ blue-skillhub/
 | [**claudecode行为规范/ruleblade/**](claudecode行为规范/ruleblade/) | 7 条实验验证的 AI 编码行为准则 | 约束 AI 编码行为，精准可控、不画蛇添足 |
 | [**mcp/web-search-mcp/**](mcp/web-search-mcp/) | MCP 网页搜索服务器 | Google 首选 + 中文优化，赋予 AI 联网搜索能力 |
 | [**skills/impact/**](skills/impact/) | 现有系统变更影响分析 Skill | 面向 Java/Spring/MyBatis 类现有系统的功能迭代、新功能接入和高风险变更；写操作 Step 级确认 |
-| [**skills/impact-pro/**](skills/impact-pro/) | 现有系统多栈变更影响分析 Skill | 面向已验证 profile 覆盖范围内的多栈现有系统；未知栈先走 generic 兜底，验收后再升级 profile |
+| [**skills/impact-pro/**](skills/impact-pro/) | 现有系统多栈变更影响分析 Skill | 面向已验证技术栈规则覆盖范围内的多栈现有系统；未知栈先用通用规则兜底，验收后再升级为专属规则 |
 | [**skills/vl-vision/**](skills/vl-vision/) | 通用 VL 识图工具 | 10 个预置模板 + 自定义 prompt，突破纯文本 LLM 的视觉限制 |
 
 ## 快速使用
@@ -34,7 +34,7 @@ blue-skillhub/
 - **搜索** → 在 MCP 客户端配置 `mcp/web-search-mcp/dist/index.js`，详见 [mcp/web-search-mcp/README.md](mcp/web-search-mcp/README.md)
 - **识图** → `python skills/vl-vision/vl_vision.py <图片路径>`，详见 [skills/vl-vision/README.md](skills/vl-vision/README.md)
 - **影响分析（Java 栈）** → 安装 impact skill，用于 Java/Spring/MyBatis/RuoYi 类现有系统的迭代变更，详见 [skills/impact/README.md](skills/impact/README.md)，验收记录见 [skills/impact/validation-runs/](skills/impact/validation-runs/)
-- **影响分析（多栈）** → 安装 impact-pro skill，用于已验证 profile 覆盖范围内现有系统的功能迭代、新功能接入和高风险变更，详见 [skills/impact-pro/README.md](skills/impact-pro/README.md)，验收记录见 [skills/impact-pro/validation-runs/](skills/impact-pro/validation-runs/)
+- **影响分析（多栈）** → 安装 impact-pro skill，用于已验证技术栈规则覆盖范围内现有系统的功能迭代、新功能接入和高风险变更，详见 [skills/impact-pro/README.md](skills/impact-pro/README.md)，验收记录见 [skills/impact-pro/validation-runs/](skills/impact-pro/validation-runs/)
 
 ## 5 分钟安装验证
 
@@ -106,6 +106,6 @@ skills/impact-pro
 验证方式：
 
 - 在客户端中触发 `/impact` 或 `/impact-pro`，能进入变更意图捕获流程。
-- `impact` 面向 Java/Spring/MyBatis/RuoYi 类现有系统；安全门禁和回归检查见 [skills/impact/VALIDATION.md](skills/impact/VALIDATION.md)。
-- `impact-pro` 面向已验证 profile 覆盖范围内的多栈现有系统；当前 profile、投产边界和验证记录见 [skills/impact-pro/README.md](skills/impact-pro/README.md)。
+- `impact` 面向 Java/Spring/MyBatis/RuoYi 类现有系统；安全检查和回归检查见 [skills/impact/VALIDATION.md](skills/impact/VALIDATION.md)。
+- `impact-pro` 面向已验证技术栈规则覆盖范围内的多栈现有系统；当前覆盖范围、使用边界和验证记录见 [skills/impact-pro/README.md](skills/impact-pro/README.md)。
 - 任一写文件、改代码、DDL/DML、配置变更、删除或测试修复，都必须由用户显式回复 `确认 Step N`，不能用 `yes/继续/全部确认` 代替。
