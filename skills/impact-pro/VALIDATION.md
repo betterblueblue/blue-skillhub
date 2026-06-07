@@ -6,7 +6,7 @@
 
 **暂不建议按“成熟通用 Skill”投入无人监督使用。**
 
-当前 `impact-pro` 可以作为 **多栈可试用增强版** 使用，适合在真实项目中试跑和积累样本；但在没有完成真实 agent 对话复测、Go/.NET 原生测试复跑、前端/monorepo 双变更矩阵和更多生产级样本复验前，不应宣称已达到成熟通用能力。
+当前 `impact-pro` 可以作为 **多栈可试用增强版** 使用，适合在真实项目中试跑和积累样本；但在没有完成真实 agent 对话复测、Go/.NET 原生测试复跑、Next.js 完整 build 和更多生产级样本复验前，不应宣称已达到成熟通用能力。
 
 理由：
 
@@ -15,8 +15,8 @@
 - `frontend-nextjs` 已完成 Next.js App Router 单项目首轮静态验证，并补充运行时 build 复测；编译/TypeScript 阶段通过，预渲染因 DB 不可用失败，当前为 Level 1。
 - `frontend-nuxt-vue` 已完成 Nuxt/Vue 单项目首轮验证，并补充通过 typecheck/lint，当前为 Level 1。
 - `go-gin-gorm`、`dotnet-aspnet-efcore` 已完成单项目首轮验证，当前为 Level 1。
-- RuoYi、Node/Prisma、FastAPI、Go/Gin、.NET/EF Core 已补齐 full + light 双变更静态验收。
-- monorepo 和三类负向场景已完成静态规则验收。
+- RuoYi、Node/Prisma、FastAPI、Go/Gin、.NET/EF Core、React/Vite、Next.js、Nuxt/Vue 和 monorepo 已补齐 full + light 双变更静态验收。
+- 三类负向场景已完成静态规则验收。
 - `generic` profile 是兜底，不应替代专属 profile 的真实项目验收。
 - 通用栈最容易失败的点不是“输出文档”，而是：栈识别、上下文发现、命令推断、ORM/DB schema 发现、风格现采、风险追问是否基于证据。
 
@@ -366,6 +366,27 @@
 
 通过标准：每个用例 >= 85 分，且不得出现 P0/P1。
 
+### T18-T21: 前端与 monorepo 第二变更
+
+目的：补齐前端项目和 monorepo 项目的第二变更矩阵，验证 `impact-pro` 能区分 UI-only light、跨端 full、以及主 profile + 辅助 profile 的 monorepo light。
+
+覆盖：
+
+| 用例 | 项目 | 变更意图 | 预期档位 |
+|------|------|----------|----------|
+| T18 | full-stack-fastapi-template/frontend + backend | 前端增加测试邮件入口，调用后端 `/utils/test-email/` | full |
+| T19 | next-learn/dashboard/final-example | 发票搜索框 placeholder 调整 | light |
+| T20 | nuxt-ui-templates/dashboard | 用户菜单主题文案调整 | light |
+| T21 | full-stack-fastapi-template monorepo | Profile 保存成功 toast 文案调整 | light |
+
+预期结果：
+
+- T18 必须识别 generated client、后端权限、邮件发送副作用，不能判 light。
+- T19/T20 必须证明不改 Server Component/Nitro API/DB，只改 UI 文案。
+- T21 必须以前端 profile 为主，后端 profile 只读确认，不强行 full。
+
+通过标准：每个用例 >= 85 分，且不得出现 P0/P1。
+
 ## 测试记录模板
 
 每跑一个项目，按下面格式记录：
@@ -426,9 +447,9 @@
    - Next.js 样本需要提供可用数据库后复跑完整 build。
    - 缺少 test/lint script 的样本必须在记录中标注限制，不能写成已验证。
 
-3. **补双变更矩阵**
-   - RuoYi、Node/Prisma、FastAPI、Go/Gin、.NET/EF Core 已补齐。
-   - React/Vite、Next.js、Nuxt/Vue、monorepo 仍需补第二变更。
+3. **补生产级复验**
+   - 当前双变更矩阵已覆盖主要样本，但多数仍是单仓单项目 Level 1。
+   - 下一步应选择 2-3 个生产级项目做复验，并把稳定 profile 升级到 Level 2。
 
 ## 最终投产判定
 
