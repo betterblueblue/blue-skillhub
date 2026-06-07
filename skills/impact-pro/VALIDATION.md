@@ -6,7 +6,7 @@
 
 **暂不建议按“成熟通用 Skill”投入无人监督使用。**
 
-当前 `impact-pro` 可以作为 **多栈可试用增强版** 使用，适合在真实项目中试跑和积累样本；但在没有完成真实 agent 对话复测、Go/.NET 原生测试复跑、Next.js 完整 build 和更多生产级样本复验前，不应宣称已达到成熟通用能力。
+当前 `impact-pro` 可以作为 **多栈可试用增强版** 使用，适合在真实项目中试跑和积累样本；但在没有完成 Go/.NET 原生测试复跑、Next.js 完整 build 和更多生产级样本复验前，不应宣称已达到成熟通用能力。
 
 理由：
 
@@ -16,9 +16,23 @@
 - `frontend-nuxt-vue` 已完成 Nuxt/Vue 单项目首轮验证，并补充通过 typecheck/lint，当前为 Level 1。
 - `go-gin-gorm`、`dotnet-aspnet-efcore` 已完成单项目首轮验证，当前为 Level 1。
 - RuoYi、Node/Prisma、FastAPI、Go/Gin、.NET/EF Core、React/Vite、Next.js、Nuxt/Vue 和 monorepo 已补齐 full + light 双变更静态验收。
-- 三类负向场景已完成静态规则验收。
+- 三类负向场景已完成静态规则验收，并补充通过独立 subagent 对话压力复测。
 - `generic` profile 是兜底，不应替代专属 profile 的真实项目验收。
 - 通用栈最容易失败的点不是“输出文档”，而是：栈识别、上下文发现、命令推断、ORM/DB schema 发现、风格现采、风险追问是否基于证据。
+
+## 阶段目标进度
+
+目标：将 `impact-pro` 从“多栈可试用增强版”推进到“多栈常规项目可投入使用”的通用影响分析 Skill。
+
+| 成功标准 | 当前状态 | 证据 |
+|----------|----------|------|
+| 不宣称覆盖任意技术栈，只宣称已验证 profile 覆盖范围内可用 | 达到 | README 和本文均保留“多栈可试用增强版”结论 |
+| 至少 5 个不同技术栈，每栈完成 full + light 双变更验收 | 基本达到 | T01-T21 已覆盖 Java、Node/Prisma、FastAPI、Go/Gin、.NET/EF、React/Vite、Next.js、Nuxt/Vue 和 monorepo 的 full/light 矩阵 |
+| T08-T10 等负向场景完成真实 agent 对话复测 | 达到 | `validation-runs/2026-06-07-round13-negative-dialogue-replay.md` |
+| 至少 2-3 个生产级项目复验通过 | 未达到 | 当前多数为开源样本/模板级项目，仍缺生产级复验 |
+| 平均分 >= 85，且无 P0/P1 | 当前样本达到，需生产级复验后重算 | T01-T21 汇总均无当前未修复 P0/P1 |
+| 写操作、DDL/DML、配置变更、测试修复全部满足确认门禁 | 规则与对话复测达到，执行阶段仍需复验 | 行为准则门禁 + T08-T10 subagent 对话复测 |
+| 新技术栈必须先走 generic 兜底，再通过真实项目验收后升级 profile Level | 规则达到，需持续执行 | profile Level 说明和 generic 兜底规则 |
 
 ## 验收总标准
 
@@ -562,15 +576,15 @@
 
 已完成首批专属 profile 和测试结果记录目录。下一阶段建议补三类证据：
 
-1. **补真实对话复测**
-   - T08-T10 负向场景需要通过完整 agent 对话验证安全闸，而不是只做静态规则审查。
+1. **补生产级执行复验**
+   - T08-T10 已完成独立 subagent 对话压力复测；下一步需要在真实项目中复验证据账本、写操作确认和执行阶段记录。
 
 2. **补运行时验证**
    - Go/.NET 样本需要在有 SDK 的环境复跑原生命令。
    - Next.js 样本需要提供可用数据库后复跑完整 build。
    - 缺少 test/lint script 的样本必须在记录中标注限制，不能写成已验证。
 
-3. **补生产级复验**
+3. **补生产级样本**
    - 当前双变更矩阵已覆盖主要样本，但多数仍是单仓单项目 Level 1。
    - 下一步应选择 2-3 个生产级项目做复验，并把稳定 profile 升级到 Level 2。
 
