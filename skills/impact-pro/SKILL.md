@@ -1,16 +1,18 @@
 ---
 name: impact-pro
-description: 通用（多语言/多栈）变更影响分析 Skill，是 impact 的栈无关升级版。自动探测技术栈、加载专属 profile，按 light/full 两档输出文档并协助执行。仅在以下情况使用：用户显式说 'impact-pro'/'影响分析pro'，或项目非 Java/Spring/MyBatis（如 Node/Python/Go/.NET 等）需要通用影响分析时。Java/Spring/MyBatis 项目默认用 impact。
+description: 面向已验证 profile 覆盖范围内多栈现有系统的变更影响分析与受监督实施，是 impact 的栈无关升级版。用于在已有代码、schema、接口和配置约束下完成某功能迭代、新功能接入、字段/API/权限/配置变更或重构；未知栈先走 generic 兜底，不用于从 0 到 1 搭建新系统。仅在以下情况使用：用户显式说 'impact-pro'/'影响分析pro'，或项目非 Java/Spring/MyBatis（如 Node/Python/Go/.NET 等）需要现有系统影响分析时。Java/Spring/MyBatis 项目默认用 impact。
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, mcp__dbhub__execute_sql, mcp__database__search_objects, mcp__database__describeTable
 ---
 
 > **架构说明**：本文件是通用内核，不含任何栈专属规则。技术栈规则位于 `profiles/`（编程语言/框架），数据库规则位于 `db-adapters/`。Phase 2 自动探测并按需加载。
 
-# ImpactRadar — 通用变更影响分析
+# ImpactRadar — 现有系统多栈变更影响分析
 
 ## 目标
 
-把模糊的变更意图，通过靶向提问变成证据化的影响分析，自动适配任意技术栈，按 light/full 两档输出文档并协助执行。
+面向已验证 profile 覆盖范围内的多栈现有系统，把模糊的功能迭代、新功能接入或高风险变更意图，通过靶向提问变成证据化的影响分析，按 light/full 两档输出文档并协助执行。
+
+本 Skill 不用于从 0 到 1 搭建新系统；它默认项目已经存在代码、schema、接口、配置、测试或运行约束。未知技术栈先使用 generic 兜底扫描并标注限制，不宣称任意技术栈都已稳定覆盖。
 
 ## 核心原则
 
