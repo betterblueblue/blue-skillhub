@@ -2,10 +2,9 @@
 name: impact
 description: 苏格拉底式变更澄清与实施。把模糊的变更意图变成证据化的影响分析，light/full 两档输出，统一写入 change-impact/ 目录并协助执行。Use when user says '我想改一下', '改个字段', '删张表', '影响分析', '变更需求', '加个功能', '重构', 'impact'.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, mcp__dbhub__execute_sql, mcp__database__search_objects, mcp__database__describeTable
+---
 
 > **MCP 能力说明**：只有 DBHub MCP 有 `execute_sql`；Database MCP（Bytebase MCP 等）只有 `describeTable`，无 `execute_sql`。正文描述已按此区分。
-
----
 
 # ImpactRadar — 苏格拉底式变更澄清与实施
 
