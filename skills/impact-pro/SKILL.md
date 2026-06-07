@@ -46,7 +46,8 @@ impact-pro/
 │   ├── light.md
 │   ├── requirements.md
 │   ├── design.md
-│   └── implementation.md
+│   ├── implementation.md
+│   └── execution-record.md
 └── README.md
 ```
 
@@ -315,7 +316,7 @@ change-impact/{需求名称}/
 ├── implementation.md       # full
 ├── light.md               # light
 ├── 300-验证脚本/          # E2E / API / SQL 验证
-└── 900-执行记录.md        # 时间戳追加
+└── 900-执行记录.md        # 基于 templates/execution-record.md，时间戳追加
 ```
 
 - **light** → `templates/light.md`，一页输出，确认后直接进 Phase 5
