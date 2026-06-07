@@ -16,6 +16,7 @@
 - **逐操作执行确认** — 每步写操作前都询问
 - **自动/确认边界清晰** — 只读操作自动跑，写操作必须确认
 - **TDD 验证框架** — 正向用例 + 错误用例（边界值/空值/格式校验/XSS）
+- **行为准则门禁** — 先澄清假设和成功标准，简单优先，精准修改，改 status/enum/常量前先确认原定义
 
 ## 技术栈覆盖
 
@@ -50,7 +51,7 @@ generic 是兜底能力，专属 profile 负责真实项目里更稳定的文件
 
 当前 `impact-pro` 已完成多栈静态验收、前端运行时复测和主要样本第二变更验收，覆盖 T01-T21 用例。补齐 Level 1 profile 后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入可试用状态；Nuxt/Vue 已补充通过 typecheck/lint，Next.js 已验证到编译/TypeScript 阶段但完整 build 仍依赖可用数据库。主要样本已补齐 full + light 双变更静态验收。整体还没有达到成熟通用完成态，关键结论和执行阶段仍需要人工复核。
 
-多栈测试用例、评分标准和投产门槛见 [VALIDATION.md](VALIDATION.md)，实际验收记录见 [validation-runs/](validation-runs/)。
+多栈测试用例、评分标准、行为准则门禁和投产门槛见 [VALIDATION.md](VALIDATION.md)，实际验收记录见 [validation-runs/](validation-runs/)。
 
 ## 典型流程
 
