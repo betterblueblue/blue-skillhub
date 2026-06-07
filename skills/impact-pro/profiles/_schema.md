@@ -49,9 +49,26 @@ notes:
 
 | Level | 含义 | 验收标准 |
 |-------|------|---------|
-| 1 | 基础覆盖 | 能识别栈、能找到主文件、能给候选命令、能说明发现方式、有 limitations |
-| 2 | 深度覆盖 | 在真实变更中积累了风格轴和验证规则 |
-| 3 | 成熟稳定 | 经多个真实项目验证，limitations 已充分覆盖 |
+| 1 | 基础覆盖 | 新技术栈先用 `generic` 完成首轮兜底分析；随后在至少 1 个真实项目完成 full + light 双变更验收；能识别栈、找到主文件、给出来自项目证据的候选命令、说明发现方式、有 limitations；验收记录写入 `validation-runs/` |
+| 2 | 深度覆盖 | 在至少 2 个真实项目或 1 个生产级项目中完成复验；积累了稳定风格轴、验证规则、失败前置条件和常见误判限制 |
+| 3 | 成熟稳定 | 经多个生产级项目验证，limitations 已充分覆盖；full/light、负向、运行时验证和执行门禁均有闭环证据 |
+
+## Profile 晋级协议
+
+新增或升级专属 profile 时，必须按顺序执行：
+
+1. **generic 兜底**：先用 `profiles/generic.md` 完成只读发现，记录命中证据和局限。
+2. **候选 profile**：新增 profile 文件时，只写已验证的 matcher、glob、命令和限制；未知项写入 `notes.limitations`。
+3. **双变更验收**：至少在一个真实项目完成 full + light 两类变更验收，记录 profile 选择证据、上下文发现、判档证据和验证方案。
+4. **运行时验证**：能执行的 build/test/lint/typecheck 必须实际运行；无法运行时记录环境限制，不得写成已通过。
+5. **记录归档**：新增 `validation-runs/Txx` 记录，并在 `README.md` / `VALIDATION.md` 更新 Level 说明。
+
+禁止事项：
+
+- 不能只因文件名或依赖命中就把新栈标成 Level 1。
+- 不能把 generic 兜底结果描述成专属 profile 已验证。
+- 不能写未验证的命令、glob、目录结构或风格结论。
+- 不能用 demo 项目的单一 happy path 覆盖生产级限制说明。
 
 ## matchers 打分规则
 
