@@ -1,8 +1,8 @@
-# web-search-mcp (优化版)
+# web-search-mcp
 
-> 基于 [mrkrsl/web-search-mcp](https://github.com/mrkrsl/web-search-mcp) 改造优化而来
+> 给 AI 客户端用的网页搜索 MCP 服务，基于 [mrkrsl/web-search-mcp](https://github.com/mrkrsl/web-search-mcp) 改造。
 
-一个基于 [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) 的网页搜索服务器，支持多搜索引擎、全文内容提取、代理访问等功能。适用于 Cursor、CodeBuddy、Claude Desktop 等支持 MCP 协议的 AI 客户端。
+它负责把“联网搜索”接到 Cursor、CodeBuddy、Claude Desktop 等支持 MCP 的客户端里。支持 Google/Bing/Brave/DuckDuckGo，多结果摘要、完整网页内容提取，以及本地代理访问。
 
 ## 与原项目的主要差异
 
@@ -13,9 +13,9 @@
 | **Playwright 代理支持** | 修复了 Playwright 不读取环境变量代理的问题，在 `chromium.launch()` 中显式传入 `proxy` 参数 |
 | **统一使用 Chromium** | 将 Brave 搜索从 Firefox 改为 Chromium，避免未安装 Firefox Playwright 浏览器导致的报错 |
 | **多引擎逻辑修复** | 修复了多引擎模式下有效结果被丢弃的 bug（`bestResults` 在循环结束后未被检查） |
-| **环境变量兜底** | 入口处硬编码默认环境变量，即使 MCP 客户端未正确传递 `env` 也能正常工作 |
+| **默认运行参数** | 入口处设置常用默认值，即使 MCP 客户端没有正确传递 `env` 也能启动 |
 | **中文搜索优化** | Google 搜索默认 locale `zh-CN`、timezone `Asia/Shanghai`，优化中文搜索体验 |
-| **智能模型适配** | 自动检测 LLM 模型类型，为 Llama 等弱模型限制内容长度，为 Qwen/Deepseek 等强壮模型放开限制 |
+| **按模型控制内容长度** | 对上下文较弱的模型限制返回内容长度；对更能处理长文本的模型放开限制 |
 
 ## 功能概览
 
@@ -23,7 +23,7 @@
 
 ### 1. `full-web-search`
 
-搜索网页并从顶部结果中获取完整页面内容。最全面的搜索工具。
+搜索网页，并继续打开靠前的结果提取正文。适合需要详细资料时使用。
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -34,7 +34,7 @@
 
 ### 2. `get-web-search-summaries`
 
-搜索网页并仅返回摘要/描述，不跟踪链接提取全文。轻量替代方案。
+只返回搜索结果标题、摘要和链接，不继续打开网页。适合先快速看一眼有哪些结果。
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -43,7 +43,7 @@
 
 ### 3. `get-single-web-page-content`
 
-从指定 URL 提取单个网页的完整内容，无需执行搜索。
+直接读取指定 URL 的正文内容，不先搜索。
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -59,32 +59,31 @@
 
 ### 当前仓库路径
 
-本仓库中的 MCP 入口文件是：
+本仓库当前的 MCP 入口文件是：
 
 ```text
 E:\agent\blue-skillhub\mcp\web-search-mcp\dist\index.js
 ```
 
-如果你把仓库克隆到其他位置，请把 MCP 客户端配置里的 `args` 改成你本机的绝对路径。
+如果仓库不在这个位置，请把 MCP 客户端配置里的 `args` 改成你本机的绝对路径。
 
 > 当前目录以 `dist/` 产物运行，没有随仓库提供 `src/` 和 `tsconfig.json`。因此安装使用时不需要执行 `npm run build`；如需二次开发，需要先补回源码构建链。
 
 ### 安装依赖
 
-在配置 MCP 客户端之前，**必须先在项目目录下执行以下两条命令**：
+在配置 MCP 客户端之前，先在项目目录下执行这两条命令：
 
 ```powershell
 cd E:\agent\blue-skillhub\mcp\web-search-mcp
 
-# 第一步：安装所有 npm 依赖（最关键！）
+# 第一步：安装 npm 依赖
 npm install
 
-# 第二步：安装 Playwright Chromium 浏览器（搜索功能依赖此浏览器）
+# 第二步：安装 Playwright Chromium 浏览器
 npx playwright install chromium
 ```
 
-> 如果跳过 `npm install`，MCP 服务器启动时会因缺少依赖报错；  
-> 如果跳过 `npx playwright install chromium`，搜索功能将无法启动浏览器，返回 0 结果。
+> 跳过 `npm install` 会导致服务启动时报缺依赖；跳过 `npx playwright install chromium`，搜索时通常会因为浏览器不存在而返回 0 结果。
 
 ### 启动验证
 
@@ -95,7 +94,7 @@ cd E:\agent\blue-skillhub\mcp\web-search-mcp
 node .\dist\index.js
 ```
 
-看到下面几行即可：
+看到下面两行就说明入口能启动：
 
 ```text
 Web Search MCP Server started
@@ -132,7 +131,7 @@ Waiting for MCP messages...
 }
 ```
 
-**Cursor / Claude Desktop**：配置格式类似，重点是 `args` 使用本机 `dist/index.js` 的绝对路径。
+**Cursor / Claude Desktop**：配置格式类似，重点是 `args` 必须指向本机真实存在的 `dist/index.js`。
 
 ### 配置后验证
 
@@ -162,14 +161,14 @@ Waiting for MCP messages...
 | Google | Playwright Chromium | 1（首选） | 正常 |
 | Bing | Playwright Chromium | 2 | CSS 选择器待更新，可能解析失败 |
 | Brave | Playwright Chromium | 3 | 正常 |
-| DuckDuckGo | Axios（无浏览器） | 4（兜底） | 正常 |
+| DuckDuckGo | Axios（无浏览器） | 4（备用选择） | 正常 |
 
 ## 项目结构
 
 ```
 web-search-mcp/
 ├── dist/
-│   ├── index.js                      # MCP 服务器入口，注册工具与环境变量兜底
+│   ├── index.js                      # MCP 服务入口，注册工具并设置默认运行参数
 │   ├── search-engine.js              # 搜索引擎实现（Google/Bing/Brave/DuckDuckGo）
 │   ├── enhanced-content-extractor.js # 增强内容提取器
 │   ├── content-extractor.js          # 基础内容提取器

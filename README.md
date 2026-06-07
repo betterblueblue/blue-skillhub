@@ -10,7 +10,7 @@
 
 ```
 blue-skillhub/
-├── claudecode行为规范/  🎯 律刃 —— AI 编码行为准则（7 条实验验证的祈使句规则）
+├── claudecode行为规范/  🎯 律刃 —— AI 编码行为准则（7 条实验验证的行为规则）
 │   └── ruleblade/
 ├── mcp/                 🔍 网搜 —— MCP 网页搜索服务器（Google 首选 + 中文优化）
 │   └── web-search-mcp/
@@ -22,10 +22,10 @@ blue-skillhub/
 
 | 目录 | 一句话 | 详请 |
 |------|--------|------|
-| [**claudecode行为规范/ruleblade/**](claudecode行为规范/ruleblade/) | 7 条实验验证的 AI 编码行为准则 | 约束 AI 编码行为，精准可控、不画蛇添足 |
+| [**claudecode行为规范/ruleblade/**](claudecode行为规范/ruleblade/) | 7 条实验验证的 AI 编码行为准则 | 让 AI 少猜、少乱改、先验证 |
 | [**mcp/web-search-mcp/**](mcp/web-search-mcp/) | MCP 网页搜索服务器 | Google 首选 + 中文优化，赋予 AI 联网搜索能力 |
 | [**skills/impact/**](skills/impact/) | 现有系统变更影响分析 Skill | 面向 Java/Spring/MyBatis 类现有系统的功能迭代、新功能接入和高风险变更；写操作 Step 级确认 |
-| [**skills/impact-pro/**](skills/impact-pro/) | 现有系统多栈变更影响分析 Skill | 面向已验证技术栈规则覆盖范围内的多栈现有系统；未知栈先用通用规则兜底，验收后再升级为专属规则 |
+| [**skills/impact-pro/**](skills/impact-pro/) | 现有系统多栈变更影响分析 Skill | 面向已验证技术栈规则覆盖范围内的多栈现有系统；未知栈先用通用规则扫描，验收后再升级为专属规则 |
 | [**skills/vl-vision/**](skills/vl-vision/) | 通用 VL 识图工具 | 10 个预置模板 + 自定义 prompt，突破纯文本 LLM 的视觉限制 |
 
 ## 快速使用
