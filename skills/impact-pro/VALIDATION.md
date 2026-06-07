@@ -46,7 +46,7 @@
 | 核心能力 | 验收标准 | 失败信号 |
 |----------|----------|----------|
 | 通用内核 + 技术栈 profile | 正确探测技术栈；按 `profiles/_schema.md` 打分选择 profile；无专属 profile 时加载 `generic`；多栈同仓列出主/辅 profile 和目录边界 | 非 Java 项目套 Java/Spring/MyBatis；monorepo 只分析一个目录；不说明 profile 置信度 |
-| Context Pack | Phase 2 必须产出上下文包；包含 L1/L2/L3、相关性 3/2/1/0、已确认事实、待确认问题、暂不纳入范围和预算；老 profile 缺少 `context_discovery` 时必须从 `discovery_globs` 推导 | 只贴搜索结果；没有说明为什么相关；未列排除项；未完成上下文包就判档 |
+| Context Pack | Phase 2 必须产出上下文包；包含 L1/L2/L3、相关性 3/2/1/0、已确认事实、待确认问题、暂不纳入范围和预算；内置 profile 必须显式提供 `context_discovery`，外部老 profile 缺失时从 `discovery_globs` 推导 | 只贴搜索结果；没有说明为什么相关；未列排除项；未完成上下文包就判档 |
 | 苏格拉底式提问 | 每轮不超过 3 个问题，但允许多轮；问题必须来自真实文件/schema/API/配置证据；按 P0/P1/P2/P3 分级收敛字段、权限、兼容、迁移、验证等决策 | 泛泛问“还有什么需求”；一次抛出大量问题；把“每轮 3 问”误当“总共 3 问”；问题与发现证据无关 |
 | light/full 两档模式 | Phase 2.5 只做初步风险预判；Phase 3 澄清后由 Agent 基于证据建议档位，用户复核确认；说明允许 light 或触发 full 的条件；用户可调整但不能跳过安全检查 | 一句模糊需求后直接定档；DB/API/权限/状态机变更误判 light；UI-only 文案变更强行 full |
 | 证据化分析 | 所有结论绑定路径、命令输出、DB 查询、schema、测试或代码片段；缺证据写入未确认项 | 编造表结构、接口、命令、风格；把猜测写成事实 |

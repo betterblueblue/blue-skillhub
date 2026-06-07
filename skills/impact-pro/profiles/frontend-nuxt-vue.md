@@ -116,6 +116,70 @@ discovery_globs:
     - "**/assets/**/*.css"
 ```
 
+## context_discovery
+
+```yaml
+context_discovery:
+  project_map:
+    - "package.json"
+    - "nuxt.config.*"
+    - "app.config.ts"
+    - "app/app.config.ts"
+    - "tsconfig*.json"
+    - "pnpm-workspace.yaml"
+  entrypoints:
+    - "**/server/api/**/*.ts"
+    - "**/server/routes/**/*.ts"
+    - "**/app/pages/**/*.vue"
+    - "**/pages/**/*.vue"
+    - "**/app/layouts/**/*.vue"
+    - "**/layouts/**/*.vue"
+    - "**/app/error.vue"
+    - "**/error.vue"
+  data_models:
+    - "**/app/types/**/*.ts"
+    - "**/types/**/*.ts"
+    - "**/server/types/**/*.ts"
+    - "**/prisma/schema.prisma"
+    - "**/prisma/migrations/**/*"
+    - "**/drizzle/**/*.sql"
+    - "**/migrations/**/*.sql"
+  dependency_paths:
+    - "**/app/composables/**/*.ts"
+    - "**/composables/**/*.ts"
+    - "**/app/utils/**/*.ts"
+    - "**/utils/**/*.ts"
+    - "**/stores/**/*.ts"
+    - "**/app/stores/**/*.ts"
+    - "**/server/utils/**/*.ts"
+    - "**/server/**/*.ts"
+  tests:
+    - "**/__tests__/**/*.{ts,vue}"
+    - "**/*.test.ts"
+    - "**/*.spec.ts"
+    - "**/*.test.vue"
+    - "**/*.spec.vue"
+    - "**/tests/**/*.ts"
+    - "**/e2e/**/*.ts"
+  configs:
+    - "**/package.json"
+    - "**/nuxt.config.*"
+    - "**/app.config.ts"
+    - "**/app/app.config.ts"
+    - "**/tsconfig*.json"
+    - "**/eslint.config.*"
+    - "**/vitest.config.*"
+    - "**/playwright.config.*"
+    - "**/.env.example"
+    - "**/pnpm-workspace.yaml"
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.nuxt/**"
+    - "**/.output/**"
+    - "**/dist/**"
+    - "**/coverage/**"
+```
+
 ## style_axes
 
 > 下列是观察方向，结论必须运行时从项目文件现采。

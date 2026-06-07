@@ -193,6 +193,94 @@ discovery_globs:
     - "**/src/components/**/*"
 ```
 
+## context_discovery
+
+> generic 只负责兜底收敛，不把命中结果描述成专属技术栈已验证。
+
+```yaml
+context_discovery:
+  project_map:
+    - "package.json"
+    - "pom.xml"
+    - "build.gradle"
+    - "pyproject.toml"
+    - "requirements.txt"
+    - "go.mod"
+    - "Cargo.toml"
+    - "*.sln"
+    - "*.csproj"
+    - "Dockerfile"
+    - "docker-compose*.yml"
+  entrypoints:
+    - "**/*Controller*.java"
+    - "**/*Controller*.py"
+    - "**/*Controller*.ts"
+    - "**/*Controller.cs"
+    - "**/*Endpoint.cs"
+    - "**/*Handler*.go"
+    - "**/routes/**/*"
+    - "**/api/**/*"
+    - "**/app/**/route.ts"
+    - "**/app/**/page.tsx"
+    - "**/pages/api/**/*"
+    - "**/server/api/**/*"
+    - "**/Program.cs"
+    - "**/main.go"
+  data_models:
+    - "**/*Entity.java"
+    - "**/*DO.java"
+    - "**/models.py"
+    - "**/schemas.py"
+    - "**/models.go"
+    - "**/Entities/**/*.cs"
+    - "**/*DbContext.cs"
+    - "**/prisma/schema.prisma"
+    - "**/*.sql"
+    - "**/migrations/**/*"
+  dependency_paths:
+    - "**/*Service*.*"
+    - "**/*Repository*.*"
+    - "**/*Mapper*.*"
+    - "**/*Dao*.*"
+    - "**/services/**/*"
+    - "**/repositories/**/*"
+    - "**/composables/**/*"
+    - "**/stores/**/*"
+  tests:
+    - "**/test/**/*"
+    - "**/tests/**/*"
+    - "**/*.test.*"
+    - "**/*.spec.*"
+    - "**/*_test.go"
+    - "**/*Tests/**/*.cs"
+  configs:
+    - "**/application*.yml"
+    - "**/application*.properties"
+    - "**/*.yaml"
+    - "**/*.yml"
+    - "**/config*.*"
+    - "**/settings.py"
+    - "**/appsettings*.json"
+    - "**/package.json"
+    - "**/tsconfig*.json"
+    - "**/vite.config.*"
+    - "**/next.config.*"
+    - "**/nuxt.config.*"
+    - "**/go.mod"
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/.next/**"
+    - "**/.nuxt/**"
+    - "**/.output/**"
+    - "**/target/**"
+    - "**/vendor/**"
+    - "**/bin/**"
+    - "**/obj/**"
+    - "**/generated/**"
+```
+
 ## 目录结构发现流程
 
 ```

@@ -81,6 +81,58 @@ discovery_globs:
     - "**/src/**/*.css"
 ```
 
+## context_discovery
+
+```yaml
+context_discovery:
+  project_map:
+    - "package.json"
+    - "vite.config.ts"
+    - "tsconfig*.json"
+    - "playwright.config.ts"
+    - "vitest.config.ts"
+  entrypoints:
+    - "**/src/main.tsx"
+    - "**/src/App.tsx"
+    - "**/src/routes/**/*.tsx"
+    - "**/src/routes/**/*.ts"
+    - "**/src/router*.ts"
+    - "**/src/routeTree*.ts"
+  data_models:
+    - "**/src/types/**/*.ts"
+    - "**/src/client/types*.ts"
+    - "**/src/client/schemas*.ts"
+    - "**/src/client/**/*.ts"
+  dependency_paths:
+    - "**/src/hooks/**/*.ts"
+    - "**/src/hooks/**/*.tsx"
+    - "**/src/lib/**/*.ts"
+    - "**/src/utils.ts"
+    - "**/src/utils/**/*.ts"
+    - "**/src/api/**/*.ts"
+    - "**/src/services/**/*.ts"
+  tests:
+    - "**/tests/**/*.spec.ts"
+    - "**/tests/**/*.test.ts"
+    - "**/src/**/*.test.ts"
+    - "**/src/**/*.test.tsx"
+    - "**/src/**/*.spec.ts"
+    - "**/src/**/*.spec.tsx"
+  configs:
+    - "**/package.json"
+    - "**/vite.config.ts"
+    - "**/tsconfig*.json"
+    - "**/playwright.config.ts"
+    - "**/vitest.config.ts"
+    - "**/biome.json"
+    - "**/src/index.css"
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/coverage/**"
+```
+
 ## style_axes
 
 > 下列是观察方向，结论必须运行时从项目文件现采。

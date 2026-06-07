@@ -136,6 +136,71 @@ discovery_globs:
     - "**/app/**/*.css"
 ```
 
+## context_discovery
+
+```yaml
+context_discovery:
+  project_map:
+    - "package.json"
+    - "next.config.*"
+    - "tsconfig*.json"
+    - "middleware.ts"
+    - "proxy.ts"
+  entrypoints:
+    - "**/app/**/page.tsx"
+    - "**/app/**/layout.tsx"
+    - "**/app/**/route.ts"
+    - "**/pages/api/**/*.ts"
+    - "**/pages/api/**/*.js"
+    - "**/middleware.ts"
+    - "**/proxy.ts"
+  data_models:
+    - "**/app/lib/definitions.ts"
+    - "**/app/lib/types.ts"
+    - "**/lib/definitions.ts"
+    - "**/lib/types.ts"
+    - "**/types/**/*.ts"
+    - "**/prisma/schema.prisma"
+    - "**/prisma/migrations/**/*"
+    - "**/drizzle/**/*.sql"
+  dependency_paths:
+    - "**/app/lib/**/*.ts"
+    - "**/app/lib/**/*.tsx"
+    - "**/lib/**/*.ts"
+    - "**/lib/**/*.tsx"
+    - "**/server/**/*.ts"
+    - "**/services/**/*.ts"
+    - "**/app/**/actions.ts"
+    - "**/app/**/actions.tsx"
+    - "**/auth.ts"
+    - "**/auth.config.ts"
+  tests:
+    - "**/__tests__/**/*.{ts,tsx,js,jsx}"
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/*.spec.ts"
+    - "**/*.spec.tsx"
+    - "**/tests/**/*.ts"
+    - "**/tests/**/*.tsx"
+    - "**/e2e/**/*.ts"
+  configs:
+    - "**/package.json"
+    - "**/next.config.*"
+    - "**/tsconfig*.json"
+    - "**/tailwind.config.*"
+    - "**/postcss.config.*"
+    - "**/playwright.config.*"
+    - "**/vitest.config.*"
+    - "**/.env.example"
+    - "**/.env.local.example"
+    - "**/auth.config.ts"
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/.next/**"
+    - "**/out/**"
+    - "**/coverage/**"
+```
+
 ## style_axes
 
 > 下列是观察方向，结论必须运行时从项目文件现采。

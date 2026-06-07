@@ -66,6 +66,45 @@ discovery_globs:
     - "**/liquibase/**/*.xml"
 ```
 
+## context_discovery
+
+```yaml
+context_discovery:
+  project_map:
+    - "pom.xml"
+    - "**/application*.yml"
+    - "**/application*.properties"
+  entrypoints:
+    - "**/*Controller*.java"
+    - "**/*RestController*.java"
+  data_models:
+    - "**/*Entity.java"
+    - "**/*DO.java"
+    - "**/domain/*.java"
+    - "**/entity/*.java"
+    - "**/dto/*.java"
+    - "**/vo/*.java"
+    - "**/*Mapper.xml"
+    - "**/*.sql"
+  dependency_paths:
+    - "**/*Service*.java"
+    - "**/*ServiceImpl*.java"
+    - "**/*Mapper.java"
+    - "**/*Dao.java"
+    - "**/*Repository*.java"
+  tests:
+    - "**/test/**/*.java"
+    - "**/*Test.java"
+    - "**/*Tests.java"
+  configs:
+    - "**/application*.yml"
+    - "**/application*.properties"
+    - "**/*Config*.java"
+  exclude_patterns:
+    - "**/target/**"
+    - "**/generated/**"
+```
+
 ## style_axes
 
 > 结论需运行时从代码现采，下列为常见模式提示。

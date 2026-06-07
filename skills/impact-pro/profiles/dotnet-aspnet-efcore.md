@@ -75,6 +75,60 @@ discovery_globs:
     - "**/*Migration*.cs"
 ```
 
+## context_discovery
+
+```yaml
+context_discovery:
+  project_map:
+    - "*.sln"
+    - "*.csproj"
+    - "Directory.Packages.props"
+    - "global.json"
+  entrypoints:
+    - "**/Controllers/**/*.cs"
+    - "**/*Controller.cs"
+    - "**/*Endpoint.cs"
+    - "**/*Endpoints/**/*.cs"
+    - "**/Pages/**/*.cshtml.cs"
+    - "**/Program.cs"
+  data_models:
+    - "**/Entities/**/*.cs"
+    - "**/*Entity.cs"
+    - "**/ApplicationCore/**/*.cs"
+    - "**/*Request.cs"
+    - "**/*Response.cs"
+    - "**/*Dto.cs"
+    - "**/Models/**/*.cs"
+    - "**/ViewModels/**/*.cs"
+    - "**/Migrations/**/*.cs"
+  dependency_paths:
+    - "**/Services/**/*.cs"
+    - "**/*Service.cs"
+    - "**/*Handler.cs"
+    - "**/Features/**/*.cs"
+    - "**/Interfaces/**/*.cs"
+    - "**/*DbContext.cs"
+    - "**/*Context.cs"
+    - "**/Infrastructure/**/*.cs"
+    - "**/*Repository.cs"
+    - "**/Data/**/*.cs"
+  tests:
+    - "**/tests/**/*.cs"
+    - "**/*Tests/**/*.cs"
+    - "**/*Test.cs"
+  configs:
+    - "**/*.sln"
+    - "**/*.csproj"
+    - "**/Directory.Packages.props"
+    - "**/appsettings*.json"
+    - "**/docker-compose*.yml"
+    - "**/global.json"
+  exclude_patterns:
+    - "**/bin/**"
+    - "**/obj/**"
+    - "**/TestResults/**"
+```
+
 ## style_axes
 
 > 下列是观察方向，结论必须运行时从项目文件现采。

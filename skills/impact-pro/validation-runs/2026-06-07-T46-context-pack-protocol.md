@@ -25,7 +25,8 @@
 |--------|------|------|
 | 通用内核 | Phase 2 明确包含栈探测、profile 加载和 Context Pack 构建 | 通过 |
 | profile 指引 | `_schema.md` / `_template.md` 提供 `context_discovery` 字段 | 通过 |
-| 旧 profile 兼容 | 老 profile 缺少 `context_discovery` 时，从 `discovery_globs` 推导 | 通过 |
+| 内置 profile | bundled profiles 均显式提供 `context_discovery`，无需临场推导 | 通过 |
+| 旧 profile 兼容 | 外部或历史 profile 缺少 `context_discovery` 时，从 `discovery_globs` 推导 | 通过 |
 | 分层探索 | L1 项目地图、L2 变更邻域、L3 精准证据逐层收敛 | 通过 |
 | 相关性分级 | 候选文件/对象必须标注 3/2/1/0，并说明用途 | 通过 |
 | 上下文预算 | 限制读取数量和片段大小，超出预算先问最多 3 个收敛问题 | 通过 |
@@ -39,3 +40,5 @@
 通过。`impact-pro` 现在不仅要求“发现上下文”，还要求 agent 解释上下文为什么被纳入、为什么被排除、哪些事实已确认、哪些问题仍需用户拍板。
 
 这能帮助其他 agent 模仿 ACE 的核心收益：不是拿最多上下文，而是拿对当前变更刚好够用的上下文，并且保留可审计的选择理由。
+
+补强项：内置 `generic`、Java、Node、Python、Go、.NET、React、Next.js、Nuxt/Vue profile 已全部补充显式 `context_discovery`，新旧 profile 仍保留 schema 级兼容规则。

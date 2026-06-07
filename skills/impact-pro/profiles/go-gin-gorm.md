@@ -73,6 +73,55 @@ discovery_globs:
     - "**/main.go"
 ```
 
+## context_discovery
+
+```yaml
+context_discovery:
+  project_map:
+    - "go.mod"
+    - "go.sum"
+    - ".env.example"
+    - "docker-compose*.yml"
+  entrypoints:
+    - "**/routers.go"
+    - "**/*router*.go"
+    - "**/*handler*.go"
+    - "**/*Handler*.go"
+    - "**/hello.go"
+    - "**/main.go"
+    - "**/cmd/**/*.go"
+  data_models:
+    - "**/models.go"
+    - "**/*model*.go"
+    - "**/serializers.go"
+    - "**/*serializer*.go"
+    - "**/validators.go"
+    - "**/*validator*.go"
+    - "**/migrations/**/*.sql"
+    - "**/db/**/*.sql"
+  dependency_paths:
+    - "**/*service*.go"
+    - "**/*Service*.go"
+    - "**/services/**/*.go"
+    - "**/usecase/**/*.go"
+    - "**/*repository*.go"
+    - "**/*Repository*.go"
+    - "**/common/database.go"
+    - "**/database.go"
+  tests:
+    - "**/*_test.go"
+    - "**/unit_test.go"
+  configs:
+    - "**/go.mod"
+    - "**/go.sum"
+    - "**/.env.example"
+    - "**/.golangci.yml"
+    - "**/docker-compose*.yml"
+  exclude_patterns:
+    - "**/vendor/**"
+    - "**/tmp/**"
+```
+
 ## style_axes
 
 > 下列是观察方向，结论必须运行时从项目文件现采。

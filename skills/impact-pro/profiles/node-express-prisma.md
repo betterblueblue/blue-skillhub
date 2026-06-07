@@ -78,6 +78,51 @@ discovery_globs:
     - "**/prisma/schema.prisma"
 ```
 
+## context_discovery
+
+```yaml
+context_discovery:
+  project_map:
+    - "package.json"
+    - "tsconfig.json"
+    - "prisma.config.ts"
+  entrypoints:
+    - "**/src/app.ts"
+    - "**/src/index.ts"
+    - "**/src/server.ts"
+    - "**/src/main.ts"
+    - "**/src/routes/**/*.ts"
+    - "**/src/controllers/**/*.ts"
+  data_models:
+    - "**/prisma/schema.prisma"
+    - "**/prisma/migrations/**/*"
+    - "**/src/**/*.model.ts"
+    - "**/src/**/*.dto.ts"
+    - "**/src/**/*.schema.ts"
+  dependency_paths:
+    - "**/*service*.ts"
+    - "**/*Service*.ts"
+    - "**/services/**/*.ts"
+    - "**/src/**/*repository*.ts"
+    - "**/src/**/*Repository*.ts"
+  tests:
+    - "**/tests/**/*.ts"
+    - "**/*.test.ts"
+    - "**/*.spec.ts"
+  configs:
+    - "**/package.json"
+    - "**/tsconfig.json"
+    - "**/prisma.config.ts"
+    - "**/.env.example"
+    - "**/docker-compose*.yml"
+    - "**/jest.config.*"
+    - "**/vitest.config.*"
+  exclude_patterns:
+    - "**/node_modules/**"
+    - "**/dist/**"
+    - "**/build/**"
+```
+
 ## style_axes
 
 > 下列是观察方向，结论必须运行时从项目文件现采。

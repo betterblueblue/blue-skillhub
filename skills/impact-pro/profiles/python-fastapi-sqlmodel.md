@@ -77,6 +77,51 @@ discovery_globs:
     - "**/alembic/versions/**/*.py"
 ```
 
+## context_discovery
+
+```yaml
+context_discovery:
+  project_map:
+    - "pyproject.toml"
+    - "requirements.txt"
+    - "alembic.ini"
+    - "Dockerfile"
+    - "compose*.yml"
+  entrypoints:
+    - "**/app/main.py"
+    - "**/app/api/main.py"
+    - "**/app/api/routes/**/*.py"
+    - "**/app/api/deps.py"
+    - "**/app/routers/**/*.py"
+  data_models:
+    - "**/app/models.py"
+    - "**/app/models/**/*.py"
+    - "**/app/schemas.py"
+    - "**/app/schemas/**/*.py"
+    - "**/app/alembic/versions/**/*.py"
+    - "**/alembic/versions/**/*.py"
+  dependency_paths:
+    - "**/app/services/**/*.py"
+    - "**/app/*service*.py"
+    - "**/app/crud.py"
+    - "**/app/crud/**/*.py"
+    - "**/app/db.py"
+    - "**/app/core/db.py"
+  tests:
+    - "**/tests/**/*.py"
+    - "**/test/**/*.py"
+  configs:
+    - "**/pyproject.toml"
+    - "**/requirements.txt"
+    - "**/app/core/config.py"
+    - "**/alembic.ini"
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.pytest_cache/**"
+    - "**/.ruff_cache/**"
+    - "**/.venv/**"
+```
+
 ## style_axes
 
 > 下列是观察方向，结论必须运行时从项目文件现采。
