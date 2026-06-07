@@ -49,7 +49,7 @@ generic 是兜底能力，专属 profile 负责真实项目里更稳定的文件
 
 ## 验收状态
 
-当前 `impact-pro` 已完成多栈静态验收、前端运行时复测、主要样本第二变更验收、T08-T10 独立 subagent 负向对话复测、第一轮生产级项目复验、T25 多轮苏格拉底提问压力测试、T26 执行阶段门禁压力复测、T27 执行记录模板补强、T28 Phase 5 闭环验收标准补强、T29 Go RealWorld 执行演练包准备、T30 Go RealWorld 演练前基线验证、T31 Step 编号确认协议补强，以及 T32 长期目标达成度审计，覆盖 T01-T32 用例。补齐 Level 1 profile 后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入可试用状态；Nuxt/Vue 已补充通过 typecheck/lint，Next.js 已在补齐 SSL Postgres、schema 和 seed 数据后完整 build 通过。生产级复验中 RuoYi、eShopOnWeb 和 Go RealWorld 均已在明确运行前置条件下完整通过。整体还没有达到成熟通用完成态，关键结论和执行阶段仍需要人工复核。
+当前 `impact-pro` 已完成多栈静态验收、前端运行时复测、主要样本第二变更验收、T08-T10 独立 subagent 负向对话复测、第一轮生产级项目复验、T25 多轮苏格拉底提问压力测试、T26 执行阶段门禁压力复测、T27 执行记录模板补强、T28 Phase 5 闭环验收标准补强、T29 Go RealWorld 执行演练包准备、T30 Go RealWorld 演练前基线验证、T31 Step 编号确认协议补强、T32 长期目标达成度审计，以及 T33 Phase 5 执行确认包，覆盖 T01-T33 用例。补齐 Level 1 profile 后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入可试用状态；Nuxt/Vue 已补充通过 typecheck/lint，Next.js 已在补齐 SSL Postgres、schema 和 seed 数据后完整 build 通过。生产级复验中 RuoYi、eShopOnWeb 和 Go RealWorld 均已在明确运行前置条件下完整通过。整体还没有达到成熟通用完成态，关键结论和执行阶段仍需要人工复核。
 
 多栈测试用例、评分标准、行为准则门禁和投产门槛见 [VALIDATION.md](VALIDATION.md)，实际验收记录见 [validation-runs/](validation-runs/)。
 

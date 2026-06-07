@@ -112,3 +112,13 @@ docker run --rm -v "E:/agent/impact-pro-validation-work/go-gin-realworld:/src" -
 T29 已完成真实执行演练包准备，T30 已证明演练前基线为绿，但尚未执行写操作。
 
 下一步需要用户明确确认是否允许在 `E:\agent\impact-pro-validation-work\go-gin-realworld` 中执行上述 Step 1、Step 2 和 Step 4。
+
+可复制确认语句：
+
+```text
+确认 Step 1
+确认 Step 2
+确认 Step 4
+```
+
+模糊表述（如“可以”“继续”“都行”）不得触发写操作，必须按 Step 编号确认。
