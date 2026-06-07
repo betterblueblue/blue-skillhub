@@ -20,6 +20,7 @@ impact = Java / MyBatis / RuoYi 类项目的受监督影响分析与执行辅助
 |------|------|------|
 | T01 | 修复后安全门禁静态回归 | 通过 |
 | T02 | impact-pro 修复项回迁差异分析 | 通过 |
+| T03 | 上下文包协议回归 | 通过 |
 
 ## 关键文件
 
@@ -32,3 +33,4 @@ impact = Java / MyBatis / RuoYi 类项目的受监督影响分析与执行辅助
 | `../templates/execution-record.md` | Phase 5 执行记录 |
 | `../templates/200-实施文档.md` | full 实施文档模板 |
 | `../templates/light-影响摘要.md` | light 摘要模板 |
+| `../templates/context-pack.md` | 上下文包模板 |

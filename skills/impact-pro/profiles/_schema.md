@@ -19,6 +19,14 @@ discovery_globs:      # 上下文发现用的 glob 模式
   config: []          # 配置文件
   test: []            # 测试文件
   migration: []        # 迁移/Schema 文件
+context_discovery:    # Context Pack 构建顺序；旧 profile 未填写时从 discovery_globs 推导
+  project_map: []     # 项目地图：根配置、包管理、启动/测试命令、目录边界
+  entrypoints: []     # 入口：route/controller/page/handler/command/job
+  data_models: []     # 数据结构：schema/model/entity/dto/type/migration
+  dependency_paths: [] # 依赖路径：service/repository/client/store/composable
+  tests: []           # 测试入口：unit/integration/e2e/api
+  configs: []         # 配置/权限：env/config/feature flag/permission
+  exclude_patterns: [] # 排除项：dist/build/vendor/generated/cache 等
 style_axes:           # 风格观察轴（结论需运行时现采）
   naming: string      # 命名规范提示
   layering: string    # 分层模式提示
@@ -45,6 +53,16 @@ notes:
   edge_cases: []     # 边缘场景
 ```
 
+## Context Pack 规则
+
+`context_discovery` 用来指导 agent 先找什么、后找什么，目标是拿到“刚好够用、刚好相关、可解释”的上下文包。
+
+- 新 profile 应填写 `context_discovery`。
+- 老 profile 若未填写，按 `discovery_globs` 推导：`api → entrypoints`，`entity/dto/migration/data_access → data_models`，`service/data_access → dependency_paths`，`test → tests`，`config → configs`。
+- 每个候选文件或对象都必须标注相关性：3 直接修改候选，2 影响判断候选，1 背景参考，0 暂不纳入范围。
+- Context Pack 必须记录排除项，避免把看过但无关的文件继续带入后续分析。
+- 未完成 Context Pack 前，不得正式 light/full 判档。
+
 ## Level 定义
 
 | Level | 含义 | 验收标准 |
@@ -59,7 +77,7 @@ notes:
 
 1. **generic 兜底**：先用 `profiles/generic.md` 完成只读发现，记录命中证据和局限。
 2. **候选 profile**：新增 profile 文件时，只写已验证的 matcher、glob、命令和限制；未知项写入 `notes.limitations`。
-3. **双变更验收**：至少在一个真实项目完成 full + light 两类变更验收，记录 profile 选择证据、上下文发现、判档证据和验证方案。
+3. **双变更验收**：至少在一个真实项目完成 full + light 两类变更验收，记录技术栈规则选择证据、Context Pack、判档证据和验证方案。
 4. **运行时验证**：能执行的 build/test/lint/typecheck 必须实际运行；无法运行时记录环境限制，不得写成已通过。
 5. **记录归档**：新增 `validation-runs/Txx` 记录，并在 `README.md` / `VALIDATION.md` 更新 Level 说明。
 
@@ -86,3 +104,4 @@ notes:
 - 每个轴的值是「通常长什么样」的**提示**，明确标注「结论需运行时现采」
 - 不写未验证的 glob/command，验证前写进 `notes.limitations`
 - 迁移文件（migration）glob 必须覆盖：SQL 脚本、Flyway、Liquibase、迁移工具配置
+- 新增或升级 profile 时必须补充 `context_discovery`；暂时无法验证的条目写入 `notes.limitations`

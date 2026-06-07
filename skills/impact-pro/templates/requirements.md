@@ -8,6 +8,15 @@
 
 [现有 schema/代码/配置 的痛点或限制]
 
+## 2.1 Context Pack 摘要
+
+- Context Pack 路径：`change-impact/{需求名称}/context-pack.md`
+- 已识别技术栈：
+- 已加载技术栈规则：
+- 直接相关对象：
+- 待确认问题：
+- 暂不纳入范围：
+
 ## 3. 需求描述
 
 ### 当前假设与歧义
