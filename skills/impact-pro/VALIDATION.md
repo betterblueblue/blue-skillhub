@@ -6,7 +6,7 @@
 
 **暂不建议按“成熟通用 Skill”投入无人监督使用。**
 
-当前 `impact-pro` 可以作为 **多栈可试用增强版** 使用，适合在真实项目中试跑和积累样本；但在没有完成真实 agent 对话复测、Go/.NET 原生测试复跑、每项目双变更矩阵和更多生产级样本复验前，不应宣称已达到成熟通用能力。
+当前 `impact-pro` 可以作为 **多栈可试用增强版** 使用，适合在真实项目中试跑和积累样本；但在没有完成真实 agent 对话复测、Go/.NET 原生测试复跑、前端/monorepo 双变更矩阵和更多生产级样本复验前，不应宣称已达到成熟通用能力。
 
 理由：
 
@@ -15,6 +15,7 @@
 - `frontend-nextjs` 已完成 Next.js App Router 单项目首轮静态验证，并补充运行时 build 复测；编译/TypeScript 阶段通过，预渲染因 DB 不可用失败，当前为 Level 1。
 - `frontend-nuxt-vue` 已完成 Nuxt/Vue 单项目首轮验证，并补充通过 typecheck/lint，当前为 Level 1。
 - `go-gin-gorm`、`dotnet-aspnet-efcore` 已完成单项目首轮验证，当前为 Level 1。
+- RuoYi、Node/Prisma、FastAPI、Go/Gin、.NET/EF Core 已补齐 full + light 双变更静态验收。
 - monorepo 和三类负向场景已完成静态规则验收。
 - `generic` profile 是兜底，不应替代专属 profile 的真实项目验收。
 - 通用栈最容易失败的点不是“输出文档”，而是：栈识别、上下文发现、命令推断、ORM/DB schema 发现、风格现采、风险追问是否基于证据。
@@ -342,6 +343,29 @@
 
 通过标准：>= 85 分。
 
+### T13-T17: 主要后端样本第二变更（light）
+
+目的：验证 `impact-pro` 不仅能处理 full 变更，也能在同一真实项目中正确收敛 light 变更，避免被项目里的 ORM/DB 证据带偏。
+
+覆盖：
+
+| 用例 | 项目 | 变更意图 | 预期档位 |
+|------|------|----------|----------|
+| T13 | RuoYi-Vue | 登录页版权/按钮文案调整 | light |
+| T14 | prisma-examples/testing-express | 重复用户错误文案调整 | light |
+| T15 | full-stack-fastapi-template/backend | Item 删除成功 message 调整 | light |
+| T16 | golang-gin-realworld-example-app | Article 不存在错误提示调整 | light |
+| T17 | eShopOnWeb | Catalog 分页展示文案调整 | light |
+
+预期结果：
+
+- 每个用例都必须找到真实 UI/API/test 文件。
+- 明确写出不涉及 DB schema、migration、权限核心逻辑的证据。
+- API 文案类变更必须提醒客户端兼容性和测试断言风险。
+- 不得因为项目含 ORM/EF/GORM/Prisma/MyBatis 就自动生成 DB 方案。
+
+通过标准：每个用例 >= 85 分，且不得出现 P0/P1。
+
 ## 测试记录模板
 
 每跑一个项目，按下面格式记录：
@@ -403,7 +427,8 @@
    - 缺少 test/lint script 的样本必须在记录中标注限制，不能写成已验证。
 
 3. **补双变更矩阵**
-   - 每个主要技术栈至少补 1 个 light + 1 个 full 变更，满足投产门槛。
+   - RuoYi、Node/Prisma、FastAPI、Go/Gin、.NET/EF Core 已补齐。
+   - React/Vite、Next.js、Nuxt/Vue、monorepo 仍需补第二变更。
 
 ## 最终投产判定
 
