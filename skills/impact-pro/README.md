@@ -7,7 +7,7 @@
 ## 核心能力
 
 - **通用内核 + 技术栈 profile** — 无栈假设，profile 按需加载
-- **苏格拉底式提问** — 基于实际 schema 和代码发现上下文，针对性提问
+- **苏格拉底式提问** — 基于实际 schema 和代码发现上下文，按风险多轮收敛；每轮最多 3 问，不是总共最多 3 问
 - **light/full 两档模式** — 简单改动走一页摘要，复杂变更走三文档
 - **证据化分析** — 用工具发现真实上下文，不靠臆测
 - **DB adapter 系统** — MySQL + generic SQL adapter（PG 等其他 DB 走 generic）
@@ -49,7 +49,7 @@ generic 是兜底能力，专属 profile 负责真实项目里更稳定的文件
 
 ## 验收状态
 
-当前 `impact-pro` 已完成多栈静态验收、前端运行时复测、主要样本第二变更验收、T08-T10 独立 subagent 负向对话复测，以及第一轮生产级项目复验，覆盖 T01-T24 用例。补齐 Level 1 profile 后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入可试用状态；Nuxt/Vue 已补充通过 typecheck/lint，Next.js 已验证到编译/TypeScript 阶段但完整 build 仍依赖可用数据库。生产级复验中 RuoYi 完整通过，eShopOnWeb 和 Go RealWorld 因本机缺少 SDK 暂为有条件通过。整体还没有达到成熟通用完成态，关键结论和执行阶段仍需要人工复核。
+当前 `impact-pro` 已完成多栈静态验收、前端运行时复测、主要样本第二变更验收、T08-T10 独立 subagent 负向对话复测、第一轮生产级项目复验，以及 T25 多轮苏格拉底提问压力测试，覆盖 T01-T25 用例。补齐 Level 1 profile 后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入可试用状态；Nuxt/Vue 已补充通过 typecheck/lint，Next.js 已验证到编译/TypeScript 阶段但完整 build 仍依赖可用数据库。生产级复验中 RuoYi 完整通过，eShopOnWeb 和 Go RealWorld 因本机缺少 SDK 暂为有条件通过。整体还没有达到成熟通用完成态，关键结论和执行阶段仍需要人工复核。
 
 多栈测试用例、评分标准、行为准则门禁和投产门槛见 [VALIDATION.md](VALIDATION.md)，实际验收记录见 [validation-runs/](validation-runs/)。
 
@@ -80,6 +80,12 @@ Phase 5：执行（每步确认，自动跑风格检查+单测）
 **full** 适合：DB/migration/索引/外键/存量数据、API/DTO/OpenAPI/GraphQL 契约、权限/认证/支付/订单/状态机、跨前后端联动、缓存/消息队列/异步任务/文件/邮件/短信/第三方 API、删除/重命名/DROP/批量替换/破坏兼容，以及高风险区域证据不足。
 
 判档由 Agent 基于证据先行建议，用户复核确认。时机是在只读发现和苏格拉底式澄清之后；Phase 2.5 只做初步风险预判，不最终定档。正式判档时必须列出：允许 light 的证据、触发 full 的证据、未确认项。用户可以要求简化输出，但不能跳过证据账本、安全闸、写操作确认和验证方案。
+
+## 苏格拉底式提问如何控量
+
+`每轮 ≤ 3 问` 是用户体验上限，不是总问题数上限。light 通常 0-1 轮；full 通常 1-3 轮；高风险 full 最多 5 轮。超过 5 轮仍不清晰时，不继续消耗用户耐心，而是输出“已确认 / 未确认 / 建议默认 / 必须用户拍板”。
+
+问题按风险分级：P0 必问、P1 应问、P2 可默认、P3 可延后。P0/P1 未确认项不能被默认值悄悄吞掉。
 
 ## 目录结构
 
