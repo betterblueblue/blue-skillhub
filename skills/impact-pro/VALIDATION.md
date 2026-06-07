@@ -6,7 +6,7 @@
 
 **暂不建议按“成熟通用 Skill”投入无人监督使用。**
 
-当前 `impact-pro` 可以作为 **多栈可试用增强版** 使用，适合在真实项目中试跑和积累样本；但在没有完成 Go/.NET 原生测试复跑、Next.js 完整 build 和更多生产级样本复验前，不应宣称已达到成熟通用能力。
+当前 `impact-pro` 可以作为 **多栈可试用增强版** 使用，适合在真实项目中试跑和积累样本；但在没有完成 Go/.NET 原生测试复跑、Next.js 完整 build 和更多生产级运行时复验前，不应宣称已达到成熟通用能力。
 
 理由：
 
@@ -17,6 +17,7 @@
 - `go-gin-gorm`、`dotnet-aspnet-efcore` 已完成单项目首轮验证，当前为 Level 1。
 - RuoYi、Node/Prisma、FastAPI、Go/Gin、.NET/EF Core、React/Vite、Next.js、Nuxt/Vue 和 monorepo 已补齐 full + light 双变更静态验收。
 - 三类负向场景已完成静态规则验收，并补充通过独立 subagent 对话压力复测。
+- 生产级复验第一轮已完成：RuoYi 完整通过，eShopOnWeb 和 Go RealWorld 因本机缺少 SDK 仅有条件通过。
 - `generic` profile 是兜底，不应替代专属 profile 的真实项目验收。
 - 通用栈最容易失败的点不是“输出文档”，而是：栈识别、上下文发现、命令推断、ORM/DB schema 发现、风格现采、风险追问是否基于证据。
 
@@ -29,8 +30,8 @@
 | 不宣称覆盖任意技术栈，只宣称已验证 profile 覆盖范围内可用 | 达到 | README 和本文均保留“多栈可试用增强版”结论 |
 | 至少 5 个不同技术栈，每栈完成 full + light 双变更验收 | 基本达到 | T01-T21 已覆盖 Java、Node/Prisma、FastAPI、Go/Gin、.NET/EF、React/Vite、Next.js、Nuxt/Vue 和 monorepo 的 full/light 矩阵 |
 | T08-T10 等负向场景完成真实 agent 对话复测 | 达到 | `validation-runs/2026-06-07-round13-negative-dialogue-replay.md` |
-| 至少 2-3 个生产级项目复验通过 | 未达到 | 当前多数为开源样本/模板级项目，仍缺生产级复验 |
-| 平均分 >= 85，且无 P0/P1 | 当前样本达到，需生产级复验后重算 | T01-T21 汇总均无当前未修复 P0/P1 |
+| 至少 2-3 个生产级项目复验通过 | 部分达到 | T22 RuoYi 完整通过；T23 eShopOnWeb、T24 Go RealWorld 为生产复杂度有条件通过，缺 SDK 运行时验证 |
+| 平均分 >= 85，且无 P0/P1 | 当前样本达到，需生产级运行时复验后重算 | T01-T24 当前均无未修复 P0/P1；T22-T24 平均分 89.67 |
 | 写操作、DDL/DML、配置变更、测试修复全部满足确认门禁 | 规则与对话复测达到，执行阶段仍需复验 | 行为准则门禁 + T08-T10 subagent 对话复测 |
 | 新技术栈必须先走 generic 兜底，再通过真实项目验收后升级 profile Level | 规则达到，需持续执行 | profile Level 说明和 generic 兜底规则 |
 
@@ -584,9 +585,9 @@
    - Next.js 样本需要提供可用数据库后复跑完整 build。
    - 缺少 test/lint script 的样本必须在记录中标注限制，不能写成已验证。
 
-3. **补生产级样本**
-   - 当前双变更矩阵已覆盖主要样本，但多数仍是单仓单项目 Level 1。
-   - 下一步应选择 2-3 个生产级项目做复验，并把稳定 profile 升级到 Level 2。
+3. **补完整生产级通过样本**
+   - Round 14 已完成 1 个完整通过 + 2 个有条件通过。
+   - 下一步需要在 Go/.NET SDK 环境补运行时验证，或新增 1-2 个可完整执行测试的生产级项目。
 
 ## 最终投产判定
 
