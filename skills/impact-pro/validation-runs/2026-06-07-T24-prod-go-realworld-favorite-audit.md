@@ -8,9 +8,9 @@
 - 变更意图：文章收藏/取消收藏增加审计时间和来源，收藏列表与详情保持 `favorited`、`favoritesCount` 正确。
 - 使用档位：full
 - 命中 profile：`go-gin-gorm`
-- 最终评分：88
+- 最终评分：89
 - 失败等级：无
-- 复验类型：生产复杂度静态复验，运行时有条件通过
+- 复验类型：生产复杂度静态复验 + Docker Go 相关包测试通过
 
 ## 生产复杂度依据
 
@@ -29,7 +29,7 @@
 | 已确认 | `articles/routers.go:20`、`:149`-`:177` | 收藏/取消收藏 API 路由和 handler |
 | 已确认 | `articles/serializers.go:48`-`:59`、`:93`-`:105` | 响应包含 `favorited` 和 `favoritesCount` |
 | 已确认 | `articles/unit_test.go` 多处收藏测试 | 已有收藏正向、边界和端点测试入口 |
-| 未确认 | `go test ./...` 结果 | 本机没有 Go SDK |
+| 已确认 | Docker `golang:1.21` 执行 `/usr/local/go/bin/go test ./...` | `articles`、`users` 包通过；`common` 包存在既有测试失败 |
 
 ## 判档
 
@@ -67,20 +67,30 @@
 
 ## 运行时验证
 
-尝试命令：
+执行命令：
 
 ```powershell
-go version
+docker run --rm -v "E:/agent/impact-pro-validation-work/go-gin-realworld:/src" -w /src golang:1.21 bash -lc "/usr/local/go/bin/go test ./..."
 ```
 
-结果：本机没有 Go SDK。
+结果：部分通过，全量失败。
 
 ```text
-The term 'go' is not recognized
+ok   github.com/gothinkster/golang-gin-realworld-example-app/articles 3.656s
+ok   github.com/gothinkster/golang-gin-realworld-example-app/users    2.873s
+FAIL github.com/gothinkster/golang-gin-realworld-example-app/common
 ```
 
-因此本轮为生产复杂度静态复验，有条件通过；仍需在 Go SDK 环境执行 `go test ./...`。
+失败点：
+
+```text
+common/unit_test.go:39
+Error: An error is expected but got nil.
+Messages: Db should not be able to ping
+```
+
+T24 收藏审计直接相关的 `articles` 包已通过；全量项目失败来自 `common` 包数据库连接期望，与本轮收藏 profile 发现无直接矛盾。该项目仍不能标为完整生产级通过。
 
 ## 结论
 
-有条件通过。`go-gin-gorm` profile 能在生产复杂度 Go 项目中定位 GORM association、AutoMigrate、API router、serializer、批量查询和测试入口；但运行时证据受本机 Go SDK 缺失限制，不能升级为完整生产级通过。
+有条件通过。`go-gin-gorm` profile 能在生产复杂度 Go 项目中定位 GORM association、AutoMigrate、API router、serializer、批量查询和测试入口；Docker Go 运行时已证明 T24 直接相关的 `articles` 包通过，但全量 `go test ./...` 仍因 `common` 包既有测试失败而不能升级为完整生产级通过。

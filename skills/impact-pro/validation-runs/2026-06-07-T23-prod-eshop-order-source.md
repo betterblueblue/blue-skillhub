@@ -8,9 +8,9 @@
 - 变更意图：订单新增 `OrderSource` 字段，用于区分 Web、PublicApi、Admin 或外部导入订单，并在订单详情/列表展示。
 - 使用档位：full
 - 命中 profile：`dotnet-aspnet-efcore`
-- 最终评分：88
+- 最终评分：92
 - 失败等级：无
-- 复验类型：生产复杂度静态复验，运行时有条件通过
+- 复验类型：生产级 full + Docker .NET SDK 测试复验
 
 ## 生产复杂度依据
 
@@ -29,7 +29,7 @@ eShopOnWeb 是分层 Clean Architecture 样例，包含 Web、PublicApi、Blazor
 | 已确认 | `src/Infrastructure/Data/Config/OrderConfiguration.cs` | EF entity 配置集中管理订单映射 |
 | 已确认 | `src/Infrastructure/Data/Migrations/*` | 现有 migrations 已包含 `Orders` 表和地址字段变更 |
 | 已确认 | `tests/UnitTests/MediatorHandlers/OrdersTests/*`、`tests/IntegrationTests/Repositories/OrderRepositoryTests/*` | 有单元/集成测试入口 |
-| 未确认 | `dotnet test` 结果 | 本机只有 .NET runtime，无 .NET SDK |
+| 已确认 | Docker `mcr.microsoft.com/dotnet/sdk:8.0` 执行 `dotnet test eShopOnWeb.sln -v minimal` | Unit、Integration、Functional、PublicApiIntegration 测试均通过 |
 
 ## 判档
 
@@ -67,21 +67,23 @@ eShopOnWeb 是分层 Clean Architecture 样例，包含 Web、PublicApi、Blazor
 
 ## 运行时验证
 
-尝试命令：
+执行命令：
 
 ```powershell
-dotnet --info
+docker run --rm -v "E:/agent/impact-pro-validation-work/eShopOnWeb:/src" -w /src mcr.microsoft.com/dotnet/sdk:8.0 bash -lc "dotnet test eShopOnWeb.sln -v minimal"
 ```
 
-结果：本机没有 .NET SDK，仅有 runtime。
+结果：通过。
 
 ```text
-.NET SDKs installed:
-  No SDKs were found.
+Passed!  - Failed: 0, Passed: 44, Skipped: 0, Total: 44 - UnitTests.dll
+Passed!  - Failed: 0, Passed: 3, Skipped: 0, Total: 3 - IntegrationTests.dll
+Passed!  - Failed: 0, Passed: 12, Skipped: 0, Total: 12 - FunctionalTests.dll
+Passed!  - Failed: 0, Passed: 15, Skipped: 0, Total: 15 - PublicApiIntegrationTests.dll
 ```
 
-因此本轮为生产复杂度静态复验，有条件通过；仍需在 .NET SDK 环境执行 `dotnet test`。
+注意：测试期间出现包安全告警和 xUnit analyzer warning，包括 `System.Text.Json` 高危 advisory、`Azure.Identity` 中危 advisory，以及若干 `xUnit2013` 建议。这些不是本轮 profile 识别失败，但应在真实项目治理中跟进。
 
 ## 结论
 
-有条件通过。`dotnet-aspnet-efcore` profile 能在生产复杂度项目中定位订单聚合、EF 配置、migration、Web controller、specification 和测试入口；但运行时证据受本机 SDK 缺失限制，不能升级为完整生产级通过。
+通过生产级复验。`dotnet-aspnet-efcore` profile 能在生产复杂度项目中定位订单聚合、EF 配置、migration、Web controller、specification 和测试入口，并已通过 Docker .NET SDK 测试复跑。
