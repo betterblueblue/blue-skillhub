@@ -1,4 +1,4 @@
-# web-search-mcp (优化版 v0.3.2)
+# web-search-mcp (优化版)
 
 > 基于 [mrkrsl/web-search-mcp](https://github.com/mrkrsl/web-search-mcp) 改造优化而来
 
@@ -57,25 +57,25 @@
 - Node.js >= 18
 - 如需代理访问 Google，请准备 HTTP 代理服务（默认 `localhost:7890`）
 
-### 安装
+### 当前仓库路径
 
-```bash
-# 克隆本项目
-git clone https://github.com/mrkrsl/web-search-mcp.git
-cd web-search-mcp
+本仓库中的 MCP 入口文件是：
 
-# 安装依赖
-npm install
-
-# 构建（如有 src 目录）
-npm run build
+```text
+E:\agent\blue-skillhub\mcp\web-search-mcp\dist\index.js
 ```
+
+如果你把仓库克隆到其他位置，请把 MCP 客户端配置里的 `args` 改成你本机的绝对路径。
+
+> 当前目录以 `dist/` 产物运行，没有随仓库提供 `src/` 和 `tsconfig.json`。因此安装使用时不需要执行 `npm run build`；如需二次开发，需要先补回源码构建链。
 
 ### 安装依赖
 
 在配置 MCP 客户端之前，**必须先在项目目录下执行以下两条命令**：
 
-```bash
+```powershell
+cd E:\agent\blue-skillhub\mcp\web-search-mcp
+
 # 第一步：安装所有 npm 依赖（最关键！）
 npm install
 
@@ -85,6 +85,24 @@ npx playwright install chromium
 
 > 如果跳过 `npm install`，MCP 服务器启动时会因缺少依赖报错；  
 > 如果跳过 `npx playwright install chromium`，搜索功能将无法启动浏览器，返回 0 结果。
+
+### 启动验证
+
+在配置 MCP 客户端前，可以先手动验证入口是否能启动：
+
+```powershell
+cd E:\agent\blue-skillhub\mcp\web-search-mcp
+node .\dist\index.js
+```
+
+看到下面几行即可：
+
+```text
+Web Search MCP Server started
+Waiting for MCP messages...
+```
+
+验证完成后按 `Ctrl+C` 退出，再配置到 MCP 客户端。
 
 ### MCP 客户端配置
 
@@ -97,7 +115,7 @@ npx playwright install chromium
   "mcpServers": {
     "web-search-mcp": {
       "command": "node",
-      "args": ["E:\\agent\\mcp\\web-search-mcp-v0.3.2\\dist\\index.js"],
+      "args": ["E:\\agent\\blue-skillhub\\mcp\\web-search-mcp\\dist\\index.js"],
       "env": {
         "BROWSER_TYPES": "chromium",
         "BROWSER_HEADLESS": "true",
@@ -114,7 +132,14 @@ npx playwright install chromium
 }
 ```
 
-**Cursor / Claude Desktop**（配置路径和格式类似，请参照对应客户端文档）
+**Cursor / Claude Desktop**：配置格式类似，重点是 `args` 使用本机 `dist/index.js` 的绝对路径。
+
+### 配置后验证
+
+1. 重启 MCP 客户端。
+2. 在客户端里确认出现 `full-web-search`、`get-web-search-summaries`、`get-single-web-page-content` 这 3 个工具。
+3. 让 AI 调用 `get-web-search-summaries` 搜一个简单关键词，例如 `MCP protocol`。
+4. 如果返回 0 结果，优先检查代理地址、`npx playwright install chromium` 是否执行过，以及客户端是否正确传入 `env`。
 
 ### 环境变量说明
 
@@ -142,7 +167,7 @@ npx playwright install chromium
 ## 项目结构
 
 ```
-web-search-mcp-v0.3.2/
+web-search-mcp/
 ├── dist/
 │   ├── index.js                      # MCP 服务器入口，注册工具与环境变量兜底
 │   ├── search-engine.js              # 搜索引擎实现（Google/Bing/Brave/DuckDuckGo）

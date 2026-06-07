@@ -35,3 +35,72 @@ blue-skillhub/
 - **识图** → `python skills/vl-vision/vl_vision.py <图片路径>`，详见 [skills/vl-vision/README.md](skills/vl-vision/README.md)
 - **影响分析（Java 栈）** → 安装 impact skill，对 AI 说"我想改一下"即可触发，详见 [skills/impact/README.md](skills/impact/README.md)
 - **影响分析（通用栈）** → 安装 impact-pro skill，适用于 Node/Python/Go/.NET 等项目，详见 [skills/impact-pro/README.md](skills/impact-pro/README.md)
+
+## 5 分钟安装验证
+
+把仓库克隆到本地后，先按下面顺序跑一遍，确认每个工具真的可用。
+
+### 1. 律刃规则
+
+复制规则文件到目标项目根目录：
+
+```powershell
+Copy-Item "claudecode行为规范/ruleblade/CLAUDE.md" "你的项目路径/CLAUDE.md"
+```
+
+验证方式：在目标项目里启动 Claude Code，确认它能读取根目录的 `CLAUDE.md`。
+
+### 2. 网搜 MCP
+
+进入 MCP 目录并安装运行依赖：
+
+```powershell
+cd mcp/web-search-mcp
+npm install
+npx playwright install chromium
+node ./dist/index.js
+```
+
+看到 `Web Search MCP Server started` 和 `Waiting for MCP messages...` 即表示服务入口正常。
+
+MCP 客户端配置时，`args` 必须写本机绝对路径，例如当前仓库位置对应：
+
+```json
+{
+  "mcpServers": {
+    "web-search-mcp": {
+      "command": "node",
+      "args": ["E:\\agent\\blue-skillhub\\mcp\\web-search-mcp\\dist\\index.js"]
+    }
+  }
+}
+```
+
+更多代理、搜索引擎和环境变量配置见 [mcp/web-search-mcp/README.md](mcp/web-search-mcp/README.md)。
+
+### 3. VL 识图
+
+先安装依赖并检查模板列表：
+
+```powershell
+pip install requests
+python skills/vl-vision/vl_vision.py --list-templates
+```
+
+再配置 `SILICONFLOW_API_KEY` 后跑一张图片：
+
+```powershell
+$env:SILICONFLOW_API_KEY="sk-your-key"
+python skills/vl-vision/vl_vision.py path/to/image.png
+```
+
+### 4. Impact Skills
+
+把对应 skill 目录安装到你的 AI 客户端技能目录：
+
+```text
+skills/impact
+skills/impact-pro
+```
+
+验证方式：在客户端中触发 `/impact` 或 `/impact-pro`，能进入变更意图捕获流程即可。
