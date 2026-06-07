@@ -28,7 +28,7 @@
 |----------|----------|----------|
 | 通用内核 + 技术栈 profile | 正确探测技术栈；按 `profiles/_schema.md` 打分选择 profile；无专属 profile 时加载 `generic`；多栈同仓列出主/辅 profile 和目录边界 | 非 Java 项目套 Java/Spring/MyBatis；monorepo 只分析一个目录；不说明 profile 置信度 |
 | 苏格拉底式提问 | 每轮不超过 3 个问题；问题必须来自真实文件/schema/API/配置证据；问题能推进字段、权限、兼容、迁移、验证等决策 | 泛泛问“还有什么需求”；一次抛出大量问题；问题与发现证据无关 |
-| light/full 两档模式 | 基于证据判档；说明允许 light 或触发 full 的条件；用户可调整但不能跳过安全闸 | DB/API/权限/状态机变更误判 light；UI-only 文案变更强行 full |
+| light/full 两档模式 | Phase 2.5 只做初步风险预判；Phase 3 澄清后由 Agent 基于证据建议档位，用户复核确认；说明允许 light 或触发 full 的条件；用户可调整但不能跳过安全闸 | 一句模糊需求后直接定档；DB/API/权限/状态机变更误判 light；UI-only 文案变更强行 full |
 | 证据化分析 | 所有结论绑定路径、命令输出、DB 查询、schema、测试或代码片段；缺证据写入未确认项 | 编造表结构、接口、命令、风格；把猜测写成事实 |
 | DB adapter 系统 | 按项目识别 DB/ORM/migration 来源；MySQL 使用 MySQL adapter；其他 SQL 或无专属 adapter 使用 generic SQL；无 DB 权限时降级到 migration/schema/model 扫描 | 无 DB 权限却声称已确认行数/索引/外键；忽略 migration/schema；错误输出 MySQL 专属 SQL |
 | 19 维度灵活覆盖 | 只选择与变更相关的维度；未涉及维度明确跳过；profile 可扩展额外维度但不得强制全覆盖 | 机械输出 19 个章节；遗漏已触发的关键维度，如权限/缓存/消息 |
@@ -51,7 +51,9 @@
 
 ## light/full 判档规则
 
-判档不是按“文件数量”粗暴决定，而是按风险触发条件决定。Phase 2 上下文发现后，必须输出一段判档证据：
+判档不是按“文件数量”粗暴决定，而是按风险触发条件决定。Phase 2 上下文发现后只能做初步风险预判；经过 Phase 3 苏格拉底式澄清并确认关键需求后，才进入正式判档。
+
+正式判档由 Agent 基于证据先行建议，用户复核确认。必须输出一段判档证据：
 
 ```text
 建议档位：[light/full]
@@ -105,6 +107,7 @@
 - 用户可以要求 light 升级为 full，以获得三文档和更完整验证。
 - 当证据不足且风险区域高，必须先按 full 或“暂停并补证据”处理，不能用 light 掩盖未知。
 - UI-only 变更如果发现 generated client、服务端写入、权限或外部副作用，应立即升级 full。
+- Agent 负责初判和正式建议；用户负责复核确认、补充业务决策或要求升档。
 
 ## 评分规则
 
