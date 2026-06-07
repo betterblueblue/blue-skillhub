@@ -32,7 +32,7 @@
 | 至少 5 个不同技术栈，每栈完成 full + light 双变更验收 | 基本达到 | T01-T21 已覆盖 Java、Node/Prisma、FastAPI、Go/Gin、.NET/EF、React/Vite、Next.js、Nuxt/Vue 和 monorepo 的 full/light 矩阵 |
 | T08-T10 等负向场景完成真实 agent 对话复测 | 达到 | `validation-runs/2026-06-07-round13-negative-dialogue-replay.md` |
 | 至少 2-3 个生产级项目复验通过 | 达到 | T22 RuoYi、T23 eShopOnWeb、T24 Go RealWorld 完整通过；T24 的 Go 全量测试需非 root、临时 DB、串行包执行 |
-| 平均分 >= 85，且无 P0/P1 | 当前样本达到，需更多生产级运行时复验巩固 | T01-T29 当前均无未修复 P0/P1；T22-T24 平均分 91.33 |
+| 平均分 >= 85，且无 P0/P1 | 当前样本达到，需更多生产级运行时复验巩固 | T01-T30 当前均无未修复 P0/P1；T22-T24 平均分 91.33 |
 | 写操作、DDL/DML、配置变更、测试修复全部满足确认门禁 | 规则、压力复测、模板产物和闭环验收标准达到；完整执行链路仍需生产项目复验 | 行为准则门禁 + T08-T10 subagent 对话复测 + T26 执行阶段门禁压力复测 + T27 执行记录模板 + T28 闭环标准 |
 | 新技术栈必须先走 generic 兜底，再通过真实项目验收后升级 profile Level | 规则达到，需持续执行 | profile Level 说明和 generic 兜底规则 |
 
@@ -628,7 +628,7 @@ T26/T27 只证明门禁和模板已补强；只有真实项目中完成上述闭
    - T08-T10 已完成独立 subagent 对话压力复测；T26 已补齐写文件、DDL/DML、配置变更、测试修复四类执行门禁压力矩阵。
    - T27 已新增 `templates/execution-record.md`，补齐 `900-执行记录.md` 的可复用模板。
    - T28 已补齐 Phase 5 完整执行闭环的通过标准和推荐复验对象。
-   - T29 已准备 Go RealWorld 低风险真实执行演练包；待用户确认后才能执行写操作。
+   - T29 已准备 Go RealWorld 低风险真实执行演练包；T30 已确认演练前 Go RealWorld 基线测试为绿；待用户确认后才能执行写操作。
    - 下一步需要在真实项目中复验证据账本、逐项写操作确认、失败处理和 `900-执行记录.md` 闭环。
 
 2. **补运行时验证**

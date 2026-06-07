@@ -9,6 +9,19 @@
 - 当前状态：待用户确认后执行；本轮未修改外部项目源码。
 - 失败等级：无 P0/P1。
 
+## 基线验证
+
+T30 已在执行任何写操作前复跑验证命令，当前 Go RealWorld 基线通过：
+
+```text
+?    github.com/gothinkster/golang-gin-realworld-example-app [no test files]
+ok   github.com/gothinkster/golang-gin-realworld-example-app/articles
+ok   github.com/gothinkster/golang-gin-realworld-example-app/common
+ok   github.com/gothinkster/golang-gin-realworld-example-app/users
+```
+
+外部验证仓源码保持干净。
+
 ## 候选变更
 
 将 profile follow/unfollow 中“用户不存在”的错误文案从：
@@ -96,6 +109,6 @@ docker run --rm -v "E:/agent/impact-pro-validation-work/go-gin-realworld:/src" -
 
 ## 当前结论
 
-T29 已完成真实执行演练包准备，但尚未执行写操作。
+T29 已完成真实执行演练包准备，T30 已证明演练前基线为绿，但尚未执行写操作。
 
 下一步需要用户明确确认是否允许在 `E:\agent\impact-pro-validation-work\go-gin-realworld` 中执行上述 Step 1、Step 2 和 Step 4。
