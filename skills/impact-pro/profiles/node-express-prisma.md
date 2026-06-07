@@ -1,0 +1,150 @@
+# Node / Express / Prisma Profile
+
+> Level 1 — 在 `prisma-examples/orm/testing-express` 上完成首轮验收。适用于 Node.js/TypeScript + Express/Fastify + Prisma ORM 项目。
+
+## 基本信息
+
+```yaml
+name: node-express-prisma
+level: 1
+matchers:
+  files:
+    - package.json
+    - prisma/schema.prisma
+    - prisma.config.ts
+  dependencies:
+    - express
+    - fastify
+    - prisma
+    - "@prisma/client"
+    - "@prisma/adapter-pg"
+  directories:
+    - src
+    - prisma
+    - tests
+roles:
+  - Node.js API 服务
+  - REST API
+  - Prisma ORM 后端
+```
+
+## discovery_globs
+
+```yaml
+discovery_globs:
+  service:
+    - "**/*service*.ts"
+    - "**/*Service*.ts"
+    - "**/services/**/*.ts"
+    - "**/src/services/**/*.ts"
+  data_access:
+    - "**/prisma/schema.prisma"
+    - "**/prisma.config.ts"
+    - "**/prisma/**/*.prisma"
+    - "**/prisma/seed.ts"
+    - "**/src/**/*repository*.ts"
+    - "**/src/**/*Repository*.ts"
+  api:
+    - "**/src/app.ts"
+    - "**/src/index.ts"
+    - "**/src/server.ts"
+    - "**/src/main.ts"
+    - "**/src/routes/**/*.ts"
+    - "**/src/controllers/**/*.ts"
+    - "**/src/**/*Controller*.ts"
+  entity:
+    - "**/prisma/schema.prisma"
+    - "**/src/**/*.model.ts"
+    - "**/src/**/*Model*.ts"
+  dto:
+    - "**/src/**/*.dto.ts"
+    - "**/src/**/*Dto*.ts"
+    - "**/src/**/*.schema.ts"
+    - "**/src/**/*Schema*.ts"
+  config:
+    - "**/package.json"
+    - "**/tsconfig.json"
+    - "**/prisma.config.ts"
+    - "**/.env.example"
+    - "**/docker-compose*.yml"
+    - "**/jest.config.*"
+    - "**/vitest.config.*"
+  test:
+    - "**/tests/**/*.ts"
+    - "**/*.test.ts"
+    - "**/*.spec.ts"
+  migration:
+    - "**/prisma/migrations/**/*"
+    - "**/prisma/schema.prisma"
+```
+
+## style_axes
+
+> 下列是观察方向，结论必须运行时从项目文件现采。
+
+| 轴 | 观察方向 |
+|----|----------|
+| naming | 路由路径、模型字段、Prisma model、测试命名是否使用 camelCase |
+| layering | 是否单文件 Express app，或 routes/controller/service/repository 分层 |
+| orm | Prisma schema、PrismaClient 初始化、adapter、migration 路径 |
+| transaction | 是否使用 `prisma.$transaction` 或单次 ORM 调用 |
+| exception | Express/Fastify 错误响应状态码和 body 格式 |
+| logging | 是否有 logger/morgan/pino/winston 或 console 输出 |
+| api_response | REST 返回裸对象、数组，还是统一 envelope |
+| dependency_injection | PrismaClient 是否单例导出、通过 context 注入或直接 import |
+
+## commands
+
+```yaml
+commands:
+  build: npm run build
+  test: npm test
+  dev: npm run dev
+  lint: npm run lint
+```
+
+## db_introspection
+
+```yaml
+db_introspection:
+  orm: Prisma
+  migration_tool: Prisma Migrate
+  schema_source: prisma/schema.prisma；无 DB 直连时只做代码级 schema 发现
+```
+
+## validation_strategy
+
+```yaml
+validation_strategy:
+  grep_patterns:
+    - pattern: "model "
+      files: "**/prisma/schema.prisma"
+      desc: "Prisma model 定义"
+    - pattern: "new PrismaClient"
+      files: "**/src/**/*.ts"
+      desc: "PrismaClient 初始化方式"
+    - pattern: "app\\.(get|post|put|patch|delete)"
+      files: "**/src/**/*.ts"
+      desc: "Express 路由定义"
+    - pattern: "request\\("
+      files: "**/tests/**/*.ts"
+      desc: "Supertest API 测试"
+  file_patterns:
+    - "**/prisma/schema.prisma"
+    - "**/src/**/*.ts"
+    - "**/tests/**/*.ts"
+```
+
+## notes
+
+```yaml
+notes:
+  limitations:
+    - 仅在 Express + Prisma 样本上验收，Fastify/NestJS 需要二次验证
+    - Prisma 7 的 `prisma-client` generator 与旧版 `prisma-client-js` 需运行时识别
+    - 无数据库连接时不能确认行数、索引实际状态，只能读取 schema.prisma
+  edge_cases:
+    - 单文件 Express app：API、service、data_access 可能都在 `src/app.ts`
+    - monorepo：需先定位包含 `prisma/schema.prisma` 的子项目目录
+    - 使用 Zod/class-validator 时，DTO/校验 schema 可能不在 Prisma schema 中
+```

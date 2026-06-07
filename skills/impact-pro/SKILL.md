@@ -19,6 +19,8 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, 
 3. **不替用户拍板** — 提供证据化的影响分析与选项，业务决策交给用户
 4. **两档模式** — light 简单改动走一页摘要，full 复杂变更走三文档
 5. **可扩展 profile** — 新技术栈只需加一个 profile 文件，无需改本内核
+6. **证据不足先标注** — 找不到 schema/API/model/test 时必须写入未确认项，不得用猜测填空
+7. **破坏性请求先拦截** — DROP/DELETE/批量重构/删除接口/破坏兼容请求必须先做影响发现和确认，不能直接执行
 
 ## 目录结构
 
@@ -29,7 +31,14 @@ impact-pro/
 │   ├── _schema.md        # profile 统一接口定义
 │   ├── _template.md      # 新 profile 空白模板
 │   ├── generic.md         # 强兜底（任意栈）
-│   └── java-spring-mybatis.md  # Java/Spring/MyBatis profile
+│   ├── java-spring-mybatis.md  # Java/Spring/MyBatis profile
+│   ├── node-express-prisma.md
+│   ├── python-fastapi-sqlmodel.md
+│   ├── frontend-react-vite.md
+│   ├── frontend-nextjs.md
+│   ├── frontend-nuxt-vue.md
+│   ├── go-gin-gorm.md
+│   └── dotnet-aspnet-efcore.md
 ├── db-adapters/          # 数据库 adapter
 │   ├── generic-sql.md     # 通用 SQL 发现模板
 │   └── mysql.md          # MySQL 专用
@@ -86,9 +95,16 @@ Phase 1 意图捕获
 2. 按 `profiles/_schema.md` 的打分机制选出匹配 profile：
    - 高置信命中（依赖命中 + 文件命中）→ 回显一行确认
    - 低置信 / 无命中 → 加载 `profiles/generic.md`
+   - 多栈同仓 / monorepo → 列出候选 profile 和目录边界，不强行压成单 profile
 
 3. 向用户确认：
    > "检测到 **[栈名]**，将加载 `profiles/[name].md` 中的专属规则。确认？"
+
+4. 多 profile 场景：
+   - 先按变更意图定位主目录（如 `backend/`、`frontend/`、`packages/api/`）
+   - 后端 + 前端共同受影响时，同时加载两个 profile
+   - 文档中按模块拆分影响范围、实施步骤和验证方案
+   - 不允许只分析命中最高的一个 profile 后忽略另一个受影响模块
 
 ### Step 2.2: Profile 加载
 
@@ -112,6 +128,10 @@ Phase 1 意图捕获
 2. 按 profile 的 `style_axes` 提取风格特征（只描述，不下结论）
 3. 按 db-adapter 的 `schema_queries` 发现数据库 schema
 4. 构建上下文地图（影响文件、API 端点、依赖关系）
+5. 生成证据账本：
+   - **已确认**：文件路径 / 命令输出 / DB 查询 / 测试结果
+   - **未确认**：找不到、工具不可用、无权限、需用户决策
+   - **禁止推断**：未确认项不得写成事实
 
 **Token 保护**：文件读取上限 20 个，超出提示用户。
 
@@ -127,10 +147,21 @@ Phase 1 意图捕获
 
 - **light（默认）**：单表/单字段、无外键级联、无存量数据风险、无 API 破坏
 - **full（复杂）**：多表/外键级联、有存量数据、破坏 API 兼容、跨多个维度
+- **禁止 light**：存在 DROP/DELETE/RENAME、接口删除/破坏兼容、支付/权限/状态机、schema 证据不足、DB 无权限但涉及 DB 变更
 
 > "这次变更看起来是 **[light / full]**（理由：…）。light 产一页影响摘要后直接执行；full 产三文档。确认走哪档？"
 
-**退出条件**：用户随时说「直接改 / 别写文档 / 简化」，立即降级为 light 或纯执行。
+**退出条件**：用户随时说「直接改 / 别写文档 / 简化」，可以简化文档形式，但不能跳过写操作确认和破坏性变更影响发现。
+
+### 破坏性请求安全闸
+
+当用户要求「直接删」「全部替换」「不用分析」「删旧接口」「DROP/RENAME 表字段」「批量重构」时：
+
+1. 不执行写操作
+2. 先只读搜索引用和消费者
+3. 回显破坏面和未确认项
+4. 至少追问兼容期、回滚、消费者、迁移策略
+5. 用户确认后仍按 Phase 5 逐项确认执行
 
 ## Phase 3: 苏格拉底式探索
 
@@ -160,6 +191,8 @@ Phase 1 意图捕获
 - **缓存**：N 个缓存 Key 存此数据，失效策略？
 - **消息队列**：变更会发布到 [Topic]，消费者是否受影响？
 - **版本兼容**：N 个版本消费者，是否需同时更新？
+- **证据不足**：未找到合法值/状态枚举/schema/test，是否提供约定或允许我继续查证？
+- **DB 无权限**：当前只能从代码/迁移推断 schema，是否提供连接或接受未确认标注？
 
 ### 停止条件
 
@@ -191,6 +224,16 @@ change-impact/{需求名称}/
 ### 设计文档的「代码风格报告」
 
 每个风格项基于 profile 的 `style_axes` 提取，附**完整、未截断**的参考代码片段。
+
+### 证据账本与未确认项
+
+每份文档必须包含：
+
+- 已确认事实：路径、命令、DB 查询或测试证据
+- 未确认项：缺失文件、无权限、命令不可用、业务决策空白
+- 不采用的推断：说明为什么不把猜测写入方案
+
+涉及前端-only 变更时，不生成数据库实施步骤；涉及 DB 但无 DB 权限时，不声称已确认行数、索引、外键。
 
 ### 设计原则约束（写进设计文档）
 

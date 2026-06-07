@@ -23,8 +23,15 @@
 |---------|-------|------|
 | generic | — | 强兜底，扫描目录结构，任意栈可用 |
 | java-spring-mybatis | 2 | Java/Spring/MyBatis/RuoYi，已深度覆盖 |
+| node-express-prisma | 1 | Node.js/TypeScript + Express/Fastify + Prisma，已在 prisma-examples 上首轮验证 |
+| python-fastapi-sqlmodel | 1 | FastAPI + SQLModel/SQLAlchemy + Alembic，已在 full-stack-fastapi-template 后端首轮验证 |
+| frontend-react-vite | 1 | React + Vite + TypeScript 前端，已在 full-stack-fastapi-template 前端首轮验证 |
+| frontend-nextjs | 1 | Next.js App Router / Pages Router，已在 vercel/next-learn 上首轮静态验证 |
+| frontend-nuxt-vue | 1 | Nuxt 4 + Vue 3 + Nuxt UI，已在 nuxt-ui-templates/dashboard 上首轮静态验证 |
+| go-gin-gorm | 1 | Go + Gin + GORM，已在 golang-gin-realworld-example-app 上首轮验证 |
+| dotnet-aspnet-efcore | 1 | ASP.NET Core + EF Core，已在 eShopOnWeb 上首轮验证 |
 
-generic 是「覆盖任意栈」的真正解锁点，专属 profile 按需晋升。
+generic 是兜底能力，专属 profile 负责真实项目里更稳定的文件发现和验证策略。Level 1 表示已在单个真实项目验收，Level 2 需要多个真实项目积累。
 
 ## 触发方式
 
@@ -38,6 +45,12 @@ generic 是「覆盖任意栈」的真正解锁点，专属 profile 按需晋升
 | 栈适配 | 仅 Java/MyBatis | 通用 + 专属 profile |
 | 扩展方式 | 修改 SKILL.md | 新增 profile 文件 |
 | 数据库 | 仅 MySQL | MySQL + generic adapter |
+
+## 验收状态
+
+当前 `impact-pro` 已完成六轮多栈静态验收，覆盖 T01-T12 用例。补齐 Level 1 profile 后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入可试用状态；但整体还没有达到成熟通用完成态，关键结论和执行阶段仍需要人工复核。
+
+多栈测试用例、评分标准和投产门槛见 [VALIDATION.md](VALIDATION.md)，实际验收记录见 [validation-runs/](validation-runs/)。
 
 ## 典型流程
 
@@ -61,11 +74,19 @@ Phase 5：执行（每步确认，自动跑风格检查+单测）
 impact-pro/
 ├── SKILL.md              # 通用内核
 ├── README.md             # 本文件
+├── VALIDATION.md         # 多栈测试验收方案
 ├── profiles/             # 技术栈 profile
 │   ├── _schema.md        # profile 统一接口
 │   ├── _template.md      # 新 profile 空白模板
 │   ├── generic.md         # 强兜底（任意栈）
-│   └── java-spring-mybatis.md  # Java/Spring/MyBatis (Level 2)
+│   ├── java-spring-mybatis.md  # Java/Spring/MyBatis (Level 2)
+│   ├── node-express-prisma.md  # Node/Express/Prisma (Level 1)
+│   ├── python-fastapi-sqlmodel.md # FastAPI/SQLModel (Level 1)
+│   ├── frontend-react-vite.md  # React/Vite 前端 (Level 1)
+│   ├── frontend-nextjs.md      # Next.js App Router/Pages Router (Level 1)
+│   ├── frontend-nuxt-vue.md    # Nuxt/Vue 前端 (Level 1)
+│   ├── go-gin-gorm.md       # Go/Gin/GORM (Level 1)
+│   └── dotnet-aspnet-efcore.md # ASP.NET Core/EF Core (Level 1)
 ├── db-adapters/          # 数据库 adapter
 │   ├── generic-sql.md    # 通用 SQL 模板
 │   └── mysql.md          # MySQL 专用

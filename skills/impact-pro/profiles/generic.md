@@ -10,6 +10,11 @@ level: 1
 matchers:
   files:
     - package.json
+    - next.config.js
+    - next.config.mjs
+    - next.config.ts
+    - nuxt.config.ts
+    - nuxt.config.js
     - requirements.txt
     - pyproject.toml
     - go.mod
@@ -20,6 +25,9 @@ matchers:
   directories:
     - src
     - app
+    - pages
+    - components
+    - composables
     - server
     - api
     - controllers
@@ -46,6 +54,9 @@ discovery_globs:
     - "**/services/**/*.py"
     - "**/services/**/*.ts"
     - "**/service/**/*.go"
+    - "**/composables/**/*.ts"
+    - "**/app/composables/**/*.ts"
+    - "**/app/utils/**/*.ts"
   data_access:
     - "**/*Mapper.xml"
     - "**/*Mapper.java"
@@ -53,7 +64,15 @@ discovery_globs:
     - "**/*Repository*.py"
     - "**/*Dao*.java"
     - "**/*Model*.py"
+    - "**/models.py"
+    - "**/schemas.py"
     - "**/*Model*.go"
+    - "**/models.go"
+    - "**/database.go"
+    - "**/*DbContext.cs"
+    - "**/*Context.cs"
+    - "**/prisma/schema.prisma"
+    - "**/prisma.config.ts"
     - "**/*.sql"
     - "**/migrations/**/*.sql"
   api:
@@ -64,13 +83,41 @@ discovery_globs:
     - "**/routes/*.py"
     - "**/routes/*.ts"
     - "**/api/**/*.ts"
+    - "**/src/app.ts"
+    - "**/app/**/route.ts"
+    - "**/app/**/page.tsx"
+    - "**/app/**/layout.tsx"
+    - "**/pages/api/**/*.ts"
+    - "**/pages/api/**/*.js"
+    - "**/server/api/**/*.ts"
+    - "**/server/routes/**/*.ts"
+    - "**/app/pages/**/*.vue"
+    - "**/pages/**/*.vue"
+    - "**/app/layouts/**/*.vue"
+    - "**/middleware.ts"
+    - "**/proxy.ts"
+    - "**/src/index.ts"
+    - "**/src/server.ts"
+    - "**/src/main.ts"
+    - "**/src/routes/**/*.tsx"
+    - "**/src/routes/**/*.ts"
     - "**/endpoints/**/*.py"
+    - "**/routers.go"
+    - "**/*handler*.go"
+    - "**/*Controller.cs"
+    - "**/*Endpoint.cs"
+    - "**/Program.cs"
   entity:
     - "**/*Entity.java"
     - "**/*DO.java"
     - "**/*Model*.py"
     - "**/*Schema*.py"
+    - "**/models.py"
+    - "**/schemas.py"
+    - "**/prisma/schema.prisma"
     - "**/*.go"
+    - "**/models.go"
+    - "**/Entities/**/*.cs"
   dto:
     - "**/dto/*.java"
     - "**/vo/*.java"
@@ -78,6 +125,15 @@ discovery_globs:
     - "**/response/*.java"
     - "**/schemas/*.py"
     - "**/schemas/*.ts"
+    - "**/src/types/**/*.ts"
+    - "**/app/lib/definitions.ts"
+    - "**/lib/definitions.ts"
+    - "**/app/types/**/*.ts"
+    - "**/types/**/*.ts"
+    - "**/src/client/**/*.ts"
+    - "**/*Request.cs"
+    - "**/*Response.cs"
+    - "**/*Dto.cs"
   config:
     - "**/application*.yml"
     - "**/application*.properties"
@@ -86,13 +142,32 @@ discovery_globs:
     - "**/config*.py"
     - "**/settings.py"
     - "**/appsettings*.json"
+    - "**/package.json"
+    - "**/tsconfig*.json"
+    - "**/vite.config.ts"
+    - "**/next.config.*"
+    - "**/nuxt.config.*"
+    - "**/app.config.ts"
+    - "**/app/app.config.ts"
+    - "**/playwright.config.ts"
+    - "**/prisma.config.ts"
+    - "**/*.sln"
+    - "**/*.csproj"
+    - "**/Directory.Packages.props"
+    - "**/go.mod"
   test:
     - "**/test/**/*.java"
     - "**/tests/**/*.py"
     - "**/*.test.ts"
     - "**/*.spec.ts"
+    - "**/*.test.tsx"
+    - "**/*.spec.tsx"
+    - "**/*.test.vue"
+    - "**/*.spec.vue"
     - "**/*_test.go"
     - "**/*Test.java"
+    - "**/tests/**/*.cs"
+    - "**/*Tests/**/*.cs"
   migration:
     - "**/*.sql"
     - "**/db/**/*.sql"
@@ -101,6 +176,21 @@ discovery_globs:
     - "**/liquibase/**/*.xml"
     - "**/alembic/**/*.py"
     - "**/db/migrate/**/*.rb"
+    - "**/prisma/migrations/**/*"
+    - "**/app/seed/route.ts"
+    - "**/scripts/seed*.ts"
+    - "**/Migrations/**/*.cs"
+  ui:
+    - "**/app/**/*.tsx"
+    - "**/app/**/*.vue"
+    - "**/components/**/*.tsx"
+    - "**/components/**/*.vue"
+    - "**/pages/**/*.tsx"
+    - "**/pages/**/*.vue"
+    - "**/src/**/*.tsx"
+    - "**/src/**/*.vue"
+    - "**/src/**/*.css"
+    - "**/src/components/**/*"
 ```
 
 ## 目录结构发现流程
@@ -119,10 +209,19 @@ discovery_globs:
 | src/main/java | Java | `**/*Service*.java`, `**/*Controller*.java` |
 | src/main/resources/mapper | MyBatis | `**/*Mapper.xml` |
 | app/ | Python/Go | `**/*service*.py`, `**/*Handler*.go` |
+| go.mod | Go | `**/models.go`, `**/routers.go`, `**/*_test.go` |
+| *.sln / *.csproj | .NET | `**/*DbContext.cs`, `**/*Controller.cs`, `**/*Endpoint.cs` |
 | server/ | Node.js/TS | `**/*Controller*.ts`, `**/routes/*.ts` |
 | controllers/ | Python/TS | `**/controllers/**` |
 | services/ | 通用 | `**/services/**` |
 | models/ | Python | `**/*Model*.py` |
+| prisma/ | Prisma | `**/prisma/schema.prisma`, `**/prisma.config.ts` |
+| app/ + next.config.* | Next.js App Router | `**/app/**/page.tsx`, `**/app/**/route.ts`, `**/app/lib/**/*.ts` |
+| pages/api/ | Next.js Pages API | `**/pages/api/**/*.ts`, `**/pages/api/**/*.js` |
+| app/ + nuxt.config.* | Nuxt 4 / Vue | `**/app/pages/**/*.vue`, `**/app/components/**/*.vue`, `**/server/api/**/*.ts` |
+| pages/ + nuxt.config.* | Nuxt 3 / Vue | `**/pages/**/*.vue`, `**/components/**/*.vue`, `**/composables/**/*.ts` |
+| src/routes/ | 前端/Node 路由 | `**/src/routes/**/*.tsx`, `**/src/routes/**/*.ts` |
+| src/components/ | 前端组件 | `**/src/**/*.tsx`, `**/src/components/**/*` |
 | repositories/ | 多语言 | `**/*Repository*.java`, `**/*Repository*.py` |
 | migrations/ | DB迁移 | `**/migrations/**/*.sql` |
 
@@ -203,6 +302,7 @@ notes:
     - discovery_globs 候选可能不准确，依赖用户确认调整
     - commands 为猜测值，必须用户确认
     - 无 DB 直连时降级为代码扫描，schema 信息受限
+    - 找不到 schema/API/model/test 时必须在文档中标注为未确认项，不得判定为已覆盖
   edge_cases:
     - 单文件项目：目录扫描可能无法推断项目结构
     - 混合栈项目（前后端同仓）：按变更维度选主 profile，辅助 profile 提供额外候选
