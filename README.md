@@ -15,8 +15,8 @@ blue-skillhub/
 ├── mcp/                 🔍 网搜 —— MCP 网页搜索服务器（Google 首选 + 中文优化）
 │   └── web-search-mcp/
 └── skills/              🧩 Skill 合集
-    ├── impact/          📡 ImpactRadar —— 变更影响分析（Java/Spring/MyBatis，light/full 两档）
-    ├── impact-pro/      📡 ImpactRadar Pro —— 通用变更影响分析（多语言/多栈，自动探测技术栈）
+    ├── impact/          📡 ImpactRadar —— 变更影响分析（Java/Spring/MyBatis，安全门禁已补强）
+    ├── impact-pro/      📡 ImpactRadar Pro —— 多栈变更影响分析（已验证 profile 覆盖范围内可用）
     └── vl-vision/       👁️ 识图 —— 通用 VL 识图工具（突破纯文本 LLM 的视觉限制）
 ```
 
@@ -24,8 +24,8 @@ blue-skillhub/
 |------|--------|------|
 | [**claudecode行为规范/ruleblade/**](claudecode行为规范/ruleblade/) | 7 条实验验证的 AI 编码行为准则 | 约束 AI 编码行为，精准可控、不画蛇添足 |
 | [**mcp/web-search-mcp/**](mcp/web-search-mcp/) | MCP 网页搜索服务器 | Google 首选 + 中文优化，赋予 AI 联网搜索能力 |
-| [**skills/impact/**](skills/impact/) | 变更影响分析 Skill | Java/Spring/MyBatis 专属，19 维度 × light/full 两档，三文档逐级确认 |
-| [**skills/impact-pro/**](skills/impact-pro/) | 通用变更影响分析 Skill | 多语言/多栈通用，自动探测技术栈并加载 profile，DB adapter 系统 |
+| [**skills/impact/**](skills/impact/) | 变更影响分析 Skill | Java/Spring/MyBatis 类项目，19 维度 × light/full 两档，三文档逐级确认，写操作 Step 级确认 |
+| [**skills/impact-pro/**](skills/impact-pro/) | 多栈变更影响分析 Skill | 仅宣称已验证 profile 覆盖范围内可用；未知栈先走 generic 兜底，验收后再升级 profile |
 | [**skills/vl-vision/**](skills/vl-vision/) | 通用 VL 识图工具 | 10 个预置模板 + 自定义 prompt，突破纯文本 LLM 的视觉限制 |
 
 ## 快速使用
@@ -33,8 +33,8 @@ blue-skillhub/
 - **规则** → 将 `claudecode行为规范/ruleblade/CLAUDE.md` 复制到项目根目录，Claude Code 自动生效
 - **搜索** → 在 MCP 客户端配置 `mcp/web-search-mcp/dist/index.js`，详见 [mcp/web-search-mcp/README.md](mcp/web-search-mcp/README.md)
 - **识图** → `python skills/vl-vision/vl_vision.py <图片路径>`，详见 [skills/vl-vision/README.md](skills/vl-vision/README.md)
-- **影响分析（Java 栈）** → 安装 impact skill，对 AI 说"我想改一下"即可触发，详见 [skills/impact/README.md](skills/impact/README.md)
-- **影响分析（通用栈）** → 安装 impact-pro skill，适用于 Node/Python/Go/.NET 等项目，详见 [skills/impact-pro/README.md](skills/impact-pro/README.md)
+- **影响分析（Java 栈）** → 安装 impact skill，对 AI 说"我想改一下"即可触发，详见 [skills/impact/README.md](skills/impact/README.md)，验收记录见 [skills/impact/validation-runs/](skills/impact/validation-runs/)
+- **影响分析（多栈）** → 安装 impact-pro skill，适用于已验证 profile 覆盖范围内的 Node/Python/Go/.NET/前端等项目，详见 [skills/impact-pro/README.md](skills/impact-pro/README.md)，验收记录见 [skills/impact-pro/validation-runs/](skills/impact-pro/validation-runs/)
 
 ## 5 分钟安装验证
 
@@ -96,11 +96,16 @@ python skills/vl-vision/vl_vision.py path/to/image.png
 
 ### 4. Impact Skills
 
-把对应 skill 目录安装到你的 AI 客户端技能目录：
+把对应 skill 目录复制到你的 AI 客户端技能目录，例如 Codex 的 `$CODEX_HOME/skills`：
 
 ```text
 skills/impact
 skills/impact-pro
 ```
 
-验证方式：在客户端中触发 `/impact` 或 `/impact-pro`，能进入变更意图捕获流程即可。
+验证方式：
+
+- 在客户端中触发 `/impact` 或 `/impact-pro`，能进入变更意图捕获流程。
+- `impact` 面向 Java/Spring/MyBatis/RuoYi 类项目；安全门禁和回归检查见 [skills/impact/VALIDATION.md](skills/impact/VALIDATION.md)。
+- `impact-pro` 面向已验证 profile 覆盖范围内的多栈项目；当前 profile、投产边界和验证记录见 [skills/impact-pro/README.md](skills/impact-pro/README.md)。
+- 任一写文件、改代码、DDL/DML、配置变更、删除或测试修复，都必须由用户显式回复 `确认 Step N`，不能用 `yes/继续/全部确认` 代替。
