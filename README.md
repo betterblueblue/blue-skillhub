@@ -60,7 +60,11 @@
 
 可以先读这三份：
 
+- [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)：安装和验证 checklist，说明复制到哪里、MCP JSON 用哪个绝对路径、Skill 怎么验证。
+- [docs/impact-real-case-study.md](docs/impact-real-case-study.md)：ImpactRadar 真实使用案例的匿名复盘，记录它暴露了哪些长会话和多 Step 边界。
+- [docs/impact-m3-next-regression-plan.md](docs/impact-m3-next-regression-plan.md)：下一轮 MiniMax M3 复测计划，限定后续要测的高价值场景。
 - [docs/impact-regression-protocol.md](docs/impact-regression-protocol.md)：ImpactRadar / ImpactRadar Pro 优化后的回归复测协议，规定什么时候跑 RG0-RG3、什么时候必须真实 agent 复测。
+- [docs/release-positioning-check-2026-06-08.md](docs/release-positioning-check-2026-06-08.md)：阶段性 release 定位自查，确认 RuleBlade、ImpactRadar、ImpactRadar Pro 的边界是否自洽。
 - [docs/not-ace-benchmark-research.md](docs/not-ace-benchmark-research.md)：研究性博客文章，解释 Not ACE 在 MiniMax M3、GLM-5.1、Kimi K2.6、GLM-5、DeepSeek V4 系列上的不同表现。
 - [docs/not-ace-exploration/](docs/not-ace-exploration/)：完整实验记录，包括 V1/V2 检索测试、V3 agent 任务测试、模型复跑、DeepSeek 调用链问题和下一轮计划。
 - [docs/agent-iteration-conclusions.md](docs/agent-iteration-conclusions.md)：给后续 agent 迭代看的结论，把测试事实映射到 RuleBlade、ImpactRadar、ImpactRadar Pro 和 VL Vision 的优化方向。
@@ -140,14 +144,23 @@ python skills/vl-vision/vl_vision.py path/to/image.png
 
 ### 4. 安装 Impact Skills
 
-把需要的 skill 目录复制到你的 AI 客户端 skills 目录，例如 Codex 的 `$CODEX_HOME/skills`：
+把需要的 skill 目录复制到你的 AI 客户端 skills 目录。
 
-```text
-skills/impact
-skills/impact-pro
+Codex：
+
+```powershell
+Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.codex\skills\impact" -Recurse -Force
+Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.codex\skills\impact-pro" -Recurse -Force
 ```
 
-触发 `/impact` 或 `/impact-pro`，能进入变更意图捕获流程即可。
+Claude Code：
+
+```powershell
+Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
+Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.claude\skills\impact-pro" -Recurse -Force
+```
+
+重启客户端后触发 `/impact` 或 `/impact-pro`，能进入变更意图捕获流程即可。完整安装和验证 checklist 见 [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)。
 
 几个边界要记住：
 
@@ -165,7 +178,11 @@ blue-skillhub/
 ├── docs/
 │   ├── not-ace-exploration/
 │   ├── agent-iteration-conclusions.md
+│   ├── install-and-verify-checklist.md
+│   ├── impact-real-case-study.md
+│   ├── impact-m3-next-regression-plan.md
 │   ├── impact-regression-protocol.md
+│   ├── release-positioning-check-2026-06-08.md
 │   └── not-ace-benchmark-research.md
 ├── mcp/
 │   └── web-search-mcp/
