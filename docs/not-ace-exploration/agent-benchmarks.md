@@ -266,3 +266,83 @@ M3 + Not ACE 的收益主要是稳定性，不是速度。它让 M3 在 3 次运
 | GLM-5.1 repeat | 在 Go 语义任务上，Not ACE 保持满分 recall，同时显著降低耗时和成本。 |
 | M3 repeat | 在 Go 语义任务上，Not ACE 稳定提升 recall 一致性，尤其是 `hello.go`。 |
 | 复杂链路任务 | Not ACE 找入口，`rg` 和框架约定做验证。 |
+
+## V3.8: Qwen3.5-397B-A17B + 常规工具
+
+这轮只测 Claude Code + Qwen3.5-397B-A17B + 常规工具，不接 Not ACE。目标是看 Qwen 强模型在 `rg` / 文件读取 / git 这类普通工具下的 coding agent 能力。
+
+首轮三任务结果：
+
+| Task | P0 Recall | Overall Recall | Misses | Duration | Cost | Turns |
+| --- | ---: | ---: | --- | ---: | ---: | ---: |
+| `fastapi-item-source` | 1.000 | 0.727 | `schemas.gen.ts`、后端 item tests | 66.803s | $1.419485 | 21 |
+| `ruoyi-permission-chain` | 0.750 | 0.727 | `UserDetailsServiceImpl.java`、`SysRoleController.java`、`getters.js` | 179.921s | $5.613520 | 35 |
+| `go-story-origin` | 1.000 | 0.833 | `articles/unit_test.go` | 73.271s | $2.070070 | 10 |
+
+汇总：
+
+| Group | Avg P0 Recall | Avg Overall Recall | Avg Duration | Total Cost | Turns |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Qwen3.5-397B-A17B + `rg` | 0.917 | 0.762 | 106.665s | $9.103075 | 66 |
+
+随后补了 FastAPI / RuoYi r2，Go r2 超时：
+
+| Task | Status | P0 Recall | Overall Recall | Misses |
+| --- | --- | ---: | ---: | --- |
+| `fastapi-item-source` r2 | completed | 1.000 | 0.818 | `schemas.gen.ts`、`backend/tests/utils/item.py` |
+| `ruoyi-permission-chain` r2 | completed | 0.750 | 0.727 | `UserDetailsServiceImpl.java`、`SysRoleController.java`、`getters.js` |
+| `go-story-origin` r2 | timeout | n/a | n/a | 15 分钟无 final output |
+
+V3.8 结论：
+
+Qwen3.5-397B-A17B 很有潜力，尤其 Go r1 能命中 `hello.go`，没有重复 M3 原始 r1 的迁移入口漏召回。但它也暴露出稳定弱点：RuoYi 两轮都漏 P0 `UserDetailsServiceImpl.java`，FastAPI 两轮都漏 generated schema / test utility，Go r2 出现工具调用异常和 provider 500。它更像“快但不够细”，暂时不能排到 GLM-5.1 前面。
+
+## V3.9: Qwen3.6-35B-A3B Sanity
+
+用户切换到 `xopqwen36v35b` 后，先跑最小可用性检查。
+
+结果：
+
+- `go-story-origin` 未产出影响分析，Claude JSON 返回 `is_error: true`，API 500。
+- 最小 prompt `Reply exactly: QWEN36_OK` 也返回 Xunfei `EngineInternalError:Bad Request` 500。
+
+V3.9 结论：
+
+这轮不能评价 Qwen3.6-35B-A3B 的 coding agent 能力。当前 `xopqwen36v35b` 在 Claude Code 里连最小 prompt 都不能稳定返回，应先修 gateway / model mapping，再进入 benchmark。
+
+## V3.10: Kimi K2.5 + 常规工具
+
+这轮测 Claude Code + Kimi K2.5 + 常规工具，主要和 Kimi K2.6 做家族内部对比。
+
+三任务结果：
+
+| Task | P0 Recall | Overall Recall | Misses | Duration | Cost | Turns |
+| --- | ---: | ---: | --- | ---: | ---: | ---: |
+| `fastapi-item-source` | 1.000 | 0.727 | `schemas.gen.ts`、后端 item tests | 105.341s | $2.300710 | 24 |
+| `ruoyi-permission-chain` | 0.750 | 0.818 | `UserDetailsServiceImpl.java`、`SysRoleController.java` | 157.098s | $3.111710 | 28 |
+| `go-story-origin` | 0.800 | 0.833 | `hello.go` | 89.360s | $1.175795 | 11 |
+
+汇总：
+
+| Group | Avg P0 Recall | Avg Overall Recall | Avg Duration | Total Cost | Turns |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Kimi K2.5 + `rg` | 0.850 | 0.793 | 117.266s | $6.588215 | 63 |
+
+V3.10 结论：
+
+Kimi K2.5 可用，输出结构清楚，但不如 Kimi K2.6 值得继续测。关键差异是 Go 任务：Kimi K2.6 + `rg` 命中 `hello.go`，Kimi K2.5 + `rg` 漏了 `hello.go`，并把迁移讨论偏向 `common/database.go`。RuoYi 中它也漏了 `UserDetailsServiceImpl.java`。Kimi 系列后续应优先保留 K2.6 作为参考。
+
+## 国模常规工具组综合判断
+
+抛开 Not ACE，只看 Claude Code + 常规工具，这轮模型排序更接近：
+
+| Position | Model | Judgment |
+| --- | --- | --- |
+| 1 | GLM-5.1 | 当前最稳，三任务常规工具组 P0 recall 满分。 |
+| 2 | Qwen3.5-397B-A17B | Go 语义任务强、速度快，但 RuoYi / generated tests 边界不够细，且 Go r2 不稳。 |
+| 3 | Kimi K2.6 | 表达和方案质量好，Go 能命中 `hello.go`，但整体召回不够稳。 |
+| 4 | MiniMax M3 | 成本低、可用，但原始 r1 漏 `hello.go`，适合测试工具补强。 |
+| 5 | Kimi K2.5 | 可用但弱于 K2.6，Go 漏 `hello.go`。 |
+| 6 | GLM-5 | 能跑但不突出，不如 GLM-5.1。 |
+| n/a | Qwen3.6-35B-A3B | 当前 `xopqwen36v35b` 调用链 500，不评分。 |
+| n/a | DeepSeek V4 via 第三方平台 | 当前接入链路不稳，不代表官方模型真实能力。 |

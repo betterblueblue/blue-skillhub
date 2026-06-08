@@ -212,6 +212,27 @@ Not ACE 的优势更多出现在：
 5. `rg` 仍然是 exact symbol 和验证阶段的强基线。
 6. 最合理的实践方式是 Not ACE + `rg` 混合检索。
 
+## 抛开 Not ACE：几个国模的常规工具表现
+
+后面又补测了几组“Claude Code + 国模 + 常规工具”的结果，不接 Not ACE，只看模型自己配合 `rg`、文件读取和 git 的能力。
+
+如果只按这轮 coding agent benchmark 的工程可用性排序，我现在会这样看：
+
+| 排名 | 模型 | 评价 |
+| --- | --- | --- |
+| 1 | GLM-5.1 | 当前最稳，最像可以认真做 coding agent 的国产模型。 |
+| 2 | Qwen3.5-397B-A17B | 很有潜力，Go 语义任务能命中 `hello.go`，但 RuoYi 和 generated/test 边界不够细。 |
+| 3 | Kimi K2.6 | 表达和分析质量好，但上下文召回不够稳。 |
+| 4 | MiniMax M3 | 中等可用、成本低，但原始 Go r1 漏过 `hello.go`。 |
+| 5 | Kimi K2.5 | 可用但弱于 K2.6，Go 任务漏 `hello.go`。 |
+| 6 | GLM-5 | 能跑但不突出，不如 GLM-5.1。 |
+| 不评分 | Qwen3.6-35B-A3B | 当前 `xopqwen36v35b` 连最小 prompt 都返回 Xunfei 500。 |
+| 不评分 | DeepSeek V4 via 第三方平台 | 当前调用链不稳，不代表官方模型真实能力。 |
+
+这里最有意思的是 Qwen3.5-397B-A17B。它第一轮很快，Go 任务也找到了 `hello.go`，说明它能理解产品语言里的结构边界。但复测以后，问题也很清楚：RuoYi 两轮都漏 `UserDetailsServiceImpl.java`，FastAPI 两轮都漏 generated schema / test utility，Go r2 还出现了工具调用异常和 provider 500。所以它更像“快，但还不够细”，暂时不是 GLM-5.1 那种稳稳找全上下文的风格。
+
+Kimi K2.5 的结论更简单：它能跑，输出也清楚，但不如 Kimi K2.6。K2.6 在 Go 任务中命中了 `hello.go`，K2.5 没有；这类迁移入口文件正是本轮 benchmark 最关心的结构边界。
+
 ## 我会怎么用它
 
 如果是我实际使用 Not ACE，我不会让它独立承担全部上下文发现。
