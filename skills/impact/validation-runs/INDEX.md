@@ -21,6 +21,7 @@ impact = Java / MyBatis / RuoYi 类项目的受监督影响分析与执行辅助
 | T01 | 修复后安全门禁静态回归 | 通过 |
 | T02 | impact-pro 修复项回迁差异分析 | 通过 |
 | T03 | 上下文包协议回归 | 通过 |
+| T04 | Claude Code + MiniMax M3 真实 `/impact` 复测 | 通过；含长期对齐、阻塞恢复、Step 范围一致和最小写操作闭环 |
 
 ## 关键文件
 

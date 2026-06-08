@@ -32,6 +32,8 @@
 
 它可以搭配律刃使用：律刃约束 agent 的通用编码行为，ImpactRadar 负责 Java/RuoYi 现有系统的影响分析流程。
 
+近期根据真实使用案例补强了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目降级保护和阻塞恢复安全闸，适合迁移、对齐、重构等多 Step 变更。补强后已用 Claude Code + MiniMax M3 通过真实 `/impact` 复测，覆盖长期对齐、阻塞恢复、Step 范围一致和最小写操作闭环。
+
 ### ImpactRadar Pro
 
 [skills/impact-pro/](skills/impact-pro/)
@@ -39,6 +41,8 @@
 `impact` 的多栈版本。面向已验证技术栈规则覆盖范围内的现有系统，未知栈会先用通用规则扫描，不直接冒充“已完整支持”。适合 Node、Python、Go、.NET、前端项目等多栈项目里的变更影响分析。
 
 它也可以搭配律刃使用：律刃提供通用行为约束，ImpactRadar Pro 提供多栈 profile 化的影响分析流程。
+
+近期同步补强了跨系统对齐规则、接口返回检查清单、验证等级、非 Git 降级和阻塞恢复安全闸，避免多栈迁移或长会话执行时把静态验证、旧授权和当前文件状态混在一起。补强后已用 Claude Code + MiniMax M3 通过真实 `/impact-pro` 复测，验证 Node/Express 响应字段删除能正确判定 full。
 
 上下文包能力的设计复盘见 [docs/impact-context-pack-design.md](docs/impact-context-pack-design.md)，里面记录了需求来源、方案取舍和实现效果。
 
@@ -56,11 +60,20 @@
 
 可以先读这三份：
 
+- [docs/impact-regression-protocol.md](docs/impact-regression-protocol.md)：ImpactRadar / ImpactRadar Pro 优化后的回归复测协议，规定什么时候跑 RG0-RG3、什么时候必须真实 agent 复测。
 - [docs/not-ace-benchmark-research.md](docs/not-ace-benchmark-research.md)：研究性博客文章，解释 Not ACE 在 MiniMax M3、GLM-5.1、Kimi K2.6、GLM-5、DeepSeek V4 系列上的不同表现。
 - [docs/not-ace-exploration/](docs/not-ace-exploration/)：完整实验记录，包括 V1/V2 检索测试、V3 agent 任务测试、模型复跑、DeepSeek 调用链问题和下一轮计划。
 - [docs/agent-iteration-conclusions.md](docs/agent-iteration-conclusions.md)：给后续 agent 迭代看的结论，把测试事实映射到 RuleBlade、ImpactRadar、ImpactRadar Pro 和 VL Vision 的优化方向。
 
 这轮实验的核心判断是：Not ACE 不是 `rg` 的替代品，而是语义上下文入口。它对 MiniMax M3 更像是在补稳定性，对 GLM-5.1 更像是在省时间、省成本；但在 Kimi K2.6、GLM-5、DeepSeek V4 系列上，这轮没有跑出稳定收益。DeepSeek V4 Pro / Flash 通过硅基流动平台接入，不代表 DeepSeek 官方模型真实能力。
+
+## 致谢
+
+律刃最初版参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后续是在真实中文编码任务和复杂链路测试里一轮轮收紧出来的。
+
+“改代码前先反查调用方和引用方，查到后再分级处理”来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提出的 issue。这个建议已经同步进 RuleBlade、ImpactRadar 和 ImpactRadar Pro，用来减少只改当前文件却漏掉接口、生成物、测试或注册点的风险。
+
+ImpactRadar 近期关于长期目标、阻塞恢复、接口返回检查和验证等级的补强，也来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提供的真实使用案例。这个案例暴露了长会话、多 Step 迁移、非 Git 项目、延迟确认和弱模型执行时更容易出现的边界问题。
 
 ## 快速验证
 
@@ -152,6 +165,7 @@ blue-skillhub/
 ├── docs/
 │   ├── not-ace-exploration/
 │   ├── agent-iteration-conclusions.md
+│   ├── impact-regression-protocol.md
 │   └── not-ace-benchmark-research.md
 ├── mcp/
 │   └── web-search-mcp/

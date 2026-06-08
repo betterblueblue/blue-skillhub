@@ -13,9 +13,13 @@
 - **通用内核 + 技术栈规则** — 无栈假设，按需加载专属规则
 - **Context Pack** — 用 L1/L2/L3 分层探索，给后续 agent 一个小而准、可解释的上下文入口
 - **引用检查分级** — 改前反查调用方、引用方、注册点、生成物和测试，按必须同步修改 / 需要用户决策 / 只需验证 / 暂不纳入处理
+- **长期目标模式** — 面对迁移、对齐、重构、大功能接入、债务清理等多 Step 任务，维护当前 Step、backlog、阻塞项和未验证项
+- **跨系统对齐规则** — 记录可信来源、目标实现、对齐语义、差距证据和本 Step 范围，避免凭相似命名臆测
 - **苏格拉底式提问** — 基于实际 schema 和代码发现上下文，按风险多轮收敛；每轮最多 3 问，不是总共最多 3 问
 - **light/full 两档模式** — 简单改动走一页摘要，复杂变更走三文档
+- **接口返回检查清单** — light 涉及向后兼容响应字段新增时，检查消费者、文档、generated client、验证方式和未验证项
 - **证据化分析** — 用工具发现真实上下文，不靠臆测
+- **验证等级** — 区分 V0 未验证、V1 静态验证、V2 构建/单测、V3 运行路径验证
 - **数据库适配器** — MySQL + 通用 SQL 规则（PG 等其他 DB 走通用规则）
 - **19 维度灵活覆盖** — 按需选择，不强制全覆盖
 - **三文档逐级确认** — 需求 → 设计 → 实施，每份确认后再出下一份
@@ -23,6 +27,7 @@
 - **自动/确认边界清晰** — 只读操作自动跑，写操作必须确认
 - **TDD 验证框架** — 正向用例 + 错误用例（边界值/空值/格式校验/XSS）
 - **行为准则检查** — 先澄清假设和成功标准，简单优先，精准修改，改 status/enum/常量前先确认原定义
+- **阻塞恢复安全闸** — blocked、上下文压缩或延迟确认后，先复核 pending Step、当前文件状态和最新授权，再决定是否执行
 
 ## 技术栈覆盖
 
@@ -55,9 +60,9 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 
 ## 验收状态
 
-当前 `impact-pro` 已完成 T01-T45 验收，覆盖多栈静态验收、前端运行时复测、负向对话复测、生产级项目复验、Step 编号确认、执行前检查、Go RealWorld 真实写操作闭环和最终复审。补齐 Level 1 技术栈规则后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入已验证覆盖范围。当前可按 **多栈常规项目可投入使用（已验证技术栈规则覆盖范围内，必须由用户确认后执行）** 使用；仍不宣称覆盖任意技术栈，也不建议无人监督生产数据库变更。
+当前 `impact-pro` 已完成 T01-T47 验收，覆盖多栈静态验收、前端运行时复测、负向对话复测、生产级项目复验、Step 编号确认、执行前检查、Go RealWorld 真实写操作闭环、最终复审，以及 Claude Code + MiniMax M3 真实 `/impact-pro` 响应契约负向复测。补齐 Level 1 技术栈规则后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入已验证覆盖范围。当前可按 **多栈常规项目可投入使用（已验证技术栈规则覆盖范围内，必须由用户确认后执行）** 使用；仍不宣称覆盖任意技术栈，也不建议无人监督生产数据库变更。
 
-多栈测试用例、评分标准、行为准则检查和使用边界见 [VALIDATION.md](VALIDATION.md)，实际验收记录索引见 [validation-runs/INDEX.md](validation-runs/INDEX.md)。
+多栈测试用例、评分标准、行为准则检查和使用边界见 [VALIDATION.md](VALIDATION.md)，优化后回归复测协议见 [../../docs/impact-regression-protocol.md](../../docs/impact-regression-protocol.md)，实际验收记录索引见 [validation-runs/INDEX.md](validation-runs/INDEX.md)。
 
 ## 典型流程
 
@@ -82,6 +87,8 @@ Phase 5：执行（每步确认，自动跑风格检查+单测）
 判档按风险触发，不按文件数量粗暴决定。
 
 **light** 适合：UI 文案、toast、placeholder、局部样式、单 handler 自然语言 message、前端本地状态展示、文档/日志文案等。前提是证据显示不改 DB schema、API 契约、权限/认证、状态机、generated client、外部服务副作用，也没有破坏兼容。
+
+兼容性新增 API 响应字段可以建议 light，但必须填写接口返回检查清单；删除/重命名字段、语义或类型变化、generated client/OpenAPI/SDK 需要同步、外部消费者不明、历史数据/缓存/持久化快照或前后端必须同步修改时，仍应 full 或先补证据。
 
 **full** 适合：DB/migration/索引/外键/存量数据、API/DTO/OpenAPI/GraphQL 契约、权限/认证/支付/订单/状态机、跨前后端联动、缓存/消息队列/异步任务/文件/邮件/短信/第三方 API、删除/重命名/DROP/批量替换/破坏兼容，以及高风险区域证据不足。
 
@@ -130,3 +137,5 @@ impact-pro/
 ## 致谢
 
 “引用检查分级”来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提出的 issue：改代码前应检查其他地方是否引用，查到后再分级处理。这个建议已纳入 `RuleBlade` 和 `impact-pro` 的 Context Pack 流程，用来减少多栈项目里漏掉调用方、注册点、生成物或测试的风险。
+
+长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 降级保护、阻塞恢复安全闸和执行记录闭环补强，来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提供的真实使用案例。该案例也被用于 `impact-pro` 的规则回迁分析，帮助确认这些边界并不只存在于 Java/RuoYi 场景。
