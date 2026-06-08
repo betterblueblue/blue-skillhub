@@ -43,9 +43,9 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 
 在 Claude Code 终端输入 `/impact-pro` 激活。
 
-## 与 impact v3.0 的区别
+## 与 impact 的区别
 
-| | impact v3.0 | impact-pro |
+| | impact | impact-pro |
 |--|------------|------------|
 | 架构 | 单体 SKILL.md，Java 规则写死 | 通用内核 + 技术栈规则 |
 | 栈适配 | 仅 Java/MyBatis | 通用规则 + 专属规则 |

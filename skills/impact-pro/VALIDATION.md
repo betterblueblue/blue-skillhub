@@ -268,7 +268,7 @@ T26/T27 只证明安全检查和模板已补强；只有真实项目中完成上
 
 ### T02: Node.js + Express + Prisma
 
-目的：验证 generic profile 面对 Node 后端时能否正确发现 API、ORM schema 和测试命令。
+目的：验证 `node-express-prisma` profile 面对 Node 后端时能否正确发现 API、ORM schema 和测试命令；若专属规则未命中，必须诚实降级为 `generic` 并说明限制。
 
 项目类型：Node.js/TypeScript，Express 或 Fastify，Prisma ORM。
 
@@ -280,7 +280,7 @@ T26/T27 只证明安全检查和模板已补强；只有真实项目中完成上
 
 预期结果：
 
-- 识别 `package.json`，无专属 Node profile 时加载 `generic`。
+- 识别 `package.json` 和 Prisma 相关文件，命中 `node-express-prisma`；无专属命中时加载 `generic` 并说明限制。
 - 发现 `prisma/schema.prisma`、routes/controller、service、test/spec 文件。
 - 不应套用 Java 术语，如 Controller/Mapper XML/MyBatis。
 - 判定 full，理由包含 DB schema + API 返回契约 + 存量订单兼容。
@@ -291,7 +291,7 @@ T26/T27 只证明安全检查和模板已补强；只有真实项目中完成上
 
 ### T03: Python + FastAPI + SQLAlchemy
 
-目的：验证 generic profile 对 Python API 项目的上下文发现和风格现采能力。
+目的：验证 `python-fastapi-sqlmodel` profile 对 Python API 项目的上下文发现和风格现采能力；若项目不符合该 profile，必须降级为 `generic` 并说明限制。
 
 项目类型：FastAPI，SQLAlchemy，Alembic。
 
@@ -314,7 +314,7 @@ T26/T27 只证明安全检查和模板已补强；只有真实项目中完成上
 
 ### T04: Go + Gin + GORM
 
-目的：验证 generic profile 对 Go 项目命名、handler/service/repository 分层的发现能力。
+目的：验证 `go-gin-gorm` profile 对 Go 项目命名、handler/service/repository 分层的发现能力；若项目不符合该 profile，必须降级为 `generic` 并说明限制。
 
 项目类型：Go，Gin，GORM。
 
@@ -337,7 +337,7 @@ T26/T27 只证明安全检查和模板已补强；只有真实项目中完成上
 
 ### T05: .NET + ASP.NET Core + EF Core
 
-目的：验证 generic profile 是否能在未预置 .NET profile 时诚实兜底。
+目的：验证 `dotnet-aspnet-efcore` profile 是否能发现 Controller、DbContext、Entity、DTO、Migration 和测试；若项目不符合该 profile，必须诚实降级为 `generic`。
 
 项目类型：ASP.NET Core Web API，Entity Framework Core。
 
@@ -349,7 +349,7 @@ T26/T27 只证明安全检查和模板已补强；只有真实项目中完成上
 
 预期结果：
 
-- 识别项目文件或目录结构，即使命中不强也必须加载 `generic` 并说明局限。
+- 识别 `.csproj`、`Program.cs`、EF Core 相关文件并命中 `dotnet-aspnet-efcore`；低置信或不符合 profile 时加载 `generic` 并说明局限。
 - 发现 Controller、DbContext、Entity、DTO、Migration、test 文件。
 - 不编造 EF 命令；若未确认，只能给候选命令并要求确认。
 - 判定 full，理由包含 DB 唯一约束 + API + 校验 + 迁移。
@@ -628,25 +628,13 @@ T26/T27 只证明安全检查和模板已补强；只有真实项目中完成上
 
 ## 当前改进建议
 
-已完成首批专属 profile 和测试结果记录目录。下一阶段建议补三类证据：
+已完成首批专属 profile、测试结果记录、Phase 5 真实执行闭环和最终投产复审。后续建议继续补三类证据：
 
 1. **补生产级执行复验**
-   - T08-T10 已完成独立 subagent 对话压力复测；T26 已补齐写文件、DDL/DML、配置变更、测试修复四类执行确认压力矩阵。
-   - T27 已新增 `templates/execution-record.md`，补齐 `900-执行记录.md` 的可复用模板。
-   - T28 已补齐 Phase 5 完整执行闭环的通过标准和推荐复验对象。
-   - T29 已准备 Go RealWorld 低风险真实执行演练包；T30 已确认演练前 Go RealWorld 基线测试为绿；T31 已补齐 Step 编号确认协议；待用户确认后才能执行写操作。
-   - T32 已完成长期目标达成度审计，确认当前硬缺口集中在真实 Phase 5 写操作闭环。
-   - T33 已准备 T29 的 Step 级确认包；待用户回复具体 `确认 Step N` 后才能执行写操作。
-   - T34 已在 Docker Desktop 恢复后复验 Go RealWorld 基线通过，并补齐自动续跑不能替代用户显式确认的边界。
-   - T35 已补齐投产升级 Readiness Checklist，防止把规则、模板或压力复测误当真实执行闭环。
-   - T36 已补齐 profile 晋级协议，明确新技术栈必须先 generic 兜底，再经真实项目 full + light 和运行验证后升级 Level。
-   - T37 已新增最终投产复审模板，要求真实 Phase 5 闭环完成后逐条审计八条目标再决定是否升级。
-   - T38 已新增 `validation-runs/INDEX.md`，把覆盖矩阵、生产复验、负向复测、Phase 5 缺口和模板补强集中成证据地图。
-   - T39 已新增最终评分复算模板，要求升级前按样本重算平均分并确认无未修复 P0/P1。
-   - T40 已新增 Phase 5 执行前检查模板，要求真实写操作前先核对仓库状态、基线、Step 确认、回滚和记录路径。
-   - T41 已将 Phase 5 preflight 套到 T29 Go RealWorld 演练：外部仓库干净、Docker 基线绿，但 Step 级确认仍缺失，因此不得进入写操作。
-   - T42 已新增分阶段 rollout policy，明确可试用、受监督常规项目、暂停/禁止使用的边界。
-   - 下一步需要在真实项目中复验分析依据、逐项写操作确认、失败处理和 `900-执行记录.md` 闭环。
+   - T08-T10 已完成独立 subagent 对话压力复测；T26-T42 已补齐执行确认、执行记录、preflight、rollout policy、scorecard 和最终复审模板。
+   - T43 已完成 Go RealWorld Phase 5 真实写操作闭环，覆盖写代码、改测试、自动验证和追加 `900-执行记录.md`。
+   - T44 已完成最终评分复算，T45 已完成最终投产复审；当前第 6 条硬缺口已补齐。
+   - 后续不是阻塞项，而是证据余量：建议在更多生产级项目中继续复验 DDL/DML、配置变更、测试修复和失败处理分支。
 
 2. **补运行时验证**
    - Go RealWorld 已确认全量测试需要非 root、临时 DB、`-p 1` 串行包执行；默认 root 容器会使 `common` 权限断言失真。
