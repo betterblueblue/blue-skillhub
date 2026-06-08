@@ -22,6 +22,7 @@ impact = Java / MyBatis / RuoYi 类项目的受监督影响分析与执行辅助
 | T02 | impact-pro 修复项回迁差异分析 | 通过 |
 | T03 | 上下文包协议回归 | 通过 |
 | T04 | Claude Code + MiniMax M3 真实 `/impact` 复测 | 通过；含长期对齐、阻塞恢复、Step 范围一致和最小写操作闭环 |
+| T05 | Claude Code + MiniMax M3 RG3 响应契约与阻塞恢复复测 | 通过；响应字段删除判 full，延迟确认不直接执行 |
 
 ## 关键文件
 
