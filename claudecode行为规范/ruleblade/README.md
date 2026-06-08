@@ -10,7 +10,7 @@
 
 ### v1 — 对照组（4 条英文规则）
 
-来源：Claude Code 官方推荐规则的精简版。
+来源：最初版参考了 multica-ai/andrej-karpathy-skills 中的 [`CLAUDE.md`](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)。律刃是在这份大佬版 4 条英文行为准则的基础上，做中文化、项目化实验和后续复杂链路复测后逐步迭代出来的。
 
 | # | 规则 | 写法 |
 |---|------|------|
@@ -253,6 +253,8 @@ RuleBlade v3.2 达到 Task A 稳定版验收标准。
 - 对照组 4 条英文规则
 - 实验组 21 条中文规则
 - 精选组 7 条中文规则
+
+最初的 4 条英文规则参考了 multica-ai/andrej-karpathy-skills 的 [`CLAUDE.md`](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)。律刃后续的中文表达、规则取舍、上下文先行、复杂链路门禁和 v3.2 稳定性验收，都是在此基础上结合真实项目反复测试后沉淀出来的。
 
 早期规则筛选实验：
 
