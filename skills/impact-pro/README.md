@@ -126,3 +126,7 @@ impact-pro/
     ├── final-readiness-audit.md
     └── scorecard.md
 ```
+
+## 致谢
+
+“引用检查分级”来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提出的 issue：改代码前应检查其他地方是否引用，查到后再分级处理。这个建议已纳入 `RuleBlade` 和 `impact-pro` 的 Context Pack 流程，用来减少多栈项目里漏掉调用方、注册点、生成物或测试的风险。

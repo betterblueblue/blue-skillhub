@@ -263,6 +263,8 @@ RuleBlade v3.2 达到 Task A 稳定版验收标准。
 
 最初的 4 条英文规则参考了 multica-ai/andrej-karpathy-skills 的 [`CLAUDE.md`](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)。律刃后续的中文表达、规则取舍、上下文先行、复杂链路门禁和 v3.2 稳定性验收，都是在此基础上结合真实项目反复测试后沉淀出来的。
 
+“改前反查调用方和引用方，并在查到后分级处理”的补强来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提出的 issue。这个建议把“上下文先行”从找目标文件推进到检查引用链，能减少只改当前文件却漏掉接口、生成物、测试或注册点的风险。
+
 早期规则筛选实验：
 
 - 实验模型：Claude Code v2.1.139 (claude-opus-4-8)
