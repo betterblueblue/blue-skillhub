@@ -12,7 +12,9 @@
 
 [claudecode行为规范/ruleblade/](claudecode行为规范/ruleblade/)
 
-7 条给 AI 编码助手看的行为规则。重点不是“让它更聪明”，而是让它少猜、少乱改、先验证。适合放到已有项目的 `CLAUDE.md` 里，给 Claude Code 这类编码助手做行为约束。
+8 条给 AI 编码助手看的行为规则。重点不是“让它更聪明”，而是让它少猜、少乱改、先拿对上下文、先验证。适合放到已有项目的 `CLAUDE.md`，也可以按需复制成 Codex 项目的 `AGENT.md`。
+
+最初版参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后续在中文任务、已有系统变更和 GovShield 复杂审查链路里持续实测迭代。目前 v3.2 已通过 Claude Code + Minimax M3 的 Task A 稳定性复测：R13 + R14 连续 2 轮无 P0/P1，最小测试通过。
 
 ### 网搜 MCP
 
