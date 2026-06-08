@@ -17,6 +17,8 @@
 
 最终落地为 `Context Pack / 上下文包` 协议。
 
+这里和 `RuleBlade` 的分工是分层的：`RuleBlade` 是通用编码行为底座，可用于 0→1 新系统开发、已有系统变更、重构、修 bug 和测试补充；`Context Pack` 是 `impact` / `impact-pro` 面向现有系统影响分析时的上下文收敛协议，负责把真实代码、schema、接口、配置和测试证据整理成后续 agent 能接手的变更上下文。
+
 ## 2. 为什么会提出这个需求
 
 最初 `impact` / `impact-pro` 已经具备比较完整的影响分析流程：识别技术栈、发现代码和 schema、苏格拉底式澄清、light/full 判档、文档输出、执行前检查和逐 Step 确认。

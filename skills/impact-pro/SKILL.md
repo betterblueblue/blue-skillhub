@@ -14,6 +14,8 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, 
 
 本 Skill 不用于从 0 到 1 搭建新系统；它默认项目已经存在代码、schema、接口、配置、测试或运行约束。未知技术栈先使用 generic 通用规则扫描并标注限制，不宣称任意技术栈都已稳定覆盖。
 
+可搭配 `RuleBlade` 使用：`RuleBlade` 提供通用编码行为约束，本 Skill 负责多栈 profile 化上下文发现、影响分析、文档产出和受监督执行流程。
+
 ## 核心原则
 
 1. **栈无关** — SKILL.md 内核不预设技术栈，所有栈规则在 `profiles/` 按需读取

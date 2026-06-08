@@ -14,6 +14,8 @@
 
 8 条给 AI 编码助手看的行为规则。重点不是“让它更聪明”，而是让它少猜、少乱改、先拿对上下文、先验证。适合放到已有项目的 `CLAUDE.md`，也可以按需复制成 Codex 项目的 `AGENT.md`。
 
+它是通用行为底座，不绑定具体开发流程：可以搭配 0→1 生成类 Skill、已有系统影响分析类 Skill，也可以单独用于修 bug、重构、补测试和普通编码任务。v3.2 的稳定性复测是在 GovShield 这种已有系统复杂链路变更里完成的，证明的是复杂链路门禁能力，不代表它只能用于已有系统。
+
 最初版参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后续在中文任务、已有系统变更和 GovShield 复杂审查链路里持续实测迭代。目前 v3.2 已通过 Claude Code + Minimax M3 的 Task A 稳定性复测：R13 + R14 连续 2 轮无 P0/P1，最小测试通过。
 
 ### 网搜 MCP
@@ -28,11 +30,15 @@
 
 面向 Java/Spring/MyBatis/RuoYi 类现有系统。它不是从 0 到 1 生成新项目，而是帮你在已有代码、表结构、接口和业务约束里，做一次功能迭代、新功能接入、字段/API/权限/配置变更或重构。
 
+它可以搭配律刃使用：律刃约束 agent 的通用编码行为，ImpactRadar 负责 Java/RuoYi 现有系统的影响分析流程。
+
 ### ImpactRadar Pro
 
 [skills/impact-pro/](skills/impact-pro/)
 
 `impact` 的多栈版本。面向已验证技术栈规则覆盖范围内的现有系统，未知栈会先用通用规则扫描，不直接冒充“已完整支持”。适合 Node、Python、Go、.NET、前端项目等多栈项目里的变更影响分析。
+
+它也可以搭配律刃使用：律刃提供通用行为约束，ImpactRadar Pro 提供多栈 profile 化的影响分析流程。
 
 上下文包能力的设计复盘见 [docs/impact-context-pack-design.md](docs/impact-context-pack-design.md)，里面记录了需求来源、方案取舍和实现效果。
 

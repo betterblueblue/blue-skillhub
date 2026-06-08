@@ -14,6 +14,8 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, 
 
 本 Skill 不用于从 0 到 1 搭建新系统；它默认项目已经存在代码、schema、接口、配置、测试或运行约束，所有结论都应从这些真实上下文中发现。
 
+可搭配 `RuleBlade` 使用：`RuleBlade` 提供通用编码行为约束，本 Skill 负责 Java/Spring/MyBatis/RuoYi 类现有系统的影响分析、文档产出和受监督执行流程。
+
 ## 核心原则
 
 1. **先想清楚，再动手** — 通过靶向提问暴露盲区
