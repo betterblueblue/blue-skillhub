@@ -1,0 +1,91 @@
+{
+  "id": "papermark-dataroom-permission-chain",
+  "project": "Papermark",
+  "repo_url": "https://github.com/papermark/papermark",
+  "commit": "cd374a9aa8639e46c8490e39dc4c2fcaf4092caa",
+  "project_root": "E:/agent/model-agent-benchmark/repos/papermark",
+  "mode": "analysis_only",
+  "task_type": "permission-chain",
+  "prompt": "A teammate asks: explain how a data room member's access to documents is enforced across backend APIs, group permissions, data room settings, and frontend visibility. Do not modify code. Produce an impact analysis and verification plan.",
+  "expected_files": [
+    {
+      "path": "prisma/schema/dataroom.prisma",
+      "tier": "P0",
+      "reason": "Defines data room, membership, permission, and related persistence models.",
+      "boundary_type": "schema"
+    },
+    {
+      "path": "pages/api/teams/[teamId]/datarooms/[id]/index.ts",
+      "tier": "P0",
+      "reason": "Core data room API entry; required to understand backend access checks.",
+      "boundary_type": "api"
+    },
+    {
+      "path": "pages/api/teams/[teamId]/datarooms/[id]/groups/[groupId]/permissions.ts",
+      "tier": "P0",
+      "reason": "Group permission API; central to member permission changes.",
+      "boundary_type": "auth"
+    },
+    {
+      "path": "components/datarooms/groups/group-permissions.tsx",
+      "tier": "P0",
+      "reason": "Frontend group permission UI; required to connect backend permission state to user actions.",
+      "boundary_type": "ui"
+    },
+    {
+      "path": "components/datarooms/settings/permission-settings.tsx",
+      "tier": "P0",
+      "reason": "Data room permission settings UI; required for configuration-level access behavior.",
+      "boundary_type": "ui"
+    },
+    {
+      "path": "pages/api/teams/[teamId]/datarooms/[id]/groups/[groupId]/members/index.ts",
+      "tier": "P1",
+      "reason": "Group membership API; relevant to how member access is assigned.",
+      "boundary_type": "auth"
+    },
+    {
+      "path": "pages/api/teams/[teamId]/datarooms/[id]/permission-groups/index.ts",
+      "tier": "P1",
+      "reason": "Permission group API; relevant for group-level access management.",
+      "boundary_type": "auth"
+    },
+    {
+      "path": "components/datarooms/groups/group-member-table.tsx",
+      "tier": "P1",
+      "reason": "Frontend group member list; useful for visibility and permission verification.",
+      "boundary_type": "ui"
+    },
+    {
+      "path": "app/api/views-dataroom/route.ts",
+      "tier": "P2",
+      "reason": "Dataroom view path; useful for understanding viewer-side enforcement and analytics.",
+      "boundary_type": "api"
+    }
+  ],
+  "must_notice": [
+    "Backend access checks and frontend visibility are separate; frontend visibility is not sufficient enforcement.",
+    "The model should distinguish team membership, data room membership, group permissions, and document-level access.",
+    "Verification should include unauthorized member and cross-team negative cases."
+  ],
+  "forbidden_claims": [
+    "Do not claim a single frontend component enforces access by itself.",
+    "Do not invent role names or permission enums without reading schema/code.",
+    "Do not skip backend API checks."
+  ],
+  "allowed_tools": [
+    "rg",
+    "file_read",
+    "directory_list",
+    "git"
+  ],
+  "disallowed_actions": [
+    "file_write",
+    "format",
+    "package_install",
+    "test_run",
+    "migration_run",
+    "network"
+  ],
+  "scoring_notes": "Use this task to test whether the model can follow auth beyond UI components."
+}

@@ -1,0 +1,55 @@
+{
+  "id": "papermark-link-source",
+  "project": "Papermark",
+  "repo_url": "https://github.com/papermark/papermark",
+  "commit": "PIN_COMMIT_SHA_HERE",
+  "project_root": "E:/agent/model-agent-benchmark/repos/papermark",
+  "mode": "analysis_only",
+  "task_type": "semantic-field-flow",
+  "prompt": "A product manager says: document share links should record the channel/source they came from, and link analytics should show it. Do not modify code. Produce an impact analysis and implementation plan.",
+  "expected_files": [
+    {
+      "path": "prisma/schema.prisma",
+      "tier": "P0",
+      "reason": "Defines persisted models; required to assess whether link/source needs schema and migration changes.",
+      "boundary_type": "schema"
+    },
+    {
+      "path": "packages/prisma/migrations",
+      "tier": "P1",
+      "reason": "Migration location; required to plan DB rollout if schema changes.",
+      "boundary_type": "migration"
+    },
+    {
+      "path": "apps/web",
+      "tier": "P1",
+      "reason": "Web app root; expected answer should narrow to concrete routes/components after inspection.",
+      "boundary_type": "route"
+    }
+  ],
+  "must_notice": [
+    "The request is product-language; do not assume the exact field name is already present.",
+    "The answer must distinguish link creation, analytics ingestion, and analytics display.",
+    "Generated or derived types should be considered if the project uses them."
+  ],
+  "forbidden_claims": [
+    "Do not claim a specific analytics backend table exists unless verified.",
+    "Do not claim Prisma migration file names before inspecting the repo.",
+    "Do not say tests are absent without searching."
+  ],
+  "allowed_tools": [
+    "rg",
+    "file_read",
+    "directory_list",
+    "git"
+  ],
+  "disallowed_actions": [
+    "file_write",
+    "format",
+    "package_install",
+    "test_run",
+    "migration_run",
+    "network"
+  ],
+  "scoring_notes": "Replace broad app-root expected files with concrete paths after the task is calibrated once."
+}

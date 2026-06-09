@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/blue-skillhub/model-agent-run-result.schema.json",
+  "title": "Model Agent Benchmark Run Result",
+  "type": "object",
+  "required": [
+    "run_id",
+    "task_id",
+    "project",
+    "mode",
+    "model",
+    "agent_framework",
+    "tool_group",
+    "status"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "scored_at": {
+      "type": "string"
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "project": {
+      "type": "string"
+    },
+    "repo_url": {
+      "type": "string"
+    },
+    "commit": {
+      "type": "string"
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["sanity", "analysis_only", "execution"]
+    },
+    "model": {
+      "type": "string"
+    },
+    "agent_framework": {
+      "type": "string"
+    },
+    "tool_group": {
+      "type": "string",
+      "examples": ["normal-tools", "not-ace", "hybrid"]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "timeout",
+        "provider_error",
+        "tool_error",
+        "invalid_output",
+        "policy_or_permission_block"
+      ]
+    },
+    "p0_recall": {
+      "type": ["number", "null"]
+    },
+    "overall_recall": {
+      "type": ["number", "null"]
+    },
+    "expected_count": {
+      "type": "integer"
+    },
+    "hit_count": {
+      "type": "integer"
+    },
+    "p0_expected_count": {
+      "type": "integer"
+    },
+    "p0_hit_count": {
+      "type": "integer"
+    },
+    "misses": {
+      "type": "array"
+    },
+    "p0_misses": {
+      "type": "array"
+    },
+    "boundary_hits": {
+      "type": "object"
+    },
+    "boundary_misses": {
+      "type": "object"
+    },
+    "manual_scores": {
+      "type": "object",
+      "properties": {
+        "analysis_quality": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 3
+        },
+        "plan_correctness": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 3
+        },
+        "verification_coverage": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 3
+        },
+        "boundary_awareness": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 3
+        },
+        "hallucination_control": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "maximum": 3
+        }
+      }
+    },
+    "quality_total": {
+      "type": ["number", "null"]
+    },
+    "duration_seconds": {
+      "type": "number"
+    },
+    "cost_usd": {
+      "type": "number"
+    },
+    "input_tokens": {
+      "type": "integer"
+    },
+    "output_tokens": {
+      "type": "integer"
+    },
+    "tool_calls": {
+      "type": "integer"
+    },
+    "tool_errors": {
+      "type": "integer"
+    },
+    "search_calls": {
+      "type": "integer"
+    },
+    "file_reads": {
+      "type": "integer"
+    },
+    "output_path": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

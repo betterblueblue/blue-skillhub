@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/blue-skillhub/model-agent-task.schema.json",
+  "title": "Model Agent Benchmark Task",
+  "type": "object",
+  "required": [
+    "id",
+    "project",
+    "project_root",
+    "mode",
+    "task_type",
+    "prompt",
+    "expected_files",
+    "must_notice",
+    "forbidden_claims",
+    "allowed_tools",
+    "disallowed_actions"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "project": {
+      "type": "string"
+    },
+    "project_root": {
+      "type": "string",
+      "description": "Absolute path to the benchmark project checkout."
+    },
+    "repo_url": {
+      "type": "string"
+    },
+    "commit": {
+      "type": "string",
+      "description": "Pinned commit SHA or tag for reproducibility."
+    },
+    "mode": {
+      "type": "string",
+      "enum": ["sanity", "analysis_only", "execution"]
+    },
+    "task_type": {
+      "type": "string",
+      "examples": [
+        "semantic-field-flow",
+        "permission-chain",
+        "analytics-flow",
+        "state-machine",
+        "bugfix",
+        "generated-client"
+      ]
+    },
+    "prompt": {
+      "type": "string"
+    },
+    "expected_files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "tier", "reason"],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string",
+            "enum": ["P0", "P1", "P2"]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "boundary_type": {
+            "type": "string",
+            "examples": ["migration", "generated", "test", "auth", "route", "schema"]
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "must_notice": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "forbidden_claims": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "allowed_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "disallowed_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "scoring_notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

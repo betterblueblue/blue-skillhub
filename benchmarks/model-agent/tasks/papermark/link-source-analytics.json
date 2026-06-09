@@ -1,0 +1,97 @@
+{
+  "id": "papermark-link-source-analytics",
+  "project": "Papermark",
+  "repo_url": "https://github.com/papermark/papermark",
+  "commit": "cd374a9aa8639e46c8490e39dc4c2fcaf4092caa",
+  "project_root": "E:/agent/model-agent-benchmark/repos/papermark",
+  "mode": "analysis_only",
+  "task_type": "semantic-field-flow",
+  "prompt": "A product manager says: document share links should record the channel/source they came from, and link analytics should show it. Do not modify code. Produce an impact analysis and implementation plan.",
+  "expected_files": [
+    {
+      "path": "prisma/schema/link.prisma",
+      "tier": "P0",
+      "reason": "Defines link persistence; required to decide whether source/channel belongs on Link or related models.",
+      "boundary_type": "schema"
+    },
+    {
+      "path": "prisma/migrations",
+      "tier": "P0",
+      "reason": "Migration boundary for any persisted link-source field.",
+      "boundary_type": "migration"
+    },
+    {
+      "path": "pages/api/links/index.ts",
+      "tier": "P0",
+      "reason": "Link creation/list API entry; likely place where source would enter the system.",
+      "boundary_type": "api"
+    },
+    {
+      "path": "pages/api/links/[id]/index.ts",
+      "tier": "P0",
+      "reason": "Link update/detail API; required to assess editing or returning the source field.",
+      "boundary_type": "api"
+    },
+    {
+      "path": "pages/api/record_view.ts",
+      "tier": "P0",
+      "reason": "Viewer event ingestion path; required to know whether source is copied into views/analytics.",
+      "boundary_type": "analytics"
+    },
+    {
+      "path": "app/api/views/route.ts",
+      "tier": "P1",
+      "reason": "Views API route; relevant to analytics display and querying.",
+      "boundary_type": "analytics"
+    },
+    {
+      "path": "components/analytics/links-table.tsx",
+      "tier": "P1",
+      "reason": "Link analytics UI table; likely place where source/channel would be displayed.",
+      "boundary_type": "ui"
+    },
+    {
+      "path": "components/links/link-sheet/index.tsx",
+      "tier": "P1",
+      "reason": "Main link settings sheet; likely place for editing or showing link-level source metadata.",
+      "boundary_type": "ui"
+    },
+    {
+      "path": "lib/tinybird/datasources/page_views.datasource",
+      "tier": "P2",
+      "reason": "Analytics datasource; useful if source/category is stored in Tinybird events.",
+      "boundary_type": "analytics"
+    },
+    {
+      "path": "lib/tinybird/pipes.ts",
+      "tier": "P2",
+      "reason": "Tinybird query/pipes integration; useful for derived analytics impact.",
+      "boundary_type": "analytics"
+    }
+  ],
+  "must_notice": [
+    "The request is product-language; do not assume the exact field name already exists.",
+    "The answer must distinguish link creation/update, view ingestion, analytics querying, and analytics display.",
+    "If source is persisted on Link only, the model must still explain how view analytics can group or display it."
+  ],
+  "forbidden_claims": [
+    "Do not claim Tinybird schema changes are required unless a relevant datasource or pipe is verified.",
+    "Do not claim a migration filename before inspecting the migrations directory.",
+    "Do not say tests are absent without searching."
+  ],
+  "allowed_tools": [
+    "rg",
+    "file_read",
+    "directory_list",
+    "git"
+  ],
+  "disallowed_actions": [
+    "file_write",
+    "format",
+    "package_install",
+    "test_run",
+    "migration_run",
+    "network"
+  ],
+  "scoring_notes": "First Papermark screening task. Calibrate P1/P2 after first human-reviewed pilot."
+}

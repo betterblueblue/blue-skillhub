@@ -12,7 +12,7 @@
 
 [claudecode行为规范/ruleblade/](claudecode行为规范/ruleblade/)
 
-8 条给 AI 编码助手看的行为规则。重点不是“让它更聪明”，而是让它少猜、少乱改、先拿对上下文、先验证。适合放到已有项目的 `CLAUDE.md`，也可以按需复制成 Codex 项目的 `AGENT.md`。
+8 条给 AI 编码助手看的核心行为规则，外加一条面向用户的中文表达要求。重点不是“让它更聪明”，而是让它少猜、少乱改、先拿对上下文、先验证，也把话说得像自然中文。适合放到已有项目的 `CLAUDE.md`，也可以按需复制成 Codex 项目的 `AGENT.md`。
 
 它是通用行为底座，不绑定具体开发流程：可以搭配 0→1 生成类 Skill、已有系统影响分析类 Skill，也可以单独用于修 bug、重构、补测试和普通编码任务。v3.2 的稳定性复测是在 GovShield 这种已有系统复杂链路变更里完成的，证明的是复杂链路门禁能力，不代表它只能用于已有系统。
 
@@ -68,6 +68,7 @@
 - [docs/not-ace-benchmark-research.md](docs/not-ace-benchmark-research.md)：研究性博客文章，解释 Not ACE 在 MiniMax M3、GLM-5.1、Kimi K2.6、GLM-5、DeepSeek V4 系列上的不同表现。
 - [docs/not-ace-exploration/](docs/not-ace-exploration/)：完整实验记录，包括 V1/V2 检索测试、V3 agent 任务测试、模型复跑、DeepSeek 调用链问题和下一轮计划。
 - [docs/agent-iteration-conclusions.md](docs/agent-iteration-conclusions.md)：给后续 agent 迭代看的结论，把测试事实映射到 RuleBlade、ImpactRadar、ImpactRadar Pro 和 VL Vision 的优化方向。
+- [benchmarks/model-agent/](benchmarks/model-agent/)：可持续迭代的模型 agent 能力评测体系，包含方法论、rubric、任务/run 结果 schema、runbook、Papermark 第一批任务、单次评分脚本和批量汇总脚本。
 
 这轮实验的核心判断是：Not ACE 不是 `rg` 的替代品，而是语义上下文入口。它对 MiniMax M3 更像是在补稳定性，对 GLM-5.1 更像是在省时间、省成本；但在 Kimi K2.6、GLM-5、DeepSeek V4 系列上，这轮没有跑出稳定收益。DeepSeek V4 Pro / Flash 通过硅基流动平台接入，不代表 DeepSeek 官方模型真实能力。
 
@@ -184,6 +185,8 @@ blue-skillhub/
 │   ├── impact-regression-protocol.md
 │   ├── release-positioning-check-2026-06-08.md
 │   └── not-ace-benchmark-research.md
+├── benchmarks/
+│   └── model-agent/
 ├── mcp/
 │   └── web-search-mcp/
 └── skills/

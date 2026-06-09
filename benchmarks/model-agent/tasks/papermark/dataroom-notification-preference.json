@@ -1,0 +1,85 @@
+{
+  "id": "papermark-dataroom-notification-preference",
+  "project": "Papermark",
+  "repo_url": "https://github.com/papermark/papermark",
+  "commit": "cd374a9aa8639e46c8490e39dc4c2fcaf4092caa",
+  "project_root": "E:/agent/model-agent-benchmark/repos/papermark",
+  "mode": "analysis_only",
+  "task_type": "notification-flow",
+  "prompt": "A product manager says: data room owners should be able to configure a notification preference for new document activity, and email sending should respect it. Do not modify code. Produce an impact analysis and implementation plan.",
+  "expected_files": [
+    {
+      "path": "prisma/schema/notification.prisma",
+      "tier": "P0",
+      "reason": "Notification persistence schema; required to assess settings and preferences.",
+      "boundary_type": "schema"
+    },
+    {
+      "path": "prisma/migrations",
+      "tier": "P0",
+      "reason": "Migration boundary for new persisted preference fields.",
+      "boundary_type": "migration"
+    },
+    {
+      "path": "pages/api/notification-preferences/dataroom.ts",
+      "tier": "P0",
+      "reason": "Existing data room notification preference API.",
+      "boundary_type": "api"
+    },
+    {
+      "path": "components/datarooms/settings/notification-settings.tsx",
+      "tier": "P0",
+      "reason": "Settings UI for data room notifications.",
+      "boundary_type": "ui"
+    },
+    {
+      "path": "pages/api/jobs/send-dataroom-new-document-notification.ts",
+      "tier": "P0",
+      "reason": "Email/job sending path that must respect the preference.",
+      "boundary_type": "async"
+    },
+    {
+      "path": "lib/zod/schemas/notifications.ts",
+      "tier": "P1",
+      "reason": "Validation schema for notification preferences.",
+      "boundary_type": "schema"
+    },
+    {
+      "path": "components/emails/viewed-dataroom.tsx",
+      "tier": "P2",
+      "reason": "Related email template; useful to verify notification wording and email path.",
+      "boundary_type": "notification"
+    },
+    {
+      "path": "components/emails/viewed-dataroom-paused.tsx",
+      "tier": "P2",
+      "reason": "Related paused notification template; useful to understand existing preference semantics.",
+      "boundary_type": "notification"
+    }
+  ],
+  "must_notice": [
+    "The answer must distinguish settings UI, API persistence, validation, and async email job behavior.",
+    "If a preference already exists, the model should identify whether the request extends or reuses it.",
+    "Verification should include owner enabled/disabled preference cases."
+  ],
+  "forbidden_claims": [
+    "Do not claim emails are sent synchronously unless verified.",
+    "Do not claim preference fields already exist without reading schema/API.",
+    "Do not skip migration or validation impact if persistence changes."
+  ],
+  "allowed_tools": [
+    "rg",
+    "file_read",
+    "directory_list",
+    "git"
+  ],
+  "disallowed_actions": [
+    "file_write",
+    "format",
+    "package_install",
+    "test_run",
+    "migration_run",
+    "network"
+  ],
+  "scoring_notes": "This task tests async/notification boundary awareness."
+}
