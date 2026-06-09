@@ -68,7 +68,9 @@
 
 安全检查和回归检查见 [VALIDATION.md](VALIDATION.md)，优化后回归复测协议见 [../../docs/impact-regression-protocol.md](../../docs/impact-regression-protocol.md)，验证记录见 [validation-runs/INDEX.md](validation-runs/INDEX.md)。
 
-当前已完成 Claude Code + MiniMax M3 真实 `/impact` 复测：长期对齐任务、接口返回字段判档、V0-V3 验证等级、非 Git 降级、阻塞恢复安全闸、Step 范围一致和最小写操作闭环均已通过。复杂多文件、多 Step 写操作闭环仍建议后续继续复测。
+当前已完成 Claude Code + MiniMax M3 真实 `/impact` 复测，覆盖长期对齐任务、接口返回字段判档、V0-V3 验证等级、非 Git 降级、阻塞恢复安全闸、Step 范围一致和最小写操作闭环。
+
+2026-06-09 的 T06 又补做了多会话写授权一致性验收：初始复测发现写入目标边界 P0，随后补强目标项目根目录检查、执行记录随当前 Step 补齐、连续 V1-only 暂停等规则，并通过 S1-S7 完整回归。当前结论：本轮定义的多会话写授权一致性通过，无 P0/P1。
 
 ## 典型对话流程
 
@@ -199,6 +201,13 @@ E2E 验证脚本已生成 → change-impact/用户个性签名/300-验证脚本/
 - 增加非 Git 项目降级保护、阻塞恢复安全闸、Step 范围一致、验证命令证据和执行记录闭环声明
 - 完成 Claude Code + MiniMax M3 真实 `/impact` 复测，记录见 `validation-runs/2026-06-08-T04-m3-real-slash-regression.md`
 
+### v3.5（多会话写授权一致性）
+
+- 增加写入目标边界：`change-impact/` 和所有写入对象都必须在目标项目根目录内
+- 写代码、配置、DDL/DML、测试修复后，执行记录必须随当前 Step 补齐
+- 连续 3 个写入 Step 只能达到 V1 静态验证时暂停，要求用户确认风险或补运行环境
+- 完成 S1-S7 多会话写授权回归，记录见 `validation-runs/2026-06-09-T06-multisession-write-gate.md`
+
 ## 三个文档的关系
 
 ```
@@ -270,4 +279,4 @@ Phase 2 在发现上下文时同步分析项目代码风格，产出结构化风
 
 “引用检查分级”来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提出的 issue：改代码前应检查其他地方是否引用，查到后再分级处理，避免只改当前文件导致引用链断裂。
 
-v3.4 的长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 降级保护、阻塞恢复安全闸和执行记录闭环补强，来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提供的真实使用案例。这个案例帮助我们把规则从“文档上合理”推进到能经受长会话和多 Step 真实执行的程度。
+v3.4/v3.5 的长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 降级保护、阻塞恢复安全闸、写入目标边界、连续 V1-only 暂停和执行记录补强，来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提供的真实使用案例。这个案例帮助我们把规则从“文档上合理”推进到能经受长会话和多 Step 真实执行的程度。

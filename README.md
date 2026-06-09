@@ -32,7 +32,7 @@
 
 它可以搭配律刃使用：律刃约束 agent 的通用编码行为，ImpactRadar 负责 Java/RuoYi 现有系统的影响分析流程。
 
-近期根据真实使用案例补强了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目降级保护和阻塞恢复安全闸，适合迁移、对齐、重构等多 Step 变更。补强后已用 Claude Code + MiniMax M3 通过真实 `/impact` 复测，覆盖长期对齐、阻塞恢复、Step 范围一致和最小写操作闭环。
+近期根据真实使用案例补强了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目降级保护、阻塞恢复安全闸和多会话写授权一致性，适合迁移、对齐、重构等多 Step 变更。补强后已完成 Claude Code + MiniMax M3 真实 `/impact` 复测，并通过 S1-S7 回归验证：模糊确认、历史确认、延迟确认、非 Git + V1-only、Health/API 响应字段变化都不能绕过 `确认 Step N`。
 
 ### ImpactRadar Pro
 
@@ -42,7 +42,7 @@
 
 它也可以搭配律刃使用：律刃提供通用行为约束，ImpactRadar Pro 提供多栈 profile 化的影响分析流程。
 
-近期同步补强了跨系统对齐规则、接口返回检查清单、验证等级、非 Git 降级和阻塞恢复安全闸，避免多栈迁移或长会话执行时把静态验证、旧授权和当前文件状态混在一起。补强后已用 Claude Code + MiniMax M3 通过真实 `/impact-pro` 复测，验证 Node/Express 响应字段删除能正确判定 full。
+近期同步补强了跨系统对齐规则、接口返回检查清单、验证等级、非 Git 降级、阻塞恢复安全闸和多会话写授权一致性，避免多栈迁移或长会话执行时把静态验证、旧授权和当前文件状态混在一起。补强后已完成真实 `/impact-pro` 复测：Node/Express 响应字段删除能正确判定 full，无 `确认 Step N` 时也不会写文件。
 
 上下文包能力的设计复盘见 [docs/impact-context-pack-design.md](docs/impact-context-pack-design.md)，里面记录了需求来源、方案取舍和实现效果。
 
@@ -56,18 +56,20 @@
 
 ### Not ACE 上下文检索探索
 
-这部分记录今天（2026年6月8日）围绕 [Not ACE](https://not-ace.ame.rip/) 做的一轮上下文检索实验。它不是仓库里的可安装 skill，而是一次用来反推 RuleBlade、ImpactRadar、ImpactRadar Pro 后续该怎么迭代的研究材料。
+这部分记录 2026 年 6 月 8 日围绕 [Not ACE](https://not-ace.ame.rip/) 做的一轮上下文检索实验。它不是仓库里的可安装 skill，而是一次用来反推 RuleBlade、ImpactRadar、ImpactRadar Pro 后续该怎么迭代的研究材料。
 
-可以先读这三份：
+可以先读这些：
 
 - [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)：安装和验证 checklist，说明复制到哪里、MCP JSON 用哪个绝对路径、Skill 怎么验证。
 - [docs/impact-real-case-study.md](docs/impact-real-case-study.md)：ImpactRadar 真实使用案例的匿名复盘，记录它暴露了哪些长会话和多 Step 边界。
 - [docs/impact-m3-next-regression-plan.md](docs/impact-m3-next-regression-plan.md)：下一轮 MiniMax M3 复测计划，限定后续要测的高价值场景。
+- [docs/impact-multisession-write-gate-test-plan.md](docs/impact-multisession-write-gate-test-plan.md)：多会话写授权一致性验收方案，覆盖旧授权、延迟确认、非 Git 降级、V1-only 暂停和写入目标边界。
 - [docs/impact-regression-protocol.md](docs/impact-regression-protocol.md)：ImpactRadar / ImpactRadar Pro 优化后的回归复测协议，规定什么时候跑 RG0-RG3、什么时候必须真实 agent 复测。
 - [docs/release-positioning-check-2026-06-08.md](docs/release-positioning-check-2026-06-08.md)：阶段性 release 定位自查，确认 RuleBlade、ImpactRadar、ImpactRadar Pro 的边界是否自洽。
 - [docs/not-ace-benchmark-research.md](docs/not-ace-benchmark-research.md)：研究性博客文章，解释 Not ACE 在 MiniMax M3、GLM-5.1、Kimi K2.6、GLM-5、DeepSeek V4 系列上的不同表现。
 - [docs/not-ace-exploration/](docs/not-ace-exploration/)：完整实验记录，包括 V1/V2 检索测试、V3 agent 任务测试、模型复跑、DeepSeek 调用链问题和下一轮计划。
 - [docs/agent-iteration-conclusions.md](docs/agent-iteration-conclusions.md)：给后续 agent 迭代看的结论，把测试事实映射到 RuleBlade、ImpactRadar、ImpactRadar Pro 和 VL Vision 的优化方向。
+- [benchmarks/impact-write-gate/](benchmarks/impact-write-gate/)：ImpactRadar / ImpactRadar Pro 写授权回归夹具，用来准备隔离副本并复测多会话写操作边界。
 - [benchmarks/model-agent/](benchmarks/model-agent/)：可持续迭代的模型 agent 能力评测体系，包含方法论、rubric、任务/run 结果 schema、runbook、Papermark 第一批任务、单次评分脚本和批量汇总脚本。
 
 这轮实验的核心判断是：Not ACE 不是 `rg` 的替代品，而是语义上下文入口。它对 MiniMax M3 更像是在补稳定性，对 GLM-5.1 更像是在省时间、省成本；但在 Kimi K2.6、GLM-5、DeepSeek V4 系列上，这轮没有跑出稳定收益。DeepSeek V4 Pro / Flash 通过硅基流动平台接入，不代表 DeepSeek 官方模型真实能力。
@@ -78,7 +80,7 @@
 
 “改代码前先反查调用方和引用方，查到后再分级处理”来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提出的 issue。这个建议已经同步进 RuleBlade、ImpactRadar 和 ImpactRadar Pro，用来减少只改当前文件却漏掉接口、生成物、测试或注册点的风险。
 
-ImpactRadar 近期关于长期目标、阻塞恢复、接口返回检查和验证等级的补强，也来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提供的真实使用案例。这个案例暴露了长会话、多 Step 迁移、非 Git 项目、延迟确认和弱模型执行时更容易出现的边界问题。
+ImpactRadar 近期关于长期目标、阻塞恢复、接口返回检查、验证等级、多会话写授权、写入目标边界和连续 V1-only 暂停的补强，也来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提供的真实使用案例。这个案例暴露了长会话、多 Step 迁移、非 Git 项目、延迟确认和弱模型执行时更容易出现的边界问题。
 
 ## 快速验证
 
@@ -182,10 +184,12 @@ blue-skillhub/
 │   ├── install-and-verify-checklist.md
 │   ├── impact-real-case-study.md
 │   ├── impact-m3-next-regression-plan.md
+│   ├── impact-multisession-write-gate-test-plan.md
 │   ├── impact-regression-protocol.md
 │   ├── release-positioning-check-2026-06-08.md
 │   └── not-ace-benchmark-research.md
 ├── benchmarks/
+│   ├── impact-write-gate/
 │   └── model-agent/
 ├── mcp/
 │   └── web-search-mcp/
