@@ -63,3 +63,16 @@
 | 步骤 | 预计耗时 | 里程碑 |
 |------|---------|--------|
 | ... | ... | ... |
+
+## 8. 环境降级路径
+
+如果实际执行时**部分验证命令不可用**（如 DB / 服务 / 工具缺失），启用以下降级方案：
+
+| 计划验证 | 环境缺失场景 | 降级方案 |
+| --- | --- | --- |
+| `pytest tests/` | 无 DB / 端口占用 | 启用 `standalone_test.py` 覆盖 Pydantic 边界 + alembic 离线 SQL 渲染 + OpenAPI schema |
+| `mvn test` | Java 环境缺失 | 启用 `mvn compile` + mypy/ruff 等价物 |
+| `go test ./...` | Go 环境缺失 | 启用 `go build ./...` + 静态 Grep 验证 |
+| `npm run dev` + curl | 服务起不来 | 启用 OpenAPI schema 验证 + 静态 import 检查 |
+
+**降级方案必须在 Phase 2.5 风险预判时识别并写入本文档**，避免"事后才发现环境受限"。

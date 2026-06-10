@@ -26,9 +26,24 @@
 - 验证方式：[测试 / 检查命令 / 手工验收]
 - 验证等级：[V0 未验证 / V1 静态验证 / V2 构建或单测 / V3 API/UI/DB/集成验证]
 - 用户确认：[确认时间、确认人、确认内容；必须包含 Step 编号；未确认不得执行]
+- 决策依据：[subagent 自主决策理由；如果命中高风险清单则写"已知风险，沙盒测试场景，subagent 选择继续"或暂停等人类]
+- 高风险清单检查（PASS/FAIL 表格）：
+
+  | 检查项 | 状态 | 说明 |
+  | --- | --- | --- |
+  | DROP TABLE / DROP COLUMN | PASS / FAIL | [理由] |
+  | DELETE FROM 无 WHERE | PASS / FAIL | [理由] |
+  | 删旧接口 / 删旧 Controller 类 | PASS / FAIL | [理由] |
+  | 删除文件 without backup | PASS / FAIL | [理由] |
+  | 修改 status / enum / 错误码 / 权限标识 | PASS / FAIL | [理由] |
+  | 任何不可逆操作（生产 DB DDL 等） | PASS / FAIL | [理由] |
+
 - 执行结果：[命令输出摘要 / 文件变更摘要 / SQL 影响行数]
 - 写入目标检查：[所有文件均在目标项目根目录内 / 不适用；如异常，写明已停止和清理结果]
 - 验证结果：[通过 / 失败 / 未执行；附关键输出]
+- 工具调用约定：
+  - `ty check` 必须通过项目 venv 的 `python -m ty` 调用（不直接调二进制，避免 venv 绑错）
+  - alembic migration 验证优先用 `alembic upgrade head --sql`（离线 SQL 渲染，环境无关；比 SQLite online 更可移植）
 - 未运行验证及原因：[环境缺失 / 无权限 / 服务不可用 / 未提供命令 / 不适用]
 - 运行时未验证项：[描述]
 - V1-only 计数：[连续仅 V1 的写入 Step 数；不适用则写 0]

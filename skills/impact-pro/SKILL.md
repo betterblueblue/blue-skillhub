@@ -565,6 +565,24 @@ change-impact/{需求名称}/
 
 **任何 Edit/Write/DDL/DML、配置变更、测试修复操作都必须用户确认。**
 
+### 高风险 Step 识别清单（subagent 决策参考）
+
+执行前问自己——本 Step 是否命中以下任一类：
+
+- DROP TABLE / DROP COLUMN
+- DELETE FROM 无 WHERE
+- 删旧接口 / 删旧 Controller 类
+- 删除文件 without backup
+- 修改 status / enum / 错误码 / 权限标识
+- 任何不可逆操作（生产 DB DDL 等）
+
+**命中后的处理**（subagent 自主判断，不是协议硬约束）：
+
+- 沙盒测试场景：可以执行，但执行记录显式写"已知风险，沙盒测试场景，subagent 选择继续"
+- 真实生产场景：建议暂停 + 等人类确认
+
+**这个清单是 subagent 的"职业判断"参考，不是协议机械约束。** subagent 在沙盒里是完全自主的用户角色，由它自己评估每个 Step 的风险。
+
 ### 执行记录
 
 每步追加写入 `change-impact/{需求名称}/900-执行记录.md`（不覆盖历史）：
