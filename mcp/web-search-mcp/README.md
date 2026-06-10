@@ -15,7 +15,9 @@
 | **多引擎逻辑修复** | 修复了多引擎模式下有效结果被丢弃的 bug（`bestResults` 在循环结束后未被检查） |
 | **默认运行参数** | 入口处设置常用默认值，即使 MCP 客户端没有正确传递 `env` 也能启动 |
 | **中文搜索优化** | Google 搜索默认 locale `zh-CN`、timezone `Asia/Shanghai`，优化中文搜索体验 |
-| **按模型控制内容长度** | 对上下文较弱的模型限制返回内容长度；对更能处理长文本的模型放开限制 |
+| **上下文爆炸防护** | 防止搜索结果撑爆 AI 上下文窗口：每条结果 6000 字符截断、全局 40000 字符上限、60 秒防重复搜索、句子边界感知截断 |
+| **语义安全截断** | `smartTruncate` 在句子/段落/词边界处截断，不会在句中或词中硬切；保留 HTML 段落/标题结构而非压成无结构文本 |
+| **网页结构保留** | `parseContent` 按 h1-h6/p/li/blockquote 等语义元素提取内容，保留标题标记和段落换行，而非 `.text()` 一把压平 |
 
 ## 功能概览
 
@@ -28,9 +30,14 @@
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `query` | string | — | 搜索查询语句（必填） |
-| `limit` | number | 5 | 返回结果数量（1-10） |
-| `includeContent` | boolean | true | 是否获取完整页面内容 |
-| `maxContentLength` | number | — | 每个结果内容的最大字符数（0 = 无限制） |
+| `limit` | number | 3 | 返回结果数量（1-5，硬上限 5） |
+| `includeContent` | boolean | true | 是否获取完整页面内容（内容会自动截断） |
+| `maxContentLength` | number | 6000 | 每个结果内容的最大字符数（硬上限 8000） |
+
+**安全机制**：
+- 60 秒内相同查询自动拦截，防止重复搜索浪费上下文
+- 全局输出硬上限 40000 字符，超出部分截断并提示省略数量
+- 内容截断使用 `smartTruncate`，在句子边界处截断而非硬切
 
 ### 2. `get-web-search-summaries`
 
@@ -39,16 +46,16 @@
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `query` | string | — | 搜索查询语句（必填） |
-| `limit` | number | 5 | 返回结果数量（1-10） |
+| `limit` | number | 3 | 返回结果数量（1-5，硬上限 5） |
 
 ### 3. `get-single-web-page-content`
 
-直接读取指定 URL 的正文内容，不先搜索。
+直接读取指定 URL 的正文内容，不先搜索。适合 `full-web-search` 返回信息不够时深入查看某个页面。
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `url` | string | — | 目标网页 URL（必填） |
-| `maxContentLength` | number | — | 内容最大字符数（0 = 无限制） |
+| `maxContentLength` | number | 6000 | 内容最大字符数（硬上限 10000） |
 
 ## 快速开始
 
@@ -153,6 +160,7 @@ Waiting for MCP messages...
 | `FORCE_MULTI_ENGINE_SEARCH` | — | 设为 `true` 启用多引擎模式 |
 | `DEFAULT_NUM_RESULTS` | — | 每次搜索默认返回结果数 |
 | `SEARCH_TIMEOUT` | — | 单个引擎超时时间（毫秒） |
+| `MAX_CONTENT_LENGTH` | `6000` | 内容提取的默认字符上限（硬上限 10000，超出自动 cap） |
 
 ## 搜索引擎
 

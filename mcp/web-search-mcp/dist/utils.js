@@ -1,12 +1,52 @@
 /**
  * Utility functions for the web search MCP server
  */
-export function cleanText(text, maxLength = 10000) {
-    return text
-        .replace(/\s+/g, ' ') // Replace multiple whitespace with single space
-        .replace(/\n\s*\n/g, '\n') // Replace multiple newlines with single newline
-        .trim()
-        .substring(0, maxLength);
+
+/**
+ * Smart truncation that preserves sentence boundaries.
+ * Instead of hard-cutting at maxLength (which can break mid-sentence or mid-word),
+ * this finds the last complete sentence before the limit.
+ */
+export function smartTruncate(text, maxLength) {
+    if (!text || text.length <= maxLength) return text;
+
+    // First pass: try to cut at a sentence boundary (。！？.!? followed by space or end)
+    const truncated = text.substring(0, maxLength);
+    // Match sentence-ending punctuation: Chinese (。！？) and English (.!?) followed by space/newline or end
+    const sentenceEndRegex = /[。！？.!?][\s\n]/g;
+    let lastSentenceEnd = -1;
+    let match;
+    while ((match = sentenceEndRegex.exec(truncated)) !== null) {
+        lastSentenceEnd = match.index + match[0].length;
+    }
+
+    if (lastSentenceEnd > maxLength * 0.6) {
+        // Found a good sentence boundary in the latter 40% of the text — use it
+        return text.substring(0, lastSentenceEnd).trim();
+    }
+
+    // Second pass: try paragraph break (\n\n or \n)
+    const lastNewline = truncated.lastIndexOf('\n', maxLength);
+    if (lastNewline > maxLength * 0.6) {
+        return text.substring(0, lastNewline).trim();
+    }
+
+    // Third pass: try last space (don't break mid-word)
+    const lastSpace = truncated.lastIndexOf(' ', maxLength - 1);
+    if (lastSpace > maxLength * 0.6) {
+        return text.substring(0, lastSpace).trim();
+    }
+
+    // Fallback: hard cut (better than nothing, but add ellipsis indicator)
+    return truncated.trim();
+}
+
+export function cleanText(text, maxLength = 6000) {
+    const cleaned = text
+        .replace(/[ \t]+/g, ' ') // Collapse horizontal whitespace only (preserve \n for paragraph structure)
+        .replace(/\n{3,}/g, '\n\n') // Collapse 3+ newlines to 2 (keep paragraph breaks)
+        .trim();
+    return smartTruncate(cleaned, maxLength);
 }
 export function getWordCount(text) {
     return text.trim().split(/\s+/).filter(word => word.length > 0).length;

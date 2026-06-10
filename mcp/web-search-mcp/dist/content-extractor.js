@@ -6,13 +6,17 @@ export class ContentExtractor {
     maxContentLength;
     constructor() {
         this.defaultTimeout = 10000;
-        // Read MAX_CONTENT_LENGTH from environment variable, fallback to 500KB
+        // Read MAX_CONTENT_LENGTH from environment variable, fallback to 6000 chars, capped at 10000
         const envMaxLength = process.env.MAX_CONTENT_LENGTH;
-        this.maxContentLength = envMaxLength ? parseInt(envMaxLength, 10) : 500000;
-        // Validate the parsed value
+        this.maxContentLength = envMaxLength ? parseInt(envMaxLength, 10) : 6000;
+        // Validate and cap the value
         if (isNaN(this.maxContentLength) || this.maxContentLength < 0) {
-            console.warn(`[ContentExtractor] Invalid MAX_CONTENT_LENGTH value: ${envMaxLength}, using default 500000`);
-            this.maxContentLength = 500000;
+            console.warn(`[ContentExtractor] Invalid MAX_CONTENT_LENGTH value: ${envMaxLength}, using default 6000`);
+            this.maxContentLength = 6000;
+        }
+        if (this.maxContentLength > 10000) {
+            console.warn(`[ContentExtractor] MAX_CONTENT_LENGTH ${this.maxContentLength} exceeds cap, capping at 10000`);
+            this.maxContentLength = 10000;
         }
     }
     async extractContent(options) {

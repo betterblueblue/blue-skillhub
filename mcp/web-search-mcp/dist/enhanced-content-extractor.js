@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { cleanText, getWordCount, getContentPreview, generateTimestamp, isPdfUrl } from './utils.js';
+import { cleanText, getWordCount, getContentPreview, generateTimestamp, isPdfUrl, smartTruncate } from './utils.js';
 import { BrowserPool } from './browser-pool.js';
 export class EnhancedContentExtractor {
     defaultTimeout;
@@ -9,13 +9,18 @@ export class EnhancedContentExtractor {
     fallbackThreshold;
     constructor() {
         this.defaultTimeout = parseInt(process.env.DEFAULT_TIMEOUT || '6000', 10);
-        // Read MAX_CONTENT_LENGTH from environment variable, fallback to 500KB
+        // Read MAX_CONTENT_LENGTH from environment variable, fallback to 6000 chars (enough for meaningful content, safe for context windows)
+        // Hard cap at 10000 to prevent context explosion regardless of env var
         const envMaxLength = process.env.MAX_CONTENT_LENGTH;
-        this.maxContentLength = envMaxLength ? parseInt(envMaxLength, 10) : 500000;
-        // Validate the parsed value
+        this.maxContentLength = envMaxLength ? parseInt(envMaxLength, 10) : 6000;
+        // Validate and cap the value
         if (isNaN(this.maxContentLength) || this.maxContentLength < 0) {
-            console.warn(`[EnhancedContentExtractor] Invalid MAX_CONTENT_LENGTH value: ${envMaxLength}, using default 500000`);
-            this.maxContentLength = 500000;
+            console.warn(`[EnhancedContentExtractor] Invalid MAX_CONTENT_LENGTH value: ${envMaxLength}, using default 6000`);
+            this.maxContentLength = 6000;
+        }
+        if (this.maxContentLength > 10000) {
+            console.warn(`[EnhancedContentExtractor] MAX_CONTENT_LENGTH ${this.maxContentLength} exceeds cap, capping at 10000`);
+            this.maxContentLength = 10000;
         }
         this.browserPool = new BrowserPool();
         this.fallbackThreshold = parseInt(process.env.BROWSER_FALLBACK_THRESHOLD || '3', 10);
@@ -59,10 +64,10 @@ export class EnhancedContentExtractor {
             validateStatus: (status) => status < 400,
         });
         let content = this.parseContent(response.data);
-        // Truncate content if it exceeds the limit (instead of axios throwing an error)
+        // Truncate content if it exceeds the limit (smart truncation at sentence boundary)
         if (maxContentLength && content.length > maxContentLength) {
-            console.log(`[EnhancedContentExtractor] Content truncated from ${content.length} to ${maxContentLength} characters for ${url}`);
-            content = content.substring(0, maxContentLength);
+            console.log(`[EnhancedContentExtractor] Content truncated from ${content.length} to ~${maxContentLength} characters for ${url}`);
+            content = smartTruncate(content, maxContentLength);
         }
         // Check if we got a meaningful response
         if (this.isLowQualityContent(content)) {
@@ -413,7 +418,7 @@ export class EnhancedContentExtractor {
             }
         });
         // Try to find the main content area first
-        let mainContent = '';
+        let $mainElement = null;
         // Priority selectors for main content
         const contentSelectors = [
             'article',
@@ -435,18 +440,58 @@ export class EnhancedContentExtractor {
         ];
         for (const selector of contentSelectors) {
             const $content = $(selector).first();
-            if ($content.length > 0) {
-                mainContent = $content.text().trim();
-                if (mainContent.length > 100) { // Ensure we have substantial content
-                    console.log(`[EnhancedContentExtractor] Found content with selector: ${selector} (${mainContent.length} chars)`);
-                    break;
-                }
+            if ($content.length > 0 && $content.text().trim().length > 100) {
+                $mainElement = $content;
+                console.log(`[EnhancedContentExtractor] Found content with selector: ${selector} (${$content.text().trim().length} chars)`);
+                break;
             }
         }
-        // If no main content found, try body content
-        if (!mainContent || mainContent.length < 100) {
+        // If no main content found, use body
+        if (!$mainElement) {
             console.log(`[EnhancedContentExtractor] No main content found, using body content`);
-            mainContent = $('body').text().trim();
+            $mainElement = $('body');
+        }
+        // Extract text while preserving paragraph structure in document order
+        const paragraphs = [];
+        // Traverse all block-level elements in document order (not separate heading/paragraph passes)
+        $mainElement.find('h1, h2, h3, h4, h5, h6, p, li, blockquote, pre, dd, dt').each(function () {
+            const tagName = this.tagName?.toLowerCase();
+            const text = $(this).text().trim();
+            if (!text) return;
+            // Only take direct text (skip nested block elements to avoid duplication)
+            if ($(this).find('p, li, h1, h2, h3, h4, h5, h6, blockquote, pre, dd, dt').length > 0) {
+                // This element contains nested block elements — skip it, the children will be processed individually
+                // Exception: headings usually don't nest, so keep them
+                if (!/^h[1-6]$/.test(tagName)) return;
+            }
+            if (/^h[1-6]$/.test(tagName)) {
+                if (text.length > 2) { // Skip empty/short headings
+                    paragraphs.push({ type: 'heading', text });
+                }
+            } else {
+                if (text.length > 10) { // Skip very short fragments
+                    paragraphs.push({ type: 'paragraph', text });
+                }
+            }
+        });
+        // If we got very few structured paragraphs, fall back to block extraction
+        if (paragraphs.filter(p => p.type === 'paragraph').length < 3) {
+            paragraphs.length = 0; // Clear and retry
+            // Split by double newlines in text content (common paragraph separator)
+            const rawText = $mainElement.text().trim();
+            const blocks = rawText.split(/\n\s*\n/).filter(b => b.trim().length > 10);
+            for (const block of blocks) {
+                paragraphs.push({ type: 'paragraph', text: block.trim() });
+            }
+        }
+        // Build structured output with markers
+        let mainContent = '';
+        for (const p of paragraphs) {
+            if (p.type === 'heading') {
+                mainContent += `\n## ${p.text}\n`;
+            } else {
+                mainContent += `\n${p.text}\n`;
+            }
         }
         // Clean up the text
         const cleanedContent = this.cleanTextContent(mainContent);
@@ -458,11 +503,10 @@ export class EnhancedContentExtractor {
         // Remove image-related text and data URLs
         text = text.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, ''); // Remove base64 image data
         text = text.replace(/https?:\/\/[^\s]+\.(jpg|jpeg|png|gif|webp|svg|ico|bmp|tiff)(\?[^\s]*)?/gi, ''); // Remove image URLs
-        text = text.replace(/\.(jpg|jpeg|png|gif|webp|svg|ico|bmp|tiff)/gi, ''); // Remove image file extensions
-        text = text.replace(/image|img|photo|picture|gallery|slideshow|carousel/gi, ''); // Remove image-related words
-        text = text.replace(/click to enlarge|click for full size|view larger|download image/gi, ''); // Remove image action text
-        // Remove common non-content patterns
-        text = text.replace(/cookie|privacy|terms|conditions|disclaimer|legal|copyright|all rights reserved/gi, '');
+        // Remove common non-content patterns (only as standalone UI labels, not mid-sentence words)
+        text = text.replace(/\b(click to enlarge|click for full size|view larger|download image)\b/gi, '');
+        // Remove common non-content patterns (only full cookie/privacy notices, not mid-sentence mentions)
+        text = text.replace(/\b(accept all cookies|cookie settings|privacy policy|terms of service|all rights reserved)\b/gi, '');
         // Remove excessive line breaks and spacing
         text = text.replace(/\n\s*\n/g, '\n');
         text = text.replace(/\r\n/g, '\n');

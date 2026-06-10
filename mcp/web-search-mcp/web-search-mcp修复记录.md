@@ -1,12 +1,12 @@
 # web-search-mcp 修复与调优记录
 
-> 日期：2026-06-03  
-> MCP 版本：v0.3.2  
-> 路径：`E:\agent\mcp\web-search-mcp-v0.3.2\`
+> 日期：2026-06-03（初版） / 2026-06-10（上下文爆炸修复）
+> MCP 版本：v0.3.2
+> 路径：`E:\agent\blue-skillhub\mcp\web-search-mcp\`
 
 ---
 
-## 一、Bug 修复
+## 一、Bug 修复（2026-06-03）
 
 ### Bug 1：MCP 配置缺少服务器名称 key
 
@@ -161,7 +161,7 @@ return { results: [], engine: 'None' };
 
 ---
 
-## 二、功能增强
+## 二、功能增强（2026-06-03）
 
 ### 新增 Google 搜索引擎
 
@@ -181,7 +181,7 @@ return { results: [], engine: 'None' };
 
 ---
 
-## 三、优先级调整
+## 三、搜索引擎优先级调整（2026-06-03）
 
 ### 调整前
 
@@ -209,18 +209,7 @@ Browser Google → Browser Bing → Browser Brave → Axios DuckDuckGo
 
 ---
 
-## 四、修改文件清单
-
-| 文件 | 修改内容 |
-|------|---------|
-| `c:\Users\blue\.codebuddy\mcp.json` | 添加服务器名称 key `web-search-mcp` |
-| `dist/index.js` | 入口硬编码默认环境变量 |
-| `dist/search-engine.js` | 添加 proxy 参数、修复多引擎逻辑 bug、新增 Google 搜索引擎、调整优先级 |
-| `dist/browser-pool.js` | 添加 proxy 参数、默认 BROWSER_TYPES 改为 `chromium` |
-
----
-
-## 五、完整 MCP 配置示例
+## 四、完整 MCP 配置示例
 
 以下为 `~/.codebuddy/mcp.json` 的完整配置，供参考：
 
@@ -230,7 +219,7 @@ Browser Google → Browser Bing → Browser Brave → Axios DuckDuckGo
     "web-search-mcp": {
       "command": "node",
       "args": [
-        "E:\\agent\\mcp\\web-search-mcp-v0.3.2\\dist\\index.js"
+        "E:\\agent\\blue-skillhub\\mcp\\web-search-mcp\\dist\\index.js"
       ],
       "env": {
         "BROWSER_TYPES": "chromium",
@@ -274,7 +263,7 @@ Browser Google → Browser Bing → Browser Brave → Axios DuckDuckGo
   "mcpServers": {
     "web-search-mcp": {
       "command": "node",
-      "args": ["E:\\agent\\mcp\\web-search-mcp-v0.3.2\\dist\\index.js"],
+      "args": ["E:\\agent\\blue-skillhub\\mcp\\web-search-mcp\\dist\\index.js"],
       "env": { "..." : "..." }
     },
     "another-mcp-server": {
@@ -285,5 +274,232 @@ Browser Google → Browser Bing → Browser Brave → Axios DuckDuckGo
   }
 }
 ```
+
+---
+
+## 五、上下文爆炸防护（2026-06-10）
+
+### 背景
+
+使用 Claude Code 通过第三方中转接口（如 Coding Plan）调用 `full-web-search` 时，MCP 输出可达 **500KB+ / 条 × 5 条 = 2.5MB+** 原文塞进上下文，导致：
+
+1. Claude Code "Cogitated for 3m 25s"，憋很久处理巨量上下文
+2. 中转网关吃不住，返回 `empty or malformed response (HTTP 200)`
+3. 同一搜索请求被重复执行
+4. 网页内容大量重复（火山方舟页面同一用户评价重复 4 次、FAQ 重复 3 次）
+
+**根因**：`full-web-search` 默认 `includeContent=true`、`maxContentLength=500KB`、`limit=5`，无截断、无上限、无去重。
+
+---
+
+### Bug 7：内容提取无截断，500KB/条塞爆上下文
+
+**现象**：单次搜索输出超 10 万字符，中转接口返回空响应
+
+**修复**：三层截断体系
+
+| 层级 | 参数 | 原值 | 修复后 |
+|------|------|------|--------|
+| 单条结果 | `maxContentLength` 默认/硬上限 | 500000 / 无 | **6000 / 8000** |
+| 全局输出 | `MAX_TOTAL_OUTPUT` | 无 | **40000** |
+| 单页抓取 | `get-single-web-page-content` 上限 | 无 | **10000** |
+| 环境变量 | `MAX_CONTENT_LENGTH` | 无硬上限 | **10000 cap** |
+
+**文件**：`dist/index.js`、`dist/enhanced-content-extractor.js`、`dist/content-extractor.js`、`dist/utils.js`
+
+---
+
+### Bug 8：搜索结果数无上限
+
+**现象**：`limit` 默认 5、可设到 10，5 条全文 = 巨量上下文
+
+**修复**：`limit` 默认改为 3，硬上限 5
+
+| 工具 | 原默认 / 上限 | 修复后 |
+|------|--------------|--------|
+| `full-web-search` | 5 / 10 | **3 / 5** |
+| `get-web-search-summaries` | 5 / 10 | **3 / 5** |
+| `handleWebSearch` 内部 | 5 | **3** |
+
+**文件**：`dist/index.js`（schema 定义 + validateAndConvertArgs + handleWebSearch + summaries handler）
+
+---
+
+### Bug 9：同一查询被重复执行
+
+**现象**：崩溃日志中同一个 `full-web-search` 查询被 Claude Code 连续调用两次，输出翻倍
+
+**修复**：60 秒防重复搜索机制
+
+```javascript
+// 新增 recentSearches Map
+this.recentSearches = new Map(); // query → timestamp
+
+// 在 full-web-search handler 中
+const normalizedQuery = args.query.toLowerCase().trim().replace(/\s+/g, ' ');
+const now = Date.now();
+const lastSearchTime = this.recentSearches.get(normalizedQuery);
+if (lastSearchTime && (now - lastSearchTime) < 60000) {
+    return { content: [{ type: 'text', text: 'Search for "..." was already performed recently.' }] };
+}
+this.recentSearches.set(normalizedQuery, now);
+// 自动清理 120 秒前的缓存
+```
+
+**文件**：`dist/index.js`
+
+---
+
+### Bug 10：`cleanText` 用 `\s+` 把换行压成空格，摧毁段落结构 🔴
+
+**现象**：`parseContent` 刚输出的结构化文本（带 `\n` 段落分隔），被 `cleanText` 的 `.replace(/\s+/g, ' ')` 一行压扁成无结构大段落。后续 `smartTruncate` 的"找换行"层永远命中不了。
+
+**修复**：只压缩水平空白，保留 `\n`
+
+```javascript
+// 修改前
+.replace(/\s+/g, ' ')           // 换行也被压成空格
+.replace(/\n\s*\n/g, '\n')      // 段落分隔被消除
+
+// 修改后
+.replace(/[ \t]+/g, ' ')        // 只压缩空格和 tab，保留 \n
+.replace(/\n{3,}/g, '\n\n')     // 3+ 连续换行压成 2 个（保留段落分隔）
+```
+
+**文件**：`dist/utils.js`
+
+---
+
+### Bug 11：`parseContent` 标题和段落不按文档顺序 🔴
+
+**现象**：先 `find('h1,h2,...')` 遍历所有标题，再 `find('p,li,...')` 遍历所有段落。输出时标题全堆前面、段落全堆后面，结构完全脱节。
+
+```
+## 产品介绍        ← 所有标题先输出
+## 套餐详情
+方舟 Coding Plan…  ← 所有段落后输出
+Lite 套餐 ¥49/月…
+```
+
+**修复**：合并为单次遍历，按文档顺序提取；跳过含嵌套块元素的父元素避免重复
+
+```javascript
+// 修改前：两次独立遍历
+$mainElement.find('h1, h2, h3, h4, h5, h6').each(...)
+$mainElement.find('p, li, td, th, blockquote, pre, dd, dt').each(...)
+
+// 修改后：单次遍历，文档顺序
+$mainElement.find('h1, h2, h3, h4, h5, h6, p, li, blockquote, pre, dd, dt').each(function () {
+    // 按标签类型区分 heading / paragraph
+    // 跳过含嵌套块元素的父元素（避免 p>ul 导致文本重复）
+})
+```
+
+**文件**：`dist/enhanced-content-extractor.js` 的 `parseContent` 方法
+
+---
+
+### Bug 12：`forEach` 里用 `return` 代替 `break`，输出多个截断提示 🔴
+
+**现象**：全局输出截断逻辑用了 `result.results.forEach(...)` + `return`，但 `forEach` 的 `return` 等于 `continue` 不是 `break`。超限时每个剩余迭代都会拼接一个 `[Output truncated...]` 字符串。
+
+**修复**：改为 `for...of` + 真正的 `break`
+
+```javascript
+// 修改前
+result.results.forEach((searchResult, idx) => {
+    if (responseText.length >= MAX_TOTAL_OUTPUT) {
+        responseText += `[Output truncated...]`;
+        return;  // ← 这是 continue，不是 break！
+    }
+    ...
+});
+
+// 修改后
+for (let idx = 0; idx < result.results.length; idx++) {
+    const searchResult = result.results[idx];
+    if (responseText.length >= MAX_TOTAL_OUTPUT) {
+        responseText += `[Output truncated: ${omitted} result(s) omitted.]`;
+        break;  // ← 真正的 break
+    }
+    ...
+}
+```
+
+**文件**：`dist/index.js`
+
+---
+
+### Bug 13：`cleanTextContent` 过度删除英文词 🟡
+
+**现象**：正则 `image|img|photo|picture|gallery|slideshow|carousel` 会把正文里出现的这些词全部删掉，如 "The image quality is great" → "The quality is great"。正则 `cookie|privacy|terms` 会把讨论隐私政策的文章内容删空。
+
+**修复**：删除这些过度正则，只保留 base64 数据和完整 UI 短语
+
+```javascript
+// 修改前
+text = text.replace(/image|img|photo|picture|gallery|slideshow|carousel/gi, '');
+text = text.replace(/cookie|privacy|terms|conditions|disclaimer|legal|copyright|all rights reserved/gi, '');
+
+// 修改后：只删 base64 数据和完整 UI 短语
+text = text.replace(/data:image\/[^;]+;base64,[A-Za-z0-9+/=]+/g, '');
+text = text.replace(/\b(click to enlarge|click for full size|view larger|download image)\b/gi, '');
+text = text.replace(/\b(accept all cookies|cookie settings|privacy policy|terms of service|all rights reserved)\b/gi, '');
+```
+
+**文件**：`dist/enhanced-content-extractor.js` 的 `cleanTextContent` 方法
+
+---
+
+### 新增功能：`smartTruncate` 句子边界感知截断
+
+替代所有 `substring(0, N)` 硬切，在句子/段落/词边界处截断：
+
+```
+优先级：句号(。！？.!?) > 段落换行(\n) > 空格(不断词) > 硬切(兜底)
+约束：边界必须在 maxLength × 0.6 之后才采用（避免丢太多内容）
+```
+
+**覆盖范围**：所有截断点统一使用
+
+| 截断点 | 原方式 | 修复后 |
+|--------|--------|--------|
+| `utils.cleanText` | `substring` 硬切 | `smartTruncate` |
+| `index.js` 输出截断 | `substring` 硬切 | `smartTruncate` |
+| `index.js` 单页截断 | `substring` 硬切 | `smartTruncate` |
+| `extractor` axios 层 | `substring` 硬切 | `smartTruncate` |
+
+截断标注改为 `~6000 characters`（波浪号表示语义截断），并显示原文长度如 `Original: 45678 characters`。
+
+**文件**：`dist/utils.js`（新增 `smartTruncate` 函数）、`dist/index.js`、`dist/enhanced-content-extractor.js`（导入并使用）
+
+---
+
+### 修复后参数对照表
+
+| 参数 | 原始值 | 修复后 |
+|------|--------|--------|
+| `full-web-search` limit 默认/上限 | 5 / 10 | **3 / 5** |
+| `full-web-search` includeContent 默认 | true | true（保持不变，搜索就是要看内容） |
+| `maxContentLength` 默认/硬上限 | 500000 / 无 | **6000 / 8000** |
+| 全局输出硬上限 `MAX_TOTAL_OUTPUT` | 无 | **40000** |
+| 单页抓取 `maxContentLength` 上限 | 无 | **10000** |
+| `MAX_CONTENT_LENGTH` 环境变量上限 | 无 | **10000** |
+| `cleanText` maxLength 默认 | 10000 | **6000** |
+| `get-web-search-summaries` limit 默认 | 5 | **3** |
+
+---
+
+## 六、修改文件清单（全量）
+
+| 文件 | 修改内容 |
+|------|---------|
+| `c:\Users\blue\.codebuddy\mcp.json` | 添加服务器名称 key `web-search-mcp` |
+| `dist/index.js` | 入口硬编码环境变量；限制参数默认值与硬上限；全局输出截断；防重复搜索；`forEach`→`for...of`；导入 `smartTruncate` |
+| `dist/search-engine.js` | 添加 proxy 参数、修复多引擎逻辑 bug、新增 Google 搜索引擎、调整优先级 |
+| `dist/browser-pool.js` | 添加 proxy 参数、默认 `BROWSER_TYPES` 改为 `chromium` |
+| `dist/enhanced-content-extractor.js` | `MAX_CONTENT_LENGTH` 默认 6000 + 10000 硬上限；`parseContent` 按文档顺序提取并保留段落结构；`cleanTextContent` 删除过度正则；导入 `smartTruncate` 替换硬切 |
+| `dist/content-extractor.js` | `MAX_CONTENT_LENGTH` 默认 6000 + 10000 硬上限 |
+| `dist/utils.js` | 新增 `smartTruncate` 句子边界感知截断函数；`cleanText` 保留换行、使用 `smartTruncate`；默认 maxLength 改为 6000 |
 
 ---
