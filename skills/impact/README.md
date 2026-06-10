@@ -28,10 +28,10 @@
 - **测试失败 fix 循环** — 自动诊断并生成修复方案，任何 Edit/Write/DDL/DML 都必须确认，不自动执行
 - **破坏性请求保护** — 直接删、DROP/RENAME、删除接口、批量替换必须先只读发现影响面
 - **阻塞恢复安全闸** — blocked、上下文压缩或延迟确认后，先复核 pending Step、当前文件状态和最新授权，再决定是否执行
-- **subagent 自治模式**（v3.6 新增）— subagent 在沙盒里等同用户角色，6 类高风险 Step 自主判断；执行记录 决策依据 + PASS/FAIL 表格字段
+- **subagent 自治模式**（v3.6 新增）— subagent 在沙盒里是用户角色，6 类高风险 Step 自主判断；执行记录加 决策依据 + PASS/FAIL 表格
 - **决策矩阵模板**（v3.6 新增）— `templates/subagent-decisions.md`（RESTATE → DECIDE → RECORD 三段）
-- **环境降级路径**（v3.6 新增）— `templates/200-实施文档.md` 加"V3 受限时启用 X 备选"段，避免事后发现
-- **PASS/FAIL 决策依据**（v3.6 新增）— `templates/execution-record.md` 决策依据字段升级为 6 项高风险清单显式勾选
+- **环境降级路径**（v3.6 新增）— `templates/200-实施文档.md` 加"V3 受限时启用 X 备选"段，避免事后才发现
+- **PASS/FAIL 决策依据**（v3.6 新增）— `templates/execution-record.md` 决策依据字段从散文升级为 6 项高风险清单显式勾选
 
 ## 什么时候该用这个 Skill
 
@@ -213,37 +213,26 @@ E2E 验证脚本已生成 → change-impact/用户个性签名/300-验证脚本/
 - 写代码、配置、DDL/DML、测试修复后，执行记录必须随当前 Step 补齐
 - 连续 3 个写入 Step 只能达到 V1 静态验证时暂停，要求用户确认风险或补运行环境
 
-### v3.6（subagent 跑分反馈 + 协议补强）
+### v3.6（subagent 跑分反馈）
 
-依据 [2026-06-10 skill-capability-eval](../../docs/skill-capability-eval-2026-06-10/README.md) 跑分（9 case Phase 1-4 + 9 case Phase 5 全量 + 2 case 回归）：
+[2026-06-10 eval 报告](../../docs/skill-capability-eval-2026-06-10/README.md) 跑了 9 case Phase 1-4、9 case Phase 5、2 case 回归。subagent 在沙盒里自主执行，暴露了几处协议可以补强的地方。
 
-**5 条协议改进**（基于 subagent 6 条建议，去除 CLAUDE.md 冲突项后采纳）：
+**改了什么**
 
-- #1 决策依据升级为 PASS/FAIL 表格（6 项高风险清单显式勾选）—— 写入 `templates/execution-record.md`
-- #2 新增 `templates/subagent-decisions.md` 模板（决策矩阵 + RESTATE/DECIDE/RECORD 三段）
-- #3 `templates/200-实施文档.md` 加"环境降级路径"段（V3 受限前移到 Phase 2.5）
-- #5 `ty check` 必须通过 venv `python -m ty` 调用（避免二进制绑错 venv）
-- #6 alembic migration 验证优先用 `alembic upgrade head --sql`（离线 SQL 渲染，环境无关）
+执行记录的决策依据从散文升级为 6 项高风险清单的 PASS/FAIL 表格。配套新增 `templates/subagent-decisions.md` 模板（RESTATE → DECIDE → RECORD 三段）。`200-实施文档.md` 多了一段"环境降级路径"，把 V3 受限后的备选方案写进 Phase 2.5 而不是事后才发现。`ty check` 必须走 venv 的 `python -m ty`；alembic 验证优先用离线 SQL 渲染。SKILL.md Phase 5 末尾加了"高风险 Step 识别清单"子段，列出 6 类不可逆操作作为 subagent 自主判断的参考。
 
-**SKILL.md 新增段**：
+**边界修正**
 
-- Phase 5 末尾加"高风险 Step 识别清单"子段（6 类不可逆操作 + subagent 自主判断参考）
+subagent 在沙盒里是用户角色——这条原本写在 SKILL.md 里，现在挪到 harness（02-执行协议.md）。高风险清单保留在 SKILL.md，因为它属于 skill 自身内容。
 
-**边界修正**：
+**跑分数据**
 
-- subagent 强调（"subagent = 用户角色"）从 SKILL.md 移到 `docs/skill-capability-eval-2026-06-10/02-执行协议.md`（harness 配置）——高风险清单保留在 SKILL.md（skill 自身内容）
+9 case Phase 5 全量通过，subagent 真改了 38 个文件、新增 19 个。0 P0。P0 兜底行为跑了 3 次都一致（R3 在 Step 7 停下来，v1 一行没动）。`java-spring-mybatis` profile 在 R4 跑出来比 R1 多三处安全约束（字段长度、`@Xss`、`@Size`）。
 
-**可生产性证据**（subagent 自治模式）：
+**撤销两项原 P1 修复**（被真实跑分证伪）
 
-- 9 case Phase 5 全量通过（subagent 真改 38 文件 + 19 新文件）
-- 0 P0 / 0 P1 / 13 P2 / 9 P3
-- P0 兜底 3/3 一致（R3 STOP Step 7，v1 0 改动）
-- impact-pro 的 `java-spring-mybatis` profile 引导有效（R4 修正 R1 三处安全约束：varchar 长度 + @Xss + @Size）
-
-**撤销原 P1 修复**（被真实跑分证伪）：
-
-- 原 P1-001（EasyExcel 编造）：R1/R4 subagent 正确识别 RuoYi 用 `@Excel` 注解
-- 原 P1-003（i18n 边界）：R2 subagent 主动检查确认 RuoYi 不是 i18n 项目
+- 原 P1-001（EasyExcel 编造）：R1/R4 都正确识别 RuoYi 用 `@Excel` 注解
+- 原 P1-003（i18n 边界）：R2 主动检查后确认 RuoYi 不是 i18n 项目
 - 完成 S1-S7 多会话写授权回归，记录见 `validation-runs/2026-06-09-T06-multisession-write-gate.md`
 
 ## 三个文档的关系

@@ -28,10 +28,10 @@
 - **TDD 验证框架** — 正向用例 + 错误用例（边界值/空值/格式校验/XSS）
 - **行为准则检查** — 先澄清假设和成功标准，简单优先，精准修改，改 status/enum/常量前先确认原定义
 - **阻塞恢复安全闸** — blocked、上下文压缩或延迟确认后，先复核 pending Step、当前文件状态和最新授权，再决定是否执行
-- **subagent 自治模式**（v3.6 新增）— subagent 在沙盒里等同用户角色，6 类高风险 Step 自主判断；执行记录 决策依据 + PASS/FAIL 表格字段
+- **subagent 自治模式**（v3.6 新增）— subagent 在沙盒里是用户角色，6 类高风险 Step 自主判断；执行记录加 决策依据 + PASS/FAIL 表格
 - **决策矩阵模板**（v3.6 新增）— `templates/subagent-decisions.md`（RESTATE → DECIDE → RECORD 三段）
-- **环境降级路径**（v3.6 新增）— `templates/implementation.md` 加"V3 受限时启用 X 备选"段，避免事后发现
-- **PASS/FAIL 决策依据**（v3.6 新增）— `templates/execution-record.md` 决策依据字段升级为 6 项高风险清单显式勾选
+- **环境降级路径**（v3.6 新增）— `templates/implementation.md` 加"V3 受限时启用 X 备选"段，避免事后才发现
+- **PASS/FAIL 决策依据**（v3.6 新增）— `templates/execution-record.md` 决策依据字段从散文升级为 6 项高风险清单显式勾选
 
 ## 技术栈覆盖
 
@@ -66,14 +66,11 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 
 当前 `impact-pro` 已完成 T01-T49 验收，覆盖多栈静态验收、前端运行时复测、负向对话复测、生产级项目复验、Step 编号确认、执行前检查、Go RealWorld 真实写操作闭环、最终复审、Claude Code + MiniMax M3 真实 `/impact-pro` 响应契约复测，以及多会话写授权一致性复测。T49 验证 Node/Express 响应字段删除不会被误判为 Java 场景，也验证了无 `确认 Step N` 不会写文件；同时同步补强写入目标边界、执行记录随 Step 补齐和 V1-only 暂停规则。补齐 Level 1 技术栈规则后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入已验证覆盖范围。当前可按 **多栈常规项目可投入使用（已验证技术栈规则覆盖范围内，必须由用户确认后执行）** 使用；仍不宣称覆盖任意技术栈，也不建议无人监督生产数据库变更。
 
-**v3.6 subagent 自治模式跑分**（依据 [2026-06-10 skill-capability-eval](../../docs/skill-capability-eval-2026-06-10/README.md)）：
+**v3.6 subagent 跑分**
 
-- 9 case Phase 1-4 通过 + 9 case Phase 5 全量真改代码（38 改 + 19 新）
-- subagent-as-user 自治模式 WORKABLE
-- 0 P0 / 0 P1 / 13 P2 / 9 P3
-- P0 兜底 3/3 一致（R3 STOP Step 7，v1 0 改动）
-- `java-spring-mybatis` profile 引导有效（R4 修正 R1 三处安全约束）
-- 5 条协议改进 + 边界修正（详见 impact README v3.6 段）
+[2026-06-10 eval 报告](../../docs/skill-capability-eval-2026-06-10/README.md) 跑了 9 case Phase 1-4 和 9 case Phase 5。subagent 在沙盒里自主执行，真改了 38 个文件、新增 19 个。0 P0。P0 兜底跑了 3 次都一致（R3 在 Step 7 停下来，v1 一行没动）。`java-spring-mybatis` profile 在 R4 跑出来比 R1 多三处安全约束。
+
+5 条协议改进 + 边界修正的细节见 impact README v3.6 段。
 
 多栈测试用例、评分标准、行为准则检查和使用边界见 [VALIDATION.md](VALIDATION.md)，优化后回归复测协议见 [../../docs/impact-regression-protocol.md](../../docs/impact-regression-protocol.md)，实际验收记录索引见 [validation-runs/INDEX.md](validation-runs/INDEX.md)。
 
