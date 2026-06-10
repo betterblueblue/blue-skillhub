@@ -32,17 +32,17 @@
 
 它可以搭配律刃使用：律刃约束 agent 的通用编码行为，ImpactRadar 负责 Java/RuoYi 现有系统的影响分析流程。
 
-近期根据真实使用案例补强了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目降级保护、阻塞恢复安全闸和多会话写授权一致性，适合迁移、对齐、重构等多 Step 变更。补强后已完成 Claude Code + MiniMax M3 真实 `/impact` 复测，并通过 S1-S7 回归验证：模糊确认、历史确认、延迟确认、非 Git + V1-only、Health/API 响应字段变化都不能绕过 `确认 Step N`。
+v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目降级保护、阻塞恢复安全闸和多会话写授权一致性，适合迁移、对齐、重构等多 Step 变更。Claude Code + MiniMax M3 真实 `/impact` 复测已经走完 S1-S7 回归，模糊确认、历史确认、延迟确认、非 Git + V1-only、Health/API 响应字段变化都不能绕过 `确认 Step N`。
 
 ### ImpactRadar Pro
 
 [skills/impact-pro/](skills/impact-pro/)
 
-`impact` 的多栈版本。面向已验证技术栈规则覆盖范围内的现有系统，未知栈会先用通用规则扫描，不直接冒充“已完整支持”。适合 Node、Python、Go、.NET、前端项目等多栈项目里的变更影响分析。
+`impact` 的多栈版本。面向已验证技术栈规则覆盖范围内的现有系统，未知栈会先用通用规则扫描，不直接冒充”已完整支持”。适合 Node、Python、Go、.NET、前端项目等多栈项目里的变更影响分析。
 
 它也可以搭配律刃使用：律刃提供通用行为约束，ImpactRadar Pro 提供多栈 profile 化的影响分析流程。
 
-近期同步补强了跨系统对齐规则、接口返回检查清单、验证等级、非 Git 降级、阻塞恢复安全闸和多会话写授权一致性，避免多栈迁移或长会话执行时把静态验证、旧授权和当前文件状态混在一起。补强后已完成真实 `/impact-pro` 复测：Node/Express 响应字段删除能正确判定 full，无 `确认 Step N` 时也不会写文件。
+`impact-pro` 同样补了跨系统对齐规则、接口返回检查清单、验证等级、非 Git 降级、阻塞恢复安全闸和多会话写授权一致性。真实 `/impact-pro` 复测里，Node/Express 响应字段删除能正确判定 full，无 `确认 Step N` 时也不会写文件。
 
 上下文包能力的设计复盘见 [docs/impact-context-pack-design.md](docs/impact-context-pack-design.md)，里面记录了需求来源、方案取舍和实现效果。
 

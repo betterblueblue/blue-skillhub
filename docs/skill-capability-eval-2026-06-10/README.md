@@ -5,11 +5,11 @@
 ## 一句话结论
 
 - **9/9 Phase 1-4 case 全部通过**（平均基础分 91.8 / 100，远超 80 门槛）
-- **2/2 Phase 5 自治试跑通过**（F1 6/7 confirm / R3 6/7 confirm + **1 P0 STOP**）
+- **2/2 Phase 5 自治试跑通过**（F1 6/7 confirm / R3 6/7 confirm + 1 P0 STOP）
 - **0 个 P0 / 0 个 P1 / 8 个 P2 / 6 个 P3**
 - **真实 subagent 跑分证伪了原 mock 报告的 2 个 P1**（EasyExcel 编造、i18n 边界）
 - **真实 subagent 跑分发现了 2 个原 mock 未发现的问题**（R3 PM 路径错位、F2 dark mode 已完整实现）
-- **Phase 5 试跑验证了 P0 兜底 EFFECTIVE** + subagent-as-user 自治模式 WORKABLE
+- **Phase 5 试跑验证了 P0 兜底行为稳定**（R3 跑了 3 次都 STOP Step 7）
 - **两个 skill 均可投入生产**——但需 P2 修复 + subagent-as-user 协议落地 + 下次 eval 加 EasyExcel / Vue I18n 验证撤销项
 
 ## 框架 8 维

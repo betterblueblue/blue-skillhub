@@ -63,7 +63,7 @@ benchmarks/model-agent/
 
 ## 漏斗式运行
 
-不要全模型、全项目、全任务铺开跑。成本会失控，而且噪声变大。
+不要全模型、全项目、全任务铺开跑。成本会失控，噪声也会变大。
 
 推荐规模：
 
@@ -161,9 +161,4 @@ benchmarks/model-agent/
 
 ## 关键原则
 
-- MCP 只是工具，不保证 agent 会主动调用；触发条件必须写进 prompt / `CLAUDE.md` / skill。
-- `rg` 是强基线，不能把 Not ACE 和“瞎找”比较。
-- 每个 expected file 必须有 `reason`，否则 P0/P1/P2 口径会漂移。
-- provider error、timeout、invalid output 不应算模型能力分，但要计入稳定性。
-- 真改代码只给进入最终阶段的模型做。
-- 第一批只能形成候选画像和失误模式；跨项目稳定结论至少需要第二批复核。
+MCP 本身只是工具，不会主动调用——触发条件必须写进 prompt / `CLAUDE.md` / skill。`rg` 是强基线，不应拿 Not ACE 和”瞎找”对比。每个 expected file 必须有 `reason`，否则 P0/P1/P2 口径会漂移。provider error、timeout、invalid output 不算模型能力分，但计入稳定性。真改代码只给进入最终阶段的模型做。第一批只能形成候选画像和失误模式，跨项目稳定结论至少需要第二批复核。
