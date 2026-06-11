@@ -61,6 +61,7 @@
 
 ### 配置和权限
 
+<!-- 凭证一律脱敏为 ***,只记键名和路径 -->
 - `[env/config/feature flag/permission]`：
 
 ### 测试

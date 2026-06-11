@@ -24,6 +24,8 @@ context_discovery:
   dependency_paths: []
   tests: []
   configs: []
+  # 为高频假阳性模式（如 i18n `$t(` 正则）提供依赖存在性检查提示
+  high_frequency_pattern_check: "引用计数异常大时先验证依赖是否真实存在"
   exclude_patterns:
     - "**/node_modules/**"
     - "**/dist/**"

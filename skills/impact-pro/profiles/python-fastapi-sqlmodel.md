@@ -188,6 +188,7 @@ notes:
     - 仅在 SQLModel 项目上验收，纯 SQLAlchemy declarative 项目需扩展
     - FastAPI 项目可能将 schema/model 分离到多个文件，需运行时确认
     - 无数据库连接时不能确认真实行数、索引和外键状态
+    - migration head 判定必须读取文件确认 down_revision 链，不得按文件名排序推断；未读取前在 preflight 标注为前置条件
   edge_cases:
     - `models.py` 同时承载 DB model 和 API schema，需要区分 `table=True`
     - response_model 可能返回计算字段，未必需要 DB 字段

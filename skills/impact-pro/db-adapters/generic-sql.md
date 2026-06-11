@@ -52,7 +52,7 @@ introspection_commands:
 ```yaml
 notes:
   limitations:
-    - 无 execute_sql 时仅能查询表结构，无法运行数据验证 SQL
+    - 无任意 SQL 执行能力（execute_sql / query 等）时仅能查询表结构，无法运行数据验证 SQL
     - 外键/视图/触发器依赖具体 DB dialect，可能不兼容
     - 行数统计需 DB-specific SQL
 ```

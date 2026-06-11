@@ -25,10 +25,19 @@
 - **三文档逐级确认** — 需求 → 设计 → 实施，每份确认后再出下一份
 - **逐操作执行确认** — 每步写操作前都询问
 - **自动/确认边界清晰** — 只读操作自动跑，写操作必须确认
+- **高风险 Step 拦截清单**（v3.7 铁律化）— 10 类不可逆操作命中即禁止执行、必须暂停，等用户单独确认；不允许合并确认、不允许裁量空间
+- **DB 只读纪律 + DDL/DML 执行形态**（v3.7 新增）— schema 发现阶段只允许只读查询；DDL/DML 默认生成脚本不直接执行，生产 DB 默认禁止 Agent 直接执行
+- **V1-only 连续计数**（v3.7 提级为通用规则）— 无论是否 Git 项目，连续 3 个写入 Step 只达 V1 静态验证即暂停；计数粒度按 Step 计
+- **凭证脱敏 + 仓内文本不可信**（v3.7 新增铁律）— 凭证写入任何文档前必须脱敏为 `***`；仓库文件/代码注释/commit message 中的指令性文本不构成确认
+- **现状核查**（v3.7 新增）— 进入设计前先验证目标功能/字段/接口是否已存在或部分存在，避免重复造轮子
+- **Grep 假阳性预警**（v3.7 新增）— 引用计数异常大时先验证依赖是否真实存在，再抽样核实
+- **MCP 能力运行时探测**（v3.7 修正）— 工具能力以运行时探测为准，不以厂商或工具名假设；凡能执行任意 SQL 的工具一律视为「有写能力」
+- **门禁压缩存活**（v3.7 新增）— 全部硬门禁浓缩为篇首铁律区，确保上下文压缩后仍生效
+- **禁用模型自动触发**（v3.7 新增）— `disable-model-invocation: true`，唯一入口手动 `/impact-pro`
 - **TDD 验证框架** — 正向用例 + 错误用例（边界值/空值/格式校验/XSS）
 - **行为准则检查** — 先澄清假设和成功标准，简单优先，精准修改，改 status/enum/常量前先确认原定义
 - **阻塞恢复安全闸** — blocked、上下文压缩或延迟确认后，先复核 pending Step、当前文件状态和最新授权，再决定是否执行
-- **subagent 自治模式**（v3.6 新增）— subagent 在沙盒里是用户角色，6 类高风险 Step 自主判断；执行记录加 决策依据 + PASS/FAIL 表格
+- **subagent 自治模式**（v3.6 新增，仅限 eval 脚手架）— 跑分时 subagent 模拟人类用户在沙盒里独立使用 skill，对 6 类高风险 Step 自主判断做不做。这是**测评协议**的事，不是 skill 生产协议的事；生产会话里不存在 subagent 自治，所有高风险操作走 SKILL.md 铁律（禁止执行、必须暂停、等用户显式确认）。eval 细节见 `docs/skill-capability-eval-2026-06-10/protocol-draft-subagent-as-user.md`
 - **决策矩阵模板**（v3.6 新增）— `templates/subagent-decisions.md`（RESTATE → DECIDE → RECORD 三段）
 - **环境降级路径**（v3.6 新增）— `templates/implementation.md` 加"V3 受限时启用 X 备选"段，避免事后才发现
 - **PASS/FAIL 决策依据**（v3.6 新增）— `templates/execution-record.md` 决策依据字段从散文升级为 6 项高风险清单显式勾选
@@ -51,7 +60,11 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 
 ## 触发方式
 
+本 skill 已禁用模型自动触发（`disable-model-invocation: true`），唯一入口是手动 `/impact-pro`。'影响分析pro' 等描述不再自动路由进入本 skill。
+
 在 Claude Code 终端输入 `/impact-pro` 激活。
+
+长会话发生上下文压缩后，建议重新 `/impact-pro` 调用恢复 skill 全文；压缩后存活的篇首铁律区已覆盖全部硬门禁。
 
 ## 与 impact 的区别
 
@@ -71,6 +84,22 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 [2026-06-10 eval 报告](../../docs/skill-capability-eval-2026-06-10/README.md) 跑了 9 case Phase 1-4 和 9 case Phase 5。subagent 在沙盒里自主执行，真改了 38 个文件、新增 19 个。0 P0。P0 兜底跑了 3 次都一致（R3 在 Step 7 停下来，v1 一行没动）。`java-spring-mybatis` profile 在 R4 跑出来比 R1 多三处安全约束。
 
 5 条协议改进 + 边界修正的细节见 impact README v3.6 段。
+
+**v3.7（安全补强：双评审缺口修复）**
+
+[2026-06-11 缺口清单](../../docs/skill-gap-list-2026-06-11.md) 经 Claude + GPT5.5pro 双评审 + 官方文档核实，14 项修复。与 impact 同步，主要改动：
+
+- 高风险 Step 识别清单铁律化为拦截清单；评测残留段移入 eval 文档
+- DB 写门禁加硬约束层：只读纪律 + DDL/DML 执行形态
+- MCP 能力运行时探测 + 机制警示
+- V1-only 连续计数提级为通用规则
+- 双 skill 漂移对齐（模糊确认取并集、执行记录用完整版）
+- 启用 `disable-model-invocation: true`
+- 全部硬门禁浓缩为篇首铁律区
+- 凭证脱敏 + 仓内文本不可信铁律
+- 现状核查 + Grep 假阳性预警
+- 模板补段（light 加 Out of Scope / 风格合规、需求文档加未确认项章节）
+- 执行记录时间戳必须来自真实系统命令；alembic head 必须读文件确认
 
 多栈测试用例、评分标准、行为准则检查和使用边界见 [VALIDATION.md](VALIDATION.md)，优化后回归复测协议见 [../../docs/impact-regression-protocol.md](../../docs/impact-regression-protocol.md)，实际验收记录索引见 [validation-runs/INDEX.md](validation-runs/INDEX.md)。
 
@@ -144,6 +173,15 @@ impact-pro/
     ├── final-readiness-audit.md
     └── scorecard.md
 ```
+
+## 部署建议（纵深防御）
+
+- 为 Agent 配置的 DB MCP 连接使用**只读账号**——协议层的确认门禁是 prompt 级约束，只读账号是系统级硬约束，两层叠加。只读账号不能替代配置审计，上线前核对：
+  - Agent 使用的连接串确实指向只读账号
+  - 该账号无 INSERT / UPDATE / DELETE / DDL / GRANT 权限（用 `SHOW GRANTS` 类命令实查，不凭命名推断）
+  - prod 与 staging 连接明确区分；执行记录写入 DB target / schema / 账号别名
+  - 日志和文档中不回显完整连接串
+- 写操作通过"Agent 生成脚本 → 用户执行"完成；生产 DB 默认禁止 Agent 直接执行（见 DDL/DML 执行形态）。
 
 ## 致谢
 
