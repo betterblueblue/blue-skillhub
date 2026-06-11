@@ -6,6 +6,10 @@ disable-model-invocation: true
 ---
 
 > **架构说明**：本文件是通用内核，不含任何栈专属规则。技术栈规则位于 `profiles/`，数据库规则位于 `db-adapters/`。Phase 2 自动探测并按需加载。
+>
+> **MCP 能力说明**：工具能力以运行时探测为准，不以厂商或工具名假设。凡能执行任意 SQL 的工具（如 `execute_sql`、`query`）一律视为「有写能力」，发现阶段套用只读纪律（见 Phase 2）；只有表结构类工具（如 `describeTable`）时走「受限发现」；都没有时降级纯代码搜索。allowed-tools 需与实际部署的 MCP server 工具名定期核对。
+>
+> **机制警示**：`allowed-tools` 是预批准，不是白名单——不在列表里的工具依然可调，只是会弹权限提示。`disallowed-tools` 的限制在用户发送下一条消息后即失效。持久的工具屏障只有两个：settings.json 的 deny 规则，以及 DB 账号权限。allowed-tools 不构成安全边界。真正的写保护由硬到软依次是：DB 账号权限 → settings deny 规则 → skill 内确认门禁。
 
 # ImpactRadar Pro — 现有系统多栈变更影响分析
 
