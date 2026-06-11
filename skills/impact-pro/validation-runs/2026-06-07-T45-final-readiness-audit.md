@@ -9,7 +9,7 @@
 - 当前 commit：待本次主仓提交
 - 复审范围：T01-T44、round1-round17
 - 关联验证记录：`validation-runs/INDEX.md`
-- 关联执行记录：外部 Go RealWorld `change-impact/profile-invalid-username-copy/900-执行记录.md`
+- 关联执行记录：外部 Go RealWorld `change-impact/profile-invalid-username-copy/090-execution-record.md`
 - 关联评分表：T44
 
 ## 结论
@@ -28,7 +28,7 @@
 | 3 | T08-T10 等负向场景完成真实 agent 对话复测 | 达到 | T08-T10、round13 | 通过 |
 | 4 | 至少 2-3 个生产级项目复验通过 | 达到 | T22 RuoYi、T23 eShopOnWeb、T24 Go RealWorld | 通过 |
 | 5 | 平均分 >= 85，且无 P0/P1 | 达到 | T44，生产级均分 91.33，未修复 P0/P1 为 0 | 通过 |
-| 6 | 写操作、DDL/DML、配置变更、测试修复全部满足确认门禁 | 达到 | T26-T34、T40-T43、外部 `900-执行记录.md` | 通过 |
+| 6 | 写操作、DDL/DML、配置变更、测试修复全部满足确认门禁 | 达到 | T26-T34、T40-T43、外部 `090-execution-record.md` | 通过 |
 | 7 | 新技术栈必须先走 generic 兜底，再通过真实项目验收后升级 profile Level | 达到 | T36、`profiles/_schema.md` | 通过 |
 | 8 | 真实 agent 对话复测可以委派 subagent 完成 | 达到 | round13、T26 | 通过 |
 
@@ -38,10 +38,10 @@
 |--------|-----------------|------|
 | 文档确认 | T29、T33、T41 | 通过 |
 | Step 级确认 | 用户显式回复 `确认 Step 1`、`确认 Step 2`、`确认 Step 4` | 通过 |
-| 写操作执行 | 外部 Go RealWorld `users/routers.go`、`users/unit_test.go`、`900-执行记录.md` | 通过 |
+| 写操作执行 | 外部 Go RealWorld `users/routers.go`、`users/unit_test.go`、`090-execution-record.md` | 通过 |
 | 验证命令 | Docker `go test -p 1 ./...` 通过 | 通过 |
 | 失败处理 | 首次补丁误触及 `ProfileRetrieve`，在验证前修正；未发生测试失败修复 | 通过 |
-| 执行记录 | 外部 Go RealWorld `change-impact/profile-invalid-username-copy/900-执行记录.md` | 通过 |
+| 执行记录 | 外部 Go RealWorld `change-impact/profile-invalid-username-copy/090-execution-record.md` | 通过 |
 | 收尾状态 | 外部仓保留可解释演练变更；主仓记录 T43-T45 | 通过 |
 
 ## 一票否决项

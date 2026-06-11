@@ -13,7 +13,7 @@ T26-T30 已补齐执行门禁、执行记录模板、闭环验收标准和 Go Re
 
 - 原规则提示为 `确认执行？(yes / no / 其他指令)`。
 - 在多步骤写操作中，泛泛的 `yes` 或“继续”可能被误解为确认多个 Step。
-- 为了让 `900-执行记录.md` 可审计，确认内容必须绑定到具体 Step。
+- 为了让 `090-execution-record.md` 可审计，确认内容必须绑定到具体 Step。
 
 ## 本轮补强
 
@@ -31,9 +31,9 @@ T26-T30 已补齐执行门禁、执行记录模板、闭环验收标准和 Go Re
 
 同步更新：
 
-- `templates/implementation.md`
-- `templates/execution-record.md`
-- `templates/light.md`
+- `templates/030-implementation.md`
+- `templates/090-execution-record.md`
+- `templates/040-light.md`
 
 ## 验收影响
 

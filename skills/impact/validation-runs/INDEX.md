@@ -32,8 +32,8 @@ impact = Java / MyBatis / RuoYi 类项目的受监督影响分析与执行辅助
 | `../SKILL.md` | impact 主流程和执行规则 |
 | `../README.md` | 用户入口和用法说明 |
 | `../VALIDATION.md` | 验收标准和回归检查 |
-| `../templates/phase5-preflight.md` | Phase 5 执行前门禁 |
-| `../templates/execution-record.md` | Phase 5 执行记录 |
-| `../templates/200-实施文档.md` | full 实施文档模板 |
-| `../templates/light-影响摘要.md` | light 摘要模板 |
-| `../templates/context-pack.md` | 上下文包模板 |
+| `../templates/060-preflight.md` | Phase 5 执行前门禁 |
+| `../templates/090-execution-record.md` | Phase 5 执行记录 |
+| `../templates/030-implementation.md` | full 实施文档模板 |
+| `../templates/040-light.md` | light 摘要模板 |
+| `../templates/000-context-pack.md` | 上下文包模板 |

@@ -59,7 +59,7 @@ ok   github.com/gothinkster/golang-gin-realworld-example-app/users
 
 ### Step 4: 追加执行记录
 
-- 文件：`change-impact/profile-invalid-username-copy/900-执行记录.md`
+- 文件：`change-impact/profile-invalid-username-copy/090-execution-record.md`
 - 操作：记录 Step 1、Step 2、Step 3、Step 4 的确认、执行、验证和收尾状态
 - 影响范围：仅新增执行记录
 

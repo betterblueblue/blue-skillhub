@@ -123,7 +123,7 @@ profile 命中：双 profile 同时加载
 
 位置：`E:\agent\skill-eval-sandbox\fastapi\change-impact\f3-team-invite\`
 
-5 个文件。`900-执行记录.md` 首行明确列出双 profile：
+5 个文件。`090-execution-record.md` 首行明确列出双 profile：
 
 ```text
 Skill invoked: impact-pro (via Skill tool)

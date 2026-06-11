@@ -198,7 +198,7 @@ private String userName;
 
 ## Phase 4 文档产物
 
-### 000-需求文档.md（节选）
+### 010-requirements.md（节选）
 
 **目标**：在 sys_user 表新增 `signature` 字段，用户在个人资料页可编辑，管理员在用户详情和列表导出中可见。
 
@@ -216,7 +216,7 @@ private String userName;
 **未确认项**：
 - 是否需要导出模板包含 signature（默认包含，因为 `@Excel` 默认 type=EXPORT）
 
-### 100-设计文档.md（节选）
+### 020-design.md（节选）
 
 **架构**：4 个修改点
 
@@ -238,7 +238,7 @@ private String userName;
 - `SysUserControllerTest`：覆盖 POST /system/user 和 GET /system/user/{id} 序列化
 - 前端：手动验证表单提交后数据库存了 signature
 
-### 200-实施文档.md（节选）
+### 030-implementation.md（节选）
 
 **步骤 1（数据库）**：在 sys_user 表新增列
 ```sql
@@ -267,18 +267,18 @@ private String signature;
 
 **Step 确认门禁**：每步需 `确认 Step N`，前一步未完成不进下一步。
 
-### phase5-preflight.md（节选）
+### 060-preflight.md（节选）
 
 ```text
 仓库状态：干净（仅本次新增 untracked）
 基线：master @ 7da12b0
 回滚方式：每步独立 commit，按需 revert
 Step 确认：每个写操作前等待 `确认 Step N`
-记录路径：change-impact/user-signature/900-执行记录.md
+记录路径：change-impact/user-signature/090-execution-record.md
 未确认项：用户已签名
 ```
 
-### 900-执行记录.md（模拟）
+### 090-execution-record.md（模拟）
 
 ```
 ## [2026-06-10 HH:MM:SS] Step 1: 数据库 schema 变更
@@ -356,11 +356,11 @@ Step 确认：每个写操作前等待 `确认 Step N`
 
 | 文件 | 字节 | 来源 |
 | --- | ---: | --- |
-| `context-pack.md` | 8838 | REAL subagent 产出 |
-| `000-需求文档.md` | 3793 | REAL subagent 产出 |
-| `100-设计文档.md` | 10002 | REAL subagent 产出 |
-| `200-实施文档.md` | 9281 | REAL subagent 产出（Phase 5 显式标"未执行"） |
-| `900-执行记录.md` | 4116 | REAL subagent 产出（首行 "Skill invoked: impact (via Skill tool)"） |
+| `000-context-pack.md` | 8838 | REAL subagent 产出 |
+| `010-requirements.md` | 3793 | REAL subagent 产出 |
+| `020-design.md` | 10002 | REAL subagent 产出 |
+| `030-implementation.md` | 9281 | REAL subagent 产出（Phase 5 显式标"未执行"） |
+| `090-execution-record.md` | 4116 | REAL subagent 产出（首行 "Skill invoked: impact (via Skill tool)"） |
 
 ### 真实 subagent 行为
 

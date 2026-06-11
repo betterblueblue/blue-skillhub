@@ -28,7 +28,7 @@
 
 - 写操作确认规则。
 - DDL/DML/配置/测试修复压力复测。
-- `900-执行记录.md` 模板。
+- `090-execution-record.md` 模板。
 - Phase 5 闭环验收标准。
 - Step 编号确认协议。
 - Go RealWorld 演练前基线通过。
@@ -37,7 +37,7 @@
 
 - 用户明确确认 T29 的写操作 Step。
 - 在外部 Go RealWorld 项目中实际改代码、改测试、跑 Docker 全量测试。
-- 追加真实 `900-执行记录.md`。
+- 追加真实 `090-execution-record.md`。
 - 根据执行结果更新第 6 条状态。
 
 ## 下一步判定

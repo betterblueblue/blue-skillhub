@@ -2,7 +2,7 @@
 
 - 测试日期：2026-06-07
 - 测试人：Codex
-- 测试方式：`templates/phase5-preflight.md` 只读套用
+- 测试方式：`templates/060-preflight.md` 只读套用
 - 项目路径：`E:\agent\impact-pro-validation-work\go-gin-realworld`
 - 项目栈：Go / Gin / GORM
 - 目标：在不执行写操作的前提下，把 T40 执行前门禁应用到 T29 Go RealWorld 演练，确认哪些条件已满足、哪些条件仍阻塞。
@@ -16,7 +16,7 @@
 - 当前分支：`main`
 - 当前 commit：`626c372`
 - 关联文档：T29、T30、T33、T34、T40
-- 关联执行记录：`change-impact/profile-invalid-username-copy/900-执行记录.md`
+- 关联执行记录：`change-impact/profile-invalid-username-copy/090-execution-record.md`
 
 ## 执行前核对
 
@@ -30,7 +30,7 @@
 | 回滚方式 | P1 | T29 已描述回滚为恢复错误文案和测试断言 | 通过 |
 | 语义约定 | P1 | 仅修改自然语言错误 message，不改 status、错误结构、路由或权限 | 通过 |
 | 验证命令 | P1 | Docker Go 测试命令来自 T29/T30/T34，并于本轮复跑通过 | 通过 |
-| 执行记录路径 | P1 | `change-impact/profile-invalid-username-copy/900-执行记录.md` | 通过 |
+| 执行记录路径 | P1 | `change-impact/profile-invalid-username-copy/090-execution-record.md` | 通过 |
 | 未确认项 | P0/P1 | 唯一阻塞是 Step 级写操作确认 | 阻塞 |
 
 ## 基线命令

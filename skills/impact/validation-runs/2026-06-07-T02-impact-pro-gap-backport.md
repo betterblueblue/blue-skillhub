@@ -14,7 +14,7 @@
 |------|------|------|
 | Phase 1 未强制输出假设、歧义、任务规模和成功标准 | Agent 可能在需求未收敛时直接进入实现 | `SKILL.md` 增加 Phase 1 输出格式和行为准则门禁 |
 | 缺少独立的破坏性请求安全闸 | 用户要求“直接删/不用分析”时，规则不够醒目 | `SKILL.md` 增加破坏性请求安全闸；`VALIDATION.md` 增加验收项和一票否决 |
-| light 模板写着“确认后直接执行” | 易被误解为 light 可以跳过 preflight 和 Step 确认 | `templates/light-影响摘要.md` 改为确认摘要后仍进入 Phase 5 preflight 和 Step 级确认 |
+| light 模板写着“确认后直接执行” | 易被误解为 light 可以跳过 preflight 和 Step 确认 | `templates/040-light.md` 改为确认摘要后仍进入 Phase 5 preflight 和 Step 级确认 |
 
 ## 已确认不需要回迁的项
 

@@ -183,8 +183,8 @@ Phase 1 意图捕获
 上下文包虽然是必需产物，但它仍然遵守写操作门禁：
 
 - Phase 2 结束前，先在对话中输出上下文包草案；
-- 只有进入 Phase 4 且用户确认写文档后，才写入 `change-impact/{需求名称}/context-pack.md`；
-- `phase5-preflight.md` 中也加入上下文包确认项。
+- 只有进入 Phase 4 且用户确认写文档后，才写入 `change-impact/{需求名称}/000-context-pack.md`；
+- `060-preflight.md` 中也加入上下文包确认项。
 
 这保证了“上下文包强制存在”和“写文件必须确认”不冲突。
 
@@ -208,7 +208,7 @@ Phase 1 意图捕获
 对应实现：
 
 - `skills/impact/SKILL.md`
-- `skills/impact/templates/context-pack.md`
+- `skills/impact/templates/000-context-pack.md`
 - `skills/impact/VALIDATION.md`
 - `skills/impact/validation-runs/2026-06-07-T03-context-pack-protocol.md`
 
@@ -228,7 +228,7 @@ Phase 1 意图捕获
 对应实现：
 
 - `skills/impact-pro/SKILL.md`
-- `skills/impact-pro/templates/context-pack.md`
+- `skills/impact-pro/templates/000-context-pack.md`
 - `skills/impact-pro/profiles/_schema.md`
 - `skills/impact-pro/profiles/_template.md`
 - `skills/impact-pro/profiles/*.md`
@@ -241,8 +241,8 @@ Phase 1 意图捕获
 
 新增文件：
 
-- `skills/impact/templates/context-pack.md`
-- `skills/impact-pro/templates/context-pack.md`
+- `skills/impact/templates/000-context-pack.md`
+- `skills/impact-pro/templates/000-context-pack.md`
 
 模板包含：
 
@@ -266,7 +266,7 @@ Phase 1 意图捕获
 - Phase 2 结束前必须输出上下文包草案；
 - 未完成上下文包前不得正式 light/full 判档；
 - 超出上下文预算时先问收敛问题；
-- 写入 `context-pack.md` 前必须用户确认。
+- 写入 `000-context-pack.md` 前必须用户确认。
 
 ### 7.3 修改 full / light 文档模板
 
@@ -432,8 +432,8 @@ all bundled profiles context_discovery OK: 9
 
 | 目标要求 | 当前证据 | 结论 |
 |----------|----------|------|
-| impact 有固定上下文方法 | `skills/impact/SKILL.md` Phase 2 + `templates/context-pack.md` | 达到 |
-| impact-pro 有固定上下文方法 | `skills/impact-pro/SKILL.md` Phase 2 + `templates/context-pack.md` | 达到 |
+| impact 有固定上下文方法 | `skills/impact/SKILL.md` Phase 2 + `templates/000-context-pack.md` | 达到 |
+| impact-pro 有固定上下文方法 | `skills/impact-pro/SKILL.md` Phase 2 + `templates/000-context-pack.md` | 达到 |
 | 上下文刚好够用 | L1/L2/L3 + 上下文预算 | 达到 |
 | 上下文刚好相关 | 相关性 3/2/1/0 + 暂不纳入范围 | 达到 |
 | 上下文可解释 | 为什么相关、已确认事实、待确认问题、排除原因 | 达到 |

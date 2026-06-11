@@ -9,13 +9,13 @@
 
 ## 背景
 
-`templates/execution-record.md` 覆盖执行中和执行后的记录，但真实进入 Phase 5 前，还需要一个独立的门禁核对表，先确认是否具备写操作条件。
+`templates/090-execution-record.md` 覆盖执行中和执行后的记录，但真实进入 Phase 5 前，还需要一个独立的门禁核对表，先确认是否具备写操作条件。
 
 ## 本轮补强
 
 新增：
 
-- `templates/phase5-preflight.md`
+- `templates/060-preflight.md`
 
 同步更新：
 

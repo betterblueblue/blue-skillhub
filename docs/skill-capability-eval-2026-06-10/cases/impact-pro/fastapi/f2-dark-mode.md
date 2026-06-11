@@ -95,7 +95,7 @@ profile 命中：frontend-react-vite
 
 位置：`E:\agent\skill-eval-sandbox\fastapi\frontend\change-impact\f2-dark-mode\`
 
-3 个文件（light 档）：context-pack.md / light-影响摘要.md（写得最完整，12 段）/ 900-执行记录.md
+3 个文件（light 档）：000-context-pack.md / 040-light.md（写得最完整，12 段）/ 090-execution-record.md
 
 ### 真实 subagent 行为
 

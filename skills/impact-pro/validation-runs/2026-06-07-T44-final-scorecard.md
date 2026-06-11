@@ -20,7 +20,7 @@
 | T23 | eShopOnWeb production revalidation | 生产级 | 92 | 0 | 0 | T23 | Docker .NET test |
 | T24 | Go RealWorld production revalidation | 生产级 | 89 | 0 | 0 | T24、round16 | Docker Go test |
 | T25-T42 | 流程、门禁、模板、索引、rollout | 规则/流程验收 | 通过 | 0 | 0 | T25-T42 | 文档审计、preflight dry-run、Docker baseline |
-| T43 | Go RealWorld Phase 5 execution | 真实执行闭环 | 通过 | 0 | 0 | T43、外部 `900-执行记录.md` | Docker `go test -p 1 ./...` |
+| T43 | Go RealWorld Phase 5 execution | 真实执行闭环 | 通过 | 0 | 0 | T43、外部 `090-execution-record.md` | Docker `go test -p 1 ./...` |
 
 ## 分组复算
 

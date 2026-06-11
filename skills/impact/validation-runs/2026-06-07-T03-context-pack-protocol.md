@@ -9,11 +9,11 @@
 - `SKILL.md`
 - `README.md`
 - `VALIDATION.md`
-- `templates/context-pack.md`
-- `templates/000-需求文档.md`
-- `templates/100-设计文档.md`
-- `templates/light-影响摘要.md`
-- `templates/phase5-preflight.md`
+- `templates/000-context-pack.md`
+- `templates/010-requirements.md`
+- `templates/020-design.md`
+- `templates/040-light.md`
+- `templates/060-preflight.md`
 
 ## 验收项
 
@@ -25,7 +25,7 @@
 | 上下文预算 | 限制 L1/L2/L3 读取规模，超出后先追问收敛 | 通过 |
 | 排除记录 | 看过但无关的对象写入“暂不纳入范围” | 通过 |
 | 判档时机 | 未完成上下文包前不得正式 light/full 判档 | 通过 |
-| 写入门禁 | `context-pack.md` 仍属于文档写入，必须等用户确认 | 通过 |
+| 写入门禁 | `000-context-pack.md` 仍属于文档写入，必须等用户确认 | 通过 |
 | 下游模板引用 | full/light/preflight 模板能引用上下文包摘要 | 通过 |
 
 ## 结论

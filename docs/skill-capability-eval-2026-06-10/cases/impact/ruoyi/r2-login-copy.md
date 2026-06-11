@@ -74,7 +74,7 @@
 
 ## Phase 4 文档（light 摘要节选）
 
-### light-影响摘要.md
+### 040-light.md
 
 **变更影响范围**：
 - `login.vue` 版权文案和"记住我"标签
@@ -145,7 +145,7 @@
 
 位置：`E:\agent\skill-eval-sandbox\ruoyi-vue\change-impact\r2-login-copy\`
 
-3 个文件（light 档）：context-pack.md / light-影响摘要.md / 900-执行记录.md
+3 个文件（light 档）：000-context-pack.md / 040-light.md / 090-execution-record.md
 
 ### 真实 subagent 行为
 

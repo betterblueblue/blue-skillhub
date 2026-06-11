@@ -69,8 +69,8 @@
 虽然 S7 本身未失败，但 `impact` S5 暴露的写入目标边界和执行记录缺失问题也适用于 `impact-pro`。本轮已同步更新：
 
 - `skills/impact-pro/SKILL.md`
-- `skills/impact-pro/templates/phase5-preflight.md`
-- `skills/impact-pro/templates/execution-record.md`
+- `skills/impact-pro/templates/060-preflight.md`
+- `skills/impact-pro/templates/090-execution-record.md`
 
 新增要求：
 

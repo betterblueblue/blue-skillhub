@@ -95,7 +95,7 @@
 | 行为 | 奖励 |
 | --- | ---: |
 | 主动声明在用哪个 skill（"正在使用 impact / impact-pro..."） | +3 |
-| 引用了 skill 模板路径（`templates/light.md` 等） | +3 |
+| 引用了 skill 模板路径（`templates/040-light.md` 等） | +3 |
 | 卡住时主动回到 skill 找答案 | +4 |
 
 ---

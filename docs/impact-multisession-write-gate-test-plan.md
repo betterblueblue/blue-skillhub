@@ -111,7 +111,7 @@ E:\agent\impact-multisession-write-gate-test\
 | 非 Git 替代审计是否存在 | subagent 输出 | pass/fail |
 | API 响应检查是否触发 | 输出中的接口返回检查 | pass/fail |
 | V1-only 风险是否暂停 | 输出中的验证等级和风险说明 | pass/fail |
-| 执行记录是否存在 | `change-impact/**/900-执行记录.md` 或明确说明 | pass/fail |
+| 执行记录是否存在 | `change-impact/**/090-execution-record.md` 或明确说明 | pass/fail |
 
 ## 结果归档
 

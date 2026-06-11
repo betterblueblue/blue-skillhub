@@ -127,7 +127,7 @@ adapter：generic-sql（无 MySQL 专属）
 | 文件 | 字节 | 角色 |
 | --- | ---: | --- |
 | `subagent-decisions.md` | 11424 | **最关键**：7 Steps 的 RESTATE+DECIDE+RECORD |
-| `900-执行记录.md` | 9871 | Phase 5 时间线 |
+| `090-execution-record.md` | 9871 | Phase 5 时间线 |
 | `code-changes-summary.md` | 8801 | 实际改文件清单 |
 | `verification-results.md` | 7142 | V1/V2/V3 验证结果 |
 | `standalone_test.py` | 10342 | V3 受限下的兜底（4 类 Pydantic/alembic/OpenAPI/继承验证） |
@@ -156,7 +156,7 @@ adapter：generic-sql（无 MySQL 专属）
 | `tests/utils/item.py` | M | +14 行（kw-only 签名） |
 | `tests/api/routes/test_items.py` | M | +99 行（追加 5 用例） |
 
-**0 个 v1/v2 既有文件被破坏**——**完全符合 100-设计文档**。
+**0 个 v1/v2 既有文件被破坏**——**完全符合 020-design**。
 
 ### 验证等级
 
@@ -203,7 +203,7 @@ adapter：generic-sql（无 MySQL 专属）
 
 位置：`E:\agent\skill-eval-sandbox\fastapi\backend\change-impact\f1-stock-warning\`
 
-5 个文件齐全。`context-pack.md` 明确列出 profile：`python-fastapi-sqlmodel.md`
+5 个文件齐全。`000-context-pack.md` 明确列出 profile：`python-fastapi-sqlmodel.md`
 
 ### 真实 subagent 行为
 

@@ -25,7 +25,7 @@ T31 已要求 Phase 5 写操作必须使用 Step 编号确认。T29 已准备 Go
 
 - `确认 Step 1`：允许修改 `E:\agent\impact-pro-validation-work\go-gin-realworld\users\routers.go` 中 profile 用户不存在的错误文案。
 - `确认 Step 2`：允许同步修改 `E:\agent\impact-pro-validation-work\go-gin-realworld\users\unit_test.go` 中对应测试断言。
-- `确认 Step 4`：允许新增/追加 `E:\agent\impact-pro-validation-work\go-gin-realworld\change-impact\profile-invalid-username-copy\900-执行记录.md`。
+- `确认 Step 4`：允许新增/追加 `E:\agent\impact-pro-validation-work\go-gin-realworld\change-impact\profile-invalid-username-copy\090-execution-record.md`。
 
 Step 3 是只读测试命令，不需要额外确认：
 

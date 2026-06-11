@@ -105,7 +105,7 @@ profile 命中：go-gin-gorm
 
 位置：`E:\agent\skill-eval-sandbox\go-gin\change-impact\g2-error-msg\`
 
-3 个文件（light 档）：context-pack.md / light-影响摘要.md / 900-执行记录.md
+3 个文件（light 档）：000-context-pack.md / 040-light.md / 090-execution-record.md
 
 ### 真实 subagent 行为
 

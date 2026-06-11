@@ -5,7 +5,7 @@
 - 测试方式：真实项目 Phase 5 执行包准备
 - 项目路径：`E:\agent\impact-pro-validation-work\go-gin-realworld`
 - 项目栈：Go / Gin / GORM
-- 目标：准备一次低风险真实写操作闭环，用于验证 Phase 5 的逐项确认、执行、验证和 `900-执行记录.md` 追加。
+- 目标：准备一次低风险真实写操作闭环，用于验证 Phase 5 的逐项确认、执行、验证和 `090-execution-record.md` 追加。
 - 当前状态：待用户确认后执行；本轮未修改外部项目源码。
 - 失败等级：无 P0/P1。
 
@@ -91,8 +91,8 @@ docker run --rm -v "E:/agent/impact-pro-validation-work/go-gin-realworld:/src" -
 ### Step 4: 追加执行记录
 
 - 确认类型：写文件
-- 文件：外部验证仓 `change-impact/profile-invalid-username-copy/900-执行记录.md`
-- 操作：按 `templates/execution-record.md` 记录确认、执行、验证和收尾状态
+- 文件：外部验证仓 `change-impact/profile-invalid-username-copy/090-execution-record.md`
+- 操作：按 `templates/090-execution-record.md` 记录确认、执行、验证和收尾状态
 - 回滚方式：删除本次新增的 `change-impact/profile-invalid-username-copy/` 目录或追加回滚记录
 - 验证方式：检查执行记录包含每步确认、影响、回滚和验证结果
 - 是否需要确认：是
@@ -104,7 +104,7 @@ docker run --rm -v "E:/agent/impact-pro-validation-work/go-gin-realworld:/src" -
 - 每个写操作执行前均有独立确认。
 - 外部项目源码变更与测试断言变更均可追溯到本次需求。
 - Docker 全量测试通过，或失败后只诊断、不自动修复。
-- `900-执行记录.md` 追加记录完整，不覆盖历史。
+- `090-execution-record.md` 追加记录完整，不覆盖历史。
 - 外部验证仓最终状态可解释：保留演练分支/变更，或按回滚方案清理。
 
 ## 当前结论

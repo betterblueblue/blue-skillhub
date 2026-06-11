@@ -12,15 +12,15 @@
 
 | 检查项 | 期望 | 证据 | 结论 |
 |--------|------|------|------|
-| Step 编号确认 | Phase 5 必须使用 `确认 Step N / 跳过 Step N` | `SKILL.md` Phase 5；`README.md` 示例；`200-实施文档.md` | 通过 |
+| Step 编号确认 | Phase 5 必须使用 `确认 Step N / 跳过 Step N` | `SKILL.md` Phase 5；`README.md` 示例；`030-implementation.md` | 通过 |
 | 模糊确认无效 | `yes/可以/继续/全部确认` 不得触发写操作 | `SKILL.md` 自动/确认边界；`README.md` 自动/确认边界 | 通过 |
 | 判档时机 | Phase 2.5 只预判；Phase 3.5 正式判档 | `SKILL.md` Phase 2.5 / Phase 3.5 | 通过 |
 | 苏格拉底多轮 | 每轮 <= 3 问，不是总共 3 问；P0/P1 未确认不得执行 | `SKILL.md` Phase 3 | 通过 |
 | 简化不跳闸 | 用户可简化文档形式，但不能跳过安全闸 | `SKILL.md` Phase 3.5；`README.md` v3.1 | 通过 |
-| 执行前门禁 | 写操作前必须完成 preflight | `templates/phase5-preflight.md`；`SKILL.md` Phase 5 | 通过 |
-| 执行记录 | `900-执行记录.md` 使用完整模板追加记录 | `templates/execution-record.md`；`SKILL.md` 执行记录 | 通过 |
-| light 模板 | light 不跳过安全闸 | `templates/light-影响摘要.md` | 通过 |
-| 实施模板 | Step 需记录语义约定、验证方式和确认提示 | `templates/200-实施文档.md` | 通过 |
+| 执行前门禁 | 写操作前必须完成 preflight | `templates/060-preflight.md`；`SKILL.md` Phase 5 | 通过 |
+| 执行记录 | `090-execution-record.md` 使用完整模板追加记录 | `templates/090-execution-record.md`；`SKILL.md` 执行记录 | 通过 |
+| light 模板 | light 不跳过安全闸 | `templates/040-light.md` | 通过 |
+| 实施模板 | Step 需记录语义约定、验证方式和确认提示 | `templates/030-implementation.md` | 通过 |
 | 验收标准 | 有轻量验收和一票否决项 | `VALIDATION.md` | 通过 |
 
 ## 执行命令
@@ -42,7 +42,7 @@ rg -n -F "Phase 2.5 判档 + 确认" skills/impact/SKILL.md skills/impact/README
 rg -n "确认 Step|phase5-preflight|execution-record|Phase 3.5|P0 必问|不是总问题数" skills/impact
 ```
 
-结果：命中 `SKILL.md`、`README.md`、`VALIDATION.md`、`templates/phase5-preflight.md`、`templates/execution-record.md`、`templates/200-实施文档.md`。
+结果：命中 `SKILL.md`、`README.md`、`VALIDATION.md`、`templates/060-preflight.md`、`templates/090-execution-record.md`、`templates/030-implementation.md`。
 
 格式检查：
 

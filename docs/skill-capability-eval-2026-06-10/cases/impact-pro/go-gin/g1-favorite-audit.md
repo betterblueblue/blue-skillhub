@@ -73,7 +73,7 @@ DB：MySQL 或 SQLite（baseline T24 指出是 SQLite）
 
 ## Phase 4 文档
 
-### 000-需求文档.md
+### 010-requirements.md
 
 **目标**：扩展 favorites 表增加 audit 字段，加 admin 审计接口
 
@@ -137,7 +137,7 @@ DB：MySQL 或 SQLite（baseline T24 指出是 SQLite）
 
 位置：`E:\agent\skill-eval-sandbox\go-gin\change-impact\g1-favorite-audit\`
 
-5 个文件齐全。`900-执行记录.md` 首行："Skill invoked: impact-pro (via Skill tool) / Profile loaded: profiles/go-gin-gorm.md (level 1)"
+5 个文件齐全。`090-execution-record.md` 首行："Skill invoked: impact-pro (via Skill tool) / Profile loaded: profiles/go-gin-gorm.md (level 1)"
 
 ### 真实 subagent 行为
 

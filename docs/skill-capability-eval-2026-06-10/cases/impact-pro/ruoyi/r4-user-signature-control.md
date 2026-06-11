@@ -124,7 +124,7 @@ DB adapter：mysql
 
 位置：`E:\agent\skill-eval-sandbox\ruoyi-vue\change-impact\r4-user-signature-control\`
 
-5 个文件：context-pack.md / 000-需求文档.md / 100-设计文档.md / 200-实施文档.md / 900-执行记录.md
+5 个文件：000-context-pack.md / 010-requirements.md / 020-design.md / 030-implementation.md / 090-execution-record.md
 
 ### 真实 subagent 行为
 
@@ -133,7 +133,7 @@ DB adapter：mysql
 | 调用的 skill | `impact-pro`（通过 Skill 工具） |
 | 加载的 profile | `java-spring-mybatis`（Level 2，RuoYi 衍生） |
 | 完成的 Phase | 1✓ / 2✓（profile 自动加载）/ 2.5✓ / 3✓（3 轮 6 问）/ 3.5✓ / 4✓ / 5 跳过 |
-| 关键发现 | profile `discovery_globs` 帮助找到多模块结构（Entity common / Mapper system / Controller admin）；`style_axes` 在 100-设计文档 §5 风格合规检查**直接复用** |
+| 关键发现 | profile `discovery_globs` 帮助找到多模块结构（Entity common / Mapper system / Controller admin）；`style_axes` 在 020-design §5 风格合规检查**直接复用** |
 | 幻觉路径 | 0 |
 | Token 消耗 | 82,689 |
 | 跑分耗时 | 5 分 58 秒 |
