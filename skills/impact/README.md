@@ -39,8 +39,8 @@
 - **阻塞恢复安全闸** — blocked、上下文压缩或延迟确认后，先复核 pending Step、当前文件状态和最新授权，再决定是否执行
 - **subagent 自治模式**（v3.6 新增，仅限 eval 脚手架）— 跑分时 subagent 模拟人类用户在沙盒里独立使用 skill，对 6 类高风险 Step 自主判断做不做。这是**测评协议**的事，不是 skill 生产协议的事；生产会话里不存在 subagent 自治，所有高风险操作走 SKILL.md 铁律（禁止执行、必须暂停、等用户显式确认）。eval 细节见 `docs/skill-capability-eval-2026-06-10/protocol-draft-subagent-as-user.md`
 - **决策矩阵模板**（v3.6 新增）— `templates/subagent-decisions.md`（RESTATE → DECIDE → RECORD 三段）
-- **环境降级路径**（v3.6 新增）— `templates/200-实施文档.md` 加"V3 受限时启用 X 备选"段，避免事后才发现
-- **PASS/FAIL 决策依据**（v3.6 新增）— `templates/execution-record.md` 决策依据字段从散文升级为 6 项高风险清单显式勾选
+- **环境降级路径**（v3.6 新增）— `templates/030-implementation.md` 加"V3 受限时启用 X 备选"段，避免事后才发现
+- **PASS/FAIL 决策依据**（v3.6 新增）— `templates/090-execution-record.md` 决策依据字段从散文升级为 6 项高风险清单显式勾选
 
 ## 什么时候该用这个 Skill
 
@@ -114,15 +114,15 @@ Skill 基于证据正式建议：light 还是 full？
 ↓
 你：够了，输出文档
 ↓
-Skill 写入需求文档 → change-impact/用户个性签名/000-需求文档.md
+Skill 写入需求文档 → change-impact/用户个性签名/010-requirements.md
 ↓
 你：确认
 ↓
-Skill 写入设计文档 → change-impact/用户个性签名/100-设计文档.md
+Skill 写入设计文档 → change-impact/用户个性签名/020-design.md
 ↓
 你：确认
 ↓
-Skill 写入实施文档 + 验证脚本 → change-impact/用户个性签名/200-实施文档.md + 300-验证脚本/
+Skill 写入实施文档 + 验证脚本 → change-impact/用户个性签名/030-implementation.md + 050-validation/
 ↓
 你：确认，开始执行
 ↓
@@ -130,13 +130,13 @@ Skill：执行操作 1/5，确认吗？
 ↓
 你：确认 Step 1
 ↓
-Skill：执行 → 风格合规检查 + 单测 + 正向用例 → 全部通过 → 写入 900-执行记录.md
+Skill：执行 → 风格合规检查 + 单测 + 正向用例 → 全部通过 → 写入 090-execution-record.md
 ↓
 你：确认 Step 2
 ↓
 ...（每步操作后自动跑 A+B 测试）
 ↓
-E2E 验证脚本已生成 → change-impact/用户个性签名/300-验证脚本/
+E2E 验证脚本已生成 → change-impact/用户个性签名/050-validation/
 ```
 
 ## 迭代记录
@@ -193,7 +193,7 @@ E2E 验证脚本已生成 → change-impact/用户个性签名/300-验证脚本/
 - `yes/no` 执行确认升级为 `确认 Step N / 跳过 Step N`
 - 模糊确认、自动续跑、系统消息和历史授权不能替代当前用户 Step 级确认
 - 用户可要求简化文档，但不能跳过分析依据、执行前检查、Step 确认和验证方案
-- 新增 `phase5-preflight.md` 和 `execution-record.md` 模板
+- 新增 `060-preflight.md` 和 `090-execution-record.md` 模板
 - 增加 P0/P1/P2/P3 问题优先级和多轮提问规则
 
 ### v3.2（行为准则回补）
@@ -209,7 +209,7 @@ E2E 验证脚本已生成 → change-impact/用户个性签名/300-验证脚本/
 - 增加 L1 项目地图 / L2 变更邻域 / L3 精准证据三层探索
 - 每个候选文件、表、接口或配置项必须标注相关性 3/2/1/0
 - 未完成上下文包前不得正式 light/full 判档
-- 新增 `templates/context-pack.md`
+- 新增 `templates/000-context-pack.md`
 
 ### v3.4（长期真实使用补强）
 
@@ -232,7 +232,7 @@ E2E 验证脚本已生成 → change-impact/用户个性签名/300-验证脚本/
 
 **改了什么**
 
-执行记录的决策依据从散文升级为 6 项高风险清单的 PASS/FAIL 表格。配套新增 `templates/subagent-decisions.md` 模板（RESTATE → DECIDE → RECORD 三段）。`200-实施文档.md` 多了一段"环境降级路径"，把 V3 受限后的备选方案写进 Phase 2.5 而不是事后才发现。`ty check` 必须走 venv 的 `python -m ty`；alembic 验证优先用离线 SQL 渲染。SKILL.md Phase 5 末尾加了"高风险 Step 识别清单"子段，列出 6 类不可逆操作作为 subagent 自主判断的参考。
+执行记录的决策依据从散文升级为 6 项高风险清单的 PASS/FAIL 表格。配套新增 `templates/subagent-decisions.md` 模板（RESTATE → DECIDE → RECORD 三段）。`030-implementation.md` 多了一段"环境降级路径"，把 V3 受限后的备选方案写进 Phase 2.5 而不是事后才发现。`ty check` 必须走 venv 的 `python -m ty`；alembic 验证优先用离线 SQL 渲染。SKILL.md Phase 5 末尾加了"高风险 Step 识别清单"子段，列出 6 类不可逆操作作为 subagent 自主判断的参考。
 
 **边界修正**
 

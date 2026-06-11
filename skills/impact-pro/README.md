@@ -39,8 +39,8 @@
 - **阻塞恢复安全闸** — blocked、上下文压缩或延迟确认后，先复核 pending Step、当前文件状态和最新授权，再决定是否执行
 - **subagent 自治模式**（v3.6 新增，仅限 eval 脚手架）— 跑分时 subagent 模拟人类用户在沙盒里独立使用 skill，对 6 类高风险 Step 自主判断做不做。这是**测评协议**的事，不是 skill 生产协议的事；生产会话里不存在 subagent 自治，所有高风险操作走 SKILL.md 铁律（禁止执行、必须暂停、等用户显式确认）。eval 细节见 `docs/skill-capability-eval-2026-06-10/protocol-draft-subagent-as-user.md`
 - **决策矩阵模板**（v3.6 新增）— `templates/subagent-decisions.md`（RESTATE → DECIDE → RECORD 三段）
-- **环境降级路径**（v3.6 新增）— `templates/implementation.md` 加"V3 受限时启用 X 备选"段，避免事后才发现
-- **PASS/FAIL 决策依据**（v3.6 新增）— `templates/execution-record.md` 决策依据字段从散文升级为 6 项高风险清单显式勾选
+- **环境降级路径**（v3.6 新增）— `templates/030-implementation.md` 加"V3 受限时启用 X 备选"段，避免事后才发现
+- **PASS/FAIL 决策依据**（v3.6 新增）— `templates/090-execution-record.md` 决策依据字段从散文升级为 6 项高风险清单显式勾选
 
 ## 技术栈覆盖
 
@@ -162,13 +162,13 @@ impact-pro/
 │   ├── generic-sql.md    # 通用 SQL 模板
 │   └── mysql.md          # MySQL 专用
 └── templates/            # 文档模板
-    ├── context-pack.md
-    ├── light.md
-    ├── requirements.md
-    ├── design.md
-    ├── implementation.md   # v3.6 加"环境降级路径"段
-    ├── phase5-preflight.md
-    ├── execution-record.md # v3.6 加 PASS/FAIL 表格 + 决策依据 + ty/alembic 约定
+    ├── 000-context-pack.md
+    ├── 010-requirements.md
+    ├── 020-design.md
+    ├── 030-implementation.md    # v3.6 加"环境降级路径"段
+    ├── 040-light.md
+    ├── 060-preflight.md
+    ├── 090-execution-record.md  # v3.6 加 PASS/FAIL 表格 + 决策依据 + ty/alembic 约定
     ├── subagent-decisions.md # v3.6 新增（subagent 决策矩阵模板）
     ├── final-readiness-audit.md
     └── scorecard.md
