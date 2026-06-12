@@ -102,6 +102,25 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 - 模板补段（light 加 Out of Scope / 风格合规、需求文档加未确认项章节）
 - 执行记录时间戳必须来自真实系统命令；alembic head 必须读文件确认
 
+**v3.7.1（结构瘦身：拆 references 达 < 500 行）**
+
+回应 gpt5.5pro 评审的"SKILL.md 拆分到 references 控制平面"建议。Anthropic 官方 [Skill Authoring Best Practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices) 明文："Keep SKILL.md body under 500 lines for optimal performance"。本次拆分后：
+
+| 文档 | 拆前 | 拆后 | 减少 |
+|------|------|------|------|
+| `impact-pro/SKILL.md` | 556 行 | 292 行 | -264 |
+| `impact/SKILL.md`（同步） | 632 行 | 256 行 | -376 |
+
+新增/扩展 `references/`：
+
+- `phase-2-context-discovery.md` — Phase 2 完整执行规则（栈无关骨架 + 引用 profile/db-adapter 加载点）
+- `phase-5-execution.md` — Phase 5 完整执行规则（profile/db-adapter 注入点保留，DDL/DML 段加 "栈/DB 专属形态由 db-adapters/ 补充" 提示）
+- `cross-platform-notes.md` — 跨平台差异（从 impact 同步）
+
+`phases-detail.md` 保持不动（已覆盖 Phase 3 & 3.5 详细规则）。
+
+**安全门禁保留策略**：与 impact 一致——铁律区 7 条 + 自动/确认边界 + 凭证脱敏/仓内文本铁律 + 行为准则检查 7 条 + Phase 4 文档输出结构 + 多栈目录结构 全部保留在主 SKILL.md（fable5 评审点 5）。references 仅下沉非门禁性的执行规则和详细说明。
+
 多栈测试用例、评分标准、行为准则检查和使用边界见 [VALIDATION.md](VALIDATION.md)，优化后回归复测协议见 [../../docs/impact-regression-protocol.md](../../docs/impact-regression-protocol.md)，实际验收记录索引见 [validation-runs/INDEX.md](validation-runs/INDEX.md)。
 
 ## 典型流程
