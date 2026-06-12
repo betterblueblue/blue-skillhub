@@ -3,3 +3,7 @@ __pycache__/
 .env
 node_modules/
 mcps/
+
+# === 测试产物（e2e fixtures + 克隆项目）===
+skills/*/tests/
+test-projects/
