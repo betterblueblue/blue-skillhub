@@ -121,6 +121,43 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 
 **安全门禁保留策略**：与 impact 一致——铁律区 7 条 + 自动/确认边界 + 凭证脱敏/仓内文本铁律 + 行为准则检查 7 条 + Phase 4 文档输出结构 + 多栈目录结构 全部保留在主 SKILL.md（fable5 评审点 5）。references 仅下沉非门禁性的执行规则和详细说明。
 
+## references 索引
+
+| 文件 | 内容 | 主文档对应段 |
+|------|------|-------------|
+| `references/phase-2-context-discovery.md` | Phase 2 栈探测 + 分层探索 + 上下文预算 | Phase 2 栈探测+上下文 |
+| `references/phases-detail.md` | Phase 3 & 3.5 详细规则（兼容历史命名） | Phase 3 探索、Phase 3.5 判档 |
+| `references/phase-5-execution.md` | Phase 5 完整执行规则 | Phase 5 执行与验证 |
+| `references/cross-platform-notes.md` | 跨平台差异（时间戳/路径/shell） | 跨平台执行 |
+
+## E2E 真实回归测试
+
+2026-06-12 在真 Go 项目 go-admin 上跑完完整 e2e（加头像上传接口），产出 8 份 change-impact 文档 + 6 文件代码改动，Subagent B 评审 9 维：首次 FAIL（4 代码问题 + 3 测试缺口），修复后重评审通过。
+
+### S3 测试详情
+
+| 维度 | 首次 | 修复后 |
+|------|------|--------|
+| doc_completeness | ✅ PASS | ✅ PASS |
+| doc_quality | ✅ PASS | ✅ PASS |
+| code_correctness | ❌ FAIL | ✅ PASS |
+| code_minimality | ✅ PASS | ✅ PASS |
+| iron_rules | ✅ PASS | ✅ PASS |
+| compile | ⏭️ SKIP | ⏭️ SKIP |
+| style_consistency | ✅ PASS | ✅ PASS |
+| unit_tests | ❌ FAIL | ✅ PASS |
+| performance | ⚠️ WARN | ⚠️ WARN |
+
+### 修复项
+
+1. Upload 签名 `interface{}` → `context.Context` + `*AvatarUploadReq`
+2. `mime.ExtensionsByType` 空切片保护
+3. 加 magic-byte 二次校验（`ValidateImageMagicBytes`）
+4. 硬编码路径 → `config.ExtConfig.Upload.AvatarDir`
+5. InsetAvatar 501 stub → 恢复原始实现（铁律 #2）
+6. BR-006 降级逻辑：缩略图生成失败 → thumbPath=origPath, 不报错
+7. 清理路径测试：新建 `failStore` mock 验证 cleanup
+
 多栈测试用例、评分标准、行为准则检查和使用边界见 [VALIDATION.md](VALIDATION.md)，优化后回归复测协议见 [../../docs/impact-regression-protocol.md](../../docs/impact-regression-protocol.md)，实际验收记录索引见 [validation-runs/INDEX.md](validation-runs/INDEX.md)。
 
 ## 典型流程
@@ -181,8 +218,11 @@ impact-pro/
 ├── db-adapters/          # 数据库适配器
 │   ├── generic-sql.md    # 通用 SQL 模板
 │   └── mysql.md          # MySQL 专用
-├── references/          # 非门禁流程细节（正文瘦身下沉）
-│   └── phases-detail.md # Phase 3/3.5 收敛协议、判档条件、验证等级等
+├── references/          # 详细执行规则（按需加载，正文瘦身下沉）
+│   ├── phase-2-context-discovery.md  # Phase 2 栈探测 + 分层探索
+│   ├── phases-detail.md             # Phase 3 & 3.5 收敛协议、判档条件
+│   ├── phase-5-execution.md          # Phase 5 执行与验证
+│   └── cross-platform-notes.md       # 跨平台差异
 └── templates/            # 文档模板
     ├── 000-context-pack.md
     ├── 010-requirements.md
