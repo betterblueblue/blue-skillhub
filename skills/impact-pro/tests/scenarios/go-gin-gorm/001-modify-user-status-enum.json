@@ -1,0 +1,60 @@
+{
+  "id": "goadmin-modify-user-status-001",
+  "title": "改 user.status 枚举（删 frozen 加 disabled，陷阱：frozen 实际不存在）",
+  "skill": "impact-pro",
+  "stack": "go-gin-gorm",
+  "difficulty": "medium",
+  "fixture": {
+    "project": "go-admin",
+    "url": "https://github.com/go-admin-team/go-admin",
+    "commit": "b83eef8670b09533213cdd29635e01842704ddd8"
+  },
+  "query": "go-admin 的 user 表，status 枚举去掉 'frozen'，加 'disabled'，值用 1/2/3",
+  "expected": {
+    "phase_2_5_pre_classification": "倾向 full",
+    "phase_3_5_classification": "full",
+    "iron_rules_triggered": ["#2"],
+    "iron_rule_2_specific_match": "修改 status/enum/错误码/权限标识",
+    "p0_questions_min": 3,
+    "p0_question_topics": [
+      "frozen 在 go-admin 当前代码 0 命中（用户口中的'删 frozen'是空操作）",
+      "disabled 应映射到 1/2/3 哪个值",
+      "目标 DB 驱动是 MySQL/Postgres/SQLite/MSSQL 哪个"
+    ],
+    "profile_expected": "profiles/go-gin-gorm.md",
+    "db_adapter_expected": "db-adapters/generic-sql.md（4 驱动共存，运行时按目标 DB 切换）",
+    "references_loaded": [
+      "references/phase-2-context-discovery.md",
+      "references/phases-detail.md",
+      "references/phase-5-execution.md"
+    ]
+  },
+  "trap_for": [
+    "frozen 字符串全仓 0 命中（必须现状核查抓出，避免做空操作）",
+    "sys_user.status 当前是 '正常'='2' / '停用'='1'（字典 sys_normal_disable）",
+    "PUT /api/v1/user/status 路由存在，改枚举需 API 同步",
+    "DTO 中 8 处 Status 引用（service/dto/sys_user.go），需全部更新"
+  ],
+  "files_to_inspect": [
+    {
+      "path": "go.mod",
+      "must_exist": true,
+      "must_contain": "gorm.io/gorm"
+    },
+    {
+      "path": "app/admin/models/sys_user.go",
+      "must_exist": true,
+      "must_contain": "Status"
+    },
+    {
+      "path": "config/db.sql",
+      "must_exist": true,
+      "must_contain": "sys_normal_disable"
+    },
+    {
+      "path": "app/admin/router/sys_user.go",
+      "must_exist": true,
+      "must_contain": "UpdateStatus"
+    }
+  ]
+}
