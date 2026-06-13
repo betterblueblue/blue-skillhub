@@ -1,0 +1,26 @@
+{
+  "skill": "pathfinder",
+  "experiment": "control-variable: ceb2343(基线skill) vs 22be520(修复skill),同 runner_model=opus-4-8,case P2/RuoYi-Vue",
+  "run_date": "2026-06-14",
+  "runner_model": "opus-4-8",
+  "judge": "opus-4-8:control-judge",
+  "cells": {
+    "ceb2343": { "n": 2, "base_mean": 99.5, "base_stdev": 0.7, "scores": [100, 99], "contracts_fail": 0 },
+    "22be520": { "n": 2, "base_mean": 99.5, "base_stdev": 0.7, "scores": [99, 100], "contracts_fail": 0 }
+  },
+  "delta_base": 0.0,
+  "signal_ratio": 0.0,
+  "verdict": "skill 版本(ceb2343→22be520)对 P2 分数零影响(Δ=0.0,信号比0,cell内σ=0.7)。P2 历史61 是执行者/模型方差,非 skill 变更。",
+  "additional_findings": [
+    "4 次新鲜 Opus 跑分全 99-100,远高于历史(ceb2343=93/sonnet, 22be520=61/unknown)→ 历史低分源于弱执行者+不同判分,非 skill",
+    "基线skill(无凭证格式/目录验证修复)在 Opus 下仍满分 → 铁律#5原措辞对强模型已足够,GLM 的'修复'对强模型无增益",
+    "cell 内 σ≈0.7(~1分)→ GLM 当时无出处的'同模型差1-3分'断言,实测基本成立",
+    "判分与执行同模型(Opus判Opus),绝对分可能偏高,但相对对比(Δ=0)有效——判分器两 cell 一致"
+  ],
+  "caveats": [
+    "仅测 Opus;弱模型可能对 skill 更敏感(但历史61本身就在22be520修复版上,说明修复未防住弱模型失败)",
+    "n=2/cell,样本小;但两 cell 均值完全一致,增样本不会反转结论",
+    "判分=执行同模型,绝对分可能上浮;控制变量已 hold 住判分器,相对结论成立"
+  ],
+  "answers_user_question": "P2 的 61 是模型(执行者),不是 skill。GLM 的归因方向正确但当时未验证;本实验验证了。"
+}

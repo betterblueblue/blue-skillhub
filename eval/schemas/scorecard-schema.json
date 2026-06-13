@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Skill Eval Scorecard",
-  "description": "一次 case 复跑的评分卡。结构化、可 diff、绑 skill commit。",
+  "description": "一次 case 复跑的评分卡。结构化、可 diff、绑 skill commit。runner_model 与 judge 必须分别记录——控制变量法据此区分'skill 漂移'与'模型方差'。",
   "type": "object",
   "required": ["case_id", "skill_commit", "run_date", "judge", "dims", "p_level", "contracts"],
   "properties": {
@@ -20,11 +20,15 @@
     },
     "judge": {
       "type": "string",
-      "description": "判分模型/人，如 'sonnet-4-6', 'human:alice'"
+      "description": "判分者(评分模型/人),如 'sonnet-4-6:l1-judge', 'opus-4-8', 'human:alice'。注意:这是给产出打分的一方,不是执行 skill 的一方——后者记 runner_model。"
+    },
+    "runner_model": {
+      "type": "string",
+      "description": "执行 skill 产出地图/文档的模型(被测的执行者),如 'opus-4-8', 'sonnet-4-6'。历史未记录的填 'unknown'。控制变量法据此判断分数变化是 skill 漂移还是执行者差异——runner_model 不一致时,跨 run 的分数不可直接归因。"
     },
     "dims": {
       "type": "object",
-      "description": "各维度分数。impact 9 维或 pathfinder 9 维。",
+      "description": "各维度分数。键名必须用该 skill 的 canonical 维度名,跨 run 一致才能 diff。pathfinder 9 维: readonly_safety, evidence_tags, blindspot_honesty, credential_masking, trust_header, mermaid_discipline, section_completeness, degradation, handoff。impact/impact-pro 9 维见 rubric-impact.md。",
       "additionalProperties": { "type": "integer" }
     },
     "base_total": {
