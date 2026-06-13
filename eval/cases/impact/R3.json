@@ -1,0 +1,35 @@
+{
+  "id": "R3",
+  "title": "改登录页 checkbox 文案（轻量，验证判 light 准确性）",
+  "skill": "impact",
+  "stack": "java-spring-mybatis",
+  "tier": "light",
+  "fixture": {
+    "project": "RuoYi-Vue",
+    "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
+    "commit": "41720e624c5a668c7d3777835e4c87095a7a1dfd"
+  },
+  "prompt": "把登录页 checkbox 文案从'记住密码'改成'7天免登录'",
+  "expected": {
+    "tier": "light",
+    "must_hit_files": [
+      "ruoyi-ui/src/views/login.vue (checkbox 文案)"
+    ],
+    "forbidden_claims": [
+      "需要改 DB 或 API（实际只需改前端文案）"
+    ],
+    "must_ask_topics": [
+      "cookie expires 30 天与新文案'7天'语义不一致，是否同步改有效期"
+    ],
+    "iron_rules_must_hold": []
+  },
+  "trap_for": [
+    "用户问的是文案，但 cookie expires 30 与新文案'7天'语义错位",
+    "用户口述'记住我'与代码原文'记住密码'不一致",
+    "无 DB/API/权限变更 → 不触发任何铁律 → 判 light 必须准确"
+  ],
+  "files_to_inspect": [
+    { "path": "ruoyi-ui/src/views/login.vue", "must_exist": true, "must_contain": "记住密码" },
+    { "path": "ruoyi-ui/src/views/login.vue", "must_exist": true, "must_contain": "expires: 30" }
+  ]
+}

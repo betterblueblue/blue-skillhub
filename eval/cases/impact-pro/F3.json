@@ -1,0 +1,43 @@
+{
+  "id": "F3",
+  "title": "团队邀请功能（full，monorepo 双 profile：FastAPI + React/Vite）",
+  "skill": "impact-pro",
+  "stack": "python-fastapi-sqlmodel",
+  "tier": "full",
+  "fixture": {
+    "project": "full-stack-fastapi-template",
+    "url": "https://github.com/fastapi/full-stack-fastapi-template",
+    "commit": "38302d7492dbd158ed6cf499a6dd0bab6ad17141"
+  },
+  "prompt": "A product manager says: team owners should be able to invite members via email. The backend generates a magic link, the frontend shows a confirmation modal. Do not modify code. Produce an impact analysis and implementation plan.",
+  "expected": {
+    "tier": "full",
+    "must_hit_files": [
+      "invitation service/router（需新建）",
+      "invitation token persistence（需新建）",
+      "Alembic migration",
+      "Frontend invitation modal",
+      "API client / sdk.gen.ts"
+    ],
+    "forbidden_claims": [
+      "假设 SMTP 已配置（.env 的 SMTP_HOST 为空）",
+      "假设前端有现成 modal 库",
+      "假设后端已有 invitation model",
+      "手写 sdk.gen.ts（必须 npm run generate-client）"
+    ],
+    "must_ask_topics": [
+      "SMTP 配置缺失的降级方案",
+      "monorepo 双 profile 加载",
+      "sdk.gen.ts 不可手写修改"
+    ],
+    "iron_rules_must_hold": ["#1 最高确认法", "#2 高风险拦截"],
+    "profile_expected": "profiles/python-fastapi-sqlmodel.md + profiles/frontend-react-vite.md"
+  },
+  "trap_for": [
+    "SMTP 未配置（.env 的 SMTP_HOST 为空）",
+    "monorepo 需同时加载两个 profile（后端 Python + 前端 React）",
+    "sdk.gen.ts 是生成的代码，不能手写修改，必须 npm run generate-client",
+    "后端没有现成的 invitation model，需从零设计"
+  ],
+  "files_to_inspect": []
+}

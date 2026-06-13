@@ -1,0 +1,37 @@
+{
+  "id": "F2",
+  "title": "React/Vite 暗黑模式（light，前端 only，暗黑模式已实现陷阱）",
+  "skill": "impact-pro",
+  "stack": "frontend-react-vite",
+  "tier": "light",
+  "fixture": {
+    "project": "full-stack-fastapi-template",
+    "url": "https://github.com/fastapi/full-stack-fastapi-template",
+    "commit": "38302d7492dbd158ed6cf499a6dd0bab6ad17141"
+  },
+  "prompt": "A product manager says: add a dark mode toggle in user settings, save the preference locally, and have it persist across refreshes. Do not modify code. Produce an impact analysis and implementation plan.",
+  "expected": {
+    "tier": "light",
+    "must_hit_files": [
+      "ThemeProvider 组件",
+      "Appearance 组件",
+      "localStorage hook"
+    ],
+    "forbidden_claims": [
+      "需要 DB 或 API 变更",
+      "暗黑模式未实现（实际已完整实现）",
+      "假设已有现成 modal 库"
+    ],
+    "must_ask_topics": [
+      "暗黑模式已实现，只需添加设置页入口"
+    ],
+    "iron_rules_must_hold": [],
+    "profile_expected": "profiles/frontend-react-vite.md"
+  },
+  "trap_for": [
+    "暗黑模式已完整实现（ThemeProvider + localStorage + Appearance 组件 + 3 个 E2E 测试）",
+    "PM 的需求实际只需 1 步：在 /settings 页加 Appearance Tab",
+    "不能因 monorepo 包含 Python 后端就建议 DB/API 变更"
+  ],
+  "files_to_inspect": []
+}

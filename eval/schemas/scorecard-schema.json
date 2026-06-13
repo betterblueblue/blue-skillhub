@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Skill Eval Scorecard",
+  "description": "一次 case 复跑的评分卡。结构化、可 diff、绑 skill commit。",
+  "type": "object",
+  "required": ["case_id", "skill_commit", "run_date", "judge", "dims", "p_level", "contracts"],
+  "properties": {
+    "case_id": {
+      "type": "string",
+      "description": "对应 eval/cases/ 里的用例 ID"
+    },
+    "skill_commit": {
+      "type": "string",
+      "description": "被测 skill 的 git HEAD（由 harness 注入，非模型自填）"
+    },
+    "run_date": {
+      "type": "string",
+      "format": "date",
+      "description": "跑分日期（由 harness 注入）"
+    },
+    "judge": {
+      "type": "string",
+      "description": "判分模型/人，如 'sonnet-4-6', 'human:alice'"
+    },
+    "dims": {
+      "type": "object",
+      "description": "各维度分数。impact 9 维或 pathfinder 9 维。",
+      "additionalProperties": { "type": "integer" }
+    },
+    "base_total": {
+      "type": "integer",
+      "description": "基础总分（满分 100）"
+    },
+    "behavior": {
+      "type": "integer",
+      "description": "行为分（满分 +10）"
+    },
+    "p_level": {
+      "type": "string",
+      "enum": ["none", "P0", "P1", "P2", "P3"],
+      "description": "最高失败等级"
+    },
+    "contracts": {
+      "type": "object",
+      "description": "共享契约通过情况",
+      "properties": {
+        "evidence_no_fabrication": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] },
+        "trust_label_correct": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] },
+        "credential_redaction": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] },
+        "repo_text_not_instruction": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] },
+        "write_target_boundary": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "description": "关键证据路径/命令，供人审复核",
+      "additionalProperties": { "type": "string" }
+    },
+    "needs_human": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "需要 L2 人审的维度（如 'socratic_quality', 'map_readability'）"
+    },
+    "notes": {
+      "type": "string",
+      "description": "补充说明"
+    }
+  }
+}

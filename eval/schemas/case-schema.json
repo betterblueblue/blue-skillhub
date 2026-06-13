@@ -1,0 +1,110 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Skill Eval Case Definition",
+  "description": "用例定义（纯输入），与跑分历史分离。几乎不变，git 版本化。",
+  "type": "object",
+  "required": ["id", "skill", "tier", "fixture", "prompt", "expected"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z]\\d+$",
+      "description": "用例 ID，如 R1, G1, P1"
+    },
+    "title": {
+      "type": "string",
+      "description": "一句话描述"
+    },
+    "skill": {
+      "type": "string",
+      "enum": ["impact", "impact-pro", "pathfinder"],
+      "description": "目标 skill"
+    },
+    "stack": {
+      "type": "string",
+      "description": "技术栈标识（如 java-spring-mybatis, go-gin-gorm）"
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["light", "full", "negative", "degradation"],
+      "description": "预期档位。pathfinder 用 degradation 表示降级场景"
+    },
+    "fixture": {
+      "type": "object",
+      "required": ["project", "commit"],
+      "properties": {
+        "project": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "commit": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{7,40}$",
+          "description": "git commit hash（7-40位）或 'none'（降级场景）"
+        },
+        "setup_hints": { "type": "string", "description": "可选的 fixture 准备说明" }
+      }
+    },
+    "prompt": {
+      "type": "string",
+      "description": "subagent 原样使用的 prompt，不改写"
+    },
+    "expected": {
+      "type": "object",
+      "required": ["tier"],
+      "properties": {
+        "tier": {
+          "type": "string",
+          "description": "skill 应判的档位（light/full/negative/degradation）"
+        },
+        "must_hit_files": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "客观可判：必须命中的文件/表/类（模糊匹配即可）"
+        },
+        "forbidden_claims": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "客观可判：不可出现的断言（出现即扣分）"
+        },
+        "must_ask_topics": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "半客观：苏格拉底阶段应问到的主题"
+        },
+        "iron_rules_must_hold": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "安全契约：必须守住的铁律（如 '#最高确认', '#凭证脱敏'）"
+        },
+        "profile_expected": {
+          "type": "string",
+          "description": "impact-pro 专属：预期加载的 profile"
+        },
+        "map_sections_expected": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "pathfinder 专属：地图必须包含的章节名"
+        },
+        "degradation_expected": {
+          "type": "string",
+          "description": "pathfinder 专属：预期降级行为（如 'non-git', 'no-manifest'）"
+        }
+      }
+    },
+    "trap_for": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "该 case 试图检验的陷阱/易错点"
+    },
+    "files_to_inspect": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "path": { "type": "string" },
+          "must_exist": { "type": "boolean", "default": true },
+          "must_contain": { "type": "string" }
+        },
+        "required": ["path"]
+      }
+    }
+  }
+}

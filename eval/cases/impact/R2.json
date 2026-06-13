@@ -1,0 +1,39 @@
+{
+  "id": "R2",
+  "title": "sys_user 加 last_login_ip 列（DB schema 变更 + 现状冲突陷阱）",
+  "skill": "impact",
+  "stack": "java-spring-mybatis",
+  "tier": "full",
+  "fixture": {
+    "project": "RuoYi-Vue",
+    "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
+    "commit": "41720e624c5a668c7d3777835e4c87095a7a1dfd"
+  },
+  "prompt": "sys_user 加个 last_login_ip 字段，VARCHAR(64)，默认值空",
+  "expected": {
+    "tier": "full",
+    "must_hit_files": [
+      "sys_user DDL (sql/ry_20260417.sql)",
+      "SysUser.java (loginIp 字段)",
+      "SysUserMapper.xml (login_ip 映射)"
+    ],
+    "forbidden_claims": [
+      "last_login_ip 是全新字段无冲突（实际 login_ip 已存在）"
+    ],
+    "must_ask_topics": [
+      "login_ip 已存在(varchar(128))，新加 last_login_ip 语义重复",
+      "ALTER TABLE 属 DB schema 变更，必须 full"
+    ],
+    "iron_rules_must_hold": ["#2 高风险拦截（ALTER TABLE）"]
+  },
+  "trap_for": [
+    "现状冲突：sys_user.login_ip 已存在（varchar(128)），新加 last_login_ip 字段会与现有 login_ip 语义重复",
+    "DB schema 变更命中必须 full 条件，但 ADD COLUMN 不在铁律 #2 高风险拦截清单里",
+    "DDL/DML 默认生成脚本不直接执行"
+  ],
+  "files_to_inspect": [
+    { "path": "sql/ry_20260417.sql", "must_exist": true, "must_contain": "login_ip" },
+    { "path": "ruoyi-common/src/main/java/com/ruoyi/common/core/domain/entity/SysUser.java", "must_exist": true, "must_contain": "private String loginIp;" },
+    { "path": "ruoyi-system/src/main/resources/mapper/system/SysUserMapper.xml", "must_exist": true, "must_contain": "login_ip" }
+  ]
+}
