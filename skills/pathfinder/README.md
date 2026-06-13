@@ -102,7 +102,7 @@ Pathfinder 已接入统一测评体系（[docs/skill-eval/](../../docs/skill-eva
 - **L1 行为契约**（release 前跑）：`bash eval/run-l1.sh pathfinder` — 3 个 case（P1/P2/P3D），subagent 扮用户跑完整流程
 - **L2 人审深度**（里程碑抽样）：主观维度（地图导航价值、盲区诚实度）人工复核
 
-基线待建立（需跑一轮 L1 后初始化）。详细 rubric 见 [docs/skill-eval/rubric-pathfinder.md](../../docs/skill-eval/rubric-pathfinder.md)。
+当前基线来自 2026-06-13 L1 跑分（3 case，平均基础分 94.0 / 100，0 P0）。降级场景 P3D 得分最高（98/100），4 个降级陷阱全正确处理。红线机制同 impact 家族——任何契约 PASS→FAIL 或维度掉档≥3 阻断发布。基线详情见 [eval/baselines/pathfinder.json](../../eval/baselines/pathfinder.json)。
 
 ## 安全姿态(只读)
 
