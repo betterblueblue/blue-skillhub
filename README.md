@@ -2,7 +2,7 @@
 
 这是我的 AI 工具箱。
 
-日常用 AI 写代码时，有几个问题会反复出现：它有时会猜、会多改、不会主动查资料、看不了图，也很难在已有系统里稳稳地做一次变更。这个仓库就是围绕这些问题攒出来的一组工具和规则。
+日常用 AI 写代码时，有几个问题会反复出现：它有时会猜、会多改、不会主动查资料、看不了图，刚接手一个陌生项目时很难快速看懂全貌，也很难在已有系统里稳稳地做一次变更。这个仓库就是围绕这些问题攒出来的一组工具和规则。
 
 每个目录都可以单独使用，不需要整套一起上。
 
@@ -23,6 +23,18 @@
 [mcp/web-search-mcp/](mcp/web-search-mcp/)
 
 给 AI 客户端接联网搜索用。支持 Google/Bing/Brave/DuckDuckGo，可以只拿搜索摘要，也可以继续打开网页提取正文。适合 Cursor、CodeBuddy、Claude Desktop 等支持 MCP 的客户端。
+
+### Pathfinder 领航
+
+[skills/pathfinder/](skills/pathfinder/)
+
+面向**刚接手、还不熟悉**的现有项目。它不做具体变更,而是先帮你通读一遍,产出一张全项目级的**认知地图**:技术栈、核心功能、架构分层、关键入口、数据模型概览、构建/运行/测试、雷区、权限模型、典型主链路、文档入口。
+
+它和 Impact 系列正好接力:Pathfinder 管**全景广度**(看懂这是个什么项目),Impact 的 Phase 2 管**变更切片深度**(看懂这次改动影响什么)。地图产出到 `change-impact/_project-map.md`,Impact 启动时会主动读它当 L1 导航上下文 —— 读不到就完全照旧,是可选加速器不是前置必跑项。
+
+地图每条结论都带信任标签(`【已核实】`/`【推断】`)、git HEAD(防过期)和覆盖度声明(显式列出没挖深的盲区)。Impact 接过去时,`【推断】`项一律按未确认处理、动手前重新取证 —— 地图是导航图不是权威源。Pathfinder 全程 100% 只读、只描述不开药方。
+
+如果说律刃管 AI 的**脑子**、Impact 管 AI 的**手**,那 Pathfinder 管的是 AI 的**眼睛** —— 先看懂,才谈得上动手。设计复盘见 [docs/plans/2026-06-13-pathfinder-skill-design.md](docs/plans/2026-06-13-pathfinder-skill-design.md)。
 
 ### ImpactRadar
 
@@ -145,13 +157,14 @@ $env:SILICONFLOW_API_KEY="sk-your-key"
 python skills/vl-vision/vl_vision.py path/to/image.png
 ```
 
-### 4. 安装 Impact Skills
+### 4. 安装 Pathfinder / Impact Skills
 
 把需要的 skill 目录复制到你的 AI 客户端 skills 目录。
 
 Codex：
 
 ```powershell
+Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.codex\skills\pathfinder" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.codex\skills\impact" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.codex\skills\impact-pro" -Recurse -Force
 ```
@@ -159,17 +172,19 @@ Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.codex\sk
 Claude Code：
 
 ```powershell
+Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.claude\skills\impact-pro" -Recurse -Force
 ```
 
-重启客户端后触发 `/impact` 或 `/impact-pro`，能进入变更意图捕获流程即可。完整安装和验证 checklist 见 [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)。
+重启客户端后触发 `/pathfinder`(陌生项目摸底)、`/impact` 或 `/impact-pro`(变更影响分析),能进入对应流程即可。完整安装和验证 checklist 见 [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)。
 
 几个边界要记住：
 
+- `pathfinder` 面向刚接手的陌生项目,产全项目认知地图,100% 只读、只描述不开药方。
 - `impact` 面向 Java/Spring/MyBatis/RuoYi 类现有系统。
 - `impact-pro` 面向已验证技术栈规则覆盖范围内的多栈现有系统。
-- 写文件、改代码、DDL/DML、配置变更、删除、测试修复，都必须由用户明确回复 `确认 Step N`。
+- 写文件、改代码、DDL/DML、配置变更、删除、测试修复,都必须由用户明确回复 `确认 Step N`。
 - 不能用 `yes`、`继续`、`全部确认` 代替 Step 级确认。
 
 ## 目录速览
@@ -194,6 +209,7 @@ blue-skillhub/
 ├── mcp/
 │   └── web-search-mcp/
 └── skills/
+    ├── pathfinder/
     ├── impact/
     ├── impact-pro/
     └── vl-vision/
