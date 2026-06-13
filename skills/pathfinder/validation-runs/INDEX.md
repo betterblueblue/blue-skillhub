@@ -17,6 +17,7 @@ pathfinder = 陌生项目全项目级只读认知地图,产出 change-impact/_pr
 | 记录 | 目标 | 结论 |
 |------|------|------|
 | T01 | 首轮真实 /pathfinder 验证（go-admin + ruoyi-vue 正向、交接、降级、安全） | PASS（1 P1 + 2 P2） |
+| T02 | 二轮验证：Mermaid 图 + P1(凭证脱敏)P2(Git 归属)修复确认 | PASS（0 P1 + 2 P2） |
 
 ## 关键文件
 
