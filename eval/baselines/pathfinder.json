@@ -1,7 +1,13 @@
 {
   "skill": "pathfinder",
-  "baseline_from": null,
-  "skill_commit": null,
-  "run_path": null,
-  "note": "待阶段 2 Pathfinder 接入后建立基线"
+  "baseline_from": "2026-06-13",
+  "skill_commit": "ceb23439e152511085bb5f4b613aab1a1a0e0a17",
+  "run_path": "eval/runs/2026-06-13-pathfinder@ceb23439e152511085bb5f4b613aab1a1a0e0a17/",
+  "average_base_score": 94.0,
+  "average_total_score": 98.0,
+  "p0_count": 0,
+  "contracts_all_pass": false,
+  "contracts_note": "P1 credential_redaction=FAIL(JWT default go-admin underplayed in 雷区); P2/P3D all PASS",
+  "frozen_at": "2026-06-13",
+  "frozen_by": "pathfinder-l1-baseline"
 }
