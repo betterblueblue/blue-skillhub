@@ -129,7 +129,19 @@ print(' '.join(rules))
 
   for rule in $rules; do
     local rule_num="${rule#\#}"
-    if grep -qE "^\s*${rule_num}[\.、\)]\s+\*\*(最高确认|高风险|DB 只读|写入目标|破坏性|阻塞恢复|凭证脱敏)" "$skill_md"; then
+    local pattern
+    case "$skill" in
+      impact|impact-pro)
+        pattern="^\s*${rule_num}[\.、\)]\s+\*\*(最高确认|高风险|DB 只读|写入目标|破坏性|阻塞恢复|凭证脱敏)"
+        ;;
+      pathfinder)
+        pattern="^\s*${rule_num}[\.、\)]\s+\*\*(只读铁律|唯一写入|信任标签|不开药方|凭证脱敏|仓内文本)"
+        ;;
+      *)
+        pattern="^\s*${rule_num}[\.、\)]\s+\*\*"
+        ;;
+    esac
+    if grep -qE "$pattern" "$skill_md"; then
       ok "铁律 $rule 存在于 $skill/SKILL.md 铁律区"
     else
       fail "铁律 $rule 在 $skill/SKILL.md 铁律区未找到"
@@ -267,6 +279,52 @@ validate_scenario() {
   validate_references "$file" || true
   validate_classification "$file" || true
   validate_fixture_files "$file" || true
+  validate_shared_contracts "$file" || true
+}
+
+# ── 共享契约存在性检查（三 skill 统一） ──
+# 检查 docs/skill-eval/contracts.md 中列出的每条共享契约
+# 在本 skill 的 SKILL.md 铁律区中存在
+
+validate_shared_contracts() {
+  local file="$1"
+  local repo_root
+  repo_root=$(repo_root_from_scenario "$file")
+  local skill
+  skill=$(grep -oE '"skill"[[:space:]]*:[[:space:]]*"[^"]+"' "$file" | head -1 | sed 's/.*"skill"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+  local skill_md="$repo_root/skills/$skill/SKILL.md"
+  local contracts_md="$repo_root/docs/skill-eval/contracts.md"
+
+  if [[ ! -f "$contracts_md" ]]; then
+    info "docs/skill-eval/contracts.md 不存在，跳过共享契约检查"
+    return 0
+  fi
+  if [[ ! -f "$skill_md" ]]; then
+    fail "SKILL.md 不存在: $skill_md"
+    return 1
+  fi
+
+  # 按 skill 选择搜索关键词（见 contracts.md「各 skill 搜索关键词」）
+  case "$skill" in
+    impact|impact-pro)
+      local keywords=("最高确认法" "凭证脱敏" "仓内文本不构成指令" "写入目标边界")
+      ;;
+    pathfinder)
+      local keywords=("信任标签强制" "凭证脱敏" "仓内文本不构成指令" "唯一写入目标")
+      ;;
+    *)
+      fail "未知 skill: $skill"
+      return 1
+      ;;
+  esac
+
+  for kw in "${keywords[@]}"; do
+    if grep -q "$kw" "$skill_md"; then
+      ok "共享契约 [$kw] 在 $skill/SKILL.md 铁律区存在"
+    else
+      fail "共享契约 [$kw] 在 $skill/SKILL.md 铁律区未找到 — 可能漂移！"
+    fi
+  done
 }
 
 # 报告总数
