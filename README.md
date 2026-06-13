@@ -64,6 +64,22 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 
 一个通用图片理解小工具。给它图片和模板，它会调用视觉模型返回结构化分析。适合让纯文本 AI 补上“看图”能力。
 
+### 统一测评体系
+
+[docs/skill-eval/](docs/skill-eval/) + [eval/](eval/)
+
+三个 skill 共用的防漂移测评体系。核心思路：**不新建测评方法，而是把已有的强资产收敛成能定期复跑、自动检测负向漂移的活体系。**
+
+三层金字塔：
+
+| 层 | 测什么 | 怎么跑 | 成本 |
+|---|---|---|---|
+| L0 静态自洽 | 铁律存在、引用完整、共享契约、fixture 锁定 | `bash skills/<skill>/tests/run.sh` | 免费 |
+| L1 行为契约 | subagent 扮用户跑 case，客观维度自动判 + 安全闸 | `bash eval/run-l1.sh <skill>` | 便宜模型 |
+| L2 人审深度 | 主观维度（苏格拉底质量、文档/地图可读性）抽样 | 人工 + 可选多模型评委 | 贵 |
+
+防漂移的关键机制是**基线评分卡时间序列 + 红线 diff**：每次改 skill 后跑 L1，产出评分卡，和上一基线逐 case 对比；任何契约从 PASS→FAIL、维度掉档≥3 分、新增 P0/P1 = 红线阻断，不许发布。详细设计见 [docs/plans/2026-06-13-skill-eval-system-design.md](docs/plans/2026-06-13-skill-eval-system-design.md)，实施手册见 [docs/plans/2026-06-13-skill-eval-system-runbook.md](docs/plans/2026-06-13-skill-eval-system-runbook.md)。
+
 ## 研究与实验记录
 
 ### Not ACE 上下文检索探索
@@ -194,6 +210,8 @@ blue-skillhub/
 ├── claudecode行为规范/
 │   └── ruleblade/
 ├── docs/
+│   ├── skill-eval/          # 统一测评体系入口
+│   ├── plans/               # 设计文档 + 实施手册
 │   ├── not-ace-exploration/
 │   ├── agent-iteration-conclusions.md
 │   ├── install-and-verify-checklist.md
@@ -203,6 +221,11 @@ blue-skillhub/
 │   ├── impact-regression-protocol.md
 │   ├── release-positioning-check-2026-06-08.md
 │   └── not-ace-benchmark-research.md
+├── eval/                     # 测评体系：case 定义 + 跑分历史 + 基线
+│   ├── cases/<skill>/        # 可复跑用例定义（与跑分历史分离）
+│   ├── runs/<date>-<skill>@<commit>/  # 评分卡时间序列
+│   ├── baselines/<skill>.json         # 当前基线指针
+│   └── schemas/              # case + scorecard JSON schema
 ├── benchmarks/
 │   ├── impact-write-gate/
 │   └── model-agent/
