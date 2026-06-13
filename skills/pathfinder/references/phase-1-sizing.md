@@ -7,6 +7,23 @@
 
 用快命令量三个数,不读文件内容:
 
+**前置:Git 仓库归属检查**
+
+先确认当前目录是独立 Git 仓库,不是另一个仓库的子目录:
+
+```bash
+# bash
+test "$(git rev-parse --show-toplevel)" = "$(pwd)" && echo "独立仓库" || echo "子目录或非Git"
+```
+```powershell
+# PowerShell
+if ((git rev-parse --show-toplevel).Trim() -eq (Get-Location).Path) { "独立仓库" } else { "子目录或非Git" }
+```
+
+- 返回"独立仓库" → 正常记录 HEAD。
+- 返回"子目录或非Git" → 信任契约头 `基于 commit` 写"非独立 Git 仓库(HEAD 来自父仓库,以扫描时间为准)",不记录父仓库的 HEAD。
+- `git rev-parse --show-toplevel` 报错(非 Git) → 同上,写"非 Git"。
+
 | 指标 | bash 示例 | PowerShell 示例 |
 |------|-----------|------------------|
 | 跟踪文件数 | `git ls-files \| wc -l` | `(git ls-files \| Measure-Object).Count` |
