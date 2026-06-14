@@ -38,7 +38,7 @@
   - 其他依据：[如有，写出]
 
 ### RECORD
-- 写入 900-执行记录.md 的 [HH:MM:SS] Step N 段
+- 写入 090-execution-record.md 的 [HH:MM:SS] Step N 段
 - 实际执行：[改了哪些文件 / 跑了哪些命令]
 - 验证结果：[V1/V2/V3 通过 / 失败 / 受限]
 

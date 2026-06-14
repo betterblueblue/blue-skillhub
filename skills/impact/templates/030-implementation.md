@@ -10,7 +10,7 @@
 - [ ] 依赖服务状态确认
 - [ ] 锁策略/停机窗口确认
 - [ ] 回滚方案准备完毕
-- [ ] `phase5-preflight.md` 已填写并通过
+- [ ] `060-preflight.md` 已填写并通过
 - [ ] 所有写类操作均已规划 Step 编号确认
 - [ ] 涉及 status/enum/常量/错误码/权限名/配置键的语义约定已回看原定义
 
@@ -51,7 +51,7 @@
 
 ## 6. E2E / 验证脚本
 
-脚本路径：`change-impact/{需求名称}/300-验证脚本/`
+脚本路径：`change-impact/{需求名称}/050-validation/`
 
 [脚本内容或生成说明]
 
@@ -63,7 +63,7 @@
 
 ## 8. 执行记录
 
-执行记录写入 `change-impact/{需求名称}/900-执行记录.md`，格式参照 `templates/execution-record.md`。记录必须包含 Step 编号确认、影响范围、回滚方式、验证命令和关键输出。
+执行记录写入 `change-impact/{需求名称}/090-execution-record.md`，格式参照 `templates/090-execution-record.md`。记录必须包含 Step 编号确认、影响范围、回滚方式、验证命令和关键输出。
 
 ## 9. 环境降级路径
 

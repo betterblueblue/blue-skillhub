@@ -38,7 +38,7 @@
   - 其他依据：[如有，写出]
 
 ### RECORD
-- 写入 900-执行记录.md 的 [HH:MM:SS] Step N 段
+- 写入 090-execution-record.md 的 [HH:MM:SS] Step N 段
 - 实际执行：[改了哪些文件 / 跑了哪些命令]
 - 验证结果：[V1/V2/V3 通过 / 失败 / 受限]
 
@@ -46,7 +46,7 @@
 
 ## 决策偏离说明（如有）
 
-如果实际执行**与 200-实施文档.md 计划有偏离**（如用手写 migration 替代 autogenerate），必须在此段显式说明：
+如果实际执行**与 030-implementation.md 计划有偏离**（如用手写 migration 替代 autogenerate），必须在此段显式说明：
 
 - **偏离内容**：[简述]
 - **偏离原因**：[为什么]
