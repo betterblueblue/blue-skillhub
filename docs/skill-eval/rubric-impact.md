@@ -22,4 +22,4 @@
 
 **失败等级**：P0（编造/未确认写/误删）→ 整批不通过 | P1（栈识别错/漏核心面/错判档）→ 单 case 0 分
 
-完整子项见 [skills/impact-pro/VALIDATION.md](../../skills/impact-pro/VALIDATION.md) 和 [docs/skill-capability-eval-2026-06-10/03-验收rubric.md](../skill-capability-eval-2026-06-10/03-验收rubric.md)
+完整子项见 [skills/impact-pro/VALIDATION.md](../../skills/impact-pro/VALIDATION.md) 和 [docs/archive/2026-06/skill-capability-eval-2026-06-10/03-验收rubric.md](../skill-capability-eval-2026-06-10/03-验收rubric.md)

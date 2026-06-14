@@ -2,7 +2,7 @@
 
 > 日期:2026-06-11
 > 适用范围:`skills/impact` + `skills/impact-pro`,有人值守生产场景
-> 来源:Claude 逐行评审 + GPT5.5pro 两轮评审 + `docs/skill-capability-eval-2026-06-10/90-问题清单.md` 未修项
+> 来源:Claude 逐行评审 + GPT5.5pro 两轮评审 + `docs/archive/2026-06/skill-capability-eval-2026-06-10/90-问题清单.md` 未修项
 > 修订:2026-06-11 第二轮——经官方文档核实 Claude Code 机制后新增 #14/#15,修订 #2/#3/#5/#8;详见各项及 `skill-gap-fix-plan-2026-06-11.md`
 > 双评审一致结论:**有人值守生产可用;阻塞项仅 1 个(#1);修复路线 P0 → P1 → P2 → CI 化**
 
@@ -48,7 +48,7 @@
 
 **怎么改**:
 
-1. 整段剪切到 `docs/skill-capability-eval-2026-06-10/protocol-draft-subagent-as-user.md`(它本来的家)
+1. 整段剪切到 `docs/archive/2026-06/skill-capability-eval-2026-06-10/protocol-draft-subagent-as-user.md`(它本来的家)
 2. 正文原位替换为:"命中以下任一项,**禁止执行,必须暂停**,等待用户对该 Step 的显式确认:DROP TABLE/COLUMN、无 WHERE 的 DELETE、删旧接口/Controller、无备份删文件、改 status/enum/错误码/权限标识、任何不可逆操作。"
 
 **收益**:高危操作门禁闭环。R3 跑分三次 STOP 证明模型在硬约束下行为一致——把唯一的口子焊上,一致性有了文本保证而不是靠模型自觉。

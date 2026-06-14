@@ -25,8 +25,8 @@
 |---|---|---|---|---|
 | 1 | `skills/{impact,impact-pro}/tests/run.sh` + `lib/validate.sh` + `scenarios/*.json` | **L0 静态自洽**：铁律存在性、引用完整、fixture commit 锁定、陷阱锚点真实 | impact / impact-pro | ✅ 确定性、可 CI |
 | 2 | `skills/{impact,impact-pro}/VALIDATION.md` | 验收标准：9 维 100 分 rubric、底线 10 条、流程合规一票否决、light/full 判档、rollout R0–R3、readiness checklist | impact / impact-pro | ⚠️ 标准在，执行靠手 |
-| 3 | `docs/impact-regression-protocol.md` | **改后即测**：RG0–RG3 分层 + 触发矩阵 + 记录格式 + 默认动作 | impact / impact-pro | ⚠️ 协议在，无定期触发 |
-| 4 | `docs/skill-capability-eval-2026-06-10/` | **行为层端到端**：subagent-as-user harness（02）、9 维+行为分 rubric（03）、9 case、分数/问题/改进 | impact / impact-pro | ❌ 一次性快照 |
+| 3 | `docs/skill-eval/regression.md` | **改后即测**：RG0–RG3 分层 + 触发矩阵 + 记录格式 + 默认动作 | impact / impact-pro | ⚠️ 协议在，无定期触发 |
+| 4 | `docs/archive/2026-06/skill-capability-eval-2026-06-10/` | **行为层端到端**：subagent-as-user harness（02）、9 维+行为分 rubric（03）、9 case、分数/问题/改进 | impact / impact-pro | ❌ 一次性快照 |
 | 5 | `docs/skill-{gpt5.5pro,fable5}-review-2026-06-11.md` | 多模型交叉评审（外部强模型当评委） | impact 家族 | ❌ 一次性活动 |
 | 6 | `docs/skill-gap-*-2026-06-11.md` | gap 发现→修复计划→验证链 | impact 家族 | ❌ 一次性活动 |
 | 7 | `docs/archive/2026-06/impact-multisession-write-gate-test-plan.md`、`impact-m3-next-regression-plan.md` | 专项测试计划（多会话写门禁 / 弱模型） | impact 家族 | ⚠️ 专项，部分可复跑 |
