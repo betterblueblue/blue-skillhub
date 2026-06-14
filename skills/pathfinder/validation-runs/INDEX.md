@@ -18,6 +18,7 @@ pathfinder = 陌生项目全项目级只读认知地图,产出 change-impact/_pr
 |------|------|------|
 | T01 | 首轮真实 /pathfinder 验证（go-admin + ruoyi-vue 正向、交接、降级、安全） | PASS（1 P1 + 2 P2） |
 | T02 | 二轮验证：Mermaid 图 + P1(凭证脱敏)P2(Git 归属)修复确认 | PASS（0 P1 + 2 P2） |
+| T03 | **V3 端到端交接实跑**(pathfinder→impact,RuoYi,opus-4-8) | **PASS(5/5 契约检查,handoff_value=high)**——关闭 T01/T02 遗留的"V3 未实跑"缺口 |
 
 ## 关键文件
 
