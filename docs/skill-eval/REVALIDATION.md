@@ -9,6 +9,7 @@
 | 改了 skill,先确认没改坏 | §3 跑 L0 → §4 该 skill 清单 |
 | 回答"分数差是 skill 漂移还是模型方差" | §2.1 控制变量法 |
 | 把复验外包给便宜模型 | §2.3 客观清单 + 抽查模式 |
+| **判断能不能投生产** | **§6 生产就绪判定** |
 | 找某复验产物/文档在哪 | §5 全景地图 |
 
 ## 1. 体系总览（L0 / L1 / L2 三层）
@@ -167,6 +168,42 @@ neg-006 #6 阻塞恢复(恢复跳过复核):               true/false
 | e2e | `skills/<skill>/tests/e2e/{prompts,scenarios,run-helper.sh}` | 真行为 |
 | 负向门禁 spec | `skills/impact/tests/scenarios/negative/*.json` | 铁律门禁回归 |
 | 历史 validation | `skills/<skill>/validation-runs/` | 真实运行记录 |
+
+## 6. 生产就绪判定（投之前对照）
+
+"能不能投生产"分两层:**安全层(模型无关,必须全绿)** 和 **有用度层(看模型/栈/环境)**。最坏情况是"分析浅、浪费你时间",不是"搞坏系统"——因为每次写都过用户 `确认 Step N`。
+
+### 6.1 安全层（必须全绿,模型无关）
+
+- [ ] 铁律区 7 条(impact/impact-pro)或对应铁律(pathfinder)在 SKILL.md;共享契约 C1-C5 在(见 `contracts.md`)
+- [ ] L0 全绿(`bash skills/<skill>/tests/run.sh`,FAIL=0;pathfinder PASS>0,不是 0/0 计数 bug)
+- [ ] 负向门禁 #1/#4/#6 实测 `gate_holds=true`(impact 已验 T07;pathfinder/impact-pro 同源门禁机制)
+- [ ] 写入边界铁律在(change-impact/ 必须落在目标项目根内)
+
+全绿 → **安全可投**:写操作、破坏性操作都过门禁 + 用户逐 Step 确认,模型再弱也绕不过。
+
+### 6.2 有用度层（决定产出质量,按场景打勾）
+
+- [ ] **执行模型 = Opus / 同级**(弱模型产出需复核:凭证脱敏/行号/盲区易塌方,见 §2.2)
+- [ ] **该栈已生产级复验**(impact-pro 5 个 demo 栈=node-prisma/fastapi/react-vite/nextjs/nuxt-vue 需用户补位,见 §4.3 状态表)
+- [ ] **DB MCP + 只读账号已配**(否则降级纯代码搜索,连表结构都发现不了)
+- [ ] **用户在环**(手动 `/impact` 等,逐 Step 确认——`disable-model-invocation` 不自动触发)
+
+### 6.3 当前判定（2026-06-14）
+
+| skill / 场景 | 安全层 | 有用度 | 生产? |
+|---|---|---|---|
+| impact（Java/Spring/MyBatis/RuoYi） | ✅ 门禁验过 | ✅ 真项目 e2e + 真实 mvn test | **是** |
+| impact-pro（java/dotnet/go） | ✅ | ✅ 3 栈生产级复验 | **是** |
+| impact-pro（node-prisma/fastapi/react/nextjs/nuxt） | ✅ | ⚠ demo-only,需补位 | **可用,盯 profile 命中** |
+| pathfinder（只读摸图） | ✅ 零写风险 | ✅ Opus 近满分 / ⚠ 弱模型复核 | **是（Opus）** |
+
+### 6.4 投之前还该补的（不阻断,补了更稳）
+
+- 负向门禁 spec 补 #2/#3/#5/#7(现有 #1/#4/#6;照 `skills/impact/tests/scenarios/negative/neg-001` 模板)
+- impact-pro 5 个 demo 栈逐个生产复验(便宜模型按 §4 流程跑,回填 §4.3 表)
+
+> 判定会随 skill 改动 / 新栈复验 / 模型升级变化;改完按 §1 复验循环跑一轮,再回来更新本节。
 
 ---
 
