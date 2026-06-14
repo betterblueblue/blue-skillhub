@@ -1,6 +1,6 @@
 ---
 name: impact
-description: 面向 Java/Spring/MyBatis/RuoYi 类现有系统的变更影响分析与受监督实施。用于在已有代码、schema、接口和配置约束下完成某功能迭代、新功能接入、字段/API/权限/配置变更或重构；不用于从 0 到 1 搭建新系统。Use when user says '影响分析', '变更需求', '改个字段', '删张表', 'impact', 或要求在现有系统上做删除/重命名/改契约/改权限等高风险变更且需要先评估影响时.
+description: 面向 Java/Spring/MyBatis 类现有系统（如 RuoYi 等后台框架）的变更影响分析与受监督实施。用于在已有代码、schema、接口和配置约束下完成某功能迭代、新功能接入、字段/API/权限/配置变更或重构；不用于从 0 到 1 搭建新系统。Use when user says '影响分析', '变更需求', '改个字段', '删张表', 'impact', 或要求在现有系统上做删除/重命名/改契约/改权限等高风险变更且需要先评估影响时.
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, mcp__dbhub__execute_sql, mcp__database__query, mcp__database__describeTable, mcp__database__listTables
 disable-model-invocation: true
 ---
@@ -17,7 +17,7 @@ disable-model-invocation: true
 
 本 Skill 不用于从 0 到 1 搭建新系统；它默认项目已经存在代码、schema、接口、配置、测试或运行约束，所有结论都应从这些真实上下文中发现。
 
-可搭配 `RuleBlade` 使用：`RuleBlade` 提供通用编码行为约束，本 Skill 负责 Java/Spring/MyBatis/RuoYi 类现有系统的影响分析、文档产出和受监督执行流程。
+可搭配 `RuleBlade` 使用：`RuleBlade` 提供通用编码行为约束，本 Skill 负责 Java/Spring/MyBatis 类现有系统（如 RuoYi 等后台框架）的影响分析、文档产出和受监督执行流程。
 
 ## 核心原则
 

@@ -1,7 +1,7 @@
 # Phase 5: 执行与验证详细规则
 
 > 本文件包含 Phase 5 执行与验证的完整规则。SKILL.md 正文只保留概要与高风险拦截清单（铁律级），详细执行规则见此。
-> 适用栈：Java / Spring / MyBatis / RuoYi（impact 专用）。多栈请使用 impact-pro + 加载对应 profile。
+> 适用栈：Java / Spring / MyBatis（如 RuoYi 等后台框架；impact 专用）。多栈请使用 impact-pro + 加载对应 profile。
 
 ## 写入目标边界
 

@@ -2,11 +2,11 @@
 
 ## 这个 Skill 是干什么的
 
-面向 Java/Spring/MyBatis/RuoYi 类现有系统，把模糊的功能迭代、新功能接入或高风险变更意图，通过靶向提问变成证据化的影响分析，light/full 两档输出，统一写入 `change-impact/` 目录并协助执行。
+面向 Java/Spring/MyBatis 类现有系统（如 RuoYi 等后台框架），把模糊的功能迭代、新功能接入或高风险变更意图，通过靶向提问变成证据化的影响分析，light/full 两档输出，统一写入 `change-impact/` 目录并协助执行。
 
 它不是从 0 到 1 搭建新系统的生成器，而是在已有代码、schema、接口、配置、测试和业务约束中，辅助完成一次安全可追溯的系统变更。
 
-它可以搭配 `RuleBlade` 使用：`RuleBlade` 约束 agent 的通用编码行为，`impact` 负责 Java/Spring/MyBatis/RuoYi 类现有系统的影响分析、文档产出和受监督执行流程。
+它可以搭配 `RuleBlade` 使用：`RuleBlade` 约束 agent 的通用编码行为，`impact` 负责 Java/Spring/MyBatis 类现有系统（如 RuoYi 等后台框架）的影响分析、文档产出和受监督执行流程。
 
 ## ⚠ 模型敏感性
 
