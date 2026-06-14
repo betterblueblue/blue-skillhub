@@ -133,4 +133,4 @@
 - 非 Git 降级审计
 - 只分析也必须展示证据
 
-后续不应继续无边界堆规则，而应按 `docs/impact-regression-protocol.md` 的 RG0-RG3 协议，用真实 agent 复测来判断哪些规则真的必要。
+后续不应继续无边界堆规则，而应按 `docs/skill-eval/regression.md` 的 RG0-RG3 协议，用真实 agent 复测来判断哪些规则真的必要。

@@ -167,7 +167,7 @@ L0 脚本对每个 skill 的 SKILL.md 搜索对应的铁律关键词（不搜编
 
 **失败等级**：P0（编造/未确认写/误删）→ 整批不通过 | P1（栈识别错/漏核心面/错判档）→ 单 case 0 分
 
-完整子项见 [skills/impact-pro/VALIDATION.md](../../skills/impact-pro/VALIDATION.md) 和 [docs/skill-capability-eval-2026-06-10/03-验收rubric.md](../skill-capability-eval-2026-06-10/03-验收rubric.md)
+完整子项见 [skills/impact-pro/VALIDATION.md](../../skills/impact-pro/VALIDATION.md) 和 [docs/archive/2026-06/skill-capability-eval-2026-06-10/03-验收rubric.md](../skill-capability-eval-2026-06-10/03-验收rubric.md)
 ```
 
 ### 1.5 创建 rubric-pathfinder.md
@@ -211,7 +211,7 @@ L0 脚本对每个 skill 的 SKILL.md 搜索对应的铁律关键词（不搜编
 ```markdown
 # 回归触发矩阵（三 skill 通用）
 
-> 升级自 docs/impact-regression-protocol.md，覆盖 pathfinder。
+> 升级自 docs/skill-eval/regression.md，覆盖 pathfinder。
 
 ## 触发矩阵
 
@@ -235,7 +235,7 @@ L0 脚本对每个 skill 的 SKILL.md 搜索对应的铁律关键词（不搜编
 ```powershell
 # 1. 文档一致性（继承原协议）
 git diff --check
-rg -n "T01-T45|T01-T46|旧版本结论" README.md skills docs --glob "!docs/impact-regression-protocol.md" --glob "!docs/skill-eval/*"
+rg -n "T01-T45|T01-T46|旧版本结论" README.md skills docs --glob "!docs/skill-eval/regression.md" --glob "!docs/skill-eval/*"
 
 # 2. 共享契约存在性（新增）
 bash skills/impact/tests/run.sh          # 含共享契约检查
@@ -257,7 +257,7 @@ bash skills/pathfinder/tests/run.sh      # 含共享契约检查
 
 ## 复测记录格式
 
-同 [docs/impact-regression-protocol.md 的复测记录格式](../impact-regression-protocol.md)，目录改为 `eval/runs/`。
+同 [docs/skill-eval/regression.md 的复测记录格式](../impact-regression-protocol.md)，目录改为 `eval/runs/`。
 ```
 
 ### §1 自检清单
@@ -617,7 +617,7 @@ New-Item -ItemType Directory -Force -Path E:\agent\blue-skillhub\eval\schemas
 
 ### 3.3 从 capability-eval 补充 case
 
-`docs/skill-capability-eval-2026-06-10/cases/` 有 9 个完整 case（R1-R4, G1-G2, F1-F3），其中 R1/G1 已从 scenario 迁移。需要从 capability-eval 补充**不在现有 scenario 里的** case：
+`docs/archive/2026-06/skill-capability-eval-2026-06-10/cases/` 有 9 个完整 case（R1-R4, G1-G2, F1-F3），其中 R1/G1 已从 scenario 迁移。需要从 capability-eval 补充**不在现有 scenario 里的** case：
 
 | 编号 | 来源 | 目标 |
 |---|---|---|
@@ -627,7 +627,7 @@ New-Item -ItemType Directory -Force -Path E:\agent\blue-skillhub\eval\schemas
 | F2 | capability-eval F2 (fastapi/light) | eval/cases/impact-pro/F2.json |
 | F3 | capability-eval F3 (fastapi/full) | eval/cases/impact-pro/F3.json |
 
-**操作方式**：读取 `docs/skill-capability-eval-2026-06-10/cases/` 下对应的 `.md` 文件，提取：
+**操作方式**：读取 `docs/archive/2026-06/skill-capability-eval-2026-06-10/cases/` 下对应的 `.md` 文件，提取：
 - 项目名 + commit
 - 变更意图（prompt）
 - 预期档位
@@ -650,7 +650,7 @@ New-Item -ItemType Directory -Force -Path E:\agent\blue-skillhub\eval\schemas
 
 ### 4.1 从 capability-eval 2026-06-10 分数初始化基线
 
-读取 `docs/skill-capability-eval-2026-06-10/91-分数汇总.md` 和各 case 文件末尾的验收评分段，按 scorecard-schema 格式写入 `eval/run/` 和 `eval/baselines/`。
+读取 `docs/archive/2026-06/skill-capability-eval-2026-06-10/91-分数汇总.md` 和各 case 文件末尾的验收评分段，按 scorecard-schema 格式写入 `eval/run/` 和 `eval/baselines/`。
 
 #### 4.1.1 创建 runs 目录
 
@@ -708,7 +708,7 @@ git log --oneline --before="2026-06-11" -1 -- skills/impact-pro/SKILL.md
     "write_target_boundary": "PASS"
   },
   "evidence": {
-    "source": "docs/skill-capability-eval-2026-06-10/cases/impact/ruoyi/r1-user-signature.md"
+    "source": "docs/archive/2026-06/skill-capability-eval-2026-06-10/cases/impact/ruoyi/r1-user-signature.md"
   },
   "needs_human": [],
   "notes": "从 capability-eval 2026-06-10 初始化"

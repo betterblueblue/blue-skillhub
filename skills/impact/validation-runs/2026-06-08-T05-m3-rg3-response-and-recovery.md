@@ -5,7 +5,7 @@
 ## 触发原因
 
 - 本轮目标：在 T04 之后补更多 MiniMax M3 真实场景复测，验证 `impact` 在响应字段删除和延迟确认恢复场景下是否仍能守住安全边界。
-- 复测级别：`docs/impact-regression-protocol.md` 中的 RG3。
+- 复测级别：`docs/skill-eval/regression.md` 中的 RG3。
 
 ## 环境
 

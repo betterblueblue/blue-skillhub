@@ -92,13 +92,12 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 - [docs/impact-real-case-study.md](docs/impact-real-case-study.md)：ImpactRadar 真实使用案例的匿名复盘，记录它暴露了哪些长会话和多 Step 边界。
 - [docs/archive/2026-06/impact-m3-next-regression-plan.md](docs/archive/2026-06/impact-m3-next-regression-plan.md)：下一轮 MiniMax M3 复测计划，限定后续要测的高价值场景。
 - [docs/archive/2026-06/impact-multisession-write-gate-test-plan.md](docs/archive/2026-06/impact-multisession-write-gate-test-plan.md)：多会话写授权一致性验收方案，覆盖旧授权、延迟确认、非 Git 降级、V1-only 暂停和写入目标边界。
-- [docs/impact-regression-protocol.md](docs/impact-regression-protocol.md)：ImpactRadar / ImpactRadar Pro 优化后的回归复测协议，规定什么时候跑 RG0-RG3、什么时候必须真实 agent 复测。
+- [docs/skill-eval/regression.md](docs/skill-eval/regression.md)：ImpactRadar / ImpactRadar Pro 优化后的回归复测协议，规定什么时候跑 RG0-RG3、什么时候必须真实 agent 复测。
 - [docs/archive/2026-06/release-positioning-check-2026-06-08.md](docs/archive/2026-06/release-positioning-check-2026-06-08.md)：阶段性 release 定位自查，确认 RuleBlade、ImpactRadar、ImpactRadar Pro 的边界是否自洽。
 - [docs/not-ace-benchmark-research.md](docs/not-ace-benchmark-research.md)：研究性博客文章，解释 Not ACE 在 MiniMax M3、GLM-5.1、Kimi K2.6、GLM-5、DeepSeek V4 系列上的不同表现。
 - [docs/not-ace-exploration/](docs/not-ace-exploration/)：完整实验记录，包括 V1/V2 检索测试、V3 agent 任务测试、模型复跑、DeepSeek 调用链问题和下一轮计划。
 - [docs/archive/2026-06/agent-iteration-conclusions.md](docs/archive/2026-06/agent-iteration-conclusions.md)：给后续 agent 迭代看的结论，把测试事实映射到 RuleBlade、ImpactRadar、ImpactRadar Pro 和 VL Vision 的优化方向。
-- [benchmarks/impact-write-gate/](benchmarks/impact-write-gate/)：ImpactRadar / ImpactRadar Pro 写授权回归夹具，用来准备隔离副本并复测多会话写操作边界。
-- [benchmarks/model-agent/](benchmarks/model-agent/)：可持续迭代的模型 agent 能力评测体系，包含方法论、rubric、任务/run 结果 schema、runbook、Papermark 第一批任务、单次评分脚本和批量汇总脚本。
+- [benchmarks/（已归档）](docs/archive/2026-06/benchmarks/)：写授权回归夹具（impact-write-gate）+ 模型 agent 能力评测体系（model-agent）。2026-06-09 后无活动，暂停保留历史；not-ace 研究见上。
 
 这轮实验的核心判断是：Not ACE 不是 `rg` 的替代品，而是语义上下文入口。它对 MiniMax M3 更像是在补稳定性，对 GLM-5.1 更像是在省时间、省成本；但在 Kimi K2.6、GLM-5、DeepSeek V4 系列上，这轮没有跑出稳定收益。DeepSeek V4 Pro / Flash 通过硅基流动平台接入，不代表 DeepSeek 官方模型真实能力。
 
@@ -226,9 +225,6 @@ blue-skillhub/
 │   ├── runs/<date>-<skill>@<commit>/  # 评分卡时间序列
 │   ├── baselines/<skill>.json         # 当前基线指针
 │   └── schemas/              # case + scorecard JSON schema
-├── benchmarks/
-│   ├── impact-write-gate/
-│   └── model-agent/
 ├── mcp/
 │   └── web-search-mcp/
 └── skills/

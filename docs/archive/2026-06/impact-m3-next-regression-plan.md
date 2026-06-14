@@ -1,6 +1,6 @@
 # Impact Skills 下一轮 MiniMax M3 复测计划
 
-> 目的：停止无边界加测，把下一轮 M3 复测限定在最容易暴露规则缺口的场景。执行时按 `docs/impact-regression-protocol.md` 的 RG3 记录结果。
+> 目的：停止无边界加测，把下一轮 M3 复测限定在最容易暴露规则缺口的场景。执行时按 `docs/skill-eval/regression.md` 的 RG3 记录结果。
 
 ## 当前状态
 

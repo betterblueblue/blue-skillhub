@@ -46,7 +46,7 @@
 - **TDD 验证框架** — 正向用例 + 错误用例（边界值/空值/格式校验/XSS）
 - **行为准则检查** — 先澄清假设和成功标准，简单优先，精准修改，改 status/enum/常量前先确认原定义
 - **阻塞恢复安全闸** — blocked、上下文压缩或延迟确认后，先复核 pending Step、当前文件状态和最新授权，再决定是否执行
-- **subagent 自治模式**（v3.6 新增，仅限 eval 脚手架）— 跑分时 subagent 模拟人类用户在沙盒里独立使用 skill，对 6 类高风险 Step 自主判断做不做。这是**测评协议**的事，不是 skill 生产协议的事；生产会话里不存在 subagent 自治，所有高风险操作走 SKILL.md 铁律（禁止执行、必须暂停、等用户显式确认）。eval 细节见 `docs/skill-capability-eval-2026-06-10/protocol-draft-subagent-as-user.md`
+- **subagent 自治模式**（v3.6 新增，仅限 eval 脚手架）— 跑分时 subagent 模拟人类用户在沙盒里独立使用 skill，对 6 类高风险 Step 自主判断做不做。这是**测评协议**的事，不是 skill 生产协议的事；生产会话里不存在 subagent 自治，所有高风险操作走 SKILL.md 铁律（禁止执行、必须暂停、等用户显式确认）。eval 细节见 `docs/archive/2026-06/skill-capability-eval-2026-06-10/protocol-draft-subagent-as-user.md`
 - **决策矩阵模板**（v3.6 新增）— `templates/subagent-decisions.md`（RESTATE → DECIDE → RECORD 三段）
 - **环境降级路径**（v3.6 新增）— `templates/030-implementation.md` 加"V3 受限时启用 X 备选"段，避免事后才发现
 - **PASS/FAIL 决策依据**（v3.6 新增）— `templates/090-execution-record.md` 决策依据字段从散文升级为 6 项高风险清单显式勾选
@@ -90,7 +90,7 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 
 **v3.6 subagent 跑分**
 
-[2026-06-10 eval 报告](../../docs/skill-capability-eval-2026-06-10/README.md) 跑了 9 case Phase 1-4 和 9 case Phase 5。subagent 在沙盒里自主执行，真改了 38 个文件、新增 19 个。0 P0。P0 兜底跑了 3 次都一致（R3 在 Step 7 停下来，v1 一行没动）。`java-spring-mybatis` profile 在 R4 跑出来比 R1 多三处安全约束。
+[2026-06-10 eval 报告](../../docs/archive/2026-06/skill-capability-eval-2026-06-10/README.md) 跑了 9 case Phase 1-4 和 9 case Phase 5。subagent 在沙盒里自主执行，真改了 38 个文件、新增 19 个。0 P0。P0 兜底跑了 3 次都一致（R3 在 Step 7 停下来，v1 一行没动）。`java-spring-mybatis` profile 在 R4 跑出来比 R1 多三处安全约束。
 
 5 条协议改进 + 边界修正的细节见 impact README v3.6 段。
 
@@ -167,7 +167,7 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 6. BR-006 降级逻辑：缩略图生成失败 → thumbPath=origPath, 不报错
 7. 清理路径测试：新建 `failStore` mock 验证 cleanup
 
-多栈测试用例、评分标准、行为准则检查和使用边界见 [VALIDATION.md](VALIDATION.md)，优化后回归复测协议见 [../../docs/impact-regression-protocol.md](../../docs/impact-regression-protocol.md)，实际验收记录索引见 [validation-runs/INDEX.md](validation-runs/INDEX.md)。
+多栈测试用例、评分标准、行为准则检查和使用边界见 [VALIDATION.md](VALIDATION.md)，优化后回归复测协议见 [../../docs/skill-eval/regression.md](../../docs/skill-eval/regression.md)，实际验收记录索引见 [validation-runs/INDEX.md](validation-runs/INDEX.md)。
 
 ## 测评体系
 

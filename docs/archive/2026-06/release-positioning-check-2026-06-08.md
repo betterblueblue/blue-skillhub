@@ -114,7 +114,7 @@
 
 1. 按 `docs/install-and-verify-checklist.md` 验证用户能装起来。
 2. 按 `docs/archive/2026-06/impact-m3-next-regression-plan.md` 做下一轮高价值 RG3。
-3. 按 `docs/impact-regression-protocol.md` 保持“优化后必须复测”的节奏。
+3. 按 `docs/skill-eval/regression.md` 保持“优化后必须复测”的节奏。
 
 ## Release 结论
 

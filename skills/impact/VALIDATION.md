@@ -74,4 +74,4 @@
 - `templates/030-implementation.md` 和 `templates/040-light.md` 是否提醒 light 不跳过安全检查。
 - `templates/000-context-pack.md` 是否覆盖长期目标、跨系统对齐、相关性分级、引用检查分级、待确认问题、暂不纳入范围和上下文预算。
 
-完整的优化后回归分层、触发矩阵和复测记录格式见 [../../docs/impact-regression-protocol.md](../../docs/impact-regression-protocol.md)。以后修改 `impact` 规则、模板或验收边界后，默认按该协议选择 RG0-RG3 复测包，并把结果写入 `validation-runs/`。
+完整的优化后回归分层、触发矩阵和复测记录格式见 [../../docs/skill-eval/regression.md](../../docs/skill-eval/regression.md)。以后修改 `impact` 规则、模板或验收边界后，默认按该协议选择 RG0-RG3 复测包，并把结果写入 `validation-runs/`。

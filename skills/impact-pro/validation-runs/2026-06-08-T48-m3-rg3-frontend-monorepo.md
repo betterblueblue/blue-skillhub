@@ -5,7 +5,7 @@
 ## 触发原因
 
 - 本轮目标：在 T47 Node/Express 响应契约负向复测之后，补充 MiniMax M3 对前端 UI-only light 和 monorepo 边界的真实 `/impact-pro` 复测。
-- 复测级别：`docs/impact-regression-protocol.md` 中的 RG3。
+- 复测级别：`docs/skill-eval/regression.md` 中的 RG3。
 
 ## 环境
 
