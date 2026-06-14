@@ -1,7 +1,7 @@
 # Phase 2: 上下文发现详细规则
 
 > 本文件包含 Phase 2 上下文包构建的完整执行规则。SKILL.md 正文只保留概要，详细规则见此。
-> 适用栈：Java / Spring / MyBatis / RuoYi（impact 专用）。多栈请使用 impact-pro + 加载对应 profile。
+> 适用栈：Java / Spring / MyBatis（如 RuoYi 等后台框架；impact 专用）。多栈请使用 impact-pro + 加载对应 profile。
 
 ## Pathfinder 项目地图预热（若存在）
 
