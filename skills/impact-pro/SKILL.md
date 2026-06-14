@@ -69,7 +69,8 @@ impact-pro/
 │   └── dotnet-aspnet-efcore.md
 ├── db-adapters/          # 数据库适配器
 │   ├── generic-sql.md
-│   └── mysql.md
+│   ├── mysql.md
+│   └── postgresql.md
 ├── references/           # 详细执行规则（按需加载）
 ├── templates/            # 文档模板
 └── README.md

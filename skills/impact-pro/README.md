@@ -8,6 +8,15 @@
 
 它可以搭配 `RuleBlade` 使用：`RuleBlade` 提供通用编码行为约束，`impact-pro` 负责多栈 profile 化上下文发现、影响分析、文档产出和受监督执行流程。
 
+## ⚠ 模型敏感性
+
+本 Skill 的**分析深度（Phase 2 栈探测/上下文发现、证据核实、Phase 3 苏格拉底提问、判档）**依赖执行模型。强模型（Opus / 同级）能扎实取证、严守确认门；弱模型（Sonnet / Haiku / 更弱）可能：profile 栈探测误判、证据核实不严（行号/表名偏差）、判档偏松。
+
+- **强模型**：日常可靠。
+- **弱模型**：产出（尤其 context-pack 的【已核实】项、profile 命中、设计文档影响面）**需人工复核**。
+
+铁律区（最高确认法 / 写入边界 / 凭证脱敏 / 高风险拦截）是模型无关的硬门——弱模型也绕不过逐 Step 确认;但"分析有多深、profile 命中多准、证据多扎实"随模型起伏。Level 1 profile 在弱模型下尤其需要人工补位（profile 多为单一 demo 首轮验证）。
+
 ## 核心能力
 
 - **通用内核 + 技术栈规则** — 无栈假设，按需加载专属规则
@@ -20,7 +29,7 @@
 - **接口返回检查清单** — light 涉及向后兼容响应字段新增时，检查消费者、文档、generated client、验证方式和未验证项
 - **证据化分析** — 用工具发现真实上下文，不靠臆测
 - **验证等级** — 区分 V0 未验证、V1 静态验证、V2 构建/单测、V3 运行路径验证
-- **数据库适配器** — MySQL + 通用 SQL 规则（PG 等其他 DB 走通用规则）
+- **数据库适配器** — MySQL + PostgreSQL + 通用 SQL 规则（其他 DB 走通用规则；PG 用 pg_catalog，覆盖 partial/表达式索引、enum、分区表）
 - **19 维度灵活覆盖** — 按需选择，不强制全覆盖
 - **三文档逐级确认** — 需求 → 设计 → 实施，每份确认后再出下一份
 - **逐操作执行确认** — 每步写操作前都询问
@@ -73,7 +82,7 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 | 架构 | 单体 SKILL.md，Java 规则写死 | 通用内核 + 技术栈规则 |
 | 栈适配 | 仅 Java/MyBatis | 通用规则 + 专属规则 |
 | 扩展方式 | 修改 SKILL.md | 新增技术栈规则文件 |
-| 数据库 | 仅 MySQL | MySQL + 通用数据库规则 |
+| 数据库 | 仅 MySQL | MySQL + PostgreSQL + 通用 SQL |
 
 ## 验收状态
 
@@ -229,7 +238,8 @@ impact-pro/
 │   └── dotnet-aspnet-efcore.md # ASP.NET Core/EF Core (Level 1)
 ├── db-adapters/          # 数据库适配器
 │   ├── generic-sql.md    # 通用 SQL 模板
-│   └── mysql.md          # MySQL 专用
+│   ├── mysql.md          # MySQL 专用
+│   └── postgresql.md     # PostgreSQL 专用(pg_catalog/无 SHOW CREATE TABLE/schema 命名空间)
 ├── references/          # 详细执行规则（按需加载，正文瘦身下沉）
 │   ├── phase-2-context-discovery.md  # Phase 2 栈探测 + 分层探索
 │   ├── phases-detail.md             # Phase 3 & 3.5 收敛协议、判档条件
