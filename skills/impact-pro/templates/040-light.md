@@ -35,7 +35,7 @@
 
 ## Context Pack 摘要
 
-- Context Pack 路径：`change-impact/{需求名称}/context-pack.md`
+- Context Pack 路径：`change-impact/{需求名称}/000-context-pack.md`
 - 直接修改候选：
 - 影响判断候选：
 - 待确认问题：

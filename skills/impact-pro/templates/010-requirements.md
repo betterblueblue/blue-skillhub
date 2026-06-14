@@ -10,7 +10,7 @@
 
 ## 2.1 Context Pack 摘要
 
-- Context Pack 路径：`change-impact/{需求名称}/context-pack.md`
+- Context Pack 路径：`change-impact/{需求名称}/000-context-pack.md`
 - 已识别技术栈：
 - 已加载技术栈规则：
 - 直接相关对象：

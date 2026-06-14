@@ -12,7 +12,7 @@
 - 执行窗口：
 - 回滚负责人：
 - 关联文档：[light / requirements / design / implementation]
-- 关联执行记录：`change-impact/[需求名称]/900-执行记录.md`
+- 关联执行记录：`change-impact/[需求名称]/090-execution-record.md`
 
 ## 执行前核对
 
@@ -20,7 +20,7 @@
 |------|------|----------|----------|------|
 | 仓库状态 | P0 | `git status --short --branch`，确认无无关脏改 |  |  |
 | 非 Git 降级 | P0 | 若不是 Git 仓库，记录替代审计方式：before/after 摘要、文件 hash、备份路径或用户确认接受无 git 风险 |  |  |
-| Context Pack | P0 | `context-pack.md` 已确认，或对话中的 Context Pack 已被用户接受且仍有效 |  |  |
+| Context Pack | P0 | `000-context-pack.md` 已确认，或对话中的 Context Pack 已被用户接受且仍有效 |  |  |
 | 文档确认 | P0 | light 摘要或 full 当前阶段文档已确认 |  |  |
 | Step 级确认 | P0 | 每个写类操作都有用户显式 `确认 Step N` |  |  |
 | 阻塞恢复 | P0 | blocked/长时间等待/上下文压缩/线程恢复后，已复核 pending Step、目标文件当前状态和最新 `确认 Step N` |  |  |
@@ -30,7 +30,7 @@
 | 回滚方式 | P1 | 每个 Step 有回滚命令或回滚操作 |  |  |
 | 语义约定 | P1 | status/enum/常量/错误码/权限名/配置键已查原定义；不涉及则标注 |  |  |
 | 验证命令 | P1 | 执行后要运行的验证命令明确且来自项目证据 |  |  |
-| 执行记录路径 | P1 | `900-执行记录.md` 路径明确，按时间追加不覆盖历史 |  |  |
+| 执行记录路径 | P1 | `090-execution-record.md` 路径明确，按时间追加不覆盖历史 |  |  |
 | 执行记录 | P1 | 当前 Step 若会写代码/配置/DDL/DML/测试修复，已把追加执行记录列入本步动作；用户拒绝记录时已声明本步记录不完整 |  |  |
 | 未确认项 | P0/P1 | 高风险未确认项不得被默认值吞掉 |  |  |
 
