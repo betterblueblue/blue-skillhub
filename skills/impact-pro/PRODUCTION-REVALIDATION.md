@@ -1,5 +1,7 @@
 # Profile 生产级复验协议 + 状态
 
+> 本手册聚焦 impact-pro 的 **profile 生产级复验**。三 skill 各自的通用复验手册:[pathfinder](../pathfinder/REVALIDATION.md) · [impact](../impact/REVALIDATION.md) · impact-pro(profile 见本文件)。
+
 > Level 1 profile 的 globs/commands/style_axes 是在**单一 demo/模板项目**上首轮验证的。要宣称"生产级可用",必须在本协议定义的真实项目复验上通过。本文是 honest 的状态看板:哪些 profile 已生产级、哪些仍 demo-only、各自还差什么。
 
 ## 1. demo 验证 vs 生产级复验
