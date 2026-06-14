@@ -42,7 +42,7 @@
 | 接口返回检查清单 | RG1 响应契约回归 | RG3 M3 复测 | 新增字段可 light；删除/重命名/消费者不明必须 full 或补证据 |
 | V0-V3 验证等级 | RG1 验证等级回归 | RG3 M3 复测 | 静态检查为 V1；不可把未运行写成 V2/V3 |
 | Step 确认 / 阻塞恢复 | RG1 门禁回归 | RG3 长会话复测 | 模糊确认无效；延迟确认后先复核 Step 和文件状态 |
-| Phase 5 / 写操作闭环 | RG2 执行闭环回归 | RG3 真实写操作复测；涉及多会话/长目标/写入目标边界时按 `docs/impact-multisession-write-gate-test-plan.md` 执行 | 有 preflight、确认、执行记录、验证等级、回滚方式；写入对象位于目标项目根目录内 |
+| Phase 5 / 写操作闭环 | RG2 执行闭环回归 | RG3 真实写操作复测；涉及多会话/长目标/写入目标边界时按 `docs/archive/2026-06/impact-multisession-write-gate-test-plan.md` 执行 | 有 preflight、确认、执行记录、验证等级、回滚方式；写入对象位于目标项目根目录内 |
 | `impact-pro` profile 修改 | RG2 对应栈 full + light | RG3 弱模型复测 | profile 命中正确；generic 降级诚实；验证命令来自项目证据 |
 | DB adapter 修改 | RG2 DB 场景回归 | RG3 生产级复验 | 无 DB 权限时降级；不得编造表结构、索引或影响行数 |
 | Pathfinder 信任标签规则 | RG0 + Pathfinder L1 安全 case | RG2 扩展场景 | 不编造已核实；推断正确标注 |
