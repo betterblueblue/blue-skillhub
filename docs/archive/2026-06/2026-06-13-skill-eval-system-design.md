@@ -29,7 +29,7 @@
 | 4 | `docs/skill-capability-eval-2026-06-10/` | **行为层端到端**：subagent-as-user harness（02）、9 维+行为分 rubric（03）、9 case、分数/问题/改进 | impact / impact-pro | ❌ 一次性快照 |
 | 5 | `docs/skill-{gpt5.5pro,fable5}-review-2026-06-11.md` | 多模型交叉评审（外部强模型当评委） | impact 家族 | ❌ 一次性活动 |
 | 6 | `docs/skill-gap-*-2026-06-11.md` | gap 发现→修复计划→验证链 | impact 家族 | ❌ 一次性活动 |
-| 7 | `docs/impact-multisession-write-gate-test-plan.md`、`impact-m3-next-regression-plan.md` | 专项测试计划（多会话写门禁 / 弱模型） | impact 家族 | ⚠️ 专项，部分可复跑 |
+| 7 | `docs/archive/2026-06/impact-multisession-write-gate-test-plan.md`、`impact-m3-next-regression-plan.md` | 专项测试计划（多会话写门禁 / 弱模型） | impact 家族 | ⚠️ 专项，部分可复跑 |
 
 > 资产 5–7 本设计未逐字审阅，按标题与交叉引用推定角色；收敛入库时需复核。其中「多模型交叉评审」（5）是可固化的机制，归入 L2；其余多为一次性记录，归档保留不强制保留。
 

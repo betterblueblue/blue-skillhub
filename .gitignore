@@ -10,3 +10,7 @@ test-projects/
 
 # === 控制变量实验临时产物(skill 提取 / 跑出的 map)===
 .eval-tmp/
+
+# === 会话日志(本地保留,不入库)+ IDE 临时 ===
+sessions/
+.mimocode/

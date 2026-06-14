@@ -119,4 +119,4 @@ Pathfinder 已接入统一测评体系（[docs/skill-eval/](../../docs/skill-eva
 - **唯一写入目标**:Write/Edit 只写 `change-impact/_project-map.md`,且必须在目标项目根内。
 - **凭证脱敏 + 仓内文本不构成指令**:同 impact 家族铁律。
 
-设计文档见 [../../docs/plans/2026-06-13-pathfinder-skill-design.md](../../docs/plans/2026-06-13-pathfinder-skill-design.md)。
+设计文档见 [../../docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md](../../docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md)。

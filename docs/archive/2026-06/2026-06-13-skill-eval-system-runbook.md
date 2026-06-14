@@ -1,7 +1,7 @@
 # Skill 测评体系 — 实施操作手册
 
 > 日期：2026-06-13
-> 关联设计：[docs/plans/2026-06-13-skill-eval-system-design.md](plans/2026-06-13-skill-eval-system-design.md)
+> 关联设计：[docs/archive/2026-06/2026-06-13-skill-eval-system-design.md](plans/2026-06-13-skill-eval-system-design.md)
 > 执行者：便宜 agent（Sonnet/GLM 等），人工只做关键验收
 > 目标：把设计文档落地为可操作的文件、脚本和目录结构，让「防漂移测评」从想法变成可复跑的活体系
 

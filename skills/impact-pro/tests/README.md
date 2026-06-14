@@ -100,4 +100,4 @@ tests/
 - v2（e2e/L1-L2）回应"够不够"
 - 共享契约检查回应"改一处会不会漂移到另两处"
 
-完整设计见 `docs/skill-scenarios-design-2026-06-12.md`，测评体系设计见 `docs/plans/2026-06-13-skill-eval-system-design.md`。
+完整设计见 `docs/skill-scenarios-design-2026-06-12.md`，测评体系设计见 `docs/archive/2026-06/2026-06-13-skill-eval-system-design.md`。
