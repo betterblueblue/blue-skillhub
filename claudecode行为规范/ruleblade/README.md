@@ -249,7 +249,6 @@ RuleBlade v3.2 达到 Task A 稳定版验收标准。
 | `README.md` | 本文件，迭代历程与设计理念 |
 | `TASK_A_STABILITY_TEST.md` | v3.2 稳定版的 Task A 复测协议、P0/P1 判定和有效轮次标准 |
 | `RUN_TASK_A_STABILITY_TEST.ps1` | 创建隔离副本并执行 Task A 两阶段复测的 PowerShell 脚本 |
-| `2026-06-01-204005-*.txt` | v2.5 版实验执行日志 |
 
 ---
 
