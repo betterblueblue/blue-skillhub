@@ -32,12 +32,8 @@
 - [回归触发矩阵](regression.md) — 改了什么 → 跑哪些复测
 - [基线与红线规则](../../eval/baselines/) — 防漂移硬机制
 
-## 模型方差与控制变量法
+## 复验体系(单一权威入口)
 
-L1 由模型执行 + 模型判分,**方差不可消灭**(非确定性系统)。所以 diff 工具链这样对齐:
+**完整复验体系见 [REVALIDATION.md](REVALIDATION.md)** —— 框架(L0/L1/L2)+ 共享方法论(控制变量法 / 模型敏感性 / 客观清单+抽查 / 契约)+ 机械(eval 工具)+ 逐 skill 复验清单(pathfinder/impact/impact-pro)+ 全景地图。改任一 skill 后从那里开始。
 
-- **评分卡记双模型**:`runner_model`(执行 skill 产出的) + `judge`(打分的),见 `eval/schemas/scorecard-schema.json`。两者任一不一致或为 `unknown`,跨 run 的分数差**不能直接归 skill**。
-- **diff 自动预警混杂**:`eval/diff-baseline.sh`(<skill>) 报红线(契约 PASS→FAIL / p_level 退化) + runner_model 混杂预警。支持 `diff-baseline.sh <skill> <run_a> <run_b>` 直接对比两个 run(控制变量实验用)。
-- **控制变量实验**:要回答"分数变化是 skill 漂移还是模型方差",保持 runner_model 不变,只改 skill 版本,各 cell 跑 ≥2 次取均值。脚本 `eval/scripts/analyze_control.py <scorecards_dir>` 聚合两 cell 均值/方差/维度,按"信号比 = |Δ|/σ_内"裁决。
-
-> 详见 `eval/scripts/diff_baseline.py` / `analyze_control.py` 的 docstring。设计依据:2026-06-14 对 GLM-5.1 方差分析的独立审查(结论:方差不可消灭,但分层 + 控制变量能让对比"够用")。
+一句话:L1 由模型执行 + 判分,**方差不可消灭**;跨 run 归因前先看 `runner_model` 一致性(评分卡必填),要隔离 skill 效应用控制变量法(同模型重跑,`eval/scripts/analyze_control.py` 裁决)。
