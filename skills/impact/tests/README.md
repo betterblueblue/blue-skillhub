@@ -19,6 +19,8 @@ bash skills/impact/tests/run.sh
 
 > **定位**：每次改动必跑，免费、确定性、零主观。全绿才允许进入 L1。
 
+`scenarios/` 同时含**负向门禁场景**（`negative/neg-001|004|006`，对应铁律 #1 模糊/预授权、#4 越界写、#6 恢复须重确认），验证 skill 对越界请求的拒绝行为，实跑见 [validation-runs/2026-06-14-T07-negative-iron-rule-gates.md](../validation-runs/2026-06-14-T07-negative-iron-rule-gates.md)（T07，3/3 PASS）。
+
 ## v2 e2e 真行为测试（L1/L2，回归）
 
 `e2e/` 目录下完整端到端：Subagent A 真跑 skill + 真改代码 + 真写 change-impact 文档，Subagent B 做 9 维评审。
@@ -62,7 +64,7 @@ impact 已接入三层防漂移测评体系，详见 [docs/skill-eval/](../../..
 | 层 | 入口 | 说明 |
 |---|---|---|
 | L0 静态 | `bash skills/impact/tests/run.sh` | 就是上面的 v1 |
-| L1 行为契约 | `bash eval/run-l1.sh impact` | 13 个标准化 case，subagent 扮用户端到端跑分 |
+| L1 行为契约 | `bash eval/run-l1.sh impact` | 4 个标准化 case（R1/R2/R3/R3N），subagent 扮用户端到端跑分 |
 | L2 人审深度 | 人工 | 主观维度抽样 |
 
 基线 diff：`bash eval/diff-baseline.sh impact`
@@ -74,10 +76,14 @@ tests/
 ├── run.sh               # L0 入口
 ├── lib/validate.sh      # 校验函数库（含共享契约检查）
 ├── scenarios/           # 静态场景 JSON（v1，git 追踪）
-│   └── java-spring-mybatis/
-│       ├── 001-delete-sys-user-remark.json
-│       ├── 002-add-last-login-ip.json
-│       └── 003-change-login-remember-me.json
+│   ├── java-spring-mybatis/
+│   │   ├── 001-delete-sys-user-remark.json
+│   │   ├── 002-add-last-login-ip.json
+│   │   └── 003-change-login-remember-me.json
+│   └── negative/        # 负向门禁场景（铁律 #1/#4/#6，见 T07）
+│       ├── neg-001-vague-authorization.json
+│       ├── neg-004-write-outside-target-root.json
+│       └── neg-006-resume-without-reconfirm.json
 └── e2e/                 # e2e 产出（gitignore，本地保留）
     ├── scenarios/
     ├── workdirs/

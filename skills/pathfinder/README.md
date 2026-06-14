@@ -113,6 +113,8 @@ Pathfinder 已接入统一测评体系（[docs/skill-eval/](../../docs/skill-eva
 
 当前基线来自 2026-06-13 L1 跑分（3 case，平均基础分 94.0 / 100，0 P0）。降级场景 P3D 得分最高（98/100），4 个降级陷阱全正确处理。红线机制同 impact 家族——任何契约 PASS→FAIL 或维度掉档≥3 阻断发布。基线详情见 [eval/baselines/pathfinder.json](../../eval/baselines/pathfinder.json)。
 
+验证记录见 [validation-runs/INDEX.md](validation-runs/INDEX.md)：T01/T02 首轮与二轮验证，**T03 V3 端到端交接实跑 PASS（pathfinder→impact，5/5 契约检查，handoff_value=high）**——关闭了「V3 未实跑」缺口。
+
 ## 安全姿态(只读)
 
 - **只读铁律**:不 Edit/Write 项目源码、不跑 DDL/DML、不改配置、不删文件;DB 只 SELECT/SHOW/DESCRIBE。

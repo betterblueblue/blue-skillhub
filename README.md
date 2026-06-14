@@ -209,22 +209,19 @@ blue-skillhub/
 ├── claudecode行为规范/
 │   └── ruleblade/
 ├── docs/
-│   ├── skill-eval/          # 统一测评体系入口
-│   ├── plans/               # 设计文档 + 实施手册
+│   ├── skill-eval/          # 统一测评体系入口(含 REVALIDATION.md 复验体系)
 │   ├── not-ace-exploration/
-│   ├── agent-iteration-conclusions.md
-│   ├── install-and-verify-checklist.md
+│   ├── archive/2026-06/     # 历史文档归档(含已迁出的 benchmarks/)
+│   ├── impact-context-pack-design.md
 │   ├── impact-real-case-study.md
-│   ├── impact-m3-next-regression-plan.md
-│   ├── impact-multisession-write-gate-test-plan.md
-│   ├── impact-regression-protocol.md
-│   ├── release-positioning-check-2026-06-08.md
+│   ├── install-and-verify-checklist.md
 │   └── not-ace-benchmark-research.md
 ├── eval/                     # 测评体系：case 定义 + 跑分历史 + 基线
 │   ├── cases/<skill>/        # 可复跑用例定义（与跑分历史分离）
-│   ├── runs/<date>-<skill>@<commit>/  # 评分卡时间序列
+│   ├── runs/<date>-<skill>@<commit>/  # 评分卡时间序列(含 runner_model)
 │   ├── baselines/<skill>.json         # 当前基线指针
-│   └── schemas/              # case + scorecard JSON schema
+│   ├── schemas/              # case + scorecard JSON schema
+│   └── scripts/              # diff_baseline.py / analyze_control.py(控制变量裁决)
 ├── mcp/
 │   └── web-search-mcp/
 └── skills/
