@@ -27,8 +27,8 @@
 | Context Pack / 引用检查 | RG1 上下文回归 | RG2 多栈 | 完整/分级/排除项齐 |
 | 接口返回检查清单 | RG1 响应契约回归 | RG3 真实 agent | 新增字段可 light；删除/重命名/消费者不明须 full 或补证据 |
 | V0-V3 验证等级 | RG1 验证等级回归 | RG3 真实 agent | 静态检查为 V1；不可把未运行写成 V2/V3 |
-| Step 确认 / 阻塞恢复 | RG1 门禁回归 | RG3 长会话复测 | 模糊确认无效；延迟确认后先复核 Step 和文件状态 |
-| Phase 5 / 写操作闭环 | RG2 执行闭环 | RG3 真实写操作 | preflight + 确认 + 执行记录 + 验证等级 + 回滚；写入对象在目标根内 |
+| Step 确认 / 阻塞恢复 / 跨会话恢复状态 | RG1 门禁回归 | RG3 长会话复测 | 模糊确认无效；延迟确认后先复核 Step、`_active-state.md`、执行记录和文件状态；状态文件不替代 `确认 Step N` |
+| Phase 5 / 写操作闭环 | RG2 执行闭环 | RG3 真实写操作 | preflight + 确认 + 执行记录 + `_active-state.md` 更新 + 验证等级 + 回滚；写入对象在目标根内 |
 | impact-pro profile / DB adapter | RG2 对应栈 full + light | RG3 弱模型 / 生产级复验 | profile 命中正确；generic 降级诚实；验证命令来自项目证据 |
 | Pathfinder 信任标签规则 | RG0 + Pathfinder L1 安全 case | RG2 扩展场景 | 不编造已核实；推断正确标注 |
 | Pathfinder 降级规则 | RG0 + Pathfinder L1 降级 case | RG2 降级场景集 | 降级不编造；盲区显式声明 |
@@ -54,8 +54,8 @@ bash skills/pathfinder/tests/run.sh      # 含共享契约检查
 
 优化影响规则或模板时执行。至少覆盖：
 
-- **impact**：长期目标、接口返回检查、V0-V3、非 Git 降级、阻塞恢复、Step 范围一致、验证命令证据。
-- **impact-pro**：Node/Express 响应字段删除、profile 识别、full 判档、消费者/OpenAPI/generated client 未确认处理、V1/V3 区分。
+- **impact**：长期目标、接口返回检查、V0-V3、非 Git 降级、阻塞恢复、跨会话 `_active-state.md`、Step 范围一致、验证命令证据。
+- **impact-pro**：Node/Express 响应字段删除、profile 识别、full 判档、消费者/OpenAPI/generated client 未确认处理、V1/V3 区分、跨会话 `_active-state.md`。
 - **pathfinder**：信任标签（不编造已核实、推断标注）、降级（非 Git/无清单/无 DB 不编造）、盲区声明。
 
 通过标准：相关规则能在输出中明确触发；未确认项写"不确定/需确认"不编造；只读分析可写 V1 但不得写 V2/V3；无 `确认 Step N` 不得执行写操作。
@@ -79,7 +79,7 @@ bash skills/pathfinder/tests/run.sh      # 含共享契约检查
 
 - 优化目标就是修复真实 agent 对话暴露的问题。
 - 涉及 MiniMax M3、GLM、Kimi 等相对弱模型稳定性。
-- 涉及长会话、上下文压缩、blocked 恢复、延迟确认。
+- 涉及长会话、上下文压缩、blocked 恢复、延迟确认或 `_active-state.md` 跨会话恢复。
 - 涉及写操作闭环、测试失败修复、DDL/DML、配置变更。
 - 涉及写入目标边界、多会话授权一致性或连续 V1-only 写入（独立 subagent 复测）。
 - 涉及负向场景：破坏性请求、证据不足、非目标栈误判。

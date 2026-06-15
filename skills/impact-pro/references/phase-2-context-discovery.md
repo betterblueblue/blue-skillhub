@@ -57,6 +57,11 @@
   - `schema_queries` — schema 发现 SQL
   - `introspection_commands` — DB 检查命令
 
+- 读取 `code-graph-adapters/generic-mcp.md`（若存在）获取：
+  - `capability contract` — 哪类 MCP 可视为只读 code graph
+  - `runtime probe` — 何时先用结构化图、何时降级文本搜索
+  - `evidence output` — Context Pack 中如何记录使用/降级状态
+
 ## Step 2.3: 上下文发现（使用技术栈规则）
 
 按 `discovery_globs` 查找相关文件，用技术栈规则中的分析维度扫描代码：
@@ -68,7 +73,7 @@
 5. 按数据库适配器的 `schema_queries` 发现数据库 schema。
 6. **只读纪律（铁律）**：schema 发现阶段无论当前连接是否具有写能力，只允许 SELECT / SHOW / DESCRIBE / INFORMATION_SCHEMA 查询。探测到任何可执行任意 SQL 的工具时，按「有写能力」对待：发现阶段照常套用只读纪律，DDL/DML 只能在 Phase 5 经 `确认 Step N` 后按下述执行形态进行。
 7. 构建上下文地图（影响文件、API 端点、依赖关系）。
-8. 对目标符号做反向引用检查：函数/方法、字段、类型、路由、事件、配置键、权限标识、组件、schema/model、生成类型、测试入口。不同技术栈按 profile 的引用入口执行；无专属工具时用 `rg` / `git grep` / 文件名搜索兜底。
+8. 对目标符号做反向引用检查：函数/方法、字段、类型、路由、事件、配置键、权限标识、组件、schema/model、生成类型、测试入口。先按 `code-graph-adapters/generic-mcp.md` 探测可选只读 code graph MCP；可用时先取定义/引用/调用/依赖候选，再读取返回的文件片段验证。不可用、失败、证据不含路径行号或覆盖不足时，必须标注 `code_graph: unavailable/failed/degraded`，再按 profile 的引用入口执行 `rg` / `git grep` / 文件名搜索兜底。
 9. 生成发现记录：
    - **已确认**：文件路径 / 命令输出 / DB 查询 / 测试结果
    - **未确认**：找不到、工具不可用、无权限、需用户决策
@@ -146,6 +151,7 @@ Phase 2 结束前必须按 `templates/000-context-pack.md` 输出上下文包草
 - L1/L2/L3 分层上下文。
 - 直接相关文件、影响判断文件、背景参考文件和暂不纳入范围。
 - 引用检查结果：必须同步修改 / 需要用户决策 / 只需验证 / 暂不纳入。
+- code graph 使用状态：used / unavailable / failed / degraded；若降级，写清原因和文本搜索兜底证据。
 - 入口、数据结构、依赖路径、配置、权限、测试和验证命令。
 - 已确认事实、待确认问题和不采用的推断。
 - 上下文预算使用情况。

@@ -38,15 +38,42 @@
 
 当任务从 blocked、长时间等待、上下文压缩、线程恢复或用户延迟确认后继续时，不得直接写文件。必须先完成恢复检查：
 
-1. 复述当前 pending Step 的编号、目标和计划修改对象。
-2. 重新只读检查目标文件/对象当前状态，确认 Step 仍适用。
-3. 检查是否出现新的冲突、用户改动、同类改动已完成或风险升级。
-4. 判断用户最新消息是否明确匹配 `确认 Step N`。
-5. 如果 Step 范围、文件状态或风险等级变化，必须重新给出 Step 说明并等待新的 `确认 Step N`。
+1. 读取 `change-impact/{需求名称}/_active-state.md`（若存在）、`030-implementation.md` 或 `040-light.md`、`060-preflight.md`、`090-execution-record.md`。
+2. 复述当前 pending Step 的编号、目标和计划修改对象。
+3. 重新只读检查目标文件/对象当前状态，确认 Step 仍适用。
+4. 检查是否出现新的冲突、用户改动、同类改动已完成或风险升级。
+5. 判断用户最新消息是否明确匹配 `确认 Step N`。
+6. 如果 Step 范围、文件状态或风险等级变化，必须重新给出 Step 说明并等待新的 `确认 Step N`。
 
 若恢复检查通过且最新用户消息已经明确匹配 `确认 Step N`，该确认可继续有效；若当前任务被要求"只读/不要执行"，则说明"确认有效但本轮不执行"。不得同时写"无需重新确认"和"继续等待同一个确认"。
 
 等待 `确认 Step N` 期间允许继续只读探索；新发现只能进入 backlog，不能改变当前 Step 范围。若新发现会改变当前 Step 风险等级，必须重新说明并重新确认。
+
+## 跨会话恢复状态文件
+
+`_active-state.md` 是 Phase 4/5 的轻量恢复检查点，模板见 `templates/_active-state.md`。它用于恢复上下文，不是执行授权。
+
+### 创建和更新触发
+
+- 用户确认写入本需求目录的第一份文档后，创建 `change-impact/{需求名称}/_active-state.md`。
+- 每次写入或更新 `000-context-pack.md`、`010-requirements.md`、`020-design.md`、`030-implementation.md`、`040-light.md`、`060-preflight.md`、`090-execution-record.md` 后，更新文档状态。
+- 每次准备询问 `确认 Step N` 前，先把 `pending_step`、写入对象、回滚方式、验证方式和 `confirmation_required: true` 写入 `_active-state.md`。
+- 每次 Step 成功、失败、跳过、阻塞、验证等级变化或 V1-only 计数变化后，立即更新 `_active-state.md`。
+- 任务完成时，将 `current_phase` 标为 `complete`、`pending_step` 标为 `none`、`confirmation_required` 标为 `false`。
+
+### 写入边界
+
+- `_active-state.md` 只能写在当前需求目录：`change-impact/{需求名称}/_active-state.md`。
+- 只有用户已确认写入该需求目录后，才可自动维护 `_active-state.md`；只读分析阶段不得偷偷落盘。
+- `_active-state.md` 的自动维护只覆盖流程状态，不授权修改源码、SQL、配置、测试、外部系统，也不能替代 `确认 Step N`。
+- 若用户拒绝写执行记录或状态文件，可以继续执行已确认的业务写操作，但最终回复必须标注"恢复状态未写，本轮不可安全自动恢复"。
+
+### 恢复时冲突处理
+
+- `_active-state.md` 与 `090-execution-record.md` 冲突时，以执行记录为准，并把冲突写入 `_active-state.md` 的 `Resume Notes`。
+- `_active-state.md` 与当前磁盘文件状态冲突时，以磁盘事实为准；必须重新给出 Step 说明并等待新的 `确认 Step N`。
+- Git HEAD 或 diff 与 `_active-state.md` 记录不一致时，标记状态可能过期，对 pending Step 涉及文件重新取证。
+- 找到多个 `_active-state.md` 时，按用户指定需求目录优先；用户未指定时，只读列出候选并询问，不自行选择继续写。
 
 ## DDL/DML 执行形态
 
@@ -77,8 +104,8 @@
 >
 > 确认执行 `Step N: [操作名称]`？请回复：`确认 Step N` / `跳过 Step N` / 其他指令
 
-- `确认 Step N` → 执行 → 自动跑风格检查 + 单测 → 通过 → 写执行记录 → 下一步
-- `跳过 Step N` → 跳过，下一步
+- `确认 Step N` → 执行 → 自动跑风格检查 + 单测 → 通过 → 写执行记录 + 更新 `_active-state.md` → 下一步
+- `跳过 Step N` → 更新 `_active-state.md` 为跳过，下一步
 - 其他 → 等待指令
 
 确认必须指向当前步骤编号；模糊确认（如"嗯""可以""都行""继续""yes""全部确认"）不得视为写操作确认，需追问具体 Step。

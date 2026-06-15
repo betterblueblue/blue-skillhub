@@ -277,9 +277,32 @@ validate_scenario() {
   validate_fixture "$file" || true
   validate_iron_rules "$file" || true
   validate_references "$file" || true
+  validate_code_graph_adapter "$file" || true
   validate_classification "$file" || true
   validate_fixture_files "$file" || true
   validate_shared_contracts "$file" || true
+}
+
+# 校验可选 code graph adapter 存在且包含结果完整性纪律
+validate_code_graph_adapter() {
+  local file="$1"
+  local repo_root
+  repo_root=$(repo_root_from_scenario "$file")
+  local skill
+  skill=$(grep -oE '"skill"[[:space:]]*:[[:space:]]*"[^"]+"' "$file" | head -1 | sed 's/.*"skill"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+  local adapter="$repo_root/skills/$skill/code-graph-adapters/generic-mcp.md"
+
+  if [[ ! -e "$adapter" ]]; then
+    info "code graph adapter 未配置（可选）"
+    return 0
+  fi
+
+  ok "code graph adapter 存在: code-graph-adapters/generic-mcp.md"
+  if grep -q "Freshness and result integrity" "$adapter" && grep -q "truncated" "$adapter" && grep -q "empty.*result\|Empty.*does not prove" "$adapter"; then
+    ok "code graph adapter 含新鲜度/截断/空结果纪律"
+  else
+    fail "code graph adapter 缺少新鲜度/截断/空结果纪律"
+  fi
 }
 
 # ── 共享契约存在性检查（三 skill 统一） ──

@@ -32,6 +32,7 @@
 - **信任标签** — 每条结论标【已核实: 证据】或【推断: 待验证】,直接对接 impact 的「已确认/未确认」二分
 - **信任契约头** — 记录 git HEAD(防过期)、聚焦信号(解释深浅)、覆盖度(显式声明盲区)
 - **典型主链路** — 只 trace 一条代表性请求,端到端串通,"读懂项目"杠杆最高的一节
+- **可选结构索引增强** — 若 code graph / repo-map MCP 已可读,优先用它找入口、依赖边和核心 hubs,再用 Read/Grep 核证;索引过期/截断/需写项目缓存时诚实降级
 - **架构可视化** — 三张 Mermaid 文本图(架构/模块图、数据模型 ER 图、主链路图),一眼掌握全局;实线=已核实关系、虚线=推断关系,图也守信任纪律
 - **100% 只读 + 只描述不开药方** — 不改项目本体,不给"该怎么改"的建议
 - **栈无关通用版** — 自带轻量清单文件栈探测,不依赖 impact-pro 的 profiles,留接缝以后可挂接
@@ -85,6 +86,8 @@ pathfinder/
 │   ├── stack-detection.md        # 通用栈探测:清单文件 → 栈/构建/测试映射
 │   ├── handoff-contract.md       # 与 impact/impact-pro 交接契约 + L1 接口
 │   └── cross-platform-notes.md   # 跨平台差异(时间戳/HEAD/体量命令/路径)
+├── code-graph-adapters/
+│   └── generic-mcp.md            # 可选只读结构索引 / code graph MCP 规则
 └── templates/
     └── project-map.md            # _project-map.md 章节模板(14 核心 + 3 可选)
 ```
