@@ -22,6 +22,10 @@
 探测覆盖度:
   已深入: [模块/链路列表]
   未深入: [模块列表]   ← 盲区,见【13】
+结构索引:
+  status: [used / unavailable / failed / degraded]
+  tool: [工具名 / none]
+  coverage: [complete / truncated / scoped path / unknown]
 ```
 
 ## 【1】一句话概述

@@ -8,6 +8,8 @@ disable-model-invocation: true
 > **MCP 能力说明**：工具能力以运行时探测为准,不以厂商或工具名假设。本 Skill 全程只读——凡能执行任意 SQL 的工具(`execute_sql`/`query`)一律只用于 SELECT/SHOW/DESCRIBE/INFORMATION_SCHEMA 发现,绝不写。只有表结构类工具(`describeTable`)时走受限发现;都没有时降级纯代码搜索,数据模型节标【推断】。
 >
 > **机制警示**：`allowed-tools` 是预批准不是白名单,也不构成安全边界。本 Skill 的只读姿态由「只读铁律」约束,不依赖工具列表。Write/Edit 仅用于产出 `change-impact/_project-map.md` 一个文件,绝不触碰项目源码。
+>
+> **结构索引说明**：若运行时存在只读 code graph / repo-map MCP,Phase 2 可按 `code-graph-adapters/generic-mcp.md` 先查询项目概览、入口、依赖边和 hubs,再用 Read/Grep 核证。若索引不可用、过期、截断或需要在项目内写缓存,必须降级普通文件扫描并在地图中诚实记录。
 
 # Pathfinder — 陌生项目认知地图
 
@@ -81,7 +83,7 @@ Phase 5 续挖循环            用户「再挖 X」→ 增量更新对应节 + 
 
 ## Phase 2: 广度优先扫描
 
-按预算做一遍**浅而全**的广度扫描:轻量栈探测(读清单文件)、目录树、模块边界、关键入口。先把广度铺满,不在任何单点深挖。声称目录"空"/"仅含 X"前必须用 Glob 验证——声称空但实际有文件 = 事实错误。**栈探测映射表见 `references/stack-detection.md`;扫描顺序与相关性分级见 `references/phase-2-breadth-scan.md`。**
+按预算做一遍**浅而全**的广度扫描:轻量栈探测(读清单文件)、可选结构索引、目录树、模块边界、关键入口。先把广度铺满,不在任何单点深挖。声称目录"空"/"仅含 X"前必须用 Glob 验证——声称空但实际有文件 = 事实错误。**栈探测映射表见 `references/stack-detection.md`;扫描顺序与相关性分级见 `references/phase-2-breadth-scan.md`;可选 code graph / repo-map MCP 规则见 `code-graph-adapters/generic-mcp.md`。**
 
 ## Phase 3: 聚焦 + 预算深挖
 
@@ -148,6 +150,7 @@ Phase 5 续挖循环            用户「再挖 X」→ 增量更新对应节 + 
 | `references/stack-detection.md` | 通用栈探测:清单文件 → 栈/构建/测试映射 | Phase 2 栈探测 |
 | `references/handoff-contract.md` | 与 impact/impact-pro 交接契约 + L1 接口 | 与 impact 的交接 |
 | `references/cross-platform-notes.md` | 跨平台差异(时间戳/路径/shell) | 跨平台执行 |
+| `code-graph-adapters/generic-mcp.md` | 可选只读结构索引 / code graph MCP 发现规则 | Phase 2 广度扫描 |
 
 ## 行为准则
 

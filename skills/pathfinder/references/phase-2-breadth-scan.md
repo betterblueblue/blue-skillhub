@@ -16,6 +16,15 @@
 - monorepo / 多栈 → 列出各子项目栈 + 目录边界,**不压成单栈**。
 - 找不到任何清单 → 降级:按文件扩展名 + 目录名启发式推断,技术栈节标【推断】+ 声明"置信低"。
 
+## Step 2.1.5: 可选结构索引探测
+
+若运行时存在只读 code graph / repo-map MCP,按 `../code-graph-adapters/generic-mcp.md` 先取项目概览、入口、依赖边、hubs 或 bounded tree,用于辅助广度扫描。
+
+- 只把结构索引当**候选集**:任何写入地图且标【已核实】的事实仍需 Read/Grep 核证。
+- 若索引不可用、过期、截断、权限失败、返回无行号/无路径,标 `code_graph: unavailable/failed/degraded` 并降级普通 Glob/Grep/Read。
+- 若工具需要在目标项目内创建/更新 `.codegraph/`、`.repomapper/`、`.cache/` 等索引目录,不得执行;Pathfinder 唯一写入目标仍是 `change-impact/_project-map.md`。
+- 如果结果带 `total/truncated/limit/offset`,必须记录覆盖范围;不能把截断结果写成全项目覆盖。
+
 ## Step 2.2: 目录树扫描
 
 按档位深度扫目录(小仓全展开 / 大仓到 2 层 / 超大仓仅顶层),为每个顶层(或聚焦区)目录记一行职责推断:
@@ -72,6 +81,7 @@ src/models/     【已核实: 含 User.ts/Order.ts → 数据模型层】
 
 ```text
 技术栈: [已核实/推断]
+结构索引: [used/unavailable/failed/degraded,若 used 写工具与覆盖范围]
 模块地图: [N 个模块,各一行职责]
 关键入口: [列表]
 聚焦区候选深挖: [按聚焦信号 + 相关性 3 选出的模块]

@@ -58,12 +58,19 @@
 
 **只读纪律（铁律）**：schema 发现阶段无论当前连接是否具有写能力，只允许 SELECT / SHOW / DESCRIBE / INFORMATION_SCHEMA 查询。探测到任何可执行任意 SQL 的工具时，按「有写能力」对待：发现阶段照常套用只读纪律，DDL/DML 只能在 Phase 5 经 `确认 Step N` 后按下述执行形态进行。
 
+## Code Graph MCP 能力探测（可选）
+
+读取 `code-graph-adapters/generic-mcp.md`（若存在）。在代码引用发现和反向引用检查前，先按该适配器探测当前可见 MCP 是否具备只读 code graph 能力（定义/引用/调用/依赖/注册点查询）。可用时先取结构化候选，再读取返回的文件片段验证；不可用、失败、证据不含路径行号或覆盖不足时，必须标注 `code_graph: unavailable/failed/degraded`，并降级到 `rg` / `git grep` / 文件名搜索。
+
+不得为了构建 code graph 在目标项目内写索引文件；若工具要求写入目标项目，视为写操作，必须等 Phase 5 的 `确认 Step N`。
+
 ## 完整 schema 发现
 
 schema 发现查询见 `references/schema-discovery.md`；有任意 SQL 能力走完整发现，只有表结构工具走受限发现。
 
 ## 代码引用发现
 
+0. 若 code graph MCP 可用，先用结构化候选缩小范围，但仍要用 `Read` 片段对照；graph 无命中不能写成“无影响”，必须继续文本搜索兜底。
 1. MyBatis XML：`Grep` 搜索表名在 `**/*.xml`
 2. JPA/Entity：`Grep` 搜索表名在 `**/*.java`
 3. Service/Repository/Mapper：`Grep` 搜索在 `**/*Service*.java`、`**/*Repository*.java`、`**/*Mapper*.java`
@@ -143,6 +150,7 @@ Phase 2 结束前必须按 `templates/000-context-pack.md` 输出上下文包草
 - L1/L2/L3 分层上下文。
 - 直接相关文件、影响判断文件、背景参考文件和暂不纳入范围。
 - 引用检查结果：必须同步修改 / 需要用户决策 / 只需验证 / 暂不纳入。
+- code graph 使用状态：used / unavailable / failed / degraded；若降级，写清原因和文本搜索兜底证据。
 - 相关接口、数据结构、配置、权限、测试和验证入口。
 - 已确认事实、待确认问题和不采用的推断。
 - 上下文预算使用情况。

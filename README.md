@@ -34,6 +34,8 @@
 
 地图每条结论都带信任标签(`【已核实】`/`【推断】`)、git HEAD(防过期)和覆盖度声明(显式列出没挖深的盲区)。Impact 接过去时,`【推断】`项一律按未确认处理、动手前重新取证 —— 地图是导航图不是权威源。Pathfinder 全程 100% 只读、只描述不开药方。
 
+如果客户端已有只读 code graph / repo-map MCP，Pathfinder 会先用结构索引找入口、依赖边和核心 hubs，再用 Read/Grep 核证；索引不可用、过期、截断或需要写项目缓存时，诚实降级普通扫描。
+
 如果说律刃管 AI 的**脑子**、Impact 管 AI 的**手**,那 Pathfinder 管的是 AI 的**眼睛** —— 先看懂,才谈得上动手。设计复盘见 [docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md](docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md)。
 
 ### ImpactRadar
@@ -46,6 +48,8 @@
 
 v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目降级保护、阻塞恢复安全闸和多会话写授权一致性，适合迁移、对齐、重构等多 Step 变更。Claude Code + MiniMax M3 真实 `/impact` 复测已经走完 S1-S7 回归，模糊确认、历史确认、延迟确认、非 Git + V1-only、Health/API 响应字段变化都不能绕过 `确认 Step N`。
 
+当前还接入了可选 code graph MCP 作为结构化定义/引用候选入口，以及 `change-impact/{需求名称}/_active-state.md` 作为跨会话恢复检查点。`_active-state.md` 只记录 pending Step、文档状态和未确认项，不授权源码/SQL/配置/测试写入，也不能替代当前对话里的 `确认 Step N`。Claude Code 可选启用 `.claude/hooks/impact-write-gate.*`，把 Step 确认补强成工具执行前检查。
+
 ### ImpactRadar Pro
 
 [skills/impact-pro/](skills/impact-pro/)
@@ -55,6 +59,8 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 它也可以搭配律刃使用：律刃提供通用行为约束，ImpactRadar Pro 提供多栈 profile 化的影响分析流程。
 
 `impact-pro` 同样补了跨系统对齐规则、接口返回检查清单、验证等级、非 Git 降级、阻塞恢复安全闸和多会话写授权一致性。真实 `/impact-pro` 复测里，Node/Express 响应字段删除能正确判定 full，无 `确认 Step N` 时也不会写文件。
+
+和 `impact` 一样，`impact-pro` 会在可用时使用只读 code graph MCP 提升引用发现，再用文本搜索和文件阅读核证；Phase 4/5 会维护 `_active-state.md` 做跨会话恢复，但该文件仍只是检查点，不是写入授权。
 
 上下文包能力的设计复盘见 [docs/impact-context-pack-design.md](docs/impact-context-pack-design.md)，里面记录了需求来源、方案取舍和实现效果。
 
@@ -201,11 +207,14 @@ Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.claude\s
 - `impact-pro` 面向已验证技术栈规则覆盖范围内的多栈现有系统。
 - 写文件、改代码、DDL/DML、配置变更、删除、测试修复,都必须由用户明确回复 `确认 Step N`。
 - 不能用 `yes`、`继续`、`全部确认` 代替 Step 级确认。
+- 中断后恢复时，`_active-state.md` 只能帮助复述 pending Step 和核验磁盘状态，不能当成授权。
 
 ## 目录速览
 
 ```text
 blue-skillhub/
+├── .claude/
+│   └── hooks/                # 可选 Claude Code 写前门禁 hook
 ├── claudecode行为规范/
 │   └── ruleblade/
 ├── docs/
