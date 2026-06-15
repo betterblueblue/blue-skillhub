@@ -79,6 +79,7 @@ export class EnhancedContentExtractor {
         const { url, timeout = this.defaultTimeout } = options;
         const browser = await this.browserPool.getBrowser();
         const browserType = this.browserPool.getLastUsedBrowserType();
+        let context;
         try {
             // Create context options based on browser capabilities
             const baseContextOptions = {
@@ -98,7 +99,7 @@ export class EnhancedContentExtractor {
                 ? baseContextOptions
                 : { ...baseContextOptions, isMobile: Math.random() > 0.8 };
             // Create a new context for each request (isolation)
-            const context = await browser.newContext(contextOptions);
+            context = await browser.newContext(contextOptions);
             // Add stealth scripts to avoid detection
             await context.addInitScript(() => {
                 // Remove webdriver property
@@ -207,6 +208,12 @@ export class EnhancedContentExtractor {
             return content;
         }
         catch (error) {
+            // Always close context to prevent memory leaks from leaked browser contexts
+            if (context) {
+                try { await context.close(); } catch (closeError) {
+                    console.error(`[BrowserExtractor] Error closing context during error recovery:`, closeError);
+                }
+            }
             console.error(`[BrowserExtractor] Browser extraction failed for ${url}:`, error);
             throw error;
         }
