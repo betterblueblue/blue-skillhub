@@ -153,6 +153,19 @@ class WebSearchMCPServer {
                 console.error(`[MCP] Error in tool handler:`, error);
                 throw error;
             }
+            finally {
+                // Clean up browser processes to prevent memory leaks
+                // BrowserPool caches headless Chromium processes that each consume 200-500MB RAM
+                try {
+                    await Promise.all([
+                        this.contentExtractor.closeAll(),
+                        this.searchEngine.closeAll()
+                    ]);
+                }
+                catch (cleanupError) {
+                    console.error(`[MCP] Error during browser cleanup:`, cleanupError);
+                }
+            }
         });
         // Register the lightweight web search summaries tool (secondary choice for quick results)
         this.server.tool('get-web-search-summaries', 'Search the web and return only the search result snippets/descriptions without following links to extract full page content. This is a lightweight alternative to full-web-search for when you only need brief search results. For comprehensive information, use full-web-search instead.', {
@@ -302,6 +315,15 @@ class WebSearchMCPServer {
             catch (error) {
                 console.error(`[MCP] Error in get-single-web-page-content tool handler:`, error);
                 throw error;
+            }
+            finally {
+                // Clean up browser processes to prevent memory leaks
+                try {
+                    await this.contentExtractor.closeAll();
+                }
+                catch (cleanupError) {
+                    console.error(`[MCP] Error during browser cleanup:`, cleanupError);
+                }
             }
         });
     }
