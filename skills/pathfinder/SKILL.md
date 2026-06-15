@@ -7,6 +7,8 @@ disable-model-invocation: true
 
 > **MCP 能力说明**：工具能力以运行时探测为准,不以厂商或工具名假设。本 Skill 全程只读——凡能执行任意 SQL 的工具(`execute_sql`/`query`)一律只用于 SELECT/SHOW/DESCRIBE/INFORMATION_SCHEMA 发现,绝不写。只有表结构类工具(`describeTable`)时走受限发现;都没有时降级纯代码搜索,数据模型节标【推断】。
 >
+> **DB 工具偏好**：优先使用 `mcp__database__*` 系列工具(标准 MCP,如 `describeTable`、`listTables`、`query`);若不存在则回退到 `mcp__dbhub__*` 系列;两者都不可用时降级纯代码搜索,数据模型节标【推断】。
+>
 > **机制警示**：`allowed-tools` 是预批准不是白名单,也不构成安全边界。本 Skill 的只读姿态由「只读铁律」约束,不依赖工具列表。Write/Edit 仅用于产出 `change-impact/_project-map.md` 一个文件,绝不触碰项目源码。
 >
 > **结构索引说明**：若运行时存在只读 code graph / repo-map MCP,Phase 2 可按 `code-graph-adapters/generic-mcp.md` 先查询项目概览、入口、依赖边和 hubs,再用 Read/Grep 核证。若索引不可用、过期、截断或需要在项目内写缓存,必须降级普通文件扫描并在地图中诚实记录。
@@ -111,6 +113,8 @@ Phase 5 续挖循环            用户「再挖 X」→ 增量更新对应节 + 
 ```
 
 **图同样守信任纪律**:三张 Mermaid 图里,**实线箭头 = 【已核实】关系,虚线箭头(`-.推断.->`)= 【推断】关系**;只画有证据的节点和边,靠命名猜的画虚线或留文字,绝不画实线冒充已核实。图只描述现状结构,不画"建议的架构"。
+
+**写前自检(Phase 4.5)**:写入 `_project-map.md` 前必须跑 4 项自检:① 每个 `[已核实] file:行号` 用 Grep 确认行存在;② 全文 grep 凭证模式脱敏;③ 盲区非空;④ Mermaid 箭头与信任标签一致。弱模型尤其容易在编造行号和推断画实线失分。**完整自检规则见 `references/phase-3-depth-fill.md` Phase 4.5 段。**
 
 ### 章节结构(核心 14 节 + 可选 3 节)
 

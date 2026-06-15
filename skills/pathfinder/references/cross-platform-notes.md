@@ -1,3 +1,4 @@
+<!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
 # 跨平台执行说明(Pathfinder)
 
 > 适用:bash / Git-Bash / PowerShell / Windows cmd。Pathfinder 全程只读,跨平台问题主要在「量体量」和「取时间戳/HEAD」两类命令。
@@ -37,6 +38,12 @@
 | `2>/dev/null` | `2>$null` |
 
 > Pathfinder 优先用 Read/Grep/Glob 工具而非 shell 文本命令,以上仅供必须用 Bash 量体量/查 git 时参考。
+
+## Git Bash (msys2) 路径格式陷阱
+
+在 Windows Git Bash 中,`git rev-parse --show-toplevel` 返回 Windows 格式路径(如 `E:/agent/blue-skillhub`),而 `$(pwd)` 返回 Unix 格式(如 `/e/agent/blue-skillhub`)。两者字符串比较恒失败。**禁止**用字符串相等判断 Git 仓库归属。
+
+**推荐方案**:先 `test -d "$(pwd)/.git"` 检测 `.git` 目录是否存在;确认独立仓库后用 `git -C "$(pwd)" rev-parse --show-toplevel` 获取根路径(信任契约头用),不依赖路径字符串比较。
 
 ## 维护注意
 

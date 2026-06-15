@@ -43,8 +43,8 @@
 - 写入目标检查：[所有文件均在目标项目根目录内 / 不适用；如异常，写明已停止和清理结果]
 - 验证结果：[通过 / 失败 / 未执行；附关键输出]
 - 工具调用约定：
-  - `ty check` 必须通过项目 venv 的 `python -m ty` 调用（不直接调二进制，避免 venv 绑错）
-  - alembic migration 验证优先用 `alembic upgrade head --sql`（离线 SQL 渲染，环境无关；比 SQLite online 更可移植）
+  - 构建验证优先用项目自带的构建工具（`mvn test` / `mvn verify` 或 `gradle test`），使用项目根目录下的 `pom.xml` 或 `build.gradle` 确认命令存在且可执行
+  - DDL/DML 验证优先用 Flyway/Liquibase dry-run 模式或 MyBatis mapper XML 语法检查（离线渲染，环境无关；比直接连 DB online 更可移植）
 - 未运行验证及原因：[环境缺失 / 无权限 / 服务不可用 / 未提供命令 / 不适用]
 - 运行时未验证项：[描述]
 - V1-only 计数：[连续仅 V1 的写入 Step 数；不适用则写 0]

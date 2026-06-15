@@ -165,9 +165,9 @@
 
 > **维护注意**：本清单是 SKILL.md 铁律 #2 的完整版。两处必须保持同步。
 
-## 实施步骤的风格约束标签
+## 实施步骤的风格约束（style_axes）
 
-通用标签：见 `profiles/_schema.md` 定义的标签体系。栈专属标签由 profile 追加（Go 的 `[err-wrap]`、Python 的 `[type-hint]`、Next.js 的 `[RSC]` 等）。
+通用约束：按 profile 的 `style_axes` 逐轴检查（naming、layering、orm、transaction、exception、logging、api_response、dependency_injection 等），同时用 `validation_strategy` 的 grep_patterns 和 file_patterns 做合规扫描。栈专属风格约束由 profile 补充（Go profile 的 `err` 处理与 `errors.Is/As`、Python profile 的 type hint、Next.js profile 的 Server Action `'use server'` 边界等）。
 
 ## 执行记录
 

@@ -1,3 +1,4 @@
+<!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
 # Phase 1: 体量测量 + 预算分档
 
 > 本文件含 Phase 1 完整规则。SKILL.md 正文只保留概要。
@@ -12,17 +13,19 @@
 先确认当前目录是独立 Git 仓库,不是另一个仓库的子目录:
 
 ```bash
-# bash
-test "$(git rev-parse --show-toplevel)" = "$(pwd)" && echo "独立仓库" || echo "子目录或非Git"
+# bash — 用 .git 目录检测,避免 msys2 路径格式不兼容
+test -d "$(pwd)/.git" && echo "独立仓库" || echo "子目录或非Git"
 ```
 ```powershell
 # PowerShell
-if ((git rev-parse --show-toplevel).Trim() -eq (Get-Location).Path) { "独立仓库" } else { "子目录或非Git" }
+if (Test-Path (Join-Path (Get-Location) '.git')) { "独立仓库" } else { "子目录或非Git" }
 ```
 
-- 返回"独立仓库" → 正常记录 HEAD。
+> **注意**:原 `git rev-parse --show-toplevel` vs `$(pwd)` 字符串比较在 Git Bash (msys2) 上恒失败,因为前者返回 Windows 格式路径(`E:/...`),后者返回 Unix 格式(`/e/...`)。改用 `.git` 目录存在性检测后再用 `git -C "$(pwd)" rev-parse --show-toplevel` 获取根路径(信任契约头用),不依赖路径字符串比较。
+
+- 返回"独立仓库" → 正常记录 HEAD(`git -C "$(pwd)" rev-parse --short HEAD`)。
 - 返回"子目录或非Git" → 信任契约头 `基于 commit` 写"非独立 Git 仓库(HEAD 来自父仓库,以扫描时间为准)",不记录父仓库的 HEAD。
-- `git rev-parse --show-toplevel` 报错(非 Git) → 同上,写"非 Git"。
+- `.git` 目录不存在(非 Git) → 同上,写"非 Git"。
 
 | 指标 | bash 示例 | PowerShell 示例 |
 |------|-----------|------------------|
@@ -32,6 +35,12 @@ if ((git rev-parse --show-toplevel).Trim() -eq (Get-Location).Path) { "独立仓
 | 主要模块数 | 数 src 下子模块 / monorepo 下 packages、apps 子项目数 | 同左 |
 
 **忽略噪音**:`node_modules`、`vendor`、`dist`、`build`、`.git`、`target`、`__pycache__`、锁文件不计入"代码体量"。优先用 `git ls-files`(天然排除 gitignore 内容)。
+
+### 大规模仓库降级处理
+
+**`git ls-files` 超时**:仓库超过 10 万文件时 `git ls-files` 可能耗时 > 5 秒。若命令超过 5 秒未返回,终止并降级为 `find . -type f -not -path './.git/*' | wc -l`,设 10 秒超时。降级时标注「文件数来自 find(含 gitignore 内容),偏高」。
+
+**sparse-checkout 感知**:若 `.git/info/sparse-checkout` 存在,说明仓库使用稀疏检出。此时 `git ls-files` **低报**(只统计 sparse 范围内的文件),而 `find` **高报**(统计物理存在的所有文件,可能包含 sparse 外的内容)。这种情况下在信任契约头标注「sparse-checkout 仓库,文件计数仅覆盖检出子集」。
 
 ## Step 1.2: 分档
 

@@ -69,8 +69,6 @@ discovery_globs:
   migration:
     - "**/migrations/**/*.sql"
     - "**/db/**/*.sql"
-    - "**/hello.go"
-    - "**/main.go"
 ```
 
 ## context_discovery

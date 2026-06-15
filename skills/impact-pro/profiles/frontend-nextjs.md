@@ -27,8 +27,6 @@ matchers:
     - postgres
     - prisma
     - zod
-    - "@playwright/test"
-    - vitest
   directories:
     - app
     - pages
