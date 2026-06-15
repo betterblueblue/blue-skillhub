@@ -1,3 +1,4 @@
+<!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
 # 通用栈探测:清单文件 → 栈 / 构建 / 测试映射
 
 > 本文件是栈无关的轻量探测表。Pathfinder 不依赖 impact-pro 的 profiles,自带这张通用映射。

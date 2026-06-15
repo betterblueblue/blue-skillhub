@@ -10,6 +10,8 @@
 
 2026-06-09 T06 完成多会话写授权一致性复测：初始复测发现写入目标边界 P0 和执行记录缺失 P1，已补充“写入目标边界”“执行记录随当前 Step 补齐”“连续 V1-only 暂停”规则，并完成 S5 定向复测和修复后 S1-S7 完整回归。当前结论：本轮多会话写授权一致性验收通过，无 P0/P1；后续建议继续补真实客户端和弱模型复测。
 
+2026-06-15 T08 完成 `_active-state.md` 跨会话恢复 dry-run：Claude Code CLI 默认配置在只读工具限制下能识别 `_active-state.md` 只是 checkpoint，不替代 `确认 Step N`；用户只说“继续”不会授权 Step 写入，恢复后仍需重读执行文档、磁盘/Git 状态并等待当前对话新的 `确认 Step N`。
+
 ## 必须满足的底线
 
 | 能力 | 验收标准 | 失败信号 |
@@ -68,9 +70,9 @@
 
 修改 `impact` 时至少检查：
 
-- `SKILL.md` 中 Phase 2.5 / Phase 3 / Phase 3.5 / Phase 5 的安全检查是否仍一致。
+- `tests/scenarios/negative/` 下的负向门禁场景是否覆盖全部 7 条铁律（neg-001 到 neg-007 各对应 #1-#7），新增铁律是否已有对应负向测试。
 - `README.md` 示例是否仍使用 `确认 Step N`，没有回退到 `yes/no`。
-- `templates/060-preflight.md` 和 `templates/090-execution-record.md` 是否覆盖 Step 确认、回滚和验证。
+- `templates/060-preflight.md` 和 `templates/090-execution-record.md` 是否覆盖 Step 确认、回滚和验证，`templates/060-preflight.md` 和 `templates/_active-state.md` 中的目标项目根目录是否包含结构化字段（绝对路径、确定方式、验证时间戳）。
 - `templates/030-implementation.md` 和 `templates/040-light.md` 是否提醒 light 不跳过安全检查。
 - `templates/000-context-pack.md` 是否覆盖长期目标、跨系统对齐、相关性分级、引用检查分级、待确认问题、暂不纳入范围和上下文预算。
 

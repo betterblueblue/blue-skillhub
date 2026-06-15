@@ -1,3 +1,4 @@
+<!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
 # 交接契约:Pathfinder → impact / impact-pro
 
 > 本文件定义 Pathfinder 产出的 `_project-map.md` 如何被 impact 家族安全消费。

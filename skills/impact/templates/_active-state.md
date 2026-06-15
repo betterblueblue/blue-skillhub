@@ -7,7 +7,10 @@
 
 - updated_at: [真实系统时间]
 - skill: impact
-- target_project_root: [绝对路径]
+- target_project_root:
+  - absolute_path: [绝对路径，如 E:\projects\ruoyi-vue]
+  - determination_method: [git-rev-parse / user-specified / pom-dot-xml / build-dot-gradle / inferred-from-cwd / other]
+  - verification_timestamp: [真实系统时间 ISO 8601]
 - change_dir: `change-impact/[需求名称]/`
 - current_phase: [Phase 4 / Phase 5 / blocked / complete]
 - mode: [light / full]

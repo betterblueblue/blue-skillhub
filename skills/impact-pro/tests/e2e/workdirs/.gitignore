@@ -1,0 +1,12 @@
+# e2e workdirs — exclude cloned fixtures from git tracking
+# Keep only the JSON scenario files and prompt files in git.
+# Cloned project fixtures are large and versioned upstream;
+# clone them locally before running e2e tests.
+
+# Exclude all cloned fixture directories
+003-add-avatar-upload/
+
+# Allow scenario JSON and prompt files
+!*.json
+!*.md
+!*.txt

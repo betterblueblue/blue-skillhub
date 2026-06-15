@@ -1,3 +1,4 @@
+<!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
 # Phase 2: 广度优先扫描
 
 > 本文件含 Phase 2 完整规则。目标:在 Phase 1 预算内做一遍**浅而全**的扫描,把项目广度铺满,不在任何单点深挖(深挖留给 Phase 3)。

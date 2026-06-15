@@ -61,14 +61,14 @@
 | generic | — | 通用兜底规则，扫描目录结构；用于未知栈首轮分析，不等同于专属规则已验证 |
 | java-spring-mybatis | 2 | Java/Spring/MyBatis/RuoYi，已深度覆盖 |
 | node-express-prisma | 1 | Node.js/TypeScript + Express/Fastify + Prisma，已在 prisma-examples 上首轮验证 |
-| python-fastapi-sqlmodel | 1 | FastAPI + SQLModel/SQLAlchemy + Alembic，已在 full-stack-fastapi-template 后端首轮验证 |
+| python-fastapi-sqlmodel | 1 | FastAPI + SQLModel/SQLAlchemy + Alembic，已在 full-stack-fastapi-template 后端首轮验证；T50 补 open-webui 真实项目样本池 |
 | frontend-react-vite | 1 | React + Vite + TypeScript 前端，已在 full-stack-fastapi-template 前端首轮验证 |
-| frontend-nextjs | 1 | Next.js App Router / Pages Router，已在 vercel/next-learn 上首轮静态验证 |
-| frontend-nuxt-vue | 1 | Nuxt 4 + Vue 3 + Nuxt UI，已在 nuxt-ui-templates/dashboard 上首轮静态验证 |
+| frontend-nextjs | 1 | Next.js App Router / Pages Router，已在 vercel/next-learn 上首轮静态验证；T50 补 cal.com 真实项目样本池 |
+| frontend-nuxt-vue | 1 | Nuxt 4 + Vue 3 + Nuxt UI，已在 nuxt-ui-templates/dashboard 上首轮静态验证；T50 补 nuxt.com 真实项目样本池 |
 | go-gin-gorm | 1 | Go + Gin + GORM，已在 golang-gin-realworld-example-app 上首轮验证 |
 | dotnet-aspnet-efcore | 1 | ASP.NET Core + EF Core，已在 eShopOnWeb 上首轮验证 |
 
-generic 是通用兜底规则，专属规则负责真实项目里更稳定的文件发现和验证策略。新技术栈必须先用 generic 兜底并保留限制说明；只有完成真实项目 full + light 验收、验证命令可执行、记录写入 `validation-runs/` 后，才能升级为 Level 1 专属规则。Level 2 需要多个真实项目积累。
+generic 是通用兜底规则，专属规则负责真实项目里更稳定的文件发现和验证策略。T50 的真实项目样本池只降低后续复验选题成本，不等同生产级通过。新技术栈必须先用 generic 兜底并保留限制说明；只有完成真实项目 full + light 验收、验证命令可执行、记录写入 `validation-runs/` 后，才能升级为 Level 1 专属规则。Level 2 需要多个真实项目积累。
 
 ## 触发方式
 
@@ -89,7 +89,7 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 
 ## 验收状态
 
-当前 `impact-pro` 已完成 T01-T49 验收，覆盖多栈静态验收、前端运行时复测、负向对话复测、生产级项目复验、Step 编号确认、执行前检查、Go RealWorld 真实写操作闭环、最终复审、Claude Code + MiniMax M3 真实 `/impact-pro` 响应契约复测，以及多会话写授权一致性复测。T49 验证 Node/Express 响应字段删除不会被误判为 Java 场景，也验证了无 `确认 Step N` 不会写文件；同时同步补强写入目标边界、执行记录随 Step 补齐和 V1-only 暂停规则。补齐 Level 1 技术栈规则后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入已验证覆盖范围。当前可按 **多栈常规项目可投入使用（已验证技术栈规则覆盖范围内，必须由用户确认后执行）** 使用；仍不宣称覆盖任意技术栈，也不建议无人监督生产数据库变更。
+当前 `impact-pro` 已完成 T01-T50 验收，覆盖多栈静态验收、前端运行时复测、负向对话复测、生产级项目复验、Step 编号确认、执行前检查、Go RealWorld 真实写操作闭环、最终复审、Claude Code + MiniMax M3 真实 `/impact-pro` 响应契约复测、多会话写授权一致性复测，以及 profile 真实项目样本池扩充。T49 验证 Node/Express 响应字段删除不会被误判为 Java 场景，也验证了无 `确认 Step N` 不会写文件；同时同步补强写入目标边界、执行记录随 Step 补齐和 V1-only 暂停规则。补齐 Level 1 技术栈规则后，Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core、monorepo 和三类负向场景均已进入已验证覆盖范围。当前可按 **多栈常规项目可投入使用（已验证技术栈规则覆盖范围内，必须由用户确认后执行）** 使用；仍不宣称覆盖任意技术栈，也不建议无人监督生产数据库变更。
 
 **v3.6 subagent 跑分**
 
@@ -132,6 +132,16 @@ generic 是通用兜底规则，专属规则负责真实项目里更稳定的文
 `phases-detail.md` 保持不动（已覆盖 Phase 3 & 3.5 详细规则）。
 
 **安全门禁保留策略**：与 impact 一致——铁律区 7 条 + 自动/确认边界 + 凭证脱敏/仓内文本铁律 + 行为准则检查 7 条 + Phase 4 文档输出结构 + 多栈目录结构 全部保留在主 SKILL.md（fable5 评审点 5）。references 仅下沉非门禁性的执行规则和详细说明。
+
+**v3.7.2（2026-06-15：生产就绪性修复）**
+
+全面评审后修复 8 个问题，三 skill 联合测试全绿（impact 179/0, impact-pro 74/1, pathfinder 43/0）：
+
+- **自动化测试场景扩充**：从 2 场景(go-gin-gorm×2)→4 场景(+ java-spring-mybatis + frontend-nextjs)，覆盖栈 1→3
+- **profile 修复**：`go-gin-gorm.md` migration glob 去 `hello.go`/`main.go`；`frontend-nuxt-vue.md` DTO glob 收窄；`frontend-nextjs.md` 去测试框架依赖匹配
+- **风格约束引用修正**：`phase-5-execution.md` / `030-implementation.md` 中"标签体系"→`style_axes`，指向现有定义
+- **workdirs 膨胀治理**：`tests/e2e/workdirs/` 加 `.gitignore` + `README.md`，fixture 不再入 git
+- **T50 真实项目样本**：为 FastAPI/Next.js/Nuxt 未生产级 profile 补 open-webui/cal.com/nuxt.com 样本
 
 ## references 索引
 
@@ -258,10 +268,15 @@ impact-pro/
     ├── 040-light.md
     ├── _active-state.md
     ├── 060-preflight.md
-    ├── 090-execution-record.md  # v3.6 加 PASS/FAIL 表格 + 决策依据 + ty/alembic 约定
+    ├── 090-execution-record.md  # v3.6 加 PASS/FAIL 表格 + 决策依据
     ├── subagent-decisions.md # v3.6 新增（subagent 决策矩阵模板）
     ├── final-readiness-audit.md
     └── scorecard.md
+└── tests/                # 自动化测试
+    ├── run.sh            # L0 静态自洽运行器
+    ├── lib/validate.sh   # 共享验证函数库
+    ├── scenarios/        # JSON scenario spec（go-gin-gorm×2, java-spring-mybatis×1, frontend-nextjs×1）
+    └── e2e/              # E2E 测试（scenarios/ + prompts/ + workdirs/）
 ```
 
 ## 部署前提（纵深防御）

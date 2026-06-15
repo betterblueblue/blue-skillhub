@@ -1,0 +1,52 @@
+{
+  "id": "nextlearn-change-dashboard-title-001",
+  "title": "改 Dashboard 标题文案（前端 only，陷阱：layout.tsx 与 page.tsx 标题不一致）",
+  "skill": "impact-pro",
+  "stack": "frontend-nextjs",
+  "difficulty": "low",
+  "fixture": {
+    "project": "next-learn",
+    "url": "https://github.com/vercel/next-learn",
+    "commit": "914a33426aac20f825ca52fae80b889302b92240"
+  },
+  "query": "next-learn dashboard 页面标题从 'Dashboard' 改成 '控制台'",
+  "expected": {
+    "phase_2_5_pre_classification": "可能 light",
+    "phase_3_5_classification": "light",
+    "iron_rules_triggered": [],
+    "p0_questions_min": 1,
+    "p0_question_topic": "标题文案出现在 dashboard/layout.tsx 的 <title> 和 dashboard/page.tsx 的 <h1> 两处，需确认改哪一处还是全改",
+    "profile_expected": "profiles/frontend-nextjs.md",
+    "references_loaded": [
+      "references/phase-2-context-discovery.md",
+      "references/phases-detail.md"
+    ]
+  },
+  "trap_for": [
+    "layout.tsx 的 <title> 是 HTML document title（SEO/标签页），page.tsx 的 <h1> 是页面内标题，两者语义不同",
+    "前端 only 的文案变更不应生成 DB/SQL 回滚方案",
+    "light 判档必须准确（无 DB/API 契约/状态机变更）"
+  ],
+  "files_to_inspect": [
+    {
+      "path": "package.json",
+      "must_exist": true,
+      "must_contain": "next"
+    },
+    {
+      "path": "app/dashboard/layout.tsx",
+      "must_exist": true,
+      "must_contain": "Dashboard"
+    },
+    {
+      "path": "app/dashboard/page.tsx",
+      "must_exist": true,
+      "must_contain": "Dashboard"
+    },
+    {
+      "path": "app/layout.tsx",
+      "must_exist": true,
+      "must_contain": "metadata"
+    }
+  ]
+}

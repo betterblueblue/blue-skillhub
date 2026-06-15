@@ -80,9 +80,10 @@ discovery_globs:
   dto:
     - "**/app/types/**/*.ts"
     - "**/types/**/*.ts"
+    - "**/interfaces/**/*.ts"
+    - "**/*.d.ts"
     - "**/app/**/*schema*.ts"
     - "**/server/**/*schema*.ts"
-    - "**/app/**/*.vue"
   config:
     - "**/package.json"
     - "**/nuxt.config.*"
