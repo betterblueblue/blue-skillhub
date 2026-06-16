@@ -6,6 +6,40 @@
 
 每个目录都可以单独使用，不需要整套一起上。
 
+## 3 分钟 Quickstart
+
+只想马上试用已有系统影响分析时，按这个最小路径走：
+
+1. 安装 skill 到你的客户端目录。
+
+```powershell
+Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
+Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
+Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.claude\skills\impact-pro" -Recurse -Force
+```
+
+Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路径见 [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)。
+
+2. 在目标项目里先摸底，再做变更。
+
+```text
+/pathfinder
+这个项目我刚接手，先帮我只读摸底。
+
+/impact
+我想删除 sys_user.remark 字段，先做影响分析，不要直接改代码。
+```
+
+非 Java/Spring/MyBatis 项目用 `/impact-pro`。如果已经知道项目结构，也可以跳过 `/pathfinder` 直接进 `/impact` 或 `/impact-pro`。
+
+3. 只在看到 Step 说明后确认写入。
+
+```text
+确认 Step 2
+```
+
+`继续`、`好的`、`全部确认` 都不算写入授权。Claude Code 用户可选启用 `.claude/hooks/impact-write-gate.*`，把这个规则补强到工具执行前。
+
 ## 里面有什么
 
 ### 律刃
@@ -208,6 +242,21 @@ Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.claude\s
 - 写文件、改代码、DDL/DML、配置变更、删除、测试修复,都必须由用户明确回复 `确认 Step N`。
 - 不能用 `yes`、`继续`、`全部确认` 代替 Step 级确认。
 - 中断后恢复时，`_active-state.md` 只能帮助复述 pending Step 和核验磁盘状态，不能当成授权。
+
+恢复/确认的真实交互应长这样：
+
+```text
+用户：继续
+Agent：我先读取 change-impact/删除用户备注/_active-state.md、030-implementation.md、
+060-preflight.md 和 090-execution-record.md，并复核当前 Git/磁盘状态。
+当前 pending_step 是 Step 2，但“继续”不是授权。Step 2 将修改
+E:\project\ruoyi-system\src\main\resources\mapper\system\SysUserMapper.xml，
+回滚方式是恢复该文件的字段映射，验证方式是 mapper 引用检查 + 对应测试。
+请回复：确认 Step 2
+
+用户：确认 Step 2
+Agent：现在执行 Step 2；执行后会更新 090-execution-record.md 和 _active-state.md。
+```
 
 ## 目录速览
 

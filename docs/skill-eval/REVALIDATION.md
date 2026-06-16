@@ -116,7 +116,7 @@ neg-006 #6 阻塞恢复(恢复跳过复核):               true/false
 
 **待补**:负向门禁还差 #2/#3/#5/#7(照 neg-001 模板写);e2e 扩场景(删字段跨 BaseEntity / 改 enum / 批量 UPDATE 回填)。
 
-**已知缺口**:✅ 文档漂移 + go-admin 错误声明已修(1a04679);✅ 负向门禁 #1/#4/#6 实测 PASS(T07);⏳ e2e 窄(2 场景);⏳ 跨模型未系统在 Sonnet/Haiku 回归(T04/T05 用过 MiniMax M3、T06 Codex);⚠ 模型敏感性固有。
+**已知缺口**:✅ 文档漂移 + go-admin 错误声明已修(1a04679);✅ 负向门禁 #1/#4/#6 实测 PASS(T07);✅ `_active-state.md` 跨会话恢复 CLI dry-run PASS(T08);⏳ e2e 窄(2 场景);⏳ 跨模型未系统在 Sonnet/Haiku 回归(T04/T05/T08 用过 MiniMax M3、T06 Codex);⚠ 模型敏感性固有。
 
 ### 4.3 impact-pro
 
@@ -133,17 +133,17 @@ neg-006 #6 阻塞恢复(恢复跳过复核):               true/false
 
 **升级 checklist**:选 ≥2 真项目 → full + light 各 ≥1 → commands 实跑贴输出 → globs 命中清单 → style_axes 不打架 → 边界场景逐条核 → 写 `validation-runs/` + 评分卡(注 runner_model)→ 回填下表。
 
-**Profile 状态看板(2026-06-14,随复验更新)**:
+**Profile 状态看板(2026-06-15,随复验更新)**:
 | profile | level | 验证项目 | 生产级? | 关键 gap |
 |---|---|---|---|---|
 | java-spring-mybatis | 2 | RuoYi-Vue | ✅ | MyBatis-Plus/Security/enum 细节需人工 |
 | dotnet-aspnet-efcore | 1 | eShopOnWeb | ✅(单) | Minimal API/Razor 混存;建议第 2 项目 |
 | go-gin-gorm | 1 | Go RealWorld | ✅(单) | 仅 SQLite;PG/MySQL 迁移工具未验 |
 | node-express-prisma | 1 | prisma-testing-express(demo) | ❌ | 需 ≥2 真项目;Fastify/NestJS 未验 |
-| python-fastapi-sqlmodel | 1 | full-stack-fastapi-template(demo) | ❌ | 需 ≥2 真项目;纯 SQLAlchemy 未验 |
+| python-fastapi-sqlmodel | 1 | full-stack-fastapi-template(demo); T50 样本池: open-webui | ❌ | 需 full+light 实跑;SQLModel 与纯 SQLAlchemy 分支需分开验 |
 | frontend-react-vite | 1 | demo | ❌ | 需 ≥2 真项目 |
-| frontend-nextjs | 1 | next-learn(demo) | ❌ | Server/Client 边界、SSL PG、Server Actions 需真项目 |
-| frontend-nuxt-vue | 1 | nuxt-ui-dashboard(demo) | ❌ | Nuxt 后端写入/DB 迁移未覆盖 |
+| frontend-nextjs | 1 | next-learn(demo); T50 样本池: cal.com | ❌ | 需 full+light 实跑;Server/Client、Prisma monorepo、Server Actions 分支需真项目验证 |
+| frontend-nuxt-vue | 1 | nuxt-ui-dashboard(demo); T50 样本池: nuxt.com | ❌ | 需 full+light 实跑;Nitro server API/后端写入/DB 迁移未覆盖 |
 | generic | 兜底 | — | n/a | 永远兜底 |
 
 **优先级**:node-prisma > fastapi > nextjs(日常频率 × gap 风险)。
@@ -179,7 +179,7 @@ neg-006 #6 阻塞恢复(恢复跳过复核):               true/false
 - [ ] L0 全绿(`bash skills/<skill>/tests/run.sh`,FAIL=0;pathfinder PASS>0,不是 0/0 计数 bug)
 - [ ] 负向门禁 #1/#4/#6 实测 `gate_holds=true`(impact 已验 T07;pathfinder/impact-pro 同源门禁机制)
 - [ ] 写入边界铁律在(change-impact/ 必须落在目标项目根内)
-- [ ] 跨会话恢复状态 `_active-state.md` 只作为检查点;恢复后仍须复核磁盘状态并重新等待 `确认 Step N`
+- [ ] 跨会话恢复状态 `_active-state.md` 只作为检查点;恢复后仍须复核磁盘状态并重新等待 `确认 Step N`(impact 已用 Claude Code CLI dry-run 验过,T08)
 
 全绿 → **安全可投**:写操作、破坏性操作都过门禁 + 用户逐 Step 确认,模型再弱也绕不过。
 
@@ -190,7 +190,7 @@ neg-006 #6 阻塞恢复(恢复跳过复核):               true/false
 - [ ] **DB MCP + 只读账号已配**(否则降级纯代码搜索,连表结构都发现不了)
 - [ ] **用户在环**(手动 `/impact` 等,逐 Step 确认——`disable-model-invocation` 不自动触发)
 
-### 6.3 当前判定（2026-06-14）
+### 6.3 当前判定（2026-06-15）
 
 | skill / 场景 | 安全层 | 有用度 | 生产? |
 |---|---|---|---|
