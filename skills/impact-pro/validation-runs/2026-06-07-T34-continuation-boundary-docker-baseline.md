@@ -57,4 +57,4 @@ ok   github.com/gothinkster/golang-gin-realworld-example-app/users
 
 T34 通过。Docker 恢复后 Go RealWorld 基线测试仍为绿；同时确认边界进一步收紧：Phase 5 写操作只能由用户显式 `确认 Step N` 触发。
 
-T29 的真实执行闭环仍未完成，仍需用户确认 Step 1、Step 2 和 Step 4。
+T29 的真实执行全流程仍未完成，仍需用户确认 Step 1、Step 2 和 Step 4。

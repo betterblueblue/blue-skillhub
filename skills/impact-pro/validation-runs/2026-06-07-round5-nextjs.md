@@ -3,7 +3,7 @@
 - 测试日期：2026-06-07
 - 测试方式：真实 Next.js 项目静态验收 + 构建命令试跑
 - 样本项目：`vercel/next-learn/dashboard/final-example`
-- 基于变更：新增 `frontend-nextjs` profile，增强 `generic` 对 Next App Router / Pages API 的兜底发现
+- 基于变更：新增 `frontend-nextjs` profile，增强 `generic` 对 Next App Router / Pages API 的补充发现
 - 结论：**Next.js 首轮 Level 1 覆盖通过，整体仍保持“多栈可试用增强版”结论**
 
 ## 第五轮新增评分

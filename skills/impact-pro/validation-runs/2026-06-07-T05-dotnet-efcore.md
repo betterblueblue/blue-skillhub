@@ -13,7 +13,7 @@
 
 ## 实际发现
 
-### 栈探测
+### 技术栈检测
 
 命中证据：
 
@@ -58,7 +58,7 @@
 4. PublicApi、BlazorShared、Web ViewModel 是否都要同步？
 5. 现有测试应补 PublicApiIntegrationTests、IntegrationTests 还是 UnitTests？
 
-### 判档
+### 定级
 
 应判定 full。
 
@@ -89,10 +89,10 @@ No .NET SDKs were found.
 
 | 维度 | 分值 | 得分 | 说明 |
 |------|------|------|------|
-| 栈探测与 profile 选择 | 15 | 15 | ASP.NET/EF Core 证据明确 |
+| 技术栈检测与 profile 选择 | 15 | 15 | ASP.NET/EF Core 证据明确 |
 | 上下文发现 | 20 | 18 | DbContext/entity/endpoint/test/migration 均命中 |
 | 风险识别与追问 | 20 | 17 | 能覆盖 context、migration、DTO、tests |
-| light/full 判档 | 10 | 10 | full 明确 |
+| light/full 定级 | 10 | 10 | full 明确 |
 | 文档质量 | 15 | 12 | 多项目 solution 需更强模块分区 |
 | 执行安全 | 10 | 10 | 写操作确认规则存在 |
 | 验证设计 | 10 | 6 | 缺少本机 dotnet test 执行证据 |

@@ -23,14 +23,14 @@
 
 | 场景 | 预期 | 实际 | 结论 |
 |------|------|------|------|
-| T48 React/Vite UI-only：`Sign in` 改 `Continue` | 命中前端 profile；建议 light；说明验证命令来自 `package.json`；当前最高 V1 | 首轮和 R1 输出过短，只给未确认项/自我闭环声明，未展示 profile 和判档证据 | 首轮不通过 |
-| T48R2 补“只分析最小响应契约”后复测 | 必须完整输出 profile、Context Pack、判档证据、验证命令来源、V0-V3 和未写文件状态 | 输出完整；命中 `frontend-react-vite`；建议 light；验证命令来自 `package.json`；当前最高 V1；V2/V3 未运行原因明确 | 通过 |
+| T48 React/Vite UI-only：`Sign in` 改 `Continue` | 命中前端 profile；建议 light；说明验证命令来自 `package.json`；当前最高 V1 | 首轮和 R1 输出过短，只给未确认项/自我完成声明，未展示 profile 和定级证据 | 首轮不通过 |
+| T48R2 补“只分析最小响应契约”后复测 | 必须完整输出 profile、Context Pack、定级证据、验证命令来源、V0-V3 和未写文件状态 | 输出完整；命中 `frontend-react-vite`；建议 light；验证命令来自 `package.json`；当前最高 V1；V2/V3 未运行原因明确 | 通过 |
 | T49 monorepo 前端 toast：`Saved successfully` 改 `Saved` | 识别 frontend/backend 边界；后端只读确认，不扩大实现范围；建议 light | 正确识别 monorepo；frontend 为直接修改对象；backend 无引用，暂不纳入；建议 light；当前最高 V1 | 通过 |
 
 ## 发现的问题
 
 1. **只分析模式输出过短**
-   - 影响：M3 在简单 UI-only 场景中容易只输出“未确认项/已闭环”，没有展示 profile、Context Pack、判档依据和验证命令来源。
+   - 影响：M3 在简单 UI-only 场景中容易只输出“未确认项/已完成”，没有展示 profile、Context Pack、定级依据和验证命令来源。
    - 修复：在 `SKILL.md` 增加“只分析 / 不写文件的最小响应契约”；在 `VALIDATION.md` 增加对应验收标准。
    - 复测：T48R2 通过。
 

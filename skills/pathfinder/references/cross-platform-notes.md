@@ -3,9 +3,9 @@
 
 > 适用:bash / Git-Bash / PowerShell / Windows cmd。Pathfinder 全程只读,跨平台问题主要在「量体量」和「取时间戳/HEAD」两类命令。
 
-## 时间戳 + git HEAD(信任契约头用)
+## 时间戳 + git HEAD(概览头部用)
 
-地图信任契约头的 `生成时间` 和 `基于 commit` 必须来自真实系统命令,**不得由模型自行编写**:
+地图概览头部的 `生成时间` 和 `基于 commit` 必须来自真实系统命令,**不得由模型自行编写**:
 
 | 环境 | 时间戳 | git HEAD |
 |------|--------|----------|
@@ -43,7 +43,7 @@
 
 在 Windows Git Bash 中,`git rev-parse --show-toplevel` 返回 Windows 格式路径(如 `E:/agent/blue-skillhub`),而 `$(pwd)` 返回 Unix 格式(如 `/e/agent/blue-skillhub`)。两者字符串比较恒失败。**禁止**用字符串相等判断 Git 仓库归属。
 
-**推荐方案**:先 `test -d "$(pwd)/.git"` 检测 `.git` 目录是否存在;确认独立仓库后用 `git -C "$(pwd)" rev-parse --show-toplevel` 获取根路径(信任契约头用),不依赖路径字符串比较。
+**推荐方案**:先 `test -d "$(pwd)/.git"` 检测 `.git` 目录是否存在;确认独立仓库后用 `git -C "$(pwd)" rev-parse --show-toplevel` 获取根路径(概览头部用),不依赖路径字符串比较。
 
 ## 维护注意
 

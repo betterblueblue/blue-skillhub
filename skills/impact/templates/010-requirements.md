@@ -8,9 +8,9 @@
 
 [现有 schema/代码/配置 的痛点或限制]
 
-## 2.1 上下文包摘要
+## 2.1 项目背景摘要
 
-- 上下文包路径：`change-impact/{需求名称}/000-context-pack.md`
+- 项目背景路径：`change-impact/{需求名称}/000-context-pack.md`
 - 直接相关对象：
 - 待确认问题：
 - 暂不纳入范围：

@@ -70,7 +70,7 @@ During Phase 2, after stack manifest detection and before manual breadth scan:
 Add a concise discovery note to `_project-map.md` when graph tools are used:
 
 ```text
-结构索引:
+结构索引辅助:
   status: used | unavailable | failed | degraded
   tool: <visible tool name or "none">
   query: <overview/tree/hubs/imports/dependents query>
@@ -85,6 +85,6 @@ Use graph evidence to improve these sections first:
 - 【3】架构分层 / 模块地图
 - 【5】关键入口
 - 【8】构建·运行·测试
-- 【9】雷区 / 风险区
-- 【11】典型主链路
+- 【9】风险区域 / 风险区
+- 【11】典型主流程
 - 【13】没挖深的部分

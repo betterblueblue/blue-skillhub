@@ -5,7 +5,7 @@
 - 测试方式：真实项目 Phase 5 执行包准备
 - 项目路径：`E:\agent\impact-pro-validation-work\go-gin-realworld`
 - 项目栈：Go / Gin / GORM
-- 目标：准备一次低风险真实写操作闭环，用于验证 Phase 5 的逐项确认、执行、验证和 `090-execution-record.md` 追加。
+- 目标：准备一次低风险真实写操作全流程，用于验证 Phase 5 的逐项确认、执行、验证和 `090-execution-record.md` 追加。
 - 当前状态：待用户确认后执行；本轮未修改外部项目源码。
 - 失败等级：无 P0/P1。
 
@@ -36,7 +36,7 @@ Invalid username
 Invalid profile username
 ```
 
-## 判档
+## 定级
 
 建议档位：light。
 
@@ -99,7 +99,7 @@ docker run --rm -v "E:/agent/impact-pro-validation-work/go-gin-realworld:/src" -
 
 ## 验收标准
 
-本次演练只有在用户确认后实际执行，且满足下列条件，才能把第 6 条升级为“完整执行链路已有真实项目闭环证据”：
+本次演练只有在用户确认后实际执行，且满足下列条件，才能把第 6 条升级为”完整执行链路已有真实项目完成证据”：
 
 - 每个写操作执行前均有独立确认。
 - 外部项目源码变更与测试断言变更均可追溯到本次需求。

@@ -24,7 +24,7 @@ pathfinder = 陌生项目全项目级只读认知地图,产出 change-impact/_pr
 
 | 文件 | 作用 |
 |------|------|
-| `../SKILL.md` | pathfinder 主流程和铁律 |
+| `../SKILL.md` | pathfinder 主流程和硬性规则 |
 | `../README.md` | 用户入口和用法 |
 | `../templates/project-map.md` | 认知地图模板 |
-| `../references/handoff-contract.md` | 与 impact 交接契约 |
+| `../references/handoff-contract.md` | 与 impact 协作约定 |

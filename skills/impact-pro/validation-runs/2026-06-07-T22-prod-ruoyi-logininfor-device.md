@@ -29,7 +29,7 @@ RuoYi 是多模块管理后台，包含 `ruoyi-admin`、`ruoyi-framework`、`ruo
 | 已确认 | `ruoyi-ui/src/api/monitor/logininfor.js`、`ruoyi-ui/src/views/monitor/logininfor` | 前端 API 与页面存在 |
 | 未确认 | 真实生产表行数、索引基数、脱敏策略 | 无 DB 直连，不能声称已确认 |
 
-## 判档
+## 定级
 
 建议档位：full。
 

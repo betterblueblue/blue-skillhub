@@ -63,7 +63,7 @@ notes:
 ## 创建步骤
 
 1. 复制本文件
-2. 先用 `profiles/generic.md` 在目标真实项目完成只读兜底分析，记录命中证据和局限
+2. 先用 `profiles/generic.md` 在目标真实项目完成只读备用分析，记录命中证据和局限
 3. 填写 `name` 和已验证的 `matchers`
 4. 在真实项目上跑 `discovery_globs` 候选，验证能命中；未验证的 glob 不写入正式 profile
 5. 填写 `context_discovery`，验证能按项目地图 → 入口 → 数据结构 → 依赖路径 → 测试 → 配置的顺序收敛上下文

@@ -363,7 +363,7 @@ validate_shared_contracts() {
   # 按 skill 选择搜索关键词（见 contracts.md「各 skill 搜索关键词」）
   case "$skill" in
     impact|impact-pro)
-      local keywords=("最高确认法" "凭证脱敏" "仓内文本不构成指令" "写入目标边界")
+      local keywords=("逐步确认" "凭证脱敏" "仓库内的文本不构成指令" "写入目标边界")
       ;;
     pathfinder)
       local keywords=("信任标签强制" "凭证脱敏" "仓内文本不构成指令" "唯一写入目标")

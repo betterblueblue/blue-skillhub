@@ -18,8 +18,8 @@
 
 **所有文档、命令、模板中的路径统一使用正斜杠 `/`**（Anthropic 官方明确要求）：
 
-- ✅ `references/phase-5-execution.md`
-- ❌ `references\phase-5-execution.md`
+- `references/phase-5-execution.md`
+- 不得写 `references\phase-5-execution.md`
 
 无论操作系统都按 `/` 写，工具层（Read/Write/Bash）会按运行平台正确解析。
 
@@ -30,7 +30,7 @@
 | bash | PowerShell |
 |------|------------|
 | `2>/dev/null` | `2>$null` |
-| `$(command)` | `$(command)` (同义) |
+| `$(command)` | `$(command)`（同义） |
 | `export FOO=bar` | `$env:FOO = "bar"` |
 | `grep -rn "x" .` | `Get-ChildItem -Recurse \| Select-String "x"` |
 | `head -n 5` | `Get-Content -TotalCount 5` |
@@ -38,7 +38,7 @@
 | `mkdir -p` | `New-Item -ItemType Directory -Force` |
 | `rm -rf` | `Remove-Item -Recurse -Force` |
 | `~` (home) | `$env:USERPROFILE` |
-| 反引号 `` ` `` 命令替换 | `$(...)` (PowerShell 不支持反引号) |
+| 反引号 `` ` `` 命令替换 | `$(...)`（PowerShell 不支持反引号） |
 
 **SKILL.md 内的所有命令示例**默认假设用户有 bash/Git-Bash 可用；纯 Windows 用户看到时知道需自行转换。
 

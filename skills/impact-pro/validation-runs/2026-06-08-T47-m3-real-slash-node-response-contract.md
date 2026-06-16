@@ -35,8 +35,8 @@ Node fixture：
 | 检查项 | 预期 | 实际 |
 |--------|------|------|
 | 技术栈识别 | Node/Express，不得套 Java | 通过 |
-| profile 选择 | Express 命中，Prisma 降级为未使用，generic 兜底 | 通过 |
-| 判档 | 删除响应字段必须 full | 通过 |
+| profile 选择 | Express 命中，Prisma 降级为未使用，generic 备用方案 | 通过 |
+| 定级 | 删除响应字段必须 full | 通过 |
 | 消费者不明 | 不得写“无影响”，必须写证据不足/待确认 | 通过 |
 | 接口返回检查清单 | 列字段变化、消费者、文档、OpenAPI/SDK、验证项 | 通过 |
 | 验证等级 | 静态搜索达到 V1，V3 未运行 | 通过 |
