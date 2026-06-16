@@ -19,6 +19,9 @@ discovery_globs:      # 上下文发现用的 glob 模式
   config: []          # 配置文件
   test: []            # 测试文件
   migration: []        # 迁移/Schema 文件
+  entity: []          # 数据实体/领域模型文件
+  dto: []             # DTO/VO/Request/Response 文件
+  ui: []              # 前端 UI 组件/页面文件
 context_discovery:    # Context Pack 构建顺序；旧 profile 未填写时从 discovery_globs 推导
   project_map: []     # 项目地图：根配置、包管理、启动/测试命令、目录边界
   entrypoints: []     # 入口：route/controller/page/handler/command/job
@@ -27,6 +30,7 @@ context_discovery:    # Context Pack 构建顺序；旧 profile 未填写时从 
   tests: []           # 测试入口：unit/integration/e2e/api
   configs: []         # 配置/权限：env/config/feature flag/permission
   exclude_patterns: [] # 排除项：dist/build/vendor/generated/cache 等
+  high_frequency_pattern_check: string # 引用计数异常大时的验证策略提示
 style_axes:           # 风格观察轴（结论需运行时现采）
   naming: string      # 命名规范提示
   layering: string    # 分层模式提示
