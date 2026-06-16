@@ -197,6 +197,7 @@ context_discovery:
     - "**/.next/**"
     - "**/out/**"
     - "**/coverage/**"
+  high_frequency_pattern_check: "引用计数异常大时先验证依赖是否真实存在"
 ```
 
 ## style_axes

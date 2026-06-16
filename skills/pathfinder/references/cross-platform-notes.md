@@ -49,3 +49,15 @@
 
 - 本文件与 impact 家族的 `cross-platform-notes.md` 共享约定;时间戳/路径规则保持一致。
 - Pathfinder 不执行构建/测试命令,故不含构建工具差异表(那部分见 impact 同名文件)。
+
+## 行尾符
+
+仓库文件统一 LF。Windows 用户的 Git 客户端默认 `core.autocrlf=true` 会把 LF 改为 CRLF，可能导致：
+- 地图文件 `_project-map.md` 中 Mermaid 图在 CRLF 环境下换行异常
+- grep / awk 在 CRLF 文件上行为差异
+
+建议在仓库根目录设置 `.gitattributes`：
+
+```
+* text=auto eol=lf
+```

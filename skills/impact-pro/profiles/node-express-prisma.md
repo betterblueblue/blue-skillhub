@@ -76,6 +76,7 @@ discovery_globs:
   migration:
     - "**/prisma/migrations/**/*"
     - "**/prisma/schema.prisma"
+  ui: []  # 纯后端栈，无前端 UI 层
 ```
 
 ## context_discovery
@@ -121,6 +122,7 @@ context_discovery:
     - "**/node_modules/**"
     - "**/dist/**"
     - "**/build/**"
+  high_frequency_pattern_check: "引用计数异常大时先验证依赖是否真实存在"
 ```
 
 ## style_axes
@@ -154,7 +156,7 @@ commands:
 db_introspection:
   orm: Prisma
   migration_tool: Prisma Migrate
-  schema_source: prisma/schema.prisma；无 DB 直连时只做代码级 schema 发现
+  schema_source: 见 prisma/schema.prisma（代码级 schema 发现路径）；默认 db-adapter 由 Prisma provider 决定（sqlite → generic-sql.md / postgresql → postgresql.md / mysql → mysql.md），运行时 DB 类型探测可覆盖
 ```
 
 ## validation_strategy

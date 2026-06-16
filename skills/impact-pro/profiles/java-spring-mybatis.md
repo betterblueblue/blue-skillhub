@@ -64,6 +64,7 @@ discovery_globs:
     - "**/migrations/**/*.sql"
     - "**/flyway/**/*.sql"
     - "**/liquibase/**/*.xml"
+  ui: []  # 纯后端栈，无前端 UI 层
 ```
 
 ## context_discovery
@@ -103,6 +104,7 @@ context_discovery:
   exclude_patterns:
     - "**/target/**"
     - "**/generated/**"
+  high_frequency_pattern_check: "引用计数异常大时先验证依赖是否真实存在"
 ```
 
 ## style_axes
@@ -137,7 +139,7 @@ commands:
 db_introspection:
   orm: MyBatis
   migration_tool: 手写SQL脚本
-  schema_source: 见 db-adapters/mysql.md（SQL 只在 adapter 一处维护）
+  schema_source: 默认 db-adapters/mysql.md（SQL 只在 adapter 一处维护），运行时 DB 类型探测可覆盖（如探测到 PostgreSQL 则切到 db-adapters/postgresql.md）
 ```
 
 ## validation_strategy

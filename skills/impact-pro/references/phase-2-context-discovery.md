@@ -1,5 +1,7 @@
 # Phase 2: 技术栈检测 + 上下文发现详细规则
 
+> **凭证脱敏（强制规则）**：本阶段发现的凭证、密钥、token、连接串密码写入 Context Pack 或对话回显前必须脱敏为 `***`，只记录配置键名和来源路径。此规则与 SKILL.md 强制规则区第 7 条一致，本阶段不因上下文压缩而豁免。
+
 > 本文件包含 Phase 2 技术栈检测、技术栈规则加载、上下文发现的完整执行规则。SKILL.md 正文只保留概要，详细规则见此。
 > 适用：impact-pro 全部技术栈。栈专属的代码风格、构建命令、测试入口、发现 globs 由 `profiles/<stack>.md` 注入；DB 专属发现查询由 `db-adapters/<db>.md` 注入。
 
@@ -52,10 +54,32 @@
   - `style_axes` — 风格观察轴（只给提示，不下结论）
   - `commands` — 构建/测试/启动命令
   - `validation_strategy` — 验证策略
+  - `db_introspection` — 数据库自省配置（schema_source / orm / migration_tool）
+
+### db-adapter 选择优先级链（强制）
+
+**profile 的 `schema_source` 是默认值，运行时 DB 类型探测可覆盖。** 按以下优先级链确定 `[dbname]`：
+
+1. **运行时 DB 类型探测（最高优先级）** — 来自 Step 2.1 的识别结果：
+   - `docker-compose.yml` 中的 `image: postgres` / `image: mysql` / `image: mcr.microsoft.com/mssql`
+   - datasource 配置中的 `jdbc:postgresql://` / `jdbc:mysql://` / `sqlite:`
+   - 环境变量中的 `DATABASE_URL` / `DB_CONNECTION`
+   - 任一命中 → 以探测到的 DB 类型加载 `db-adapters/{postgresql|mysql|...}.md`
+   - 同时与各 `db-adapters/*.md` 的 `detection_signals` 对照，确认匹配
+
+2. **Profile schema_source 指向具体 adapter 文件（次优先级）** — 仅当 Step 2.1 未探测到 DB 类型时：
+   - 如 `schema_source` 明确指向 `db-adapters/mysql.md` → 加载该 adapter
+   - 如 `schema_source` 指向代码路径（如 `prisma/schema.prisma`）→ 从代码路径推断 DB 类型
+   - 如 `schema_source` 为 `"不适用"` → 无 DB 层，跳过 adapter 加载
+
+3. **无法确定（兜底）** → 加载 `db-adapters/generic-sql.md`，标注「DB 类型未确认，generic adapter 可能部分失败」
+
+4. **无 DB 保护** — 纯前端 profile（react-vite / nextjs / nuxt-vue）的 schema_source 为 `"不适用"` 时，**跳过 schema 发现**，Context Pack 标注「无 DB 层」
 
 - 读取 `db-adapters/[dbname].md` 获取：
   - `schema_queries` — schema 发现 SQL
   - `introspection_commands` — DB 检查命令
+  - `detection_signals` — 运行时 DB 类型确认信号
 
 - 读取 `code-graph-adapters/generic-mcp.md`（若存在）获取：
   - `capability contract` — 哪类 MCP 可视为只读 code graph

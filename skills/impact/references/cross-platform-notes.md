@@ -18,8 +18,8 @@
 
 **所有文档、命令、模板中的路径统一使用正斜杠 `/`**（Anthropic 官方明确要求）：
 
-- `references/phase-5-execution.md`
-- 不得写 `references\phase-5-execution.md`
+- ✅ `references/phase-5-execution.md`
+- ❌ `references\phase-5-execution.md`
 
 无论操作系统都按 `/` 写，工具层（Read/Write/Bash）会按运行平台正确解析。
 

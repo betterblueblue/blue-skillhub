@@ -69,6 +69,7 @@ discovery_globs:
   migration:
     - "**/migrations/**/*.sql"
     - "**/db/**/*.sql"
+  ui: []  # 纯后端栈，无前端 UI 层
 ```
 
 ## context_discovery
@@ -118,6 +119,7 @@ context_discovery:
   exclude_patterns:
     - "**/vendor/**"
     - "**/tmp/**"
+  high_frequency_pattern_check: "引用计数异常大时先验证依赖是否真实存在"
 ```
 
 ## style_axes
@@ -154,7 +156,7 @@ commands:
 db_introspection:
   orm: GORM
   migration_tool: AutoMigrate 或项目自定义迁移
-  schema_source: models.go + AutoMigrate 调用；无 DB 直连时只做代码级 schema 发现
+  schema_source: 见 models.go + AutoMigrate 调用（代码级 schema 发现路径）；默认 db-adapter 由 GORM 驱动决定（sqlite → generic-sql.md / postgres → postgresql.md / mysql → mysql.md），运行时 DB 类型探测可覆盖
 ```
 
 ## validation_strategy

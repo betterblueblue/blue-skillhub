@@ -282,6 +282,7 @@ context_discovery:
     - "**/bin/**"
     - "**/obj/**"
     - "**/generated/**"
+  high_frequency_pattern_check: "引用计数异常大时先验证依赖是否真实存在"
 ```
 
 ## 目录结构发现流程

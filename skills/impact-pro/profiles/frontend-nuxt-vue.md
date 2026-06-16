@@ -179,6 +179,7 @@ context_discovery:
     - "**/.output/**"
     - "**/dist/**"
     - "**/coverage/**"
+  high_frequency_pattern_check: "引用计数异常大时先验证依赖是否真实存在"
 ```
 
 ## style_axes
