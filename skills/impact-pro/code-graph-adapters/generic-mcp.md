@@ -1,5 +1,7 @@
 # Code Graph Adapter: generic MCP
 
+> **凭证脱敏（强制规则）**：code graph 返回的配置值、环境变量、连接串可能含凭证，写入 Context Pack 前必须脱敏为 `***`，只记录键名和来源路径。
+
 > Optional Phase 2 enhancer for structured code graph / tree-sitter MCP tools.
 > If no suitable tool is visible at runtime, this adapter is skipped and normal
 > `rg` / `git grep` discovery remains the source of truth.

@@ -75,6 +75,7 @@ discovery_globs:
   migration:
     - "**/app/alembic/versions/**/*.py"
     - "**/alembic/versions/**/*.py"
+  ui: []  # 纯后端栈，无前端 UI 层
 ```
 
 ## context_discovery
@@ -120,6 +121,7 @@ context_discovery:
     - "**/.pytest_cache/**"
     - "**/.ruff_cache/**"
     - "**/.venv/**"
+  high_frequency_pattern_check: "引用计数异常大时先验证依赖是否真实存在"
 ```
 
 ## style_axes
@@ -153,7 +155,7 @@ commands:
 db_introspection:
   orm: SQLModel / SQLAlchemy
   migration_tool: Alembic
-  schema_source: app/models.py + app/alembic/versions；无 DB 直连时只做代码级 schema 发现
+  schema_source: 见 app/models.py + app/alembic/versions（代码级 schema 发现路径）；默认 db-adapter 由 SQLAlchemy 连接串决定（sqlite → generic-sql.md / postgresql → postgresql.md / mysql → mysql.md），运行时 DB 类型探测可覆盖
 ```
 
 ## validation_strategy

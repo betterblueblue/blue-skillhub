@@ -73,6 +73,7 @@ discovery_globs:
   migration:
     - "**/Migrations/**/*.cs"
     - "**/*Migration*.cs"
+  ui: []  # 纯后端栈，无前端 UI 层
 ```
 
 ## context_discovery
@@ -127,6 +128,7 @@ context_discovery:
     - "**/bin/**"
     - "**/obj/**"
     - "**/TestResults/**"
+  high_frequency_pattern_check: "引用计数异常大时先验证依赖是否真实存在"
 ```
 
 ## style_axes
@@ -161,7 +163,7 @@ commands:
 db_introspection:
   orm: Entity Framework Core
   migration_tool: EF Core Migrations
-  schema_source: DbContext + Entities + Migrations；无 DB 直连时只做代码级 schema 发现
+  schema_source: 见 DbContext + Entities + Migrations（代码级 schema 发现路径）；默认 db-adapter 由 EF Core provider 决定（SqlServer → 暂无 sqlserver adapter，降级 generic-sql.md / Postgres → postgresql.md / MySQL → mysql.md），运行时 DB 类型探测可覆盖
 ```
 
 ## validation_strategy

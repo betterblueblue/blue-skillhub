@@ -1,5 +1,7 @@
 # Phase 2: 上下文发现详细规则
 
+> **凭证脱敏（强制规则）**：本阶段发现的凭证、密钥、token、连接串密码写入 Context Pack 或对话回显前必须脱敏为 `***`，只记录配置键名和来源路径。此规则与 SKILL.md 强制规则区第 7 条一致，本阶段不因上下文压缩而豁免。
+
 > 本文件包含 Phase 2 项目背景构建的完整执行规则。SKILL.md 正文只保留概要，详细规则见此。
 > 适用栈：Java / Spring / MyBatis（如 RuoYi 等后台框架；impact 专用）。多栈请使用 impact-pro + 加载对应 profile。
 

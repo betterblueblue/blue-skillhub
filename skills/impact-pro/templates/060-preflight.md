@@ -63,6 +63,9 @@
 ## 写入目标边界
 
 - 目标项目根目录：
+  - absolute_path: [绝对路径，如 E:\projects\ruoyi-vue]
+  - determination_method: [git-rev-parse / user-specified / pom-dot-xml / build-dot-gradle / package-dot-json / inferred-from-cwd / other]
+  - verification_timestamp: [真实系统时间 ISO 8601]
 - 当前进程工作目录：
 - `change-impact/` 绝对路径：
 
