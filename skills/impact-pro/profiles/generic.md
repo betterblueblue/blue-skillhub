@@ -115,7 +115,10 @@ discovery_globs:
     - "**/models.py"
     - "**/schemas.py"
     - "**/prisma/schema.prisma"
-    - "**/*.go"
+    - "**/*model*.go"
+    - "**/*entity*.go"
+    - "**/models/*.go"
+    - "**/entities/*.go"
     - "**/models.go"
     - "**/Entities/**/*.cs"
   dto:
