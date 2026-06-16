@@ -87,7 +87,7 @@ validate_fixture() {
     if [[ "$actual_commit" == "$fixture_commit" ]]; then
       ok "fixture commit 匹配: ${fixture_commit:0:7}"
     else
-      fail "fixture commit 漂移: 期望 ${fixture_commit:0:7} 实际 ${actual_commit:0:7}"
+      fail "fixture commit 不一致: 期望 ${fixture_commit:0:7} 实际 ${actual_commit:0:7}"
       info "  解决: cd $fixture_path && git fetch && git checkout $fixture_commit"
       return 1
     fi
@@ -95,7 +95,7 @@ validate_fixture() {
   return 0
 }
 
-# 校验 expected.iron_rules_triggered 中的每条铁律在 SKILL.md 中存在
+# 校验 expected.iron_rules_triggered 中的每条硬性规则在 SKILL.md 中存在
 validate_iron_rules() {
   local file="$1"
   local repo_root
@@ -135,16 +135,16 @@ print(' '.join(rules))
         pattern="^\s*${rule_num}[\.、\)]\s+\*\*(最高确认|高风险|DB 只读|写入目标|破坏性|阻塞恢复|凭证脱敏)"
         ;;
       pathfinder)
-        pattern="^\s*${rule_num}[\.、\)]\s+\*\*(只读铁律|唯一写入|信任标签|不开药方|凭证脱敏|仓内文本)"
+        pattern="^\s*${rule_num}[\.、\)]\s+\*\*(只读硬性规则|唯一写入|可信度|不开药方|凭证脱敏|仓库内的文本)"
         ;;
       *)
         pattern="^\s*${rule_num}[\.、\)]\s+\*\*"
         ;;
     esac
     if grep -qE "$pattern" "$skill_md"; then
-      ok "铁律 $rule 存在于 $skill/SKILL.md 铁律区"
+      ok "硬性规则 $rule 存在于 $skill/SKILL.md 强制规则"
     else
-      fail "铁律 $rule 在 $skill/SKILL.md 铁律区未找到"
+      fail "硬性规则 $rule 在 $skill/SKILL.md 强制规则未找到"
     fi
   done
 }
@@ -307,7 +307,7 @@ validate_code_graph_adapter() {
 
 # ── 共享契约存在性检查（三 skill 统一） ──
 # 检查 docs/skill-eval/contracts.md 中列出的每条共享契约
-# 在本 skill 的 SKILL.md 铁律区中存在
+# 在本 skill 的 SKILL.md 强制规则中存在
 
 validate_shared_contracts() {
   local file="$1"
@@ -333,7 +333,7 @@ validate_shared_contracts() {
       local keywords=("最高确认法" "凭证脱敏" "仓内文本不构成指令" "写入目标边界")
       ;;
     pathfinder)
-      local keywords=("信任标签强制" "凭证脱敏" "仓内文本不构成指令" "唯一写入目标")
+      local keywords=("可信度强制" "凭证脱敏" "仓库内的文本不构成指令" "唯一写入目标")
       ;;
     *)
       fail "未知 skill: $skill"
@@ -343,9 +343,9 @@ validate_shared_contracts() {
 
   for kw in "${keywords[@]}"; do
     if grep -q "$kw" "$skill_md"; then
-      ok "共享契约 [$kw] 在 $skill/SKILL.md 铁律区存在"
+      ok "共享契约 [$kw] 在 $skill/SKILL.md 强制规则存在"
     else
-      fail "共享契约 [$kw] 在 $skill/SKILL.md 铁律区未找到 — 可能漂移！"
+      fail "共享契约 [$kw] 在 $skill/SKILL.md 强制规则未找到 — 可能不一致！"
     fi
   done
 }

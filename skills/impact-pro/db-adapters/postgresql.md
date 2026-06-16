@@ -1,6 +1,6 @@
 # PostgreSQL DB Adapter
 
-> 适用于 PostgreSQL 10+。当 Phase 2 探测到 PG（连接串含 `postgresql://` / `jdbc:postgresql`，或 ORM 配置 dialect 为 `postgresql`/`psql`）时加载本 adapter。PG 与 MySQL 的关键差异:**无 SHOW CREATE TABLE**(用 `pg_dump -s` 或 `\d`)、**行数是估算值**(reltuples)、**有 schema 命名空间**、**enum/部分索引/表达式索引是独立对象**。
+> 适用于 PostgreSQL 10+。Phase 2 探测到 PG（连接串含 `postgresql://` / `jdbc:postgresql`，或 ORM 配置 dialect 为 `postgresql`/`psql`）时加载本 adapter。PG 与 MySQL 的关键差异:**无 SHOW CREATE TABLE**(用 `pg_dump -s` 或 `\d`)、**行数是估算值**(reltuples)、**有 schema 命名空间**、**enum/部分索引/表达式索引是独立对象**。
 
 ## detection_signals
 

@@ -86,4 +86,4 @@ ok   github.com/gothinkster/golang-gin-realworld-example-app/users
 生产级复验从 1 个完整通过 + 2 个有条件通过，提升到 3 个完整通过。
 ```
 
-长期目标第 4 条“至少 2-3 个生产级项目复验通过”已达到，但整体目标仍保持 active：Next.js 完整 build、更多生产级样本和执行阶段门禁仍需要继续积累证据。
+长期目标第 4 条”至少 2-3 个生产级项目复验通过”已达到，但整体目标仍保持 active：Next.js 完整 build、更多生产级样本和执行阶段安全闸仍需要继续积累证据。

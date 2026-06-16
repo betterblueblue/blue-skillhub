@@ -81,12 +81,12 @@ impact-pro 当前不能作为“成熟通用 Skill”投入使用。
 优先级 P2：
 
 1. 强化 `generic` 的“不确定项”输出，找不到 schema/API/model 时必须显式标红。
-2. 判档规则增加“证据不足时不得判 light”的约束。
+2. 定级规则增加”证据不足时不得定为 light”的约束。
 3. 文档模板增加“证据来源 / 未确认项”章节。
 
 ## 下一步建议
 
-先修 profile，再进行第二轮验收。第二轮建议至少包含：
+先修 profile，再做第二轮验收。第二轮建议至少包含：
 
 - T02 Node/Express/Prisma 复测
 - T03 FastAPI/SQLModel 复测

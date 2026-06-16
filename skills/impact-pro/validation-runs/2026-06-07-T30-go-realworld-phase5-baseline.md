@@ -43,4 +43,4 @@ ok   github.com/gothinkster/golang-gin-realworld-example-app/users
 
 T30 通过。Go RealWorld 在 T29 指定的 Docker 非 root、临时 DB、串行包执行前置条件下基线为绿。
 
-这仍不等同于完整 Phase 5 写操作闭环已完成：T29 的 Step 1、Step 2 和 Step 4 属于写操作，仍需用户明确确认后才能执行。
+这仍不等同于完整 Phase 5 写操作全流程已完成：T29 的 Step 1、Step 2 和 Step 4 属于写操作，仍需用户明确确认后才能执行。

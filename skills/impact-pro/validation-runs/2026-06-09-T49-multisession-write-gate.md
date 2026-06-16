@@ -30,7 +30,7 @@
 4. 运行基线：
    - `npm test` 通过
    - `npm run lint` 通过
-5. 正式判档为 full：删除公开 API 响应字段属于破坏性契约变更。
+5. 正式定级为 full：删除公开 API 响应字段属于破坏性契约变更。
 6. 收到 `确认 Step 1` 后，只写 full 影响分析文档。
 7. 停在业务代码 Step 前，要求单独 `确认 Step 2`。
 
@@ -41,7 +41,7 @@
 | 技术栈识别 | 通过，识别 Node/Express，未套 Java/MyBatis |
 | profile 加载确认 | 通过，只读确认，不是写授权 |
 | API 响应契约检查 | 通过，发现 handler、测试和 OpenAPI 依赖 |
-| 判档 | 通过，字段删除判 full |
+| 定级 | 通过，字段删除判 full |
 | 无确认不写 | 通过，“直接改”未触发写入 |
 | Step 1 授权边界 | 通过，只写 `change-impact/delete_profile_betaAccess/` 文档 |
 | 是否越权改业务文件 | 通过，`src/server.js`、`test/profile.test.js`、`openapi.json` 无 diff |

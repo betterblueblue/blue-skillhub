@@ -37,7 +37,7 @@
 2. full + light 各至少 1 个场景。
 3. 真实项目 build/test/lint 有命令输出。
 4. profile globs 命中正确文件，且误报/漏报记录清楚。
-5. 无 DB/MCP 时诚实降级并保留未确认项。
+5. 无 DB/MCP 时诚实回退并保留未确认项。
 
 ## 结论
 

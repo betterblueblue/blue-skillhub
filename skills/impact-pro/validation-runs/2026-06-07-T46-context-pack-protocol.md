@@ -23,7 +23,7 @@
 
 | 检查项 | 预期 | 结果 |
 |--------|------|------|
-| 通用内核 | Phase 2 明确包含栈探测、profile 加载和 Context Pack 构建 | 通过 |
+| 通用内核 | Phase 2 明确包含技术栈检测、profile 加载和 Context Pack 构建 | 通过 |
 | profile 指引 | `_schema.md` / `_template.md` 提供 `context_discovery` 字段 | 通过 |
 | 内置 profile | bundled profiles 均显式提供 `context_discovery`，无需临场推导 | 通过 |
 | 旧 profile 兼容 | 外部或历史 profile 缺少 `context_discovery` 时，从 `discovery_globs` 推导 | 通过 |
@@ -31,7 +31,7 @@
 | 相关性分级 | 候选文件/对象必须标注 3/2/1/0，并说明用途 | 通过 |
 | 上下文预算 | 限制读取数量和片段大小，超出预算先问最多 3 个收敛问题 | 通过 |
 | 排除记录 | 看过但不相关的文件必须记录排除原因 | 通过 |
-| 判档时机 | Context Pack 和苏格拉底澄清完成后才正式 light/full 判档 | 通过 |
+| 定级时机 | Context Pack 和苏格拉底澄清完成后才正式 light/full 定级 | 通过 |
 | 写入门禁 | `000-context-pack.md` 先在对话输出草案，写入文件仍需用户确认 | 通过 |
 | 文档串联 | requirements/design/light/preflight 都能引用 Context Pack 摘要 | 通过 |
 

@@ -69,4 +69,4 @@ Before any resumed write operation:
 
 ## Resume Notes
 
-- [恢复时读到的冲突、漂移、阻塞项、下一步安全动作]
+- [恢复时读到的冲突、不一致、阻塞项、下一步安全动作]

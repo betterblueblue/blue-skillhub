@@ -5,7 +5,7 @@
 - 测试方式：`templates/060-preflight.md` 只读套用
 - 项目路径：`E:\agent\impact-pro-validation-work\go-gin-realworld`
 - 项目栈：Go / Gin / GORM
-- 目标：在不执行写操作的前提下，把 T40 执行前门禁应用到 T29 Go RealWorld 演练，确认哪些条件已满足、哪些条件仍阻塞。
+- 目标：在不执行写操作的前提下，把 T40 执行前检查点应用到 T29 Go RealWorld 演练，确认哪些条件已满足、哪些条件仍阻塞。
 - 当前状态：preflight 只读项通过；Step 级确认缺失；不得进入写操作。
 - 失败等级：无 P0/P1。
 
@@ -52,7 +52,7 @@ ok   github.com/gothinkster/golang-gin-realworld-example-app/users
 
 不允许进入 Phase 5 写操作。
 
-理由：preflight 中仓库状态、基线验证、影响范围、回滚方式、语义约定、验证命令和执行记录路径均已满足；但 P0 门禁 `Step 级确认` 未满足。
+理由：preflight 中仓库状态、基线验证、影响范围、回滚方式、语义约定、验证命令和执行记录路径均已满足；但 P0 检查点 `Step 级确认` 未满足。
 
 若用户同意执行 T29，请精确回复：
 

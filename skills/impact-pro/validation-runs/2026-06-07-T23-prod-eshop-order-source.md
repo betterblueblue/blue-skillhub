@@ -31,7 +31,7 @@ eShopOnWeb 是分层 Clean Architecture 样例，包含 Web、PublicApi、Blazor
 | 已确认 | `tests/UnitTests/MediatorHandlers/OrdersTests/*`、`tests/IntegrationTests/Repositories/OrderRepositoryTests/*` | 有单元/集成测试入口 |
 | 已确认 | Docker `mcr.microsoft.com/dotnet/sdk:8.0` 执行 `dotnet test eShopOnWeb.sln -v minimal` | Unit、Integration、Functional、PublicApiIntegration 测试均通过 |
 
-## 判档
+## 定级
 
 建议档位：full。
 

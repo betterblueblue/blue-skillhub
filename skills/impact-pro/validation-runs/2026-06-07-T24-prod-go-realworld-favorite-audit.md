@@ -31,7 +31,7 @@
 | 已确认 | `articles/unit_test.go` 多处收藏测试 | 已有收藏正向、边界和端点测试入口 |
 | 已确认 | Docker `golang:1.21` 执行 `/usr/local/go/bin/go test ./...` | `articles`、`users` 包通过；`common` 包存在既有测试失败 |
 
-## 判档
+## 定级
 
 建议档位：full。
 

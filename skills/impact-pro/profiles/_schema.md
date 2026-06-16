@@ -7,7 +7,7 @@
 ```yaml
 name: string          # 唯一标识，如 java-spring-mybatis
 level: 1 | 2 | 3      # 成熟度等级（见下）
-matchers:             # 栈探测规则（依赖优先于文件名）
+matchers:             # 技术栈检测规则（依赖优先于文件名）
   files: []           # 文件名命中（如 pom.xml）
   dependencies: []    # 依赖命中（如 spring-boot-starter）
   directories: []     # 目录命中
@@ -55,36 +55,36 @@ notes:
 
 ## Context Pack 规则
 
-`context_discovery` 用来指导 agent 先找什么、后找什么，目标是拿到“刚好够用、刚好相关、可解释”的上下文包。
+`context_discovery` 用来指导 agent 先找什么、后找什么，目标是拿到“刚好够用、刚好相关、可解释”的项目背景。
 
 - 新 profile 应填写 `context_discovery`。
 - 老 profile 若未填写，按 `discovery_globs` 推导：`api → entrypoints`，`entity/dto/migration/data_access → data_models`，`service/data_access → dependency_paths`，`test → tests`，`config → configs`。
 - 每个候选文件或对象都必须标注相关性：3 直接修改候选，2 影响判断候选，1 背景参考，0 暂不纳入范围。
 - Context Pack 必须记录排除项，避免把看过但无关的文件继续带入后续分析。
-- 未完成 Context Pack 前，不得正式 light/full 判档。
+- 未完成 Context Pack 前，不得正式 light/full 定级。
 
 ## Level 定义
 
 | Level | 含义 | 验收标准 |
 |-------|------|---------|
-| 1 | 基础覆盖 | 新技术栈先用 `generic` 完成首轮兜底分析；随后在至少 1 个真实项目完成 full + light 双变更验收；能识别栈、找到主文件、给出来自项目证据的候选命令、说明发现方式、有 limitations；验收记录写入 `validation-runs/` |
+| 1 | 基础覆盖 | 新技术栈先用 `generic` 完成首轮备用分析；随后在至少 1 个真实项目完成 full + light 双变更验收；能识别栈、找到主文件、给出来自项目证据的候选命令、说明发现方式、有 limitations；验收记录写入 `validation-runs/` |
 | 2 | 深度覆盖 | 在至少 2 个真实项目或 1 个生产级项目中完成复验；积累了稳定风格轴、验证规则、失败前置条件和常见误判限制 |
-| 3 | 成熟稳定 | 经多个生产级项目验证，limitations 已充分覆盖；full/light、负向、运行时验证和执行门禁均有闭环证据 |
+| 3 | 成熟稳定 | 经多个生产级项目验证，limitations 已充分覆盖；full/light、负向、运行时验证和执行检查点均有通过证据 |
 
 ## Profile 晋级协议
 
 新增或升级专属 profile 时，必须按顺序执行：
 
-1. **generic 兜底**：先用 `profiles/generic.md` 完成只读发现，记录命中证据和局限。
+1. **generic 备用**：先用 `profiles/generic.md` 完成只读发现，记录命中证据和局限。
 2. **候选 profile**：新增 profile 文件时，只写已验证的 matcher、glob、命令和限制；未知项写入 `notes.limitations`。
-3. **双变更验收**：至少在一个真实项目完成 full + light 两类变更验收，记录技术栈规则选择证据、Context Pack、判档证据和验证方案。
+3. **双变更验收**：至少在一个真实项目完成 full + light 两类变更验收，记录技术栈规则选择证据、Context Pack、定级证据和验证方案。
 4. **运行时验证**：能执行的 build/test/lint/typecheck 必须实际运行；无法运行时记录环境限制，不得写成已通过。
 5. **记录归档**：新增 `validation-runs/Txx` 记录，并在 `README.md` / `VALIDATION.md` 更新 Level 说明。
 
 禁止事项：
 
 - 不能只因文件名或依赖命中就把新栈标成 Level 1。
-- 不能把 generic 兜底结果描述成专属 profile 已验证。
+- 不能把 generic 备用结果描述成专属 profile 已验证。
 - 不能写未验证的命令、glob、目录结构或风格结论。
 - 不能用 demo 项目的单一 happy path 覆盖生产级限制说明。
 

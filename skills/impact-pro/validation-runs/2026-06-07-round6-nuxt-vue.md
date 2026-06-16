@@ -3,7 +3,7 @@
 - 测试日期：2026-06-07
 - 测试方式：真实 Nuxt/Vue 项目静态验收 + typecheck/lint 命令试跑
 - 样本项目：`nuxt-ui-templates/dashboard`
-- 基于变更：新增 `frontend-nuxt-vue` profile，增强 `generic` 对 Nuxt/Vue 的兜底发现
+- 基于变更：新增 `frontend-nuxt-vue` profile，增强 `generic` 对 Nuxt/Vue 的补充发现
 - 结论：**Nuxt/Vue 首轮 Level 1 覆盖通过，前端生态缺口进一步缩小**
 
 ## 第六轮新增评分

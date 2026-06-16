@@ -1,6 +1,6 @@
 # Generic Profile
 
-> 强兜底 profile，适用于无法命中任何专属 profile 的项目。Level 1 核心能力。
+> 强备用 profile，适用于无法命中任何专属 profile 的项目。Level 1 核心能力。
 
 ## 基本信息
 
@@ -195,7 +195,7 @@ discovery_globs:
 
 ## context_discovery
 
-> generic 只负责兜底收敛，不把命中结果描述成专属技术栈已验证。
+> generic 只负责备用收敛，不把命中结果描述成专属技术栈已验证。
 
 ```yaml
 context_discovery:
@@ -364,7 +364,7 @@ commands:
 db_introspection:
   orm: ""         # 需从项目配置/代码中识别
   migration_tool: ""  # 检查 migrations/ 目录、Flyway、Liquibase、Alembic
-  schema_source: generic-sql.md  # 降级使用 generic-sql adapter
+  schema_source: generic-sql.md  # 回退到 generic-sql adapter
 ```
 
 ## validation_strategy
@@ -389,7 +389,7 @@ notes:
     - 不预置任何栈的风格结论，结论需运行时从代码现采
     - discovery_globs 候选可能不准确，依赖用户确认调整
     - commands 为猜测值，必须用户确认
-    - 无 DB 直连时降级为代码扫描，schema 信息受限
+    - 无 DB 直连时回退为代码扫描，schema 信息受限
     - 找不到 schema/API/model/test 时必须在文档中标注为未确认项，不得判定为已覆盖
   edge_cases:
     - 单文件项目：目录扫描可能无法推断项目结构

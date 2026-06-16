@@ -41,5 +41,5 @@ impact-pro = 多栈可试用增强版；Nuxt/Vue Level 1 证据增强，Next.js 
 剩余原因：
 
 1. 仍需生产级 Next 项目、Pages Router/API Routes 和不同 DB/ORM 组合复验。
-2. 执行阶段门禁仍需在真实项目中继续复验。
+2. 执行阶段安全闸仍需在真实项目中继续复验。
 3. “每项目 2 个变更”的投产门槛需持续补样本。
