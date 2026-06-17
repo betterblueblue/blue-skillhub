@@ -6,6 +6,16 @@
 
 ---
 
+## 上下文快照
+
+- 加载的 profile：
+- profile 选择依据（matchers 命中项）：
+- 加载的 db-adapter：
+- db-adapter 选择依据（运行时探测 / profile 默认 / 兜底）：
+- 栈检测确认状态：[已确认 / 用户覆盖 / 降级 generic]
+
+---
+
 ## 决策矩阵汇总（必填）
 
 | Step | DECIDE | 高风险清单命中 | 决策依据（1 行） |

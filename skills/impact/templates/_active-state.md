@@ -14,6 +14,8 @@
 - change_dir: `change-impact/[需求名称]/`
 - current_phase: [Phase 4 / Phase 5 / blocked / complete]
 - mode: [light / full]
+- auto_manual: [auto / manual]  — 当前会话是 agent 自主执行还是人类逐步确认
+- concurrency_lock: [none / locked_by_[agent_id]]  — 多 agent 不能同时操作同一需求目录
 - current_git_head: [HEAD / 非 Git / Git 不可用]
 - git_audit_status: [clean / dirty / non-git / unavailable]
 - confirmation_required: [true / false]
