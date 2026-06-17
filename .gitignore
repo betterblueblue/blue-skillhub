@@ -14,3 +14,4 @@ test-projects/
 # === 会话日志(本地保留,不入库)+ IDE 临时 ===
 sessions/
 .mimocode/
+.claude/worktrees/
