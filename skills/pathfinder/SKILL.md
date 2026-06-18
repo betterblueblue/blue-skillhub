@@ -12,6 +12,8 @@ disable-model-invocation: true
 > **机制警示**：`allowed-tools` 是预批准不是白名单,也不构成安全边界。本技能的只读约束由「只读硬性规则」约束,不依赖工具列表。Write/Edit 仅用于产出 `change-impact/_project-map.md` 一个文件,绝不触碰项目源码。
 >
 > **结构索引辅助说明**：若运行时存在只读 code graph / repo-map MCP,Phase 2 可按 `code-graph-adapters/generic-mcp.md` 先查询项目概览、入口、依赖边和 hubs,再用 Read/Grep 核证。若索引不可用、过期、截断或需要在项目内写缓存,必须降级普通文件扫描并在地图中诚实记录。
+>
+> **SVG 预览说明**：地图内的 Mermaid 图是 canonical source;内联 SVG 只作为 Markdown 阅读预览。SVG 必须直接写入 `_project-map.md`,不得引用外链资源或额外写 `.svg`/`.drawio` 文件,不得为了画图新增事实或改变可信度。
 
 # Pathfinder — 陌生项目认知地图
 
@@ -58,14 +60,22 @@ disable-model-invocation: true
 
 7. **概览头部诚实(Git 归属纪律)**：地图开头「基于 commit」必须如实反映 Git 归属检查结果。当前目录**非独立 Git 仓库**(`git rev-parse --show-toplevel` ≠ 当前目录,或命令报错)时,写「非 Git,以扫描时间为准」或「非独立 Git 仓库(HEAD 来自父仓库)」,**禁止用父仓库的 HEAD 冒充当前项目的 commit**——那是另一个仓库的状态,不是本项目的。检查方法与写法见 `references/phase-1-sizing.md` Step 1.1。
 
+8. **Script Gate(脚本闸门)**：Phase 4 写入 `_project-map.md` 前,必须执行以下步骤,缺一不可：
+   a. 运行 `python scripts/pf_validate.py change-impact/_project-map.md --repo-root <project-root>`
+   b. 检查 exit code——不为 0 时,根据 stdout 报错逐条修正地图内容
+   c. 修正后重新运行闸门脚本,重复直到 exit code = 0
+   d. exit code ≠ 0 时禁止写入 `_project-map.md`,禁止进入 Phase 5
+   闸门替代原 Phase 4.5 模型自检。跳过闸门直接写入视为硬性规则违规——等同于跳过可信度标签。
+
 ## 流程总览
 
 ```
 Phase 0 触发 + 聚焦问题      开场一句(可跳过 → 退化均匀全景),只用来给深度排序
 Phase 1 体量测量 + 预算分档   数文件/目录/模块 → 判小/中/大仓 → 回显档位
-Phase 2 广度优先扫描         栈探测 + 目录树 + 入口 + 模块边界 —— 浅而全,先铺满广度
-Phase 3 聚焦 + 预算深挖       填核心 14 节;主流程只 trace 一条;不确定一律标【推断】
-Phase 4 产出地图            写 change-impact/_project-map.md(概览头部 + 各节 + 未覆盖项清单)
+Phase 1.5 FACTS 层           运行 pf_scan.py + pf_git.py,产出 facts JSON
+Phase 2 并行专探             5 路 explore 子 agent 分域扫描(降级时串行)
+Phase 3 聚焦 + 预算深挖       填 Executive Summary + 核心 14 节;主流程只 trace 一条;不确定一律标【推断】
+Phase 4 产出地图             Script Gate(pf_validate.py exit code = 0)→ 写入
 Phase 5 扩展循环            用户「再挖 X」→ 增量更新对应节 + 刷新覆盖度声明
 ```
 
@@ -83,13 +93,34 @@ Phase 5 扩展循环            用户「再挖 X」→ 增量更新对应节 + 
 
 先做 Git 归属检查(`git rev-parse --show-toplevel` 对比当前目录),确认是独立仓库还是子目录/非 Git,据此决定概览头部怎么写。然后量体量(文件数 / 目录数 / 主要模块数),判小/中/大仓并定上下文预算,回显给用户。**完整分档标准、预算表、超大仓处理见 `references/phase-1-sizing.md`。**
 
-## Phase 2: 广度优先扫描
+## Phase 1.5: FACTS 层(脚本产出确定性事实)
 
-按预算做一遍**浅而全**的广度扫描:轻量栈探测(读清单文件)、可选结构索引辅助、目录树、模块边界、关键入口。先把广度铺满,不在任何单点深挖。声称目录"空"/"仅含 X"前必须用 Glob 验证——声称空但实际有文件 = 事实错误。**栈探测映射表见 `references/stack-detection.md`;扫描顺序与相关性分级见 `references/phase-2-breadth-scan.md`;可选 code graph / repo-map MCP 规则见 `code-graph-adapters/generic-mcp.md`。**
+Phase 1 完成后,运行两个脚本获取项目事实,不依赖模型猜测:
+
+```bash
+python scripts/pf_scan.py <project-root> --output change-impact/_project-map/facts/scan.json
+python scripts/pf_git.py <project-root> --output change-impact/_project-map/facts/git.json
+```
+
+产出:
+- `facts/scan.json` — 文件数、扩展名分布、目录树、清单文件 → 填【2】技术栈 +【0】预算档位
+- `facts/git.json` — HEAD、toplevel、hotspots、recent_commit_modules → 填【0】概览头部 + 定向深挖模块
+
+注意:`facts/` 目录在目标项目的 `change-impact/_project-map/facts/` 下,由 Pathfinder 管理,不写项目源码区。
+
+## Phase 2: 并行专探
+
+启动 5 路 explore 子 agent,每个负责一个域(架构/数据/入口-API/权限/运维)。子 agent 的设计、输入、输出格式和降级策略见 `references/phase-2-explore-domains.md`。
+
+环境不支持并行时按降级策略执行(2 路可用时分两批,1 路可用时串行)。
+
+子 agent 输出均为对话内结构化报告,不写文件。
 
 ## Phase 3: 聚焦 + 预算深挖
 
-在广度骨架上,按关注重点 + 预算填充核心 14 节:核心功能反推、数据模型、权限模型、典型主流程(只 trace 一条代表性请求)、风险区域识别等。不确定一律标【推断】。三张直观图也在此生成:**【3】架构/模块图、【6】数据模型 ER 图、【11】主流程图**(均为 Mermaid 文本)。**各节填充方法、主流程 trace 步骤、Mermaid 绘制规则见 `references/phase-3-depth-fill.md`。**
+在广度骨架上,按关注重点 + 预算填充核心 14 节:核心功能反推、数据模型、权限模型、典型主流程(只 trace 一条代表性请求)、风险区域识别等。不确定一律标【推断】。三张直观图也在此生成:**【3】架构/模块图、【6】数据模型 ER 图、【11】主流程图**(Mermaid 文本为 canonical source,可追加内联 SVG 预览图)。**各节填充方法、主流程 trace 步骤、图形输出规则见 `references/phase-3-depth-fill.md`。**
+
+地图产出时先填 Executive Summary(见 `templates/project-map.md` 顶部「Executive Summary」节),再填核心 14 节。Executive Summary 面向人类快速认知;impact 读取时从【0】开始。
 
 ## Phase 4: 产出地图
 
@@ -112,9 +143,18 @@ Phase 5 扩展循环            用户「再挖 X」→ 增量更新对应节 + 
 【推断: 待验证】     从命名/结构猜的     例:【推断: 目录名 payment/ → 推测含支付,待验证】
 ```
 
-**图同样守信任纪律**:三张 Mermaid 图里,**实线箭头 = 【已核实】关系,虚线箭头(`-.推断.->`)= 【推断】关系**;只画有证据的节点和边,靠命名猜的画虚线或留文字,绝不画实线冒充已核实。图只描述现状结构,不画"建议的架构"。
+**图同样守信任纪律**:三张 Mermaid 图里,**实线箭头 = 【已核实】关系,虚线箭头(`-.推断.->`)= 【推断】关系**;只画有证据的节点和边,靠命名猜的画虚线或留文字,绝不画实线冒充已核实。可选内联 SVG 预览图必须与 Mermaid 使用同一语义:实线=已核实,虚线=推断。图只描述现状结构,不画"建议的架构"。
 
-**写前自检(Phase 4.5)**:写入 `_project-map.md` 前必须跑 4 项自检:① 每个 `[已核实] file:行号` 用 Grep 确认行存在;② 全文 grep 凭证模式脱敏;③ 未覆盖项非空;④ Mermaid 箭头与可信度一致。弱模型尤其容易在编造行号和推断画实线失分。**完整自检规则见 `references/phase-3-depth-fill.md` Phase 4.5 段。**
+**SVG 预览图(可选)**:若图节点不超过 5-9 个,可在 Mermaid 后追加内联 `<svg>` 预览,只用基础 SVG 元素,不含 `script`/`foreignObject`/外链资源。图复杂、证据不足或渲染环境不确定时直接跳过 SVG,保留 Mermaid 即可。
+
+**Script Gate(替代 Phase 4.5 自检)**：写入 `_project-map.md` 前必须:
+
+1. 运行:`python scripts/pf_validate.py change-impact/_project-map.md --repo-root <project-root>`
+2. 检查 exit code
+3. 若 exit code ≠ 0:逐条修正报错项 → 重新运行 → 重复直到 exit code = 0
+4. 若 exit code = 0:闸门通过,写入地图
+
+exit code ≠ 0 时强行写入、跳过闸门、或不检查 exit code 就写入——视为违反硬性规则 #8。
 
 ### 章节结构(核心 14 节 + 可选 3 节)
 
@@ -122,13 +162,14 @@ Phase 5 扩展循环            用户「再挖 X」→ 增量更新对应节 + 
 
 | # | 章节 | # | 章节 |
 |---|------|---|------|
-| 0 | 基本信息(可信度标记) | 7 | 外部依赖与集成 |
-| 1 | 一句话概述 | 8 | 构建·运行·测试 |
-| 2 | 技术栈 | 9 | 风险区域 / 风险区 |
-| 3 | 架构分层 / 模块地图 ←impact L1 | 10 | 权限 / 认证模型概览 |
-| 4 | 核心功能 | 11 | 典型主流程 |
-| 5 | 关键入口 | 12 | 文档与知识入口 |
-| 6 | 数据模型概览 | 13 | 没挖深的部分(未覆盖项+扩展锚点) |
+| E | Executive Summary(给人看的第一屏) | 7 | 外部依赖与集成 |
+| 0 | 基本信息(可信度标记) | 8 | 构建·运行·测试 |
+| 1 | 一句话概述 | 9 | 风险区域 / 风险区 |
+| 2 | 技术栈 | 10 | 权限 / 认证模型概览 |
+| 3 | 架构分层 / 模块地图 ←impact L1 | 11 | 典型主流程 |
+| 4 | 核心功能 | 12 | 文档与知识入口 |
+| 5 | 关键入口 | 13 | 没挖深的部分(未覆盖项+扩展锚点) |
+| 6 | 数据模型概览 | | |
 
 可选集:仓库活跃度 / 协作信号、部署 / 运行拓扑、可观测性。
 
@@ -149,12 +190,15 @@ Phase 5 扩展循环            用户「再挖 X」→ 增量更新对应节 + 
 | 文件 | 内容 | 主文档对应段 |
 |------|------|--------------|
 | `references/phase-1-sizing.md` | 体量测量 + 预算分档 + 超大仓处理 | Phase 1 |
-| `references/phase-2-breadth-scan.md` | 广度扫描顺序、模块边界、相关性分级 | Phase 2 |
+| `references/phase-2-explore-domains.md` | 5 路并行 explore 子 agent 设计 + 降级策略 | Phase 2 |
 | `references/phase-3-depth-fill.md` | 各节深挖方法、主流程 trace、扩展 | Phase 3 / Phase 5 |
 | `references/stack-detection.md` | 通用栈探测:清单文件 → 栈/构建/测试映射 | Phase 2 栈探测 |
 | `references/handoff-contract.md` | 与 impact/impact-pro 协作约定 + L1 接口 | 与 impact 的协作 |
 | `references/cross-platform-notes.md` | 跨平台差异(时间戳/路径/shell) | 跨平台执行 |
-| `code-graph-adapters/generic-mcp.md` | 可选只读结构索引辅助 / code graph MCP 发现规则 | Phase 2 广度扫描 |
+| `code-graph-adapters/generic-mcp.md` | 可选只读结构索引辅助 / code graph MCP 发现规则 | Phase 2 并行专探 |
+| `scripts/pf_scan.py` | 项目体量扫描(文件数/扩展名/目录树/清单) | Phase 1.5 |
+| `scripts/pf_git.py` | Git 元数据提取(HEAD/hotspots/modules) | Phase 1.5 |
+| `scripts/pf_validate.py` | 闸门验证(行号/凭证/SVG/未覆盖项/一致性) | Phase 4 Script Gate |
 
 ## 行为准则
 
