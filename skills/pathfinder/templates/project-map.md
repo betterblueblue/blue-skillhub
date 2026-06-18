@@ -5,12 +5,49 @@
   - 找不到写"未发现",不编造。凭证脱敏 ***。
   - 核心集【0】-【13】永远输出;可选集仅关注重点命中或扩展时补。
   - 缺失的核心节写"未发现 / 本档未深入",不删节。
+  - Mermaid 是图的 canonical source;内联 SVG 预览图可选,只用于 Markdown 阅读。
 -->
 
 # [项目名] 认知地图
 
 > 本地图由 Pathfinder(领航)生成,供 impact/impact-pro 当 L1 导航上下文。
 > 地图是**导航图不是权威源**:`【推断】`项动手前必须重新取证。
+
+## Executive Summary（30 秒读懂）
+
+> 本节为人类快速认知设计。impact 读取时跳过本节,从【0】开始。
+
+**一句话**：[项目名] 是一个 [做什么的] 项目,使用 [主要语言/框架] 构建,面向 [谁用/什么场景]。
+证据：【已核实: ...】或【推断: ...】
+
+**Quick Start（5 步跑起来）**：
+1. 克隆并安装依赖：
+2. 配置环境变量：
+3. 初始化数据库：
+4. 启动开发服务：
+5. 访问应用：
+
+> 每步写**真实命令**,找不到真实入口写"未发现"。
+
+**从这 5 个文件开始读**：
+
+| 文件 | 为什么重要 | 可信度 |
+|------|-----------|--------|
+| `...` | ... | 【已核实: ...】 |
+
+**Top 3 风险**：
+1. [风险描述,无凭证值] — 【已核实: ...】
+2. ...
+3. ...
+
+**Top 3 Gotchas**：
+1. ...
+2. ...
+3. ...
+
+**导航**：→ 【3】架构分层 / 【6】数据模型 / 【8】构建运行 / 【11】主流程 / 【13】未覆盖项
+
+---
 
 ## 【0】基本信息(可信度标记)
 
@@ -61,6 +98,32 @@ flowchart TD
     B -.推断.-> D[模块D / 待验证]
 ```
 
+**SVG 预览图**(可选;由同一证据生成,仅用于阅读;若不渲染以上方 Mermaid 为准):
+
+<svg width="760" height="250" viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="架构预览图">
+  <title>架构预览图: 实线为已核实关系,虚线为推断关系</title>
+  <defs>
+    <marker id="pf-arch-arrow-solid" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <marker id="pf-arch-arrow-dashed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect x="40" y="80" width="150" height="56" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="115" y="113" text-anchor="middle" font-family="Arial, sans-serif" font-size="14">模块A / 入口层</text>
+  <rect x="270" y="80" width="150" height="56" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="345" y="113" text-anchor="middle" font-family="Arial, sans-serif" font-size="14">模块B / 业务层</text>
+  <rect x="500" y="80" width="150" height="56" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="575" y="113" text-anchor="middle" font-family="Arial, sans-serif" font-size="14">数据层 / DB</text>
+  <rect x="270" y="170" width="150" height="50" rx="6" fill="#f8fafc" stroke="#64748b" stroke-dasharray="6 4"/>
+  <text x="345" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="14">模块D / 待验证</text>
+  <path d="M190 108 L270 108" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#pf-arch-arrow-solid)"/>
+  <path d="M420 108 L500 108" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#pf-arch-arrow-solid)"/>
+  <path d="M345 136 L345 170" stroke="#64748b" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#pf-arch-arrow-dashed)"/>
+</svg>
+
+> SVG 复杂或证据不足时可写: `SVG 预览图: 本档跳过,以上方 Mermaid 为准。`
 > 证据不足时只画到顶层模块 + 标推断,不为了图好看而编造关系。大仓/超大仓只画顶层。
 > 模块间依赖方向(文字补充,若可见):
 
@@ -87,9 +150,39 @@ flowchart TD
 erDiagram
     USER ||--o{ ORDER : places
     ORDER ||--|{ ORDER_ITEM : contains
+    ORDER -.推断.-> PAYMENT : pays
     %% 关系只画有证据的;靠命名猜的在文字里标【推断】,不画进图
 ```
 
+**SVG 预览图**(可选;由同一证据生成,仅用于阅读;若不渲染以上方 Mermaid 为准):
+
+<svg width="760" height="260" viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="数据模型预览图">
+  <title>数据模型预览图: 实线为已核实关系,虚线为推断关系</title>
+  <defs>
+    <marker id="pf-er-arrow-solid" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+    <marker id="pf-er-arrow-dashed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <rect x="50" y="90" width="150" height="62" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="125" y="126" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">USER</text>
+  <rect x="305" y="90" width="150" height="62" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="380" y="126" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">ORDER</text>
+  <rect x="560" y="90" width="150" height="62" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="635" y="126" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">ORDER_ITEM</text>
+  <rect x="560" y="180" width="150" height="62" rx="6" fill="#f8fafc" stroke="#64748b" stroke-dasharray="6 4"/>
+  <text x="635" y="216" text-anchor="middle" font-family="Arial, sans-serif" font-size="15">PAYMENT</text>
+  <path d="M200 121 L305 121" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#pf-er-arrow-solid)"/>
+  <text x="252" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">places</text>
+  <path d="M455 121 L560 121" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#pf-er-arrow-solid)"/>
+  <text x="507" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#334155">contains</text>
+  <path d="M455 140 C500 160 520 170 560 190" stroke="#64748b" stroke-width="2" stroke-dasharray="6 4" fill="none" marker-end="url(#pf-er-arrow-dashed)"/>
+  <text x="490" y="175" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#64748b">pays</text>
+</svg>
+
+> SVG 复杂或证据不足时可写: `SVG 预览图: 本档跳过,以上方 Mermaid 为准。`
 > 无 DB 访问且 model 不清晰时,跳过本图并在【13】标"数据模型图待补"。
 
 ## 【7】外部依赖与集成
@@ -134,6 +227,35 @@ flowchart LR
     BIZ --> RESP[返回/序列化 → 响应]
 ```
 
+**SVG 预览图**(可选;由同一证据生成,仅用于阅读;若不渲染以上方 Mermaid 为准):
+
+<svg width="860" height="260" viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="典型主流程预览图">
+  <title>典型主流程预览图: 实线为已核实跳转,虚线为推断跳转</title>
+  <defs>
+    <marker id="pf-flow-arrow-solid" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#334155"/>
+    </marker>
+  </defs>
+  <rect x="30" y="80" width="120" height="54" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="90" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="13">入口</text>
+  <rect x="190" y="80" width="120" height="54" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="250" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="13">校验/中间件</text>
+  <rect x="350" y="80" width="120" height="54" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="410" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="13">业务逻辑</text>
+  <rect x="510" y="80" width="120" height="54" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="570" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="13">数据访问</text>
+  <rect x="670" y="80" width="120" height="54" rx="20" fill="#f8fafc" stroke="#475569"/>
+  <text x="730" y="112" text-anchor="middle" font-family="Arial, sans-serif" font-size="13">DB</text>
+  <rect x="510" y="170" width="120" height="54" rx="6" fill="#f8fafc" stroke="#475569"/>
+  <text x="570" y="202" text-anchor="middle" font-family="Arial, sans-serif" font-size="13">响应</text>
+  <path d="M150 107 L190 107" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#pf-flow-arrow-solid)"/>
+  <path d="M310 107 L350 107" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#pf-flow-arrow-solid)"/>
+  <path d="M470 107 L510 107" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#pf-flow-arrow-solid)"/>
+  <path d="M630 107 L670 107" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#pf-flow-arrow-solid)"/>
+  <path d="M470 120 L510 197" stroke="#334155" stroke-width="2" fill="none" marker-end="url(#pf-flow-arrow-solid)"/>
+</svg>
+
+> SVG 复杂或证据不足时可写: `SVG 预览图: 本档跳过,以上方 Mermaid 为准。`
 - 逐跳文件证据:`【已核实: file:line → ...】`或`【推断: 待验证】`（不合并，两条独立）
 - 不确定的跳在证据里标【推断】;**只 trace 一条**代表性请求,不为每个接口画图。
 

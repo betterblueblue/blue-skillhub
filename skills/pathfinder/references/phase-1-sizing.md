@@ -88,4 +88,4 @@ Phase 1 结束必须回显:
 ## 维护注意
 
 - 文件数阈值是**易变**参考值,可按实际经验调整,但分档→预算的映射关系不变。
-- 改预算上限必须同步 `phase-2-breadth-scan.md` / `phase-3-depth-fill.md` 的引用。
+- 改预算上限必须同步 `phase-2-explore-domains.md` / `phase-3-depth-fill.md` 的引用。
