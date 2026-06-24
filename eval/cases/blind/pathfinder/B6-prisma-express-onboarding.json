@@ -1,0 +1,11 @@
+{
+  "id": "B6",
+  "title": "摸底 Node/Express/Prisma 项目的数据模型和认证流程",
+  "skill": "pathfinder",
+  "stack": "node-express-prisma",
+  "fixture": {
+    "project": "prisma-express-ts",
+    "path": "test-projects/prisma-express-ts"
+  },
+  "prompt": "帮我摸一下这个 Node 项目的整体情况，重点看两个东西：一是数据模型有哪些表、关系是什么样的，二是认证流程是怎么走的，从登录到鉴权完整串一遍。"
+}
