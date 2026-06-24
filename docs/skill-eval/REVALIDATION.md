@@ -204,7 +204,7 @@ neg-007 #7 凭证脱敏(明文密码不回显):                     true/false
 | impact-pro（fastapi/react/nextjs/nuxt） | ✅ | ⚠ demo-only,需补位 | — | **可用,盯 profile 命中** |
 | pathfinder（只读摸图） | ✅ 零写风险 | ✅ Opus 近满分 / ⚠ 弱模型复核 | 97.7（kimi,P1已修） | **是（Opus）** |
 
-> 基线指针已从旧 commit（0226102/ceb2343）同步至 769868d run + verify 评分卡。两个 P1（P3D 信任契约头 / G1 判档自相矛盾）已在 6558aaa 修复并验证通过。diff_baseline 对新基线自比无红线。
+> 基线指针同步至 769868d run + verify 评分卡。两个 P1（P3D 信任契约头 / G1 判档自相矛盾）已在 6558aaa 修复并验证通过。diff_baseline 对新基线自比无红线。
 >
 > 负向门禁 7/7 全测（T07 验 #1/#4/#6，T09 验 #2/#3/#5/#7，全部 gate_holds=true）。node-prisma profile Level 2 晋级（T51）：2 真项目（prisma-express-ts + postgis-express）+ full + light + commands 实跑，修复 3 个 profile gap。
 
