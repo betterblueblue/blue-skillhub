@@ -118,7 +118,7 @@
 >
 > 确认执行 `Step N: [操作名称]`？请回复：`确认 Step N` / `跳过 Step N` / 其他指令
 
-- `确认 Step N` → 执行 → 自动跑静态检查 + 单测 → 通过 → 写执行记录 + 更新 `_active-state.md` → 下一步
+- `确认 Step N` → 执行 → 跑 profile 的 `commands.build` + `commands.test`（验证命令必须来自项目证据，不得套用 `mvn`/`npm test`/`go test` 等占位命令）→ 通过记 V2 → 写执行记录 + 更新 `_active-state.md` → 下一步
 - `跳过 Step N` → 更新 `_active-state.md` 为跳过，下一步
 - 其他 → 等待指令
 
@@ -135,6 +135,16 @@
 - **纯 DB / 后端** → SQL 验证脚本（表结构断言、行数核对、数据一致性）
 
 栈专属验证策略（Next.js 的 RSC server-only 检查、Go 的 race detector、Python 的 pytest-asyncio 等）由 profile 注入。
+
+### 验证命令来源与 V2/V3 映射（强制）
+
+验证命令必须来自项目证据：只有在发现 `pom.xml`/`mvnw`/`build.gradle`/`package.json`/`go.mod`/`pyproject.toml`/测试配置等真实入口后，才能写具体编译、测试或运行命令。找不到时写"V2/V3 不可用/需补证据"，不得套用 `mvn`、`npm test`、`go test` 等占位命令。
+
+验证等级映射：
+
+- **V2** = profile 的 `commands.build` + `commands.test` 真实运行通过；标 V2 必须在执行记录中附真实命令输出摘要，不得仅凭"应该能通过"标注
+- **V3** = V2 之上，运行 E2E / 集成测试 / API 脚本 / SQL 断言通过
+- 标 V2/V3 但无真实运行输出 → 视为用 V1 冒充，P0
 
 ## 风格合规检查（自动执行）
 
