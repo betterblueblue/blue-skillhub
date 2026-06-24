@@ -190,7 +190,7 @@ impact-pro 已接入统一测评框架（[docs/skill-eval/](../../docs/skill-eva
 - **L1 行为契约**（release 前跑）：`bash eval/run-l1.sh impact-pro` — 6 个标准化 case（R4/G1/G2/F1/F2/F3），覆盖 Java/Go/FastAPI/React 四栈 + monorepo 双 profile，subagent 扮用户端到端跑分
 - **L2 人审深度**（里程碑抽样）：主观维度人工复核，可选多模型交叉评审
 
-当前基线来自 2026-06-10 capability-eval（6 case，平均基础分 92.0 / 100）。红线机制同 impact——任何契约 PASS→FAIL 或维度掉档≥3 阻断发布。基线详情见 [eval/baselines/impact-pro.json](../../eval/baselines/impact-pro.json)。
+当前基线来自 2026-06-14（6 case，平均基础分 93.0 / 100，opus-4-8）。红线机制同 impact——任何契约 PASS→FAIL 或维度掉档≥3 阻断发布。基线详情见 [eval/baselines/impact-pro.json](../../eval/baselines/impact-pro.json)。
 
 共享契约、L0 自动检查与 impact 一致。
 
