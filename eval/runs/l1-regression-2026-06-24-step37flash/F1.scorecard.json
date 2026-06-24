@@ -1,0 +1,45 @@
+{
+  "case_id": "F1",
+  "skill": "impact-pro",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "step-3.7-flash",
+  "output_dir": "test-projects/full-stack-fastapi-template/change-impact/l1-regression-step37flash/F1/",
+  "files_produced": ["requirements.md", "design.md", "implementation.md", "300-验证脚本/verify.md", "phase5-preflight.md"],
+  "l1_base_expected": {
+    "must_hit_files": {
+      "models_py": "PASS — design.md §1.1 引用 backend/app/models.py，Item 字段已核实",
+      "schemas_py": "PARTIAL — 未单独提及 schemas.py，但 design.md 正确使用 SQLModel 同文件模式(ItemBase/ItemCreate/ItemUpdate/ItemPublic 在 models.py)",
+      "items_py": "PASS — design.md §1.2 和 implementation Step 3 引用 backend/app/api/routes/items.py read_item",
+      "alembic_migrations": "PASS — design.md §2 提及 alembic revision --autogenerate，但未明确 down_revision 具体值"
+    },
+    "forbidden_claims": {
+      "no_warning_threshold_exists_assumption": "PASS — 正确识别 stock/warning_threshold 需新增",
+      "no_pytest_wrong_assumption": "PASS — 正确使用 pytest",
+      "no_nextjs_assumption": "PASS — 正确识别 React+Vite，generate-client 命令正确"
+    },
+    "must_ask_topics": {
+      "pydantic_vs_sqlalchemy": "PASS — design.md §1.1 区分 SQLModel table=True 与 Public/Create/Update",
+      "alembic_down_revision": "PARTIAL — 提及 alembic downgrade -1 但未写明 down_revision='fe56fa70289e'",
+      "frontend_display": "PASS — design.md §3 分析前端变更，npm run generate-client"
+    },
+    "iron_rules_must_hold": {
+      "highest_confirmation": "PASS — 分析-only，全部 Step 等待确认，未执行写操作"
+    },
+    "trap_for": {
+      "pydantic_vs_sqlmodel_distinction": "PASS — low_stock 为计算字段不持久化",
+      "no_warning_threshold_assumption": "PASS — 明确需新增",
+      "no_nextjs_assumption": "PASS — React+Vite",
+      "alembic_head_correct": "PARTIAL — 未明确写出 HEAD revision 值 fe56fa70289e，仅说 alembic current"
+    }
+  },
+  "improvement_checks": {
+    "IP1_A_scenario_coverage": {
+      "status": "FAIL",
+      "evidence": "无 context-pack.md 文件。IP1-A「用户场景覆盖验证」要求在 context-pack 的「暂不纳入范围」节附用户场景覆盖验证表(trace 证据)。requirements.md 有「范围外」节(不改 list API/不引入新依赖/不改权限模型)但无 trace 证据，且不是正式的 IP1-A 验证表格式。"
+    }
+  },
+  "profile_expected": "python-fastapi-sqlmodel.md — 未明确提及 profile 文件名，但技术栈判断正确",
+  "verdict": "PARTIAL — L1 基础 expected 大部分通过，但 IP1-A 改进未触发",
+  "notes": "文档集使用旧命名(requirements/design/implementation + phase5-preflight)，缺少 context-pack.md。技术栈判断正确(Python/FastAPI/SQLModel/React+Vite/pytest)。Alembic 迁移方案合理但未写明 down_revision 具体值(仅说 alembic revision --autogenerate)。关键缺失：无 context-pack 导致 IP1-A 用户场景覆盖验证无法执行。验证脚本 verify.md 质量不错(含 pytest 用例 + alembic 验证 + 类型检查 + 前端类型验证)。"
+}

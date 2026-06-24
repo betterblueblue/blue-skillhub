@@ -131,3 +131,82 @@
 | `eval/runs/blind-2026-06-24-step37flash/_summary.md` | Step 3.7 Flash 评审总报告 |
 | `eval/runs/blind-2026-06-24-step37flash/B*.scorecard.json` | Step 3.7 Flash 逐 case 评分卡 |
 | `eval/cases/blind/JUDGE-RUBRIC.md` | 盲测评审标准 |
+
+---
+
+## 七、协议改进后的更新（v3，2026-06-24）
+
+> 本节为协议改进后的补充结论。上述一至六节基于 v1 盲测（Opus 4.8 评审），本节基于 v2/v3 复跑（GLM-5.2 评审）。
+> 完整改进过程见 `docs/skill-improvement-2026-06-24.md`。
+
+### 7.1 协议改进做了什么
+
+基于 v1 盲测暴露的 5 个问题，在三个 Skill 的协议中增加了 5 项检查步骤：
+
+| 改进 ID | Skill | 解决的问题 |
+|---------|-------|-----------|
+| P1-A | pathfinder | Script Gate 不验证 facts 文件内容（file_count=0 但 Gate 通过） |
+| P1-B | pathfinder | 漏发现跨文件安全 bug（passport select 缺 role 致 RBAC 失效） |
+| I1-A | impact | 实施文档编造不存在的 API 方法名（updateUserPassword） |
+| I2-A | impact | 实施代码对抛异常的方法做 null 检查（getLoginUser 死代码） |
+| IP1-A | impact-pro | 排除文件时不验证用户核心场景是否被覆盖（排除注册流程） |
+
+v2 复跑发现这些改进放在 `references/` 参考文件中时，盲测场景下不被模型读取。v3 将 P1-B、IP1-A 提升到 SKILL.md 主入口，并为 Step 3.7 Flash 的 prompt 加入"强制 Read SKILL.md"步骤。
+
+### 7.2 v3 最新结果
+
+| 指标 | Composer 2.5 v3 | Step 3.7 Flash v3 |
+|------|:---------------:|:-----------------:|
+| 改进项通过数 | **5/5 全通过** | 3/5 修复 + 1/5 部分改善 + 1/5 仍 FAIL |
+| 平均分 | 95.3 | 85.5 |
+| would_approve yes | 4/4 | 2/4 |
+| 证据编造 | 0 例 | 0 例 |
+
+**Composer 2.5**：v1 的 87.0 → v3 的 95.3，5 项改进全部通过，可作为生产级 Runner。v1 中发现的跨文件安全 bug 能力保持（P1-B 退步后修复），影响面识别更全（IP1-A 修复，包含注册流程）。
+
+**Step 3.7 Flash**：v1/v2 的 0/5 改进 → v3 的 3/5 修复。"强制 Read SKILL.md"步骤确认了 v2 失败根因是协议未加载。B2（I1-A 不再编造方法名）、B3（IP1-A 包含注册流程）产出质量接近 Composer 2.5。剩余两项：P1-A 仍未产出 facts 文件；I2-A 因判档偏松（light）绕过了实施代码编写。
+
+### 7.3 更新后的模型画像
+
+#### Composer 2.5：协议改进后全面达标
+
+v1 时的短板在 v3 中已修复：
+- 影响链不再断在中间（B3 的 createUser 中明确调用 getUserByPhone 查重）
+- P1-B 退步修复，重新发现 passport select bug
+- IP1-A 修复，完整纳入注册流程
+- 实施文档有显式的「方法存在性预检」节
+
+#### Step 3.7 Flash：协议加载问题解决，剩余两项待优化
+
+v1/v2 时"疑似未加载改进后协议"的问题在 v3 中通过"强制 Read SKILL.md"解决：
+- I1-A 修复：不再编造 updateUserPassword，有完整双表格预检（方法存在性 + 异常行为）
+- IP1-A 修复：从需求→设计→实施三阶段完整覆盖注册流程
+- P1-B 修复：地图【10】节有完整 4 步认证-鉴权字段一致性自检
+- 行号精度高的优势保持
+
+剩余两项：
+- P1-A：读了 SKILL.md 但未运行 Script Gate 产出 facts 文件，需进一步强化脚本执行的强制性
+- I2-A：判档偏松（用户说"每次接口请求"，LogAspect 仅覆盖 @Log 注解接口，应 full），因定级 light 无实施代码而技术规避了 null 检查缺陷，但未执行 I2-A 预检
+
+### 7.4 更新后的推荐工作流
+
+协议改进后，人工复核的 5 个点中第 1、2、5 项已被协议内置检查覆盖（Composer 2.5 全通过，Step 3.7 Flash 3/5 修复），复核负担下降：
+
+| # | 复核项 | v1 时谁会出问题 | v3 后状态 |
+|---|--------|----------------|----------|
+| 1 | API 方法名是否存在 | Step 3.7 Flash（I1-A） | 协议内置预检，v3 双模型均通过 |
+| 2 | 影响链是否覆盖核心场景 | Step 3.7 Flash（IP1-A） | 协议内置场景覆盖验证，v3 双模型均通过 |
+| 3 | 行号是否准确 | Composer 2.5 | 仍需抽查（协议未覆盖） |
+| 4 | facts 文件内容是否真实 | Step 3.7 Flash（P1-A） | Step 3.7 Flash v3 仍 FAIL，Composer 通过 |
+| 5 | 跨文件逻辑一致性 | 两个模型（P1-B） | 协议内置自检，v3 双模型均通过 |
+
+**更新后的结论**：Composer 2.5 v3 可作为生产级 Runner（5/5 全通过），日常开发场景人工复核可压缩到 3-5 分钟（重点查行号）。Step 3.7 Flash v3 适合非 pathfinder 场景（B2/B3 质量接近 Composer 2.5），pathfinder 场景仍需人工补查 facts 文件。
+
+### 7.5 v3 评分文件索引
+
+| 文件 | 说明 |
+|------|------|
+| `eval/runs/blind-2026-06-24-v3-composer25/summary.md` | Composer 2.5 v3 评审总报告 |
+| `eval/runs/blind-2026-06-24-v3-composer25/B*.scorecard.json` | Composer 2.5 v3 逐 case 评分卡 |
+| `eval/runs/blind-2026-06-24-v3-step37flash/summary.md` | Step 3.7 Flash v3 评审总报告 |
+| `eval/runs/blind-2026-06-24-v3-step37flash/B*.scorecard.json` | Step 3.7 Flash v3 逐 case 评分卡 |

@@ -1,0 +1,30 @@
+{
+  "case_id": "B1",
+  "skill": "impact",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "composer-2.5",
+  "run_type": "blind-v2 (post-improvement)",
+  "output_dir": "test-projects/ruoyi-vue/change-impact/blind-composer25/B1/",
+  "files_produced": ["000-需求文档.md", "100-设计文档.md", "200-实施文档.md", "phase5-preflight.md", "300-验证脚本/verify-api-timing.sh", "300-验证脚本/verify-operlog-cost-time.sql"],
+  "improvement_checks": {
+    "I2_A_exception_behavior": {
+      "status": "PASS",
+      "evidence": "200-实施文档.md 使用 Filter 方案（OperLogTimingFilter extends OncePerRequestFilter），不调用 SecurityUtils.getLoginUser()，从架构上规避了异常处理问题。实施代码中无对 getLoginUser 的 null 检查。",
+      "explicit_check_section": false,
+      "fix_mechanism": "通过换方案（Filter 替代 LogAspect @Around）规避了 getLoginUser 异常问题，而非通过 I2-A 预检流程"
+    }
+  },
+  "source_code_verification": {
+    "getLoginUser_behavior": "SecurityUtils.java:72-82: catch Exception → throw new ServiceException — 确认抛异常不返回 null",
+    "original_issue": "改进前 Step 3.7 Flash 对 getLoginUser 做 if (loginUser != null) 检查，是死代码"
+  },
+  "key_findings": [
+    "正确识别 cost_time 已存在，核心判断'不是缺字段而是缺全局采集'正确",
+    "使用 Filter 方案替代 LogAspect @Around，避免了 getLoginUser 异常问题",
+    "Filter 注册位置标注为 FilterConfig.java 或 ResourcesConfig.java（不够确切）",
+    "验证脚本偏简单：SQL 只 SELECT 无断言，shell 只 curl 登录"
+  ],
+  "verdict": "PASS — I2-A 修复",
+  "notes": "改进前 Composer 2.5 的方案有 getLoginUser null 检查缺陷（83 分），改进后通过换 Filter 方案修复。但未做显式的异常行为确认，修复方式是架构层面规避而非预检发现。"
+}

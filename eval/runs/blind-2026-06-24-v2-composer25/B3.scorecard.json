@@ -1,0 +1,31 @@
+{
+  "case_id": "B3",
+  "skill": "impact-pro",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "composer-2.5",
+  "run_type": "blind-v2 (post-improvement)",
+  "output_dir": "test-projects/prisma-express-ts/change-impact/blind-composer25/B3/",
+  "files_produced": ["context-pack.md", "requirements.md", "design.md", "implementation.md", "light.md", "300-验证脚本/register-phone.http"],
+  "improvement_checks": {
+    "IP1_A_scenario_coverage": {
+      "status": "FAIL",
+      "evidence": "context-pack.md 无「用户场景覆盖验证（IP1-A）」表。Section 7 引用检查结果中 auth.route.ts 被列为「暂不纳入」，理由为'由 controller 透传'。Section 10 暂不纳入范围中 auth.service.ts 被排除，理由为'注册逻辑在 controller 层透传，service 层不直接处理 phone'。",
+      "core_scenario_broken": true
+    }
+  },
+  "source_code_verification": {
+    "auth_controller_register": "src/controllers/auth.controller.ts:8: const { email, password } = req.body — 只解构 email 和 password，不含 name 也不含 phone",
+    "auth_controller_createUser_call": "auth.controller.ts:9: userService.createUser(email, password) — 只传 2 个参数",
+    "registration_flow": "POST /v1/auth/register → auth.controller.ts:register → userService.createUser(email, password) — 注册流程不经过 user.controller.ts"
+  },
+  "key_findings": [
+    "context-pack 排除 auth.route.ts/auth.controller.ts/auth.service.ts，理由'由 controller 透传'——实际 auth.controller.ts:8 只解构 email+password，不透传 phone",
+    "实施文档只修改 user.controller.ts createUser（POST /v1/users 管理员端点），未修改 auth.controller.ts register（POST /v1/auth/register 注册端点）",
+    "用户核心场景'注册时填手机号'无法实现——注册走的是 auth.controller.ts，不走 user.controller.ts",
+    "两个 Runner 的 B3 context-pack 内容几乎完全相同",
+    "createUser 查重逻辑链完整：getUserByPhone 查重 → prisma.user.create 含 phone"
+  ],
+  "verdict": "FAIL — IP1-A 未修复",
+  "notes": "改进前后都排除了注册流程。IP1-A 改进项未在盲测中触发。用户的核心场景'注册时填手机号'仍然无法实现。"
+}

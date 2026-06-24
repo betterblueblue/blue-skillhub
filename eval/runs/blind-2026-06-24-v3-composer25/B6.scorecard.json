@@ -1,0 +1,44 @@
+{
+  "case_id": "B6",
+  "runner_model": "composer-2.5",
+  "judge": "GLM-5.2",
+  "test_version": "v3",
+  "skill": "pathfinder",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 24,
+    "evidence_authenticity": 20,
+    "analysis_depth": 19,
+    "tier_judgment": 14,
+    "doc_quality": 10,
+    "protocol_compliance": 9
+  },
+  "base_total": 96,
+  "gate_failed": false,
+  "improvement_checks": {
+    "P1-A_facts_content": {
+      "status": "PASS",
+      "v2_status": "PASS",
+      "details": "scan.json file_count=90 ✅, budget_tier=small ✅; git.json head_short=346d60f ✅, toplevel=prisma-express-ts ✅"
+    },
+    "P1-B_authn_authz_self_check": {
+      "status": "PASS",
+      "v2_status": "FAIL (regression)",
+      "details": "地图【10】节有「认证-鉴权字段一致性(已读源码比对)」小节，明确写出认证链路写入 {id,email,name} vs 鉴权链路使用 user.role，发现不一致：role 未在 Passport select 中。记录到【9】风险区域和 Executive Summary Top 3 风险 #1。源码核实：passport.ts:17 select {id,email,name} 确实不含 role；auth.ts:22 确实用 user.role。退步修复 ✅",
+      "key_evidence": "_project-map.md:196-199「认证-鉴权字段一致性(已读源码比对)」; _project-map.md:184 风险区域记录"
+    }
+  },
+  "key_findings": [
+    "P1-B 退步修复：v2 中 Composer 2.5 未发现 passport.ts select bug，v3 重新发现并记录到风险区域——提升到 SKILL.md 主入口有效",
+    "额外发现 auth.ts:26 userId 类型不一致 bug（string vs number 严格不等），超出改进项要求，分析深度优秀",
+    "facts 文件完全正确，Script Gate 6/6 PASS，地图结构完整",
+    "Executive Summary 质量高：Top 3 风险 + Top 3 Gotchas + Quick Start 5 步，面向人类认知友好"
+  ],
+  "would_approve": "yes",
+  "notes": "v3 最显著的改进：P1-B 退步完全修复。地图质量极高，不仅发现了改进项要求的 passport select bug，还额外发现了 userId 类型不一致 bug。5/5 改进项中 P1-A 和 P1-B 均通过。"
+}

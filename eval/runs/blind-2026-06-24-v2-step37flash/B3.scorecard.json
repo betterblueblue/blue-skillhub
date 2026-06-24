@@ -1,0 +1,31 @@
+{
+  "case_id": "B3",
+  "skill": "impact-pro",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "step-3.7-flash",
+  "run_type": "blind-v2 (post-improvement)",
+  "output_dir": "test-projects/prisma-express-ts/change-impact/blind-step37flash/B3/",
+  "files_produced": ["010-requirements.md", "020-design.md", "030-implementation.md", "context-pack.md", "design.md", "implementation.md", "light.md", "requirements.md"],
+  "improvement_checks": {
+    "IP1_A_scenario_coverage": {
+      "status": "FAIL",
+      "evidence": "context-pack.md 无「用户场景覆盖验证（IP1-A）」表。Section 7 引用检查结果中 auth.route.ts 被列为「暂不纳入」，理由为'由 controller 透传'。context-pack 内容与 Composer 2.5 几乎完全相同。",
+      "core_scenario_broken": true,
+      "identical_to_composer25": true
+    }
+  },
+  "source_code_verification": {
+    "auth_controller_register": "src/controllers/auth.controller.ts:8: const { email, password } = req.body — 只解构 email 和 password",
+    "registration_flow": "POST /v1/auth/register → auth.controller.ts:register → userService.createUser(email, password) — 不经过 user.controller.ts"
+  },
+  "key_findings": [
+    "context-pack 排除 auth.route.ts/auth.controller.ts/auth.service.ts，理由'由 controller 透传'——实际不透传 phone",
+    "实施文档只修改 user.controller.ts（管理员端点），未修改 auth.controller.ts（注册端点）",
+    "用户核心场景'注册时填手机号'无法实现",
+    "context-pack 内容与 Composer 2.5 几乎完全相同 — 两个 Runner 产出趋同",
+    "implementation.md 比 Composer 2.5 更完整：明确在 createUser 中新增 getUserByPhone 查重调用"
+  ],
+  "verdict": "FAIL — IP1-A 未修复",
+  "notes": "与改进前相同的排除决策。context-pack 内容与 Composer 2.5 几乎完全相同。用户核心场景仍然无法实现。"
+}

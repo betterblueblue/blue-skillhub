@@ -1,0 +1,46 @@
+{
+  "case_id": "B6",
+  "runner_model": "step-3.7-flash",
+  "judge": "GLM-5.2",
+  "test_version": "v3",
+  "skill": "pathfinder",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 21,
+    "evidence_authenticity": 16,
+    "analysis_depth": 19,
+    "tier_judgment": 14,
+    "doc_quality": 9,
+    "protocol_compliance": 4
+  },
+  "base_total": 83,
+  "gate_failed": false,
+  "improvement_checks": {
+    "P1-A_facts_content": {
+      "status": "FAIL",
+      "v2_status": "FAIL",
+      "details": "B6 目录下仅有 _project-map.md，无 facts/ 目录（无 scan.json、无 git.json）。地图虽通过其他方式获取到正确 commit（346d60f）和文件数（~92），但未按协议产出 facts 文件，Script Gate V6 应报 FAIL。v2 是有 facts 文件但内容全错（file_count=0, head_short=null），v3 是根本未产出 facts 文件——两种均为 FAIL。",
+      "key_evidence": "目录列表仅含 _project-map.md；_project-map.md:46-48 commit=346d60f 文件数~92 信息正确但来源非 facts 文件"
+    },
+    "P1-B_authn_authz_self_check": {
+      "status": "PASS",
+      "v2_status": "FAIL",
+      "details": "地图【10】节有完整的「认证-鉴权字段一致性自检」小节（4 个编号步骤）：(1) 认证链路 passport select {id,email,name}；(2) 鉴权链路 roleRights.get(user.role)；(3) 比对结果 user.role 不在 select 中，运行时 undefined；(4) 不一致记录。正确发现 passport.ts:17 未 select role 导致 RBAC 实质失效。同步记录到【9】风险区域和 Executive Summary Top 3 风险 #1。源码核实：passport.ts:17 select {id,email,name} 确实不含 role；auth.ts:22 确实用 user.role。v2→v3 修复 ✅",
+      "key_evidence": "_project-map.md:189-206「认证-鉴权字段一致性自检」4 步; _project-map.md:30 Executive Summary Top 3 风险 #1; _project-map.md:173 风险区域记录"
+    }
+  },
+  "key_findings": [
+    "P1-B 修复：v2 无自检小节，v3 地图【10】节有完整 4 步自检并正确发现 passport select bug——强制 Read SKILL.md 生效",
+    "P1-A 仍 FAIL：v2 是 facts 内容全错，v3 是根本未产出 facts 文件，protocol_compliance 严重扣分",
+    "地图本身质量高：14 节 + Mermaid ER 图/流程图 + Executive Summary Top3 风险/Gotchas + Quick Start",
+    "分析深度优秀：除 passport select bug 外，还额外发现 auth.ts 类型与运行时不一致（req.user 运行时仅 3 字段）",
+    "地图通过其他方式（直接 git log/扫描）获取了正确 commit 和文件数，但未按协议保存为 facts 文件"
+  ],
+  "would_approve": "no",
+  "notes": "v3 最显著的进步是 P1-B 从 FAIL 修复为 PASS——证明强制 Read SKILL.md 步骤有效，模型读到了 Phase 3 的认证-鉴权自检要求并执行了源码比对。但 P1-A 仍 FAIL：模型未按协议产出 facts 文件（v2 是内容错，v3 是没产出），这是 pathfinder Script Gate 的硬门禁。地图内容质量高，但 protocol 合规性不足。"
+}

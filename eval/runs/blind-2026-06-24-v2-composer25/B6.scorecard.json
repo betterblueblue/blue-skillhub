@@ -1,0 +1,28 @@
+{
+  "case_id": "B6",
+  "skill": "pathfinder",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "composer-2.5",
+  "run_type": "blind-v2 (post-improvement)",
+  "output_dir": "test-projects/prisma-express-ts/change-impact/blind-composer25/B6/",
+  "files_produced": ["_project-map.md", "facts/scan.json", "facts/git.json"],
+  "improvement_checks": {
+    "P1_A_facts_validation": {
+      "status": "PASS",
+      "evidence": "scan.json: file_count=87, budget_tier=small, manifest_files=[package.json]; git.json: head_short=346d60f, toplevel=prisma-express-ts, is_independent_repo=true — 全部正确"
+    },
+    "P1_B_authn_authz_consistency": {
+      "status": "FAIL",
+      "evidence": "【10】权限/认证模型概览节止于权限检查逻辑描述，无「认证-鉴权字段一致性自检」小节。未提及 passport.ts:16-21 select 缺 role 的 bug。未提及 auth.ts:22 user.role 为 undefined 导致 RBAC 失效的风险。退步：改进前 Composer 2.5 发现了此 bug。",
+      "regression": true
+    }
+  },
+  "source_code_verification": {
+    "passport_ts_select": "src/config/passport.ts:16-21: select: { id: true, email: true, name: true } — 不含 role",
+    "auth_ts_rbac": "src/middlewares/auth.ts:22: roleRights.get(user.role) — 使用 user.role",
+    "bug_confirmed": "passport.ts select 缺 role → JWT 路径 user.role=undefined → RBAC 失效"
+  },
+  "verdict": "PARTIAL — P1-A 修复，P1-B 退步",
+  "notes": "facts 文件内容正确（P1-A 修复），但未发现 passport.ts select bug 且无认证-鉴权一致性自检（P1-B 退步）。地图内容质量合格：数据模型准确、认证流程描述完整、架构图清晰。"
+}

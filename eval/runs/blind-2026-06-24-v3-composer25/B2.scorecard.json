@@ -1,0 +1,39 @@
+{
+  "case_id": "B2",
+  "runner_model": "composer-2.5",
+  "judge": "GLM-5.2",
+  "test_version": "v3",
+  "skill": "impact",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 24,
+    "evidence_authenticity": 19,
+    "analysis_depth": 19,
+    "tier_judgment": 15,
+    "doc_quality": 9,
+    "protocol_compliance": 9
+  },
+  "base_total": 95,
+  "gate_failed": false,
+  "improvement_checks": {
+    "I1-A_method_name_existence": {
+      "status": "PASS",
+      "v2_status": "PASS",
+      "details": "实施文档底部有「方法存在性预检」小节，列出 SecurityUtils.encryptPassword（已存在）、SecurityUtils.matchesPassword（已存在）、userService.resetUserPwd（已存在于 SysUserService）。未出现编造的 updateUserPassword。源码核实：resetUserPwd 存在于 ISysUserService.java:190；matchesPassword 存在于 SecurityUtils.java:111",
+      "key_evidence": "030-implementation.md:30-34「方法存在性预检」小节"
+    }
+  },
+  "key_findings": [
+    "I1-A 保持修复且有显式预检小节：v2 是靠避免引用具体方法修复，v3 有明确的「方法存在性预检」节",
+    "正确发现代码已是 BCrypt（用户认知有偏差），真实需求是 MD5 存量兼容+透明升级——分析深度优秀",
+    "全仓库 grep 确认 Md5Utils 未被密码路径引用，种子 admin 密码已是 $2a$10$ BCrypt 格式",
+    "方案设计合理：matchesPasswordLegacyAware 双路径校验 + 登录成功后 upgradeLegacyPassword 透明升级"
+  ],
+  "would_approve": "yes",
+  "notes": "I1-A 保持修复，且比 v2 更好——v2 是靠避免引用具体方法修复，v3 有显式的「方法存在性预检」小节。现状核查纠正了用户错误认知（代码已是 BCrypt），分析深度很高。"
+}

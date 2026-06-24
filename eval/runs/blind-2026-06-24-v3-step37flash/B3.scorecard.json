@@ -1,0 +1,40 @@
+{
+  "case_id": "B3",
+  "runner_model": "step-3.7-flash",
+  "judge": "GLM-5.2",
+  "test_version": "v3",
+  "skill": "impact-pro",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 24,
+    "evidence_authenticity": 18,
+    "analysis_depth": 19,
+    "tier_judgment": 15,
+    "doc_quality": 10,
+    "protocol_compliance": 9
+  },
+  "base_total": 95,
+  "gate_failed": false,
+  "improvement_checks": {
+    "IP1-A_scenario_coverage": {
+      "status": "PASS",
+      "v2_status": "FAIL",
+      "details": "从需求→设计→实施三阶段完整覆盖注册流程。010-requirements.md R2「注册接口接受可选 phone」(P0)、4.1 节 POST /v1/auth/register 接口契约变更。020-design.md 3.1 节 register schema 加 phone、3.3 节 auth.controller.ts register 解构 phone 传 service、5.1/5.2 节 register 测试断言和新增用例。030-implementation.md Step 3 修改 auth.validation.ts register 校验、Step 8 修改 auth.controller.ts register 透传 phone、Step 11.2 新增 3 个 register phone 测试用例。v2 排除了 auth.route.ts/auth.controller.ts（理由'由 controller 透传'），v3 正确纳入。源码核实：auth.controller.ts:8 确实只解构 {email,password}。v2→v3 修复 ✅",
+      "key_evidence": "010-requirements.md:27 R2 注册接口; 020-design.md:65-75 register schema + 176-186 register controller; 030-implementation.md:76-96 Step 3 + 239-257 Step 8 + 329-356 Step 11.2 register 测试"
+    }
+  },
+  "key_findings": [
+    "IP1-A 完全修复：v2 排除注册流程（核心场景无法实现），v3 三阶段完整覆盖 register——强制 Read SKILL.md + 提升到 Phase 2 主入口生效",
+    "需求阶段即纳入：R2「注册接口接受可选 phone」标 P0，4.1 节有完整接口契约变更",
+    "实施 12 Step 跨 5 层（schema/validation/service/controller/test），11 个文件清单完整",
+    "测试覆盖充分：register 成功(带/不带 phone) + 格式错误 + 唯一性冲突 + fixture 更新",
+    "设计决策清晰：phone 查重在 service 层（与 email 一致）而非依赖 DB 唯一约束报错，提供友好错误消息"
+  ],
+  "would_approve": "yes",
+  "notes": "IP1-A 从 v2 FAIL 修复为 v3 PASS，是本次最关键的改进之一。v2 中 Step 3.7 Flash 排除了 auth.route.ts/auth.controller.ts（理由'由 controller 透传'，实际不透传 phone），导致用户核心场景'注册时填手机号'无法实现。v3 中从需求→设计→实施三阶段完整覆盖注册流程，12 个 Step 跨 5 层 11 文件。强制 Read SKILL.md 使模型读到了 Phase 2 的场景覆盖验证要求。产出质量与 Composer 2.5 v3 接近。"
+}

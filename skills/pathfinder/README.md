@@ -27,16 +27,18 @@
 
 ## 核心能力
 
-- **全景广度优先** — 所有核心模块都上地图,关注重点只决定哪片挖更深,不裁剪广度
-- **自适应分档 + 可扩展** — 先量体量定预算,大仓不硬扫;没挖深的显式进未覆盖项,用户可「再挖 X」续扫
-- **可信度** — 每条结论标【已核实: 证据】或【推断: 待验证】,直接对接 impact 的「已确认/未确认」二分
-- **概览头部** — 记录 git HEAD(防过期)、关注重点(解释深浅)、覆盖范围(显式声明未覆盖项)
-- **典型主流程** — 只 trace 一条代表性请求,端到端串通,"读懂项目"杠杆最高的一节
-- **可选结构索引辅助** — 如果 code graph / repo-map MCP 已可读,优先用它找入口、依赖边和核心 hubs,再用 Read/Grep 核证;索引过期/截断/需写项目缓存时诚实降级
-- **写前自检(Phase 4.5)** — 写入 `_project-map.md` 前自动检查:证据行号真实性、凭证未泄露、未覆盖项非空、Mermaid 箭头与可信度一致;弱模型尤其需要这道闸
-- **架构可视化** — 三张 Mermaid 文本图(架构/模块图、数据模型 ER 图、主流程图),一眼掌握全局;实线=已核实关系、虚线=推断关系,图也守信任纪律
-- **100% 只读 + 只描述不开药方** — 不改项目本体,不给"该怎么改"的建议
-- **栈无关通用版** — 自带轻量清单文件栈探测,不依赖 impact-pro 的 profiles,留接缝以后可挂接
+- **FACTS 层（Phase 1.5，必做不可跳过）** — 运行 `pf_scan.py` + `pf_git.py` 产出确定性事实 JSON（文件数/扩展名分布/目录树/清单文件 + Git HEAD/hotspots），填入地图【0】【2】节；这是 Script Gate 的前置输入，缺一不可，跳过会导致 V6 报 FAIL、地图无法写入
+- **认证-鉴权字段一致性自检** — 填写【10】权限/认证模型后必做：读认证链路源码（如 passport select 字段）+ 读鉴权链路源码（如 RBAC 用的 user.role），交叉比对发现字段缺失类安全 bug
+- **Script Gate（脚本闸门，替代 Phase 4.5 自检）** — 写入 `_project-map.md` 前必须运行 `pf_validate.py`，6 项检查（V1 行号真实性、V2 凭证脱敏、V3 SVG 安全、V4 未覆盖项非空、V5 Mermaid 一致性、V6 facts 文件内容校验），exit code ≠ 0 禁止写入
+- **全景广度优先** — 所有核心模块都上地图，关注重点只决定哪片挖更深，不裁剪广度
+- **自适应分档 + 可扩展** — 先量体量定预算，大仓不硬扫；没挖深的显式进未覆盖项，用户可「再挖 X」续扫
+- **可信度** — 每条结论标【已核实: 证据】或【推断: 待验证】，直接对接 impact 的「已确认/未确认」二分
+- **概览头部** — 记录 git HEAD（防过期）、关注重点（解释深浅）、覆盖范围（显式声明未覆盖项）
+- **典型主流程** — 只 trace 一条代表性请求，端到端串通，"读懂项目"杠杆最高的一节
+- **可选结构索引辅助** — 如果 code graph / repo-map MCP 已可读，优先用它找入口、依赖边和核心 hubs，再用 Read/Grep 核证；索引过期/截断/需写项目缓存时诚实降级
+- **架构可视化** — 三张 Mermaid 文本图（架构/模块图、数据模型 ER 图、主流程图），一眼掌握全局；实线=已核实关系、虚线=推断关系，图也守信任纪律
+- **100% 只读 + 只描述不开药方** — 不改项目本体，不给"该怎么改"的建议
+- **栈无关通用版** — 自带轻量清单文件栈探测，不依赖 impact-pro 的 profiles，留接缝以后可挂接
 
 ## 什么时候用
 
@@ -82,15 +84,26 @@ pathfinder/
 ├── README.md                     # 本文件
 ├── references/                   # 详细执行规则(按需加载)
 │   ├── phase-1-sizing.md         # 体量测量 + 预算分档 + 超大仓处理
-│   ├── phase-2-breadth-scan.md   # 广度优先扫描:栈探测/目录树/模块边界/入口
-│   ├── phase-3-depth-fill.md     # 各节深挖方法 + 主流程 trace + 扩展
+│   ├── phase-2-explore-domains.md # 5 路并行 explore 子 agent 设计 + 降级策略
+│   ├── phase-3-depth-fill.md     # 各节深挖方法 + 主流程 trace + 扩展 + 认证-鉴权自检
 │   ├── stack-detection.md        # 通用栈探测:清单文件 → 栈/构建/测试映射
 │   ├── handoff-contract.md       # 与 impact/impact-pro 协作约定 + L1 接口
 │   └── cross-platform-notes.md   # 跨平台差异(时间戳/HEAD/体量命令/路径)
+├── scripts/                      # 脚本（Phase 1.5 facts 产出 + Phase 4 Script Gate）
+│   ├── pf_scan.py                # 项目体量扫描(文件数/扩展名/目录树/清单)
+│   ├── pf_git.py                 # Git 元数据提取(HEAD/hotspots/modules)
+│   └── pf_validate.py            # 闸门验证(V1-V6: 行号/凭证/SVG/未覆盖项/Mermaid/facts内容)
 ├── code-graph-adapters/
 │   └── generic-mcp.md            # 可选只读结构索引 / code graph MCP 规则
-└── templates/
-    └── project-map.md            # _project-map.md 章节模板(14 核心 + 3 可选)
+├── templates/
+│   └── project-map.md            # _project-map.md 章节模板(14 核心 + 3 可选)
+├── tests/                        # 测试（gitignore，本地保留）
+│   ├── run.sh                    # L0 静态自洽运行器
+│   ├── lib/validate.sh           # 共享验证函数库
+│   ├── scenarios/                # JSON scenario spec
+│   ├── test_scripts/             # 脚本单元测试
+│   └── fixtures/                 # 测试 fixture（含降级陷阱）
+└── validation-runs/              # 验证记录
 ```
 
 ## 测评体系
@@ -111,13 +124,24 @@ Pathfinder 已接入统一测评体系（[docs/skill-eval/](../../docs/skill-eva
 
 三层检测：
 
-- **L0 静态自洽**（每次改动必跑）：`bash skills/pathfinder/tests/run.sh` — 3 个 scenario（go-admin 正向 + ruoyi 正向 + 降级陷阱 fixture）+ 共享契约检查
+- **L0 静态自洽**（每次改动必跑）：`bash skills/pathfinder/tests/run.sh` — 3 个 scenario（go-admin 正向 + ruoyi 正向 + 降级陷阱 fixture）+ 共享契约检查 + `pf_validate.py` 脚本单元测试
 - **L1 行为契约**（release 前跑）：`bash eval/run-l1.sh pathfinder` — 3 个 case（P1/P2/P3D），subagent 扮用户跑完整流程
 - **L2 人审深度**（里程碑抽样）：主观维度（地图导航价值、未覆盖项诚实度）人工复核
 
 当前基线来自 2026-06-14（3 case，平均基础分 97.7 / 100，0 P0，kimi-k2.7-code）。P3D 得分 98/100，4 个降级陷阱全正确处理。红线机制同 impact 家族——任何契约 PASS→FAIL 或维度掉档≥3 阻断发布。基线详情见 [eval/baselines/pathfinder.json](../../eval/baselines/pathfinder.json)。
 
 验证记录见 [validation-runs/INDEX.md](validation-runs/INDEX.md)：T01/T02 首轮与二轮验证，**T03 V3 端到端交接实跑 PASS（pathfinder→impact，5/5 契约检查，handoff_value=high）**——关闭了「V3 未实跑」缺口。
+
+### 盲测验证（2026-06-24）
+
+6 个真实开发场景盲测 + 协议改进后复跑，验证 FACTS 层强制性、认证-鉴权自检等改进项：
+
+- **v1 盲测**：Composer 2.5 在 prisma-express-ts 上发现 passport.ts select 缺 role 致 RBAC 失效（真实安全 bug）；Step 3.7 Flash 未发现（facts 文件内容全错但 Script Gate 通过）
+- **v2 复跑**：Composer 2.5 P1-B 退步（不再发现 passport bug）；Step 3.7 Flash 0/5 改进全 FAIL（疑似未加载改进协议）
+- **v3 复跑**：Composer 2.5 5/5 全通过（P1-B 退步修复 + IP1-A 修复）；Step 3.7 Flash 3/5 修复（P1-B 认证-鉴权自检修复 + I1-A 方法名预检修复 + IP1-A 场景覆盖修复），P1-A 仍 FAIL（未产出 facts 文件）
+- **v3 后续优化**：`pf_validate.py` V6 检查中 facts 文件缺失从 WARN 改为 FAIL（模型跳过 Phase 1.5 时 Script Gate 拦截）；V6 toplevel 大小写比较修复（`os.path.normcase`）
+
+盲测评审见 `eval/runs/blind-2026-06-24-v3-{composer25,step37flash}/`，完整改进过程见 [docs/skill-improvement-2026-06-24.md](../../docs/skill-improvement-2026-06-24.md)。
 
 ## 安全约束(只读)
 

@@ -1,0 +1,31 @@
+{
+  "case_id": "B2",
+  "skill": "impact",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "composer-2.5",
+  "run_type": "blind-v2 (post-improvement)",
+  "output_dir": "test-projects/ruoyi-vue/change-impact/blind-composer25/B2/",
+  "files_produced": ["000-需求文档.md", "100-设计文档.md", "200-实施文档.md", "phase5-preflight.md", "300-验证脚本/seed-md5-user.sql"],
+  "improvement_checks": {
+    "I1_A_method_name_precheck": {
+      "status": "PASS",
+      "evidence": "200-实施文档.md 不引用不存在的 API 方法名。引用的方法：SecurityUtils.matchesPassword（存在）、Md5Utils.hash（存在）、upgradeLegacyPassword（标注为新增）。未出现 updateUserPassword。",
+      "explicit_precheck_section": false,
+      "fix_mechanism": "通过避免引用具体已有方法名而非通过 grep 预检来规避编造"
+    }
+  },
+  "source_code_verification": {
+    "updateUserPassword_exists": false,
+    "correct_methods": "ISysUserService.resetPwd(SysUser) at line 181; ISysUserService.resetUserPwd(Long, String) at line 190; SysUserMapper.resetUserPwd at line 106"
+  },
+  "key_findings": [
+    "正确识别密码已用 BCrypt（SecurityUtils.java:100 核实）",
+    "正确识别 Md5Utils 为死代码",
+    "MD5 兼容方案设计合理：isMd5Hash → matchesPasswordLegacyAware → 登录后 upgrade",
+    "实施文档较为简略（31 行），Step 2 提到 upgradeLegacyPassword 作为新增方法",
+    "未出现编造的方法名 — I1-A 改进有效果"
+  ],
+  "verdict": "PASS — I1-A 修复",
+  "notes": "改进前 Composer 2.5 本就没有编造方法名（88 分），改进后保持正确。但实施文档未增加显式的方法名预检小节，而是通过简略化实施描述避免引用具体方法名。"
+}

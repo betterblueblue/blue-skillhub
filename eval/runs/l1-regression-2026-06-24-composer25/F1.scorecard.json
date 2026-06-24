@@ -1,0 +1,45 @@
+{
+  "case_id": "F1",
+  "skill": "impact-pro",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "composer-2.5",
+  "output_dir": "test-projects/full-stack-fastapi-template/change-impact/l1-regression-composer25/F1/",
+  "files_produced": ["000-context-pack.md", "010-requirements.md", "020-design.md", "030-implementation.md", "050-validation/verify-low-stock.http"],
+  "l1_base_expected": {
+    "must_hit_files": {
+      "models_py": "PASS — backend/app/models.py 多处引用，Item 字段已核实",
+      "schemas_py": "PASS — 正确识别 schemas.py 不存在，schema 在 models.py 中(SQLModel 同文件)",
+      "items_py": "PASS — backend/app/api/routes/items.py:48 read_item 端点",
+      "alembic_migrations": "PASS — HEAD fe56fa70289e 已核实，down_revision 正确链接"
+    },
+    "forbidden_claims": {
+      "no_warning_threshold_exists_assumption": "PASS — 明确「warning_threshold/stock/low_stock 均不存在」",
+      "no_pytest_wrong_assumption": "PASS — 正确识别测试框架为 pytest",
+      "no_nextjs_assumption": "PASS — 正确识别前端为 React+Vite，明确排除 Next.js"
+    },
+    "must_ask_topics": {
+      "pydantic_vs_sqlalchemy": "PASS — design.md §1.1 区分 SQLModel table=True 与 Public/Create/Update 三件套",
+      "alembic_down_revision": "PASS — context-pack 和 implementation 明确 down_revision='fe56fa70289e'",
+      "frontend_display": "PASS — design.md §5 分析前端影响，当前无详情页，Phase 1 可不改前端"
+    },
+    "iron_rules_must_hold": {
+      "highest_confirmation": "PASS — 分析-only，未执行任何代码/DDL 变更，尊重 Do not modify code"
+    },
+    "trap_for": {
+      "pydantic_vs_sqlmodel_distinction": "PASS — 正确区分，low_stock 为 computed 非持久化",
+      "no_warning_threshold_assumption": "PASS — 明确需新增",
+      "no_nextjs_assumption": "PASS — 正确识别 React+Vite",
+      "alembic_head_correct": "PASS — fe56fa70289e 与实际文件 fe56fa70289e_add_created_at_to_user_and_item.py 一致"
+    }
+  },
+  "improvement_checks": {
+    "IP1_A_scenario_coverage": {
+      "status": "PASS",
+      "evidence": "000-context-pack.md §5「用户场景覆盖验证（IP1-A）」含 5 行表格：schemas.py(不存在)/Next.js前端/列表页items.tsx/User model/compose-deployment，每行附「是否影响该场景」和「trace 证据」列。结论：排除项均不影响「详情 API 返回 low_stock」核心场景。§4「暂不纳入」3 项也附 trace 证据"
+    }
+  },
+  "profile_expected": "python-fastapi-sqlmodel.md — PASS，context-pack §1 明确加载",
+  "verdict": "PASS",
+  "notes": "文档集完整：context-pack → requirements → design → implementation + 验证脚本(.http)。IP1-A 用户场景覆盖验证表完整，5 个排除项各有 trace 证据。Alembic HEAD 经独立核实正确。schemas.py 不存在的判断准确。Profile 正确加载。"
+}
