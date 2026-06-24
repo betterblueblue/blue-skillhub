@@ -1,12 +1,15 @@
 {
   "skill": "impact-pro",
-  "baseline_from": "2026-06-10",
-  "skill_commit": "0226102",
-  "run_path": "eval/runs/2026-06-10-impact-pro@0226102/",
-  "average_base_score": 92.0,
-  "average_total_score": 101.5,
+  "baseline_from": "2026-06-14",
+  "skill_commit": "6558aaa",
+  "run_path": "eval/runs/2026-06-14-impact-pro@769868d/",
+  "average_base_score": 93.0,
+  "average_total_score": 102.7,
   "p0_count": 0,
   "contracts_all_pass": true,
-  "frozen_at": "2026-06-13",
-  "frozen_by": "design-doc-initialization"
+  "contracts_note": "G1 P1 (tier_judgment self-contradiction: judged light but own analysis showed full triggers) fixed at 6558aaa, verified via G1.verify.json (base 87->96, P1->none)",
+  "runner_model": "opus-4-8",
+  "cases": {"F1": 98, "F2": 92, "F3": 96, "G1": 96, "G2": 88, "R4": 88},
+  "frozen_at": "2026-06-24",
+  "frozen_by": "baseline-sync-to-769868d-verified"
 }

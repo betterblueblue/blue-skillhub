@@ -66,8 +66,8 @@ def load_json_scorecard(path: Path) -> dict:
 
 
 def find_scorecard(run_dir: Path, case_id: str) -> Path | None:
-    """优先 .json,回退 .scorecard.md。"""
-    for ext in (".json", ".scorecard.md"):
+    """优先 .scorecard.json,回退 .json / .scorecard.md。"""
+    for ext in (".scorecard.json", ".json", ".scorecard.md"):
         p = run_dir / f"{case_id}{ext}"
         if p.is_file():
             return p
@@ -260,7 +260,7 @@ def main(argv):
         name = p.name
         if name.startswith("_") or "summary" in name.lower():
             continue
-        cid = name.replace(".scorecard.md", "").replace(".json", "")
+        cid = name.replace(".scorecard.json", "").replace(".scorecard.md", "").replace(".json", "")
         if cid not in case_ids:
             case_ids.append(cid)
 

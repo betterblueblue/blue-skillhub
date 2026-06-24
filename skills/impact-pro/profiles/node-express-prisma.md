@@ -1,12 +1,12 @@
 # Node / Express / Prisma Profile
 
-> Level 1 — 在 `prisma-examples/orm/testing-express` 上完成首轮验收。适用于 Node.js/TypeScript + Express/Fastify + Prisma ORM 项目。
+> Level 2 — 在 prisma-express-ts（分层架构 + Prisma 4 + Express 4）和 postgis-express（单文件 + Prisma 7 + Express 5 + PostGIS）上完成生产级验收（T51）。适用于 Node.js/TypeScript + Express/Fastify + Prisma ORM 项目。
 
 ## 基本信息
 
 ```yaml
 name: node-express-prisma
-level: 1
+level: 2
 matchers:
   files:
     - package.json
@@ -61,6 +61,8 @@ discovery_globs:
     - "**/src/**/*Dto*.ts"
     - "**/src/**/*.schema.ts"
     - "**/src/**/*Schema*.ts"
+    - "**/src/validations/**/*.ts"
+    - "**/src/**/*validation*.ts"
   config:
     - "**/package.json"
     - "**/tsconfig.json"
@@ -170,9 +172,9 @@ validation_strategy:
     - pattern: "new PrismaClient"
       files: "**/src/**/*.ts"
       desc: "PrismaClient 初始化方式"
-    - pattern: "app\\.(get|post|put|patch|delete)"
+    - pattern: "(app|router)\\.(get|post|put|patch|delete)"
       files: "**/src/**/*.ts"
-      desc: "Express 路由定义"
+      desc: "Express 路由定义（app.xxx 和 router.xxx）"
     - pattern: "request\\("
       files: "**/tests/**/*.ts"
       desc: "Supertest API 测试"
@@ -191,7 +193,8 @@ notes:
     - Prisma 7 的 `prisma-client` generator 与旧版 `prisma-client-js` 需运行时识别
     - 无数据库连接时不能确认行数、索引实际状态，只能读取 schema.prisma
   edge_cases:
-    - 单文件 Express app：API、service、data_access 可能都在 `src/app.ts`
+    - 单文件 Express app：API、service、data_access 可能都在 `src/app.ts` 或 `src/server.ts`
     - monorepo：需先定位包含 `prisma/schema.prisma` 的子项目目录
     - 使用 Zod/class-validator 时，DTO/校验 schema 可能不在 Prisma schema 中
+    - `Unsupported` 类型（PostGIS/JSONB 等）：Prisma Client 方法不可用，需 `$queryRaw` 操作
 ```
