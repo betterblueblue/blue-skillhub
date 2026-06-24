@@ -1,0 +1,31 @@
+{
+  "case_id": "B3",
+  "skill": "impact-pro",
+  "runner_model": "step-3.7-flash",
+  "judge": "opus-4-8（独立评审，拿源码逐条核实）",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 18,
+    "evidence_authenticity": 18,
+    "analysis_depth": 15,
+    "tier_judgment": 13,
+    "doc_quality": 8,
+    "protocol_compliance": 8
+  },
+  "base_total": 80,
+  "gate_failed": false,
+  "key_findings": [
+    "正确识别 phone 字段不存在（schema.prisma 核实）、Prisma schema 变更方案正确（phone String? @unique）、Joi 正则 ^1\\d{10}$ 正确",
+    "实施文档比 Composer 2.5 更完整：明确在 createUser 中新增 getUserByPhone 查重调用，逻辑链不断",
+    "关键遗漏：context-pack 将 auth.route.ts 排除，理由是'由 controller 透传'——实际 auth.controller.ts:8 只解构 email+password，不透传 phone。注册流程（POST /v1/auth/register）需要改 auth.validation.ts + auth.controller.ts 才能支持 phone",
+    "auth.controller.ts:10 的 exclude(user, ['password','createdAt','updatedAt']) 未提及——加了 phone 后注册响应会包含 phone，需确认是否要排除",
+    "updateUserById 的 keys 默认数组（user.service.ts:132）只有 ['id','email','name','role']，需加 phone——context-pack 只提了 queryUsers/getUserById/getUserByEmail 的 keys，漏了 updateUserById"
+  ],
+  "would_approve": "with-fixes",
+  "notes": "方案方向正确、实施比 Composer 2.5 更完整，但排除了注册流程（auth.controller + auth.validation）导致用户核心场景'注册时填手机号'无法实现"
+}
