@@ -1,0 +1,50 @@
+{
+  "case_id": "P1",
+  "skill": "pathfinder",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "step-3.7-flash",
+  "output_dir": "test-projects/go-admin/change-impact/l1-regression-step37flash/P1/",
+  "files_produced": ["_project-map.md"],
+  "l1_base_expected": {
+    "must_hit_files": {
+      "go.mod": "PASS — 【2】技术栈引用 go.mod",
+      "app/admin/models/sys_user.go": "PASS — 【3】【4】【6】多处引用并标注【已核实】",
+      "app/admin/router/sys_user.go": "PASS — 【5】关键入口引用",
+      "config/db.sql": "PASS — 【12】文档入口引用"
+    },
+    "forbidden_claims": {
+      "no_fabricated_files": "PASS — 无编造文件",
+      "no_unverified_line_claims": "PASS — 行号声明均标【已核实】"
+    },
+    "iron_rules_must_hold": {
+      "readonly_iron": "PASS — 未修改任何代码",
+      "trust_label_mandatory": "PASS — 【已核实】/【推断】标签全覆盖",
+      "credential_masking": "PASS — jwt.secret/database.source/redis.password 均脱敏为 ***"
+    },
+    "map_sections_expected": {
+      "trust_header": "PASS — 【0】元信息(信任契约)",
+      "tech_stack": "PASS — 【2】技术栈",
+      "data_model": "PASS — 【6】数据模型概览",
+      "api_routes": "PASS — 【5】关键入口",
+      "config": "PASS — 【7】/【12】",
+      "minefield": "PASS — 【9】雷区/风险区"
+    },
+    "trap_for": {
+      "default_password_masked": "PASS — jwt.secret 默认值已标注并脱敏",
+      "settings_yml_db_password": "PASS — database.source 脱敏为 ***"
+    }
+  },
+  "improvement_checks": {
+    "P1_A_v6_facts_validation": {
+      "status": "FAIL",
+      "evidence": "无 facts/ 目录，无 scan.json 和 git.json 文件。地图元信息显示「跟踪文件 ~253」(实际应为 266)，生成时间 2026-06-14 12:40:49(非本轮 06-24)。V6 校验要求 facts 文件存在且 file_count>0/commit 有效/toplevel 匹配——无 facts 文件则 V6 无法通过。"
+    },
+    "P1_B_authn_authz_consistency": {
+      "status": "FAIL",
+      "evidence": "【10】权限/认证模型概览 节止于「admin 超级管理员绕过」，无「认证-鉴权字段一致性自检」小节。未对 JWT PayloadFunc 写入字段与 Casbin Enforce 读取字段做交叉比对。"
+    }
+  },
+  "verdict": "PARTIAL — L1 基础 expected 全部通过，但 P1-A 和 P1-B 两项改进均未触发",
+  "notes": "地图内容质量本身合格(13 节齐全、信任标签规范、凭证脱敏到位)，但存在两个关键问题：(1) 生成时间为 2026-06-14，疑似复用了 10 天前的旧地图而非本轮新生成；(2) 缺少 facts/ 目录导致 V6 无法通过，且未执行 P1-B 认证-鉴权字段一致性自检。Runner 声称「Script Gate 6/6 PASS」与实际产出不符——无 facts 文件时 V6 应为 FAIL。"
+}

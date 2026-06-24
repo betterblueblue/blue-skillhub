@@ -1,7 +1,8 @@
 # Skill 改进方案：基于盲测发现的协议优化
 
 > 日期：2026-06-24
-> 作者：Opus 4.8（基于 Composer 2.5 + Step 3.7 Flash 双模型盲测评审结果）
+> 方案作者：Opus 4.8（基于 Composer 2.5 + Step 3.7 Flash 双模型盲测评审结果）
+> 实施者：GLM-5.2（按本方案修改 5 个文件 + sibling 同步 + 测试验证）
 
 ---
 
@@ -257,10 +258,14 @@ V6: facts 文件内容校验
 
 ### 5.1 复测原则
 
-- 复测用和盲测相同的 6 个 case（B1-B6），不重新出题
-- 复测用和盲测相同的两个模型（Composer 2.5 + Step 3.7 Flash）
+- 跑分模型：Composer 2.5 + Step 3.7 Flash（回归和盲测复跑都用它们）
+- 评审模型：GLM-5.2
+- 盲测复跑用和盲测相同的 6 个 case（B1-B6），不重新出题
+- 回归测试用 L1 case 中的 3 个（P1/R1/F1），每个对应一条改进链路
 - 评审用和盲测相同的标准（JUDGE-RUBRIC.md）
 - 改进前后的分数对比是核心指标
+
+> **评审者变更说明**：盲测评审者是 Opus 4.8，复测评审者是 GLM-5.2（当前实施改进的模型）。评审标准（JUDGE-RUBRIC.md）不变，但评审者换了，分数对比会引入评审者差异这个变量——分数变化可能部分来自评审者不同，而非纯改进效果。因此判定时以「5 个改进项对应的盲测问题是否被修复」（定性验证点）为主要依据，分数变化为辅。
 
 ### 5.2 复测步骤
 
@@ -270,8 +275,13 @@ Step 1: 实施改进
   - 确保修改不破坏现有 L1 评测
 
 Step 2: 回归测试
-  - 跑现有 L1 评测（3 个 Skill 各自的 baselines）
-  - 确认改进没有导致已有 case 分数下降
+  - 跑分模型：Composer 2.5 + Step 3.7 Flash（和盲测相同）
+  - 评审模型：GLM-5.2
+  - 从 L1 全部 13 个 case 中选 3 个（P1/R1/F1），每个对应一条改进链路
+  - prompt 文件：eval/cases/l1-regression/PROMPT-{composer25,step37flash}-regression.md
+  - 评审标准：L1 case 的 expected 字段（must_hit_files、iron_rules、trap_for）
+  - 定位：盲测是主验证（有改进前后对比），L1 回归是补充（确认没破坏盲测没覆盖的 case 类型）
+  - 注意：L1 基线 runner 是 kimi/opus，不是这两个模型，分数不要和基线直接比
 
 Step 3: 盲测复跑
   - 用 Composer 2.5 跑 B1-B6（改进后的协议）
@@ -279,14 +289,14 @@ Step 3: 盲测复跑
   - 产出目录带 -postfix 标记：blind-2026-XX-XX-composer25-v2/
 
 Step 4: 评审对比
-  - 评审者拿源码逐条核实（和盲测相同流程）
+  - 评审者：GLM-5.2（拿源码逐条核实，流程和盲测相同，但评审者从 Opus 4.8 换为 GLM-5.2）
   - 重点检查：
     a. B6 facts 文件是否正确（验证 P1-A）
     b. B6 是否发现 passport.ts select bug（验证 P1-B）
     c. B2 实施文档是否还有编造方法名（验证 I1-A）
     d. B1 实施代码是否正确处理 getLoginUser 异常（验证 I2-A）
     e. B3 是否包含注册流程（验证 IP1-A）
-  - 输出改进前后分数对比表
+  - 输出改进前后分数对比表（注意：评审者变更，分数对比含评审者差异变量，定性验证点为主）
 
 Step 5: 判定
   - 每个改进项对应的盲测问题是否被修复
@@ -296,6 +306,8 @@ Step 5: 判定
 
 ### 5.3 成功标准
 
+#### 盲测复跑验证点（主验证，有改进前后对比）
+
 | 改进 ID | 复测验证点 | 成功标准 |
 |---------|-----------|---------|
 | P1-A | B6 的 facts 文件内容 | scan.json file_count > 0，git.json head_short 非 null |
@@ -304,24 +316,312 @@ Step 5: 判定
 | I2-A | B1 的实施代码 | getLoginUser 调用使用 try-catch，不做 null 检查 |
 | IP1-A | B3 的 context-pack | auth.controller.ts 和 auth.validation.ts 在变更范围内 |
 
-### 5.4 复测时间线
+#### L1 回归验证点（补充，验证没破坏既有能力）
+
+| Case | 对应改进 | 额外检查 |
+|------|---------|---------|
+| P1 | P1-A + P1-B | Script Gate 输出含 V6；facts 内容合理；【10】节做了认证-鉴权字段自检 |
+| R1 | I1-A + I2-A | 实施文档方法名经 grep 验证；对已有方法调用确认了异常行为 |
+| F1 | IP1-A | context-pack 排除文件附 trace 证据；做了用户场景覆盖验证 |
+
+### 5.4 L1 回归结果（2026-06-24）
+
+> 评审者：GLM-5.2
+> 评分卡归档：`eval/runs/l1-regression-2026-06-24-{composer25,step37flash}/`
+> 综合报告：`eval/runs/l1-regression-2026-06-24-summary.md`
+
+#### 结果速览
+
+| Case | Skill | 改进项 | Composer 2.5 | Step 3.7 Flash |
+|------|-------|--------|:------------:|:--------------:|
+| P1 | pathfinder | P1-A + P1-B | ✅ PASS | ❌ FAIL |
+| R1 | impact | I1-A + I2-A | ✅ PASS | ❌ FAIL |
+| F1 | impact-pro | IP1-A | ✅ PASS | ❌ FAIL |
+
+#### 既有能力是否破坏
+
+**否。** 两个 Runner 的 L1 基础 expected（must_hit_files、forbidden_claims、iron_rules、trap_for）全部通过，五项改进的加入没有破坏 skill 的既有分析能力。
+
+#### 改进项触发情况
+
+- **Composer 2.5**：5/5 改进项全部正确触发。P1 产出含 facts/scan.json + facts/git.json（V6 通过），【10】节有认证-鉴权字段一致性自检表；R1 实施文档有方法名 grep 预检表 + checkUserAllowed 异常行为确认；F1 context-pack 有用户场景覆盖验证表（5 项排除各附 trace 证据）。
+- **Step 3.7 Flash**：0/5 改进项触发。P1 疑似复用了 06-14 的旧地图（无 facts/、无 P1-B 自检）；R1 无方法名预检和异常行为确认；F1 无 context-pack 导致 IP1-A 无法执行。Runner 自报「Script Gate 6/6 PASS」和「IP1-A 完成」与实际产出不符。
+
+#### 结论
+
+改进协议本身设计正确——Composer 2.5 证明协议可被执行且产出质量高。Step 3.7 Flash 的问题出在执行层（疑似加载旧版协议或复用旧产出），而非协议设计缺陷。盲测复跑（Step 3）可继续推进。
+
+### 5.5 盲测复跑结果（2026-06-24）
+
+> 评审者：GLM-5.2
+> 评分卡归档：`eval/runs/blind-2026-06-24-v2-{composer25,step37flash}/`
+> 综合报告：`eval/runs/blind-2026-06-24-v2-summary.md`
+
+#### 五项改进验证总览
+
+| 改进 ID | 验证 Case | 验证点 | Composer 2.5 | Step 3.7 Flash |
+|---------|-----------|--------|:------------:|:--------------:|
+| P1-A | B6 | facts 文件内容正确 | ✅ 修复 | ❌ 未修复（与改进前完全相同错误） |
+| P1-B | B6 | 发现 passport.ts select bug | ❌ 退步（改进前发现，改进后不发现） | ❌ 未变 |
+| I1-A | B2 | 不再编造方法名 | ✅ 修复 | ❌ 未修复（仍编造 updateUserPassword） |
+| I2-A | B1 | 正确处理 getLoginUser 异常 | ✅ 修复（换 Filter 方案规避） | ❌ 未修复（仍做 null 检查） |
+| IP1-A | B3 | 包含注册流程 | ❌ 未修复 | ❌ 未修复 |
+
+#### Composer 2.5 改进效果
+
+- **3/5 修复**：P1-A（facts 正确）、I1-A（不再编造方法名）、I2-A（换 Filter 方案规避 getLoginUser 问题）
+- **1 项退步**：P1-B（改进前发现了 passport.ts select bug，改进后反而不发现，地图中无认证-鉴权一致性自检）
+- **1 项未修复**：IP1-A（B3 仍排除注册流程，context-pack 无用户场景覆盖验证表）
+
+#### Step 3.7 Flash 改进效果
+
+- **0/5 修复**：5 项原始问题全部原样存在。与 L1 回归结论一致——Step 3.7 Flash 疑似未加载改进后的协议。B6 facts 文件与改进前完全相同错误（file_count=0, head_short=null, wrong toplevel），B2 仍编造 updateUserPassword，B1 仍做 null 检查，B3 仍排除注册流程。
+
+#### 根因分析
+
+1. **P1-B 退步**：P1-B 改进在 L1 回归（明确调用 `/pathfinder`）中被 Composer 2.5 正确触发，但在盲测（自然语言驱动）中未触发。模型可能未按 Phase 3 参考文件执行深度填充步骤。
+2. **IP1-A 未生效**：与 P1-B 类似，盲测中模型未按 Phase 2 参考文件执行场景覆盖验证。两个 Runner 的 B3 context-pack 内容几乎完全相同。
+3. **Step 3.7 Flash 零改进**：疑似使用了缓存的旧版 skill 协议或未读取更新后的参考文件。
+4. **协议改进的局限性**：在明确调用 skill 的场景（L1 回归）中改进有效，在自然语言驱动的盲测场景中可能不生效。建议将 P1-B 和 IP1-A 从 `references/` 提升到 `SKILL.md` 主入口。
+
+#### 结论
+
+改进协议在 L1 回归中证明设计正确，但在盲测场景中可靠性不足。Composer 2.5 在 3 项改进上有效果（P1-A/I1-A/I2-A），但 P1-B 退步和 IP1-A 未生效需要进一步优化协议触发方式。Step 3.7 Flash 的问题在执行层而非协议设计——疑似未加载改进后的协议。
+
+### 5.6 复测时间线
 
 | 阶段 | 预计工时 | 产出 |
 |------|---------|------|
 | 实施改进 | 2-3 小时 | 5 个文件修改完成 |
-| 回归测试 | 1 小时 | L1 评测分数无下降 |
+| 回归测试 | 1 小时 | L1 定向回归（3 个 case × 2 模型 = 6 份产出） |
 | 盲测复跑 | 2 小时（两个模型各 1 小时） | 12 份产出文件 |
 | 评审对比 | 3-4 小时 | 改进前后分数对比报告 |
 | **总计** | **8-10 小时** | |
 
 ---
 
-## 六、附录：盲测评分文件索引
+## 六、v2 优化与 v3 测试计划
+
+### 6.1 v2 盲测复跑后的根因分析
+
+v2 盲测复跑暴露了协议触发率问题：**放在 `references/` 参考文件中的改进项，在自然语言驱动的盲测场景下不被模型读取**。只有 SKILL.md 主入口的内容才会被可靠加载。
+
+具体表现：
+
+| 改进项 | v2 状态 | 根因 |
+|--------|---------|------|
+| P1-B | Composer 退步（v1 发现 bug，v2 不发现） | 自检写在 `references/phase-3-depth-fill.md`，盲测不读；且"填表"式自检替代了深度分析 |
+| IP1-A | 两个 Runner 都未触发 | 验证写在 `references/phase-2-context-discovery.md`，盲测不读 |
+| I1-A/I2-A | Composer 部分修复（靠避开问题而非执行预检） | 已在 SKILL.md 但描述太简略，模型不执行具体步骤 |
+| P1-A | Composer 修复 / Step 未修复 | Step 疑似使用缓存旧协议 |
+
+### 6.2 v2 到 v3 的协议优化
+
+针对触发率问题做了以下优化：
+
+#### 优化 1：P1-B 提升到 pathfinder SKILL.md Phase 3 主入口
+
+**改哪里**：`skills/pathfinder/SKILL.md` Phase 3 段
+
+**改什么**：将"认证-鉴权字段一致性自检"从 `references/phase-3-depth-fill.md` 提升到 SKILL.md 正文，并强调"先 Read 源码再比对"，防止模型把自检当成"填表"而不做深度分析。
+
+**解决的问题**：v2 中 Composer 2.5 的 P1-B 退步——改进前能自然发现 passport.ts bug，改进后反而只填比对表不读源码。
+
+#### 优化 2：IP1-A 提升到 impact/impact-pro SKILL.md Phase 2 主入口
+
+**改哪里**：`skills/impact/SKILL.md` Phase 2 段 + `skills/impact-pro/SKILL.md` Phase 2 段
+
+**改什么**：将"用户场景覆盖验证"从 `references/phase-2-context-discovery.md` 提升到两个 skill 的 SKILL.md 正文，作为排除文件的前置必做步骤。
+
+**解决的问题**：v2 中两个 Runner 的 B3 都排除了注册流程，IP1-A 完全未触发。
+
+#### 优化 3：I1-A/I2-A 强化可操作性
+
+**改哪里**：`skills/impact/SKILL.md` Phase 4 段 + `skills/impact-pro/SKILL.md` Phase 4 段
+
+**改什么**：将"实施文档代码引用预检"从简略 bullet 扩展为带编号步骤的可操作清单，明确每一步做什么（提取方法名 → grep 验证 → 打开源码检查 throw）。
+
+**解决的目的**：v2 中 Composer 2.5 靠"避开问题"（不引用具体方法、换 Filter 方案）而非"执行预检"修复。v3 希望模型真正执行预检步骤。
+
+#### 优化 4：Step 3.7 Flash prompt 加固
+
+**改哪里**：`eval/cases/blind/PROMPT-step37flash-v3.md`
+
+**改什么**：在每个任务前显式要求 Read 对应 skill 的 SKILL.md 文件，确保使用最新版协议，不使用缓存。
+
+**解决的目的**：v2 中 Step 3.7 Flash 0/5 改进，疑似使用缓存旧协议。
+
+#### 优化 5：references 同步更新
+
+**改哪里**：`skills/pathfinder/references/phase-3-depth-fill.md`
+
+**改什么**：P1-B 自检步骤同步强调"先读源码再比对"，保持 SKILL.md 和 references 一致。
+
+### 6.3 v3 测试计划
+
+#### 测试范围
+
+v3 只跑 4 个 case（B6/B1/B2/B3），聚焦 v2 中有问题的改进项。跳过 B4 和 B5——B4 没有对应改进项问题，B5 没有已知的 authn-authz bug 可验证 P1-B。
+
+| Case | Skill | 对应改进 | v2 状态 | v3 验证目标 |
+|------|-------|---------|---------|------------|
+| B6 | pathfinder | P1-A + P1-B | P1-A 修复 / P1-B 退步 | P1-A 保持 / **P1-B 退步修复** |
+| B1 | impact | I2-A | Composer 修复 / Step 未修复 | Composer 保持 / **Step 是否修复** |
+| B2 | impact | I1-A | Composer 修复 / Step 未修复 | Composer 保持 / **Step 是否修复** |
+| B3 | impact-pro | IP1-A | 两个 Runner 都未修复 | **两个 Runner 是否修复** |
+
+#### 成功标准
+
+| 改进 ID | Case | v3 成功标准 |
+|---------|------|------------|
+| P1-A | B6 | Composer 保持 ✅ / Step 需确认 |
+| P1-B | B6 | **Composer 重新发现 passport.ts select bug** / Step 需确认 |
+| I1-A | B2 | Composer 保持 ✅ / **Step 不再编造方法名** |
+| I2-A | B1 | Composer 保持 ✅ / **Step 修正 null 检查** |
+| IP1-A | B3 | **两个 Runner 都包含注册流程** |
+
+#### 文件索引
+
+| 文件 | 说明 |
+|------|------|
+| `eval/cases/blind/PROMPT-composer25-v3.md` | Composer 2.5 v3 一键执行 prompt（4 个 case） |
+| `eval/cases/blind/PROMPT-step37flash-v3.md` | Step 3.7 Flash v3 一键执行 prompt（含 Read SKILL.md 前置步骤） |
+| `eval/cases/blind/BLIND-TEST-V3-DESIGN.md` | v3 测试设计文档（完整验证点和判定标准） |
+
+#### 修改的 skill 文件
+
+| 文件 | 改动 |
+|------|------|
+| `skills/pathfinder/SKILL.md` | Phase 3 新增"认证-鉴权字段一致性自检"（P1-B 提升主入口） |
+| `skills/pathfinder/references/phase-3-depth-fill.md` | P1-B 自检同步强调"先读源码再比对" |
+| `skills/impact/SKILL.md` | Phase 2 新增"用户场景覆盖验证"（IP1-A）+ Phase 4 强化 I1-A/I2-A 可操作性 |
+| `skills/impact-pro/SKILL.md` | Phase 2 新增"用户场景覆盖验证"（IP1-A）+ Phase 4 强化 I1-A/I2-A 可操作性 |
+
+### 6.4 v3 测试结果（2026-06-24）
+
+> 评审者：GLM-5.2
+> 评分卡归档：`eval/runs/blind-2026-06-24-v3-{composer25,step37flash}/`
+> 综合报告：各自目录下的 `summary.md`
+
+#### 五项改进验证总览（双模型 v3 对比）
+
+| 改进 ID | 验证 Case | 验证点 | Composer 2.5 v3 | Step 3.7 Flash v3 |
+|---------|-----------|--------|:---------------:|:-----------------:|
+| P1-A | B6 | facts 文件内容正确 | ✅ 保持 | ❌ 仍 FAIL（未产出 facts 文件） |
+| P1-B | B6 | 发现 passport.ts select bug | ✅ **退步修复** | ✅ **新修复** |
+| I1-A | B2 | 不再编造方法名 | ✅ 保持（有显式预检节） | ✅ **新修复**（双表格预检） |
+| I2-A | B1 | 正确处理 getLoginUser 异常 | ✅ 保持（Filter 方案） | ⚠️ PARTIAL（判档偏松绕过） |
+| IP1-A | B3 | 包含注册流程 | ✅ **新修复** | ✅ **新修复** |
+
+#### Composer 2.5 v3：5/5 全通过
+
+详见 `eval/runs/blind-2026-06-24-v3-composer25/summary.md`。v2 的两个失败项（P1-B 退步 + IP1-A 未触发）全部修复，平均分 95.3，全部 would_approve: yes。
+
+#### Step 3.7 Flash v3：3/5 修复 + 1/5 部分改善 + 1/5 仍 FAIL
+
+详见 `eval/runs/blind-2026-06-24-v3-step37flash/summary.md`。相比 v2 的 0/5 全 FAIL，"强制 Read SKILL.md"步骤效果显著。
+
+| Case | Skill | v3 分数 | 改进项 |
+|------|-------|---------|--------|
+| B6 | pathfinder | 83 | P1-A ❌ + P1-B ✅ |
+| B1 | impact | 74 | I2-A ⚠️ PARTIAL |
+| B2 | impact | 90 | I1-A ✅ |
+| B3 | impact-pro | 95 | IP1-A ✅ |
+| **平均** | | **85.5** | **3✅ + 1⚠️ + 1❌** |
+
+#### v2 → v3 关键变化
+
+1. **"强制 Read SKILL.md" 是 Step 3.7 Flash v3 突破的关键**：v2 中 0/5 全 FAIL（疑似未加载改进后协议），v3 在 prompt 中加入"每个任务前必须 Read 对应 SKILL.md"后，3 项直接修复（P1-B、I1-A、IP1-A），确认 v2 失败根因是协议未加载。
+2. **P1-B 修复**：v2 无自检小节，v3 地图【10】节有完整 4 步「认证-鉴权字段一致性自检」，正确发现 passport.ts:17 未 select role 导致 RBAC 失效。
+3. **I1-A 修复**：v2 编造 updateUserPassword，v3 有完整「实施前代码引用预检」双表格（方法存在性 + 异常行为），改用真实方法 resetUserPwd。
+4. **IP1-A 修复**：v2 排除注册流程，v3 从需求→设计→实施三阶段完整覆盖 register。
+5. **P1-A 仍 FAIL**：v2 是 facts 内容全错，v3 是根本未产出 facts 文件。模型读了 SKILL.md 但未运行 Script Gate 产出 facts。
+6. **I2-A 部分改善**：v2 有 null 检查死代码，v3 定级 light 无实施代码故无缺陷，但根因是判档偏松（用户说"每次接口请求"，LogAspect 仅覆盖 @Log 注解接口，应 full），而非执行 I2-A 预检。
+
+#### v3 结论
+
+- **Composer 2.5**：协议优化完全成功，5/5 全通过，可作为生产级 Runner 使用。
+- **Step 3.7 Flash**："强制 Read SKILL.md"策略验证成功，从 0/5 提升到 3/5 修复。B2/B3 产出质量接近 Composer 2.5。剩余两项需针对性优化：P1-A 需在 SKILL.md 中进一步强化 Script Gate 强制性；I2-A 需增加"覆盖范围语义核查"指引，提醒注意用户表述中的全量词与现有实现覆盖范围的差距。
+
+### 6.5 v3 后续优化（P1-A 脚本强化 / I2-A 覆盖范围核查 / 需求文档去技术化）
+
+基于 v3 测试结果中 Step 3.7 Flash 的两项未完全修复问题（P1-A 仍 FAIL、I2-A 判档偏松），以及盲测中发现的需求文档混入技术内容问题，做以下优化。
+
+#### 优化 6：P1-A 脚本层强化——facts 文件缺失从 WARN 改为 FAIL
+
+**问题**：v3 中 Step 3.7 Flash 跳过 Phase 1.5，未产出 facts 文件，但 `pf_validate.py` 对 facts 缺失只报 WARN（不影响 exit code），Script Gate 仍通过，地图写入成功。
+
+**根因**：`pf_validate.py` 的 V6 检查中，facts 文件缺失走 warnings 分支，而 warnings 不影响 exit code（`sys.exit(1 if fails else 0)` 只有 fails 决定退出码）。模型跳过 Phase 1.5 后 Script Gate 不会拦截。
+
+**改动**：
+- `skills/pathfinder/scripts/pf_validate.py`：facts 文件缺失从 `warnings.append` 改为 `errors.append`（4 处：两文件都不存在、scan.json 单独不存在、git.json 单独不存在、docstring 注释）
+- `skills/pathfinder/SKILL.md`：Phase 1.5 标题加"必做不可跳过" + 硬性规则 #8 新增 facts 前置检查步骤 + Phase 4 Script Gate 新增 facts 存在性确认步骤
+
+**验证**：`check_facts_content(ruoyi-vue)` 返回 `errors` 非空（`warnings` 为空），facts 缺失现在会阻止 Script Gate 通过 ✅
+
+#### 优化 7：I2-A 覆盖范围语义核查
+
+**问题**：v3 中 Step 3.7 Flash 对 B1 判档偏松——用户说"每次接口请求都要记录"，LogAspect 通过 `@Log` 注解只覆盖部分接口，模型判 light（零改动确认），未识别覆盖范围缺口。
+
+**改动**：
+- `skills/impact/SKILL.md` Phase 2.5：增加"覆盖范围语义核查（定级前必做）"
+- `skills/impact-pro/SKILL.md` Phase 2.5：增加"覆盖范围语义核查（定级前必做）"
+
+**内容**：用户表述中出现"每次/所有/全部/任何/一律/每个"等全量词时，必须打开现有实现代码确认实际覆盖范围（如 AOP 切面 `@annotation(xxx)` 只覆盖注解接口），与用户要求的范围比对。有缺口 → 标记"倾向 full"，不是"零改动确认"。
+
+#### 优化 8：需求文档去技术化
+
+**问题**：v3 中 Composer 2.5 和 Step 3.7 Flash 的 `010-requirements.md` 都混入了技术内容（表名 `sys_user`、类名/方法名 `SecurityUtils.matchesPassword`、文件路径 `src/config/passport.ts`、代码片段、数据库字段定义 `varchar(100)`、依赖注入方式、日志框架等）。模板已有"不出现表名、类名、文件路径"约束，但 SKILL.md 主入口未强调，模型未遵守。
+
+**改动**：
+- `skills/impact/SKILL.md` Phase 4：增加"需求文档内容边界（010-requirements.md，生成后自检）"
+- `skills/impact-pro/SKILL.md` Phase 4：增加"需求文档内容边界（010-requirements.md，生成后自检）"
+
+**内容**：明确需求文档禁止出现的技术细节清单（表名、类名/方法名、文件路径、代码片段、字段类型定义、schema 变更方案、API 契约细节、依赖注入方式、ORM 用法等）+ 应该出现的业务内容（业务场景、功能需求、非功能需求业务指标、业务约束、验收标准）+ 生成后自检步骤（发现技术细节 → 移到 `020-design.md`，需求文档只留业务描述）。
+
+#### 已知问题（已修复）
+
+`pf_validate.py` 的 V6 toplevel 检查在 Windows 上因盘符大小写不匹配（git 输出 `E:/agent/...` vs 命令行参数 `e:\agent\...`）误报 FAIL。
+
+**根因**：原代码用 `os.path.abspath(path).replace("\\", "/").rstrip("/")` 规范化路径，但 `os.path.abspath` 在 Windows 上不统一盘符大小写，导致字符串比较时 `E:/...` != `e:/...`。
+
+**修复**：改用 `os.path.normcase(os.path.abspath(path))`。`os.path.normcase` 在 Windows 上统一盘符大小写 + 分隔符，在 Unix 上是 no-op（保留大小写敏感），是 Python 标准库的跨平台方案。同时去掉了多余的 `.replace("\\", "/").rstrip("/")`（`abspath` 内部 `normpath` 已统一分隔符并去尾部）。
+
+**验证**：用之前误报 FAIL 的命令重跑，6/6 全 PASS，exit code 0。`os.path.normcase` 对 `E:/...` 和 `e:\...` 均规范化为 `e:\...`，比较结果 `equal: True`。
+
+#### 本轮修改文件清单
+
+| 文件 | 改动 |
+|------|------|
+| `skills/pathfinder/scripts/pf_validate.py` | V6 facts 缺失 WARN→FAIL（4 处） + V6 toplevel 大小写修复（`os.path.normcase`） |
+| `skills/pathfinder/SKILL.md` | Phase 1.5 强化"必做不可跳过" + 硬性规则 #8 加 facts 前置 + Phase 4 Script Gate 加 facts 存在性 |
+| `skills/impact/SKILL.md` | Phase 2.5 增加覆盖范围语义核查 + Phase 4 增加需求文档内容边界与自检 |
+| `skills/impact-pro/SKILL.md` | Phase 2.5 增加覆盖范围语义核查 + Phase 4 增加需求文档内容边界与自检 |
+
+---
+
+## 七、附录：盲测评分文件索引
 
 | 文件 | 说明 |
 |------|------|
 | `eval/cases/blind/JUDGE-RUBRIC.md` | 盲测评审标准（6 维度 100 分 + 4 项安全门禁） |
 | `eval/cases/blind/B1-B6` | 6 个盲测 case（含 prompt） |
-| `eval/runs/blind-2026-06-24-composer25/` | Composer 2.5 评审结果（6 份评分卡 + 总报告） |
-| `eval/runs/blind-2026-06-24-step37flash/` | Step 3.7 Flash 评审结果（6 份评分卡 + 总报告） |
+| `eval/cases/blind/PROMPT-composer25.md` | Composer 2.5 盲测一键执行 prompt |
+| `eval/cases/blind/PROMPT-step37flash.md` | Step 3.7 Flash 盲测一键执行 prompt |
+| `eval/cases/blind/PROMPT-composer25-v3.md` | Composer 2.5 v3 盲测 prompt（4 个 case，聚焦改进项） |
+| `eval/cases/blind/PROMPT-step37flash-v3.md` | Step 3.7 Flash v3 盲测 prompt（含 Read SKILL.md 前置步骤） |
+| `eval/cases/blind/BLIND-TEST-V3-DESIGN.md` | v3 测试设计文档 |
+| `eval/cases/l1-regression/PROMPT-composer25-regression.md` | Composer 2.5 L1 回归一键执行 prompt（P1/R1/F1） |
+| `eval/cases/l1-regression/PROMPT-step37flash-regression.md` | Step 3.7 Flash L1 回归一键执行 prompt（P1/R1/F1） |
+| `eval/cases/l1-regression/README.md` | L1 回归说明（case 选择、评审标准、和盲测的区别） |
+| `eval/runs/blind-2026-06-24-composer25/` | Composer 2.5 v1 评审结果（6 份评分卡 + 总报告） |
+| `eval/runs/blind-2026-06-24-step37flash/` | Step 3.7 Flash v1 评审结果（6 份评分卡 + 总报告） |
+| `eval/runs/blind-2026-06-24-v2-composer25/` | Composer 2.5 v2 评审结果（改进后复跑） |
+| `eval/runs/blind-2026-06-24-v2-step37flash/` | Step 3.7 Flash v2 评审结果（改进后复跑） |
+| `eval/runs/blind-2026-06-24-v2-summary.md` | v2 盲测复跑综合报告 |
+| `eval/runs/blind-2026-06-24-v3-composer25/` | Composer 2.5 v3 评审结果（4 份评分卡 + summary） |
+| `eval/runs/blind-2026-06-24-v3-step37flash/` | Step 3.7 Flash v3 评审结果（4 份评分卡 + summary） |
+| `eval/runs/l1-regression-2026-06-24-composer25/` | Composer 2.5 L1 回归评审结果 |
+| `eval/runs/l1-regression-2026-06-24-step37flash/` | Step 3.7 Flash L1 回归评审结果 |
+| `eval/runs/l1-regression-2026-06-24-summary.md` | L1 回归综合报告 |
 | `eval/runs/BLIND-TEST-FINAL-CONCLUSION.md` | 最终结论：两个模型能不能用、怎么用 |

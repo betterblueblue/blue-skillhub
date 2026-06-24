@@ -1,0 +1,40 @@
+{
+  "case_id": "B3",
+  "runner_model": "composer-2.5",
+  "judge": "GLM-5.2",
+  "test_version": "v3",
+  "skill": "impact-pro",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 25,
+    "evidence_authenticity": 19,
+    "analysis_depth": 19,
+    "tier_judgment": 15,
+    "doc_quality": 10,
+    "protocol_compliance": 9
+  },
+  "base_total": 97,
+  "gate_failed": false,
+  "improvement_checks": {
+    "IP1-A_scenario_coverage": {
+      "status": "PASS",
+      "v2_status": "FAIL",
+      "details": "context-pack 第 4 节有「用户场景覆盖验证」小节，明确识别入口为 POST /v1/auth/register，确认注册不经过 user.controller.ts，标注「不得排除 auth.validation.ts / auth.controller.ts」。实施文档 Step 3 修改 auth.validation.ts（注册校验），Step 4 修改 auth.controller.ts（解构 phone 传入 createUser）。文件变更清单包含 8 个文件。源码核实：auth.controller.ts:8 确实只解构 {email,password}，不含 phone",
+      "key_evidence": "000-context-pack.md:30-34「用户场景覆盖验证」; 030-implementation.md:15-23 Step 3+4 注册校验和控制器修改"
+    }
+  },
+  "key_findings": [
+    "IP1-A 完全修复：v2 两个 Runner 都排除注册流程，v3 Composer 2.5 正确纳入注册流程——提升到 SKILL.md 主入口有效",
+    "context-pack「用户场景覆盖验证」小节明确写出入口场景和不得排除结论，trace 证据完整",
+    "实施文档 Step 3+4 标注 P0 优先级修改注册校验和控制器，方案正确",
+    "迁移方式对齐项目惯例：yarn db:push（非 migrate），识别正确",
+    "方法存在性预检：userService.createUser、exclude、encryptPassword、getUserByEmail 均验证存在"
+  ],
+  "would_approve": "yes",
+  "notes": "IP1-A 是 v3 最关键的修复之一。v2 中两个 Runner 都排除了注册流程导致核心场景无法实现，v3 中 Composer 2.5 完整纳入注册流程，context-pack 有显式的场景覆盖验证小节。这是提升到 SKILL.md 主入口的直接效果。"
+}

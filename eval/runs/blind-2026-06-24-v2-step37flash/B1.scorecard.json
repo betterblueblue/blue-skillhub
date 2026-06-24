@@ -1,0 +1,30 @@
+{
+  "case_id": "B1",
+  "skill": "impact",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "step-3.7-flash",
+  "run_type": "blind-v2 (post-improvement)",
+  "output_dir": "test-projects/ruoyi-vue/change-impact/blind-step37flash/B1/",
+  "files_produced": ["040-light.md", "context-pack.md", "design.md", "implementation.md", "light.md", "requirements.md"],
+  "improvement_checks": {
+    "I2_A_exception_behavior": {
+      "status": "FAIL",
+      "evidence": "implementation.md 第 62-63 行仍然写 LoginUser loginUser = SecurityUtils.getLoginUser(); if (loginUser != null) — getLoginUser() 抛 ServiceException 不返回 null，null 检查是死代码。无被调方法异常行为确认小节。",
+      "identical_to_baseline": true,
+      "dead_code": "if (loginUser != null) — getLoginUser 永远不返回 null"
+    }
+  },
+  "source_code_verification": {
+    "getLoginUser_behavior": "SecurityUtils.java:72-82: catch Exception → throw new ServiceException — 确认抛异常不返回 null",
+    "impact": "登录接口（无认证用户）的 operlog 不会被记录 — 核心场景失效"
+  },
+  "key_findings": [
+    "正确识别 cost_time 已存在、LogAspect 仅覆盖 @Log 方法",
+    "implementation.md 第 62-63 行仍对 getLoginUser 做 null 检查 — 与改进前完全相同",
+    "登录接口的 operlog 不会被记录 — 最核心场景失效",
+    "无被调方法异常行为确认小节"
+  ],
+  "verdict": "FAIL — I2-A 未修复，仍然存在相同的 null 检查逻辑缺陷",
+  "notes": "与改进前完全相同的逻辑缺陷。Step 3.7 Flash 疑似未加载改进后的 skill 协议。"
+}

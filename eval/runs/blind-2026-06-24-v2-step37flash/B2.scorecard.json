@@ -1,0 +1,30 @@
+{
+  "case_id": "B2",
+  "skill": "impact",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "step-3.7-flash",
+  "run_type": "blind-v2 (post-improvement)",
+  "output_dir": "test-projects/ruoyi-vue/change-impact/blind-step37flash/B2/",
+  "files_produced": ["040-light.md", "context-pack.md", "design.md", "implementation.md", "light.md", "requirements.md"],
+  "improvement_checks": {
+    "I1_A_method_name_precheck": {
+      "status": "FAIL",
+      "evidence": "implementation.md 第 79 行仍然写 userService.updateUserPassword(user.getUserId(), bcryptPassword) — 该方法在代码库中不存在。正确方法为 userService.resetPwd(SysUser user) 或 userService.resetUserPwd(Long userId, String password)。无方法名预检小节。",
+      "identical_to_baseline": true,
+      "fabricated_method": "userService.updateUserPassword"
+    }
+  },
+  "source_code_verification": {
+    "updateUserPassword_exists": false,
+    "correct_methods": "ISysUserService.resetPwd(SysUser) at line 181; ISysUserService.resetUserPwd(Long, String) at line 190"
+  },
+  "key_findings": [
+    "正确识别密码已用 BCrypt、Md5Utils 为死代码",
+    "implementation.md 第 79 行仍编造 userService.updateUserPassword — 与改进前完全相同",
+    "MD5 兼容方案设计合理",
+    "无方法名存在性预检小节"
+  ],
+  "verdict": "FAIL — I1-A 未修复，仍然编造相同的方法名",
+  "notes": "与改进前完全相同的编造。Step 3.7 Flash 疑似未加载改进后的 skill 协议。"
+}

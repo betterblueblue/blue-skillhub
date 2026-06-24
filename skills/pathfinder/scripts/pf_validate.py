@@ -7,6 +7,7 @@ Checks:
   V3: SVG safety (no script/foreignObject/external links)
   V4: Section [13] has at least 1 non-empty entry
   V5: Mermaid solid-arrow source nodes are mentioned in body text
+  V6: Facts JSON files (scan.json/git.json) content is non-empty and consistent
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass, 1 = fail (any FAIL item).
@@ -182,6 +183,96 @@ def check_mermaid_consistency(text: str) -> list[str]:
     return errors
 
 
+# --- V6: Facts file content validation ---
+
+def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
+    """V6: Validate facts JSON files content. Returns (errors, warnings).
+
+    Checks change-impact/_project-map/facts/scan.json and git.json for:
+      - scan.json file_count > 0
+      - scan.json dir_tree contains root '/'
+      - git.json head_short non-null (for independent Git repos)
+      - git.json toplevel matches --repo-root
+
+    Missing facts files produce FAIL (Phase 1.5 must be run before Script Gate);
+    bad content also produces FAIL.
+    """
+    errors = []
+    warnings = []
+
+    facts_dir = os.path.join(repo_root, "change-impact", "_project-map", "facts")
+    scan_path = os.path.join(facts_dir, "scan.json")
+    git_path = os.path.join(facts_dir, "git.json")
+
+    scan_exists = os.path.isfile(scan_path)
+    git_exists = os.path.isfile(git_path)
+
+    if not scan_exists and not git_exists:
+        errors.append(
+            "V6: facts directory not found at change-impact/_project-map/facts/ "
+            "(Phase 1.5 must be run before Script Gate — run pf_scan.py and pf_git.py)"
+        )
+        return errors, warnings
+
+    # Validate scan.json
+    if scan_exists:
+        try:
+            with open(scan_path, "r", encoding="utf-8") as f:
+                scan = json.load(f)
+            file_count = scan.get("file_count", 0)
+            if not isinstance(file_count, int) or file_count <= 0:
+                errors.append(
+                    f"V6: scan.json file_count is {file_count}, expected > 0 "
+                    f"(project has files on disk)"
+                )
+            dir_tree = scan.get("dir_tree", [])
+            if not isinstance(dir_tree, list) or "/" not in dir_tree:
+                errors.append("V6: scan.json dir_tree missing root '/' entry")
+        except (json.JSONDecodeError, OSError) as e:
+            errors.append(f"V6: cannot read/parse scan.json: {e}")
+    else:
+        errors.append(
+            "V6: scan.json not found in facts directory "
+            "(Phase 1.5 must be run — run pf_scan.py to produce it)"
+        )
+
+    # Validate git.json
+    if git_exists:
+        try:
+            with open(git_path, "r", encoding="utf-8") as f:
+                git = json.load(f)
+            is_git = git.get("is_git_repo", False)
+            is_independent = git.get("is_independent_repo", False)
+            # Only check head_short for independent git repos
+            if is_git and is_independent:
+                head_short = git.get("head_short")
+                if not head_short:
+                    errors.append(
+                        "V6: git.json head_short is null/empty for an independent "
+                        "Git repo (expected a commit hash)"
+                    )
+            # Check toplevel matches repo_root
+            # os.path.normcase: Windows 上统一盘符大小写 + 分隔符，Unix 上 no-op
+            toplevel = git.get("toplevel")
+            if toplevel:
+                norm_toplevel = os.path.normcase(os.path.abspath(toplevel))
+                norm_repo_root = os.path.normcase(os.path.abspath(repo_root))
+                if norm_toplevel != norm_repo_root:
+                    errors.append(
+                        f"V6: git.json toplevel ({toplevel}) does not match "
+                        f"--repo-root ({repo_root})"
+                    )
+        except (json.JSONDecodeError, OSError) as e:
+            errors.append(f"V6: cannot read/parse git.json: {e}")
+    else:
+        errors.append(
+            "V6: git.json not found in facts directory "
+            "(Phase 1.5 must be run — run pf_git.py to produce it)"
+        )
+
+    return errors, warnings
+
+
 # --- Main ---
 
 def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]]:
@@ -224,6 +315,13 @@ def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]
         fails.extend(v5_errors)
     else:
         passes.append("V5: Mermaid solid-arrow consistency passed")
+
+    # V6
+    v6_errors, v6_warnings = check_facts_content(repo_root)
+    fails.extend(v6_errors)
+    warnings.extend(v6_warnings)
+    if not v6_errors and not v6_warnings:
+        passes.append("V6: facts file content validated")
 
     return passes, fails, warnings
 

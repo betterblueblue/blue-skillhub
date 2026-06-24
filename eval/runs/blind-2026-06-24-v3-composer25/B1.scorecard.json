@@ -1,0 +1,39 @@
+{
+  "case_id": "B1",
+  "runner_model": "composer-2.5",
+  "judge": "GLM-5.2",
+  "test_version": "v3",
+  "skill": "impact",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 23,
+    "evidence_authenticity": 19,
+    "analysis_depth": 18,
+    "tier_judgment": 15,
+    "doc_quality": 9,
+    "protocol_compliance": 9
+  },
+  "base_total": 93,
+  "gate_failed": false,
+  "improvement_checks": {
+    "I2-A_callee_exception_behavior": {
+      "status": "PASS",
+      "v2_status": "PASS",
+      "details": "实施文档使用 OperLogTimingFilter (OncePerRequestFilter) 方案，完全不调用 SecurityUtils.getLoginUser()，从架构上规避了异常处理问题。无 null 检查逻辑缺陷。方法名 insertOperlog 经核实存在于 SysOperLogServiceImpl.java:27",
+      "key_evidence": "030-implementation.md:3-9 Step 1 OperLogTimingFilter; 030-implementation.md:33 方法名验证声明"
+    }
+  },
+  "key_findings": [
+    "I2-A 保持修复：Filter 方案规避 getLoginUser 异常问题，与 v2 策略一致",
+    "正确识别 cost_time 字段已存在于 DB 和实体，缺口仅在全局覆盖范围",
+    "Filter 与 LogAspect 防双写设计（Step 3 request.setAttribute 标记）思路清晰",
+    "context-pack 现状核查到位：DB/实体/Mapper/前端已就绪，只缺全局计时 Filter"
+  ],
+  "would_approve": "yes",
+  "notes": "I2-A 保持 v2 的修复状态。实施文档虽简略（34行）但方案正确、方法名已验证。full 档位定级准确（跨模块+审计行为变更）。"
+}

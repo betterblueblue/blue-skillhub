@@ -1,0 +1,29 @@
+{
+  "case_id": "B6",
+  "skill": "pathfinder",
+  "run_date": "2026-06-24",
+  "judge": "GLM-5.2",
+  "runner_model": "step-3.7-flash",
+  "run_type": "blind-v2 (post-improvement)",
+  "output_dir": "test-projects/prisma-express-ts/change-impact/blind-step37flash/B6/",
+  "files_produced": ["_project-map.md", "facts/scan.json", "facts/git.json"],
+  "improvement_checks": {
+    "P1_A_facts_validation": {
+      "status": "FAIL",
+      "evidence": "scan.json: file_count=0（实际 ~87）, budget_tier=tiny, manifest_files=[] — 全部错误。git.json: head_short=null（实际 346d60f）, toplevel=full-stack-fastapi-template（实际 prisma-express-ts）, is_independent_repo=false — 全部错误。与改进前完全相同错误，V6 应报 FAIL。",
+      "identical_to_baseline": true
+    },
+    "P1_B_authn_authz_consistency": {
+      "status": "FAIL",
+      "evidence": "【10】节无「认证-鉴权字段一致性自检」小节。未提及 passport.ts select bug。与改进前相同。",
+      "identical_to_baseline": true
+    }
+  },
+  "source_code_verification": {
+    "passport_ts_select": "src/config/passport.ts:16-21: select: { id: true, email: true, name: true } — 不含 role",
+    "auth_ts_rbac": "src/middlewares/auth.ts:22: roleRights.get(user.role) — 使用 user.role",
+    "bug_confirmed": "passport.ts select 缺 role → JWT 路径 user.role=undefined → RBAC 失效"
+  },
+  "verdict": "FAIL — P1-A 和 P1-B 均未修复，与改进前完全相同",
+  "notes": "facts 文件与改进前完全一样错误（file_count=0, head_short=null, wrong toplevel），地图内容也与 Composer 2.5 几乎完全相同。Step 3.7 Flash 疑似未加载改进后的 skill 协议。"
+}
