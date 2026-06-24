@@ -611,6 +611,9 @@ v3 只跑 4 个 case（B6/B1/B2/B3），聚焦 v2 中有问题的改进项。跳
 | `eval/cases/blind/PROMPT-composer25-v3.md` | Composer 2.5 v3 盲测 prompt（4 个 case，聚焦改进项） |
 | `eval/cases/blind/PROMPT-step37flash-v3.md` | Step 3.7 Flash v3 盲测 prompt（含 Read SKILL.md 前置步骤） |
 | `eval/cases/blind/BLIND-TEST-V3-DESIGN.md` | v3 测试设计文档 |
+| `eval/cases/blind/PROMPT-composer25-v4.md` | Composer 2.5 v4 盲测 prompt（含 Read SKILL.md，验证优化 6-8） |
+| `eval/cases/blind/PROMPT-step37flash-v4.md` | Step 3.7 Flash v4 盲测 prompt（含 Read SKILL.md，验证优化 6-8） |
+| `eval/cases/blind/BLIND-TEST-V4-DESIGN.md` | v4 测试设计文档（验证优化 6-8） |
 | `eval/cases/l1-regression/PROMPT-composer25-regression.md` | Composer 2.5 L1 回归一键执行 prompt（P1/R1/F1） |
 | `eval/cases/l1-regression/PROMPT-step37flash-regression.md` | Step 3.7 Flash L1 回归一键执行 prompt（P1/R1/F1） |
 | `eval/cases/l1-regression/README.md` | L1 回归说明（case 选择、评审标准、和盲测的区别） |
@@ -621,6 +624,8 @@ v3 只跑 4 个 case（B6/B1/B2/B3），聚焦 v2 中有问题的改进项。跳
 | `eval/runs/blind-2026-06-24-v2-summary.md` | v2 盲测复跑综合报告 |
 | `eval/runs/blind-2026-06-24-v3-composer25/` | Composer 2.5 v3 评审结果（4 份评分卡 + summary） |
 | `eval/runs/blind-2026-06-24-v3-step37flash/` | Step 3.7 Flash v3 评审结果（4 份评分卡 + summary） |
+| `eval/runs/blind-2026-06-24-v4-composer25/summary.md` | Composer 2.5 v4 评审总报告（源码级核实，验证优化 6-8） |
+| `eval/runs/blind-2026-06-24-v4-step37flash/summary.md` | Step 3.7 Flash v4 评审总报告（源码级核实，验证优化 6-8） |
 | `eval/runs/l1-regression-2026-06-24-composer25/` | Composer 2.5 L1 回归评审结果 |
 | `eval/runs/l1-regression-2026-06-24-step37flash/` | Step 3.7 Flash L1 回归评审结果 |
 | `eval/runs/l1-regression-2026-06-24-summary.md` | L1 回归综合报告 |

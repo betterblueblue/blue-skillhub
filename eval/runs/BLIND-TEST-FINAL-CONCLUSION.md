@@ -210,3 +210,69 @@ v1/v2 时"疑似未加载改进后协议"的问题在 v3 中通过"强制 Read S
 | `eval/runs/blind-2026-06-24-v3-composer25/B*.scorecard.json` | Composer 2.5 v3 逐 case 评分卡 |
 | `eval/runs/blind-2026-06-24-v3-step37flash/summary.md` | Step 3.7 Flash v3 评审总报告 |
 | `eval/runs/blind-2026-06-24-v3-step37flash/B*.scorecard.json` | Step 3.7 Flash v3 逐 case 评分卡 |
+
+---
+
+## 八、v3 后续优化验证（v4，2026-06-25）
+
+> 本节验证 v3 后实施的优化 6-8 是否生效。v4 评审方式为源码级核实（读取实际产出文件逐项核对，非仅凭模型自报）。
+> 完整 v4 设计见 `eval/cases/blind/BLIND-TEST-V4-DESIGN.md`。
+
+### 8.1 v3 后续做了什么（优化 6-8）
+
+v3 盲测跑完后，针对 Step 3.7 Flash 剩余 2 项失败（P1-A、I2-A）和两模型共有的需求文档技术细节渗入问题，又做了 3 项优化：
+
+| 优化 | 改哪里 | 解决的问题 |
+|------|--------|-----------|
+| 优化 6（P1-A 加固） | `pf_validate.py` + `pathfinder/SKILL.md` | v3 中 Step 跳过 Phase 1.5 不产出 facts，Script Gate 仍放行（V6 当时是 WARN） |
+| 优化 7（I2-A 新增） | `impact/SKILL.md` Phase 2.5 + `impact-pro/SKILL.md` Phase 2.5 | v3 中 Step 把"每次接口请求"误判 light（LogAspect 只覆盖 @Log 注解接口） |
+| 优化 8（需求文档边界） | `impact/SKILL.md` Phase 4 + `impact-pro/SKILL.md` Phase 4 | v3 中两模型的 `010-requirements.md` 都混入了表名、类名、文件路径、代码片段 |
+
+### 8.2 v4 结果
+
+| 指标 | Composer 2.5 v4 | Step 3.7 Flash v4 |
+|------|:---------------:|:-----------------:|
+| 3 项优化通过数 | **3/3 全通过** | **3/3 全通过** |
+| 5 项改进状态 | 5/5 不退步 | **5/5 全 PASS**（v3 剩余 2 项修复） |
+| 评审方式 | 源码级核实 | 源码级核实 |
+
+**Composer 2.5**：优化 6、7 保持 v3 修复状态，优化 8（需求文档去技术化）修复。5 项改进全部不退步。24 个产出文件，文档结构完整。
+
+**Step 3.7 Flash**：v3 剩余 2 项失败全部修复——
+- **P1-A 修复**：v3 未产出 facts 文件 → v4 产出 scan.json（file_count=113）+ git.json（head=346d60f），内容真实有效。优化 6 的 WARN→FAIL + Phase 1.5 强化生效。
+- **I2-A 修复**：v3 判 light 绕过 → v4 识别"每次接口请求"全量词，核实 LogAspect @Log 覆盖缺口，定级 full，产出 030-implementation.md。优化 7 的覆盖范围语义核查生效。
+- 优化 8 修复：三份需求文档均为纯业务描述。
+
+### 8.3 最终定版结论
+
+**v3.8 协议优化完全成功，两个模型均可定版：**
+
+| 模型 | v1 | v3 | v4 | 定版状态 |
+|------|:--:|:--:|:--:|---------|
+| Composer 2.5 | 87.0（5 项问题） | 95.3（5/5 修复） | 3/3 优化 + 5/5 不退步 | **生产级 Runner** |
+| Step 3.7 Flash | 85.2（5 项问题） | 85.5（3/5 修复） | 3/3 优化 + 5/5 全 PASS | **Runner** |
+
+**人工复核负担最终状态**：
+
+| # | 复核项 | v1 时 | v4 后 |
+|---|--------|-------|-------|
+| 1 | API 方法名是否存在 | Step 会编造 | 协议内置预检，双模型均通过 |
+| 2 | 影响链是否覆盖核心场景 | Step 会排除 | 协议内置场景覆盖验证，双模型均通过 |
+| 3 | 行号是否准确 | Composer 有偏差 | 仍需抽查（协议未覆盖） |
+| 4 | facts 文件内容是否真实 | Step 全错 | 协议内置强制 + Gate 拦截，双模型均通过 |
+| 5 | 跨文件逻辑一致性 | 两模型都漏 | 协议内置自检，双模型均通过 |
+| 6 | 需求文档是否渗入技术细节 | 两模型都有 | 协议内置自检，双模型均通过 |
+
+5 项复核中 4 项已被协议内置检查覆盖（仅行号抽查仍需人工）。日常开发场景人工复核可压缩到 3-5 分钟（重点查行号 + 整体合理性）。
+
+**Step 3.7 Flash 的已知短板**（不影响改进项验证，但影响整体产出完整度）：产出文件比 Composer 少 9 个，缺 `_active-state.md`（跨会话状态）、`060-preflight.md`（Phase 4 预检）、`050-validation/`（验证脚本）。这是后续可优化方向。
+
+### 8.4 v4 评审文件索引
+
+| 文件 | 说明 |
+|------|------|
+| `eval/cases/blind/BLIND-TEST-V4-DESIGN.md` | v4 测试设计文档 |
+| `eval/cases/blind/PROMPT-composer25-v4.md` | Composer 2.5 v4 一键执行 prompt |
+| `eval/cases/blind/PROMPT-step37flash-v4.md` | Step 3.7 Flash v4 一键执行 prompt |
+| `eval/runs/blind-2026-06-24-v4-composer25/summary.md` | Composer 2.5 v4 评审总报告（源码级核实） |
+| `eval/runs/blind-2026-06-24-v4-step37flash/summary.md` | Step 3.7 Flash v4 评审总报告（源码级核实） |
