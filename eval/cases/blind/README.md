@@ -21,22 +21,20 @@
 | B5 | pathfinder | full-stack-fastapi-template | 摸底全栈项目架构 | 全栈栈检测 + 数据模型 + 构建命令 |
 | B6 | pathfinder | prisma-express-ts | 摸底数据模型和认证流程 | 认证链路 trace + 数据模型 ER |
 
-## 执行方式
+## 执行方式（简化版：一个模型一条 prompt 跑完全部）
 
-### 对每个 case × 每个模型：
+### 每个模型只需复制对应 prompt 文件的内容，粘贴发给模型即可
 
-1. **准备**：确保 test-projects/ 下的项目已 clone 且干净
-2. **执行**：让小模型用对应 skill 处理 case 的 prompt
-3. **收集**：产出文件在 `test-projects/<project>/change-impact/` 下
-4. **评审**：judge 拿着 `JUDGE-RUBRIC.md` + 项目源码，核实产出中的每条证据
-5. **出卡**：写评分卡到 `eval/runs/blind-<date>-<model>/B<id>.scorecard.json`
+| 模型 | prompt 文件 | 产出目录前缀 |
+|------|------------|-------------|
+| Composer 2.5 | `PROMPT-composer25.md` | `blind-composer25/` |
+| Step 3.7 Flash | `PROMPT-step37flash.md` | `blind-step37flash/` |
 
-### 每个模型跑 6 个 case，2 个模型 = 12 次执行
+prompt 里已经包含了全部 6 个任务的完整指令：用哪个 skill、项目路径、输出目录、用户原话。模型会按顺序逐个执行，产出自动落到带模型名的目录下。
 
-```
-模型 A（Composer 2.5）→ B1 B2 B3 B4 B5 B6
-模型 B（Step 3.7 Flash）→ B1 B2 B3 B4 B5 B6
-```
+### 跑完后
+
+把两个 `blind-<model>/` 目录的产出位置告诉我，我按 `JUDGE-RUBRIC.md` 逐个评审出评分卡。
 
 ### 评审产出
 
@@ -52,6 +50,8 @@
 eval/cases/blind/
 ├── README.md              # 本文件
 ├── JUDGE-RUBRIC.md        # 评审标准
+├── PROMPT-composer25.md   # Composer 2.5 一键执行 prompt
+├── PROMPT-step37flash.md  # Step 3.7 Flash 一键执行 prompt
 ├── impact/
 │   ├── B1-*.json
 │   └── B2-*.json
