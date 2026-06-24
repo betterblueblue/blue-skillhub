@@ -1,0 +1,11 @@
+{
+  "id": "B5",
+  "title": "刚接手 FastAPI 全栈项目，摸底整体架构",
+  "skill": "pathfinder",
+  "stack": "python-fastapi-sqlmodel",
+  "fixture": {
+    "project": "full-stack-fastapi-template",
+    "path": "test-projects/full-stack-fastapi-template"
+  },
+  "prompt": "我刚接手这个项目，之前没见过。帮我摸一下整体架构是什么，用了什么技术栈，数据库里有哪些核心表，前后端是怎么配合的，怎么在本地跑起来做开发。"
+}

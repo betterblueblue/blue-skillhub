@@ -1,0 +1,11 @@
+{
+  "id": "B1",
+  "title": "给操作日志加响应耗时记录",
+  "skill": "impact",
+  "stack": "java-spring-mybatis",
+  "fixture": {
+    "project": "RuoYi-Vue",
+    "path": "test-projects/ruoyi-vue"
+  },
+  "prompt": "我想给系统的操作日志加一个响应耗时记录功能。每次接口请求都要记录从进入到返回花了多少毫秒，然后在操作日志列表页面能看到这个耗时。"
+}
