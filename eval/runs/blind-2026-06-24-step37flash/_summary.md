@@ -159,17 +159,17 @@
 
 | 维度 | Step 3.7 Flash | Composer 2.5 |
 |------|---------------|--------------|
-| 平均分 | 85.2 | 85.5 |
+| 平均分 | 85.2 | 87.0 |
 | 行号精度 | **极高（零偏差）** | 中等（B4 偏差 1-10 行） |
 | 现状核查 | 强（3/3 正确） | 强（3/3 正确） |
-| 证据编造 | 1 例（B2 编造方法名） | 0 例* |
+| 证据编造 | 1 例（B2 编造方法名） | 0 例 |
 | 深度 bug 发现 | 弱（miss passport.ts select bug） | **强（发现 RBAC 失效 + userId 旁路）** |
 | B3 影响链 | 排除了注册流程 | **包含 auth.validation + auth.controller** |
 | B3 实施链 | **更完整（getUserByPhone 连到 createUser）** | getUserByPhone 未连到 createUser |
 | facts 文件 | B6 严重错误 | 全部正确 |
 | 安全门禁 | 1 FAIL（B2） | 全 PASS |
 
-> *注：Composer 2.5 的 B5 评审中，我之前将"private 路由仅 local 挂载"标记为编造。本次核实源码后确认 `api/main.py:13-14` 确实是条件挂载，Composer 2.5 的描述是正确的。该条不应算作编造，Composer 2.5 的 B5 实际分数应上调至约 88-90 分。
+> *注：Composer 2.5 的 B5 评审中，原评审将"private 路由仅 local 挂载"标记为编造。后核实源码确认 `api/main.py:13-14` 确实是条件挂载，Composer 2.5 描述正确。B5 分数从 82 上调至 93，平均分从 85.5 上调至 87.0，证据编造 0 例。
 
 ### 关键差异总结
 
