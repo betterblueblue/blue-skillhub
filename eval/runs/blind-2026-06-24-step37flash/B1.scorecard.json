@@ -1,0 +1,30 @@
+{
+  "case_id": "B1",
+  "skill": "impact",
+  "runner_model": "step-3.7-flash",
+  "judge": "opus-4-8（独立评审，拿源码逐条核实）",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 21,
+    "evidence_authenticity": 19,
+    "analysis_depth": 15,
+    "tier_judgment": 13,
+    "doc_quality": 8,
+    "protocol_compliance": 9
+  },
+  "base_total": 85,
+  "gate_failed": false,
+  "key_findings": [
+    "现状核查到位：cost_time 字段已存在（sql 核实）、前端已展示（index.vue 核实）、LogAspect 仅覆盖 @Log 方法（LogAspect.java:59 核实正确）",
+    "行号全部准确：LogAspect.java:59（@Before 注解）、:62（TIME_THREADLOCAL.set）、:126（setCostTime 计算）—— 逐条核实无误",
+    "设计方案有逻辑缺陷：@Around 中调用 SecurityUtils.getLoginUser() 为登录等无认证接口记录 operlog，但 getLoginUser() 不返回 null 而是抛出 ServiceException，导致 null 检查是死代码、登录接口的 operlog 实际不会被记录——这恰恰是最核心的使用场景",
+    "AsyncFactory.recordOper 复用正确，排除规则思路合理，但未检查 Excel 导出模板是否包含 cost_time"
+  ],
+  "would_approve": "with-fixes",
+  "notes": "分析方向正确、行号精准，但实施代码有逻辑缺陷（getLoginUser 抛异常导致核心场景失效），需修复后可用"
+}
