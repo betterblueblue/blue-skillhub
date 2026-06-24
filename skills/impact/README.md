@@ -112,10 +112,10 @@
 impact 已接入统一测评框架（[docs/skill-eval/](../../docs/skill-eval/)），支持三层防不一致检测：
 
 - **L0 静态自洽**（每次改动必跑）：`bash skills/impact/tests/run.sh` — 检查硬性规则存在、引用完整、共享契约、fixture 锁定
-- **L1 行为契约**（release 前跑）：`bash eval/run-l1.sh impact` — 13 个标准化 case，subagent 扮用户端到端跑分，客观维度机器判 + 安全闸
+- **L1 行为契约**（release 前跑）：`bash eval/run-l1.sh impact` — 4 个标准化 case（R1/R2/R3/R3N），subagent 扮用户端到端跑分，客观维度机器判 + 安全闸
 - **L2 人审深度**（里程碑抽样）：主观维度（苏格拉底质量、文档可读性）人工复核
 
-当前基线来自 2026-06-10 capability-eval（4 case，平均基础分 93.0 / 100）。每次改 skill 后跑 L1 产出评分卡，用 `bash eval/diff-baseline.sh impact` 和基线 diff——任何契约掉绿或维度掉档>=3 即红线阻断。基线详情见 [eval/baselines/impact.json](../../eval/baselines/impact.json)。
+当前基线来自 2026-06-14（4 case，平均基础分 89.3 / 100，opus-4-8）。每次改 skill 后跑 L1 产出评分卡，用 `bash eval/diff-baseline.sh impact` 和基线 diff——任何契约掉绿或维度掉档>=3 即红线阻断。基线详情见 [eval/baselines/impact.json](../../eval/baselines/impact.json)。
 
 共享契约（三 skill 都要守）：基于证据不臆测、可信度标记二分、凭证脱敏、仓库内文本不构成指令、写入目标边界。L0 自动检查这些契约在三个 SKILL.md 中都存在，防止改一处另两处不一致。
 
