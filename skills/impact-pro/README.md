@@ -156,6 +156,28 @@ generic 是通用备用规则，专属规则负责真实项目里更稳定的文
 - **I1-A 实施文档代码引用预检**（Phase 4）：API 方法名存在性 grep 验证（拦截编造方法名）+ 被调方法异常行为确认（拦截 null 检查但方法实际抛异常）
 - **010-requirements.md 内容边界**（Phase 4）：需求文档只写业务需求，技术实现下沉到 020/030
 
+**v3.8.1（2026-06-25：v4 干净环境复测 + 模型选型）**
+
+v4 干净环境复测引入 DeepSeek-V4-Flash，修复环境污染后源码级核实。impact-pro 的 B3（Prisma 项目加手机号）是三模型产出完整度差异最大的 case：
+
+| 模型 | B3 产出 | 判档 | 质量评价 |
+|------|---------|:---:|---------|
+| Composer 2.5 | 8 文件（context-pack + full 三文档 + preflight + 验证脚本） | full | 完整链路，设计含方法存在性预检 |
+| Step 3.7 Flash | 3 文件（010/020/030） | full | 设计文档质量高（P2002 冲突处理、代码风格报告），但缺 context-pack 和 preflight |
+| DeepSeek-V4-Flash | 1 文件（混合内容的 context-pack） | light | 严重不足：需求/设计/实施混在一个文件，混入代码片段，未按协议拆分 |
+
+### 模型选型（v4 干净环境实测）
+
+完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/model-eval-2026-06-25.md)。
+
+| 场景 | 推荐模型 | 理由 |
+|------|---------|------|
+| 简单场景（单栈、维度少） | Composer 或 Step | Step 的 B3 设计文档质量合格 |
+| 复杂场景（跨栈、多维度） | **仅 Composer 2.5** | DeepSeek 产出不完整；Step 缺 context-pack/preflight |
+| 涉及覆盖范围判断 | **仅 Composer 2.5** | Step/DeepSeek 会误判 light（同 impact） |
+
+评审报告见 `eval/runs/blind-2026-06-24-v4-{composer25,step37flash,deepseek-v4-flash}/`，最终结论见 [eval/runs/BLIND-TEST-FINAL-CONCLUSION.md](../../eval/runs/BLIND-TEST-FINAL-CONCLUSION.md)。
+
 ## references 索引
 
 | 文件 | 内容 | 主文档对应段 |
