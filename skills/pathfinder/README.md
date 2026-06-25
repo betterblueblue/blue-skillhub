@@ -140,8 +140,19 @@ Pathfinder 已接入统一测评体系（[docs/skill-eval/](../../docs/skill-eva
 - **v2 复跑**：Composer 2.5 P1-B 退步（不再发现 passport bug）；Step 3.7 Flash 0/5 改进全 FAIL（疑似未加载改进协议）
 - **v3 复跑**：Composer 2.5 5/5 全通过（P1-B 退步修复 + IP1-A 修复）；Step 3.7 Flash 3/5 修复（P1-B 认证-鉴权自检修复 + I1-A 方法名预检修复 + IP1-A 场景覆盖修复），P1-A 仍 FAIL（未产出 facts 文件）
 - **v3 后续优化**：`pf_validate.py` V6 检查中 facts 文件缺失从 WARN 改为 FAIL（模型跳过 Phase 1.5 时 Script Gate 拦截）；V6 toplevel 大小写比较修复（`os.path.normcase`）
+- **v4 干净环境复测**：引入 DeepSeek-V4-Flash，修复环境污染（`pf_scan.py` 的 `SKIP_DIRS` 加入 `change-impact`，每个 prompt 加 Step 0 清理）。三模型在 B6（pathfinder）上均 PASS——facts 产出正确、认证-鉴权自检完整。pathfinder 场景三模型均可胜任
 
-盲测评审见 `eval/runs/blind-2026-06-24-v3-{composer25,step37flash}/`，完整改进过程见 [docs/skill-improvement-2026-06-24.md](../../docs/skill-improvement-2026-06-24.md)。
+### 模型选型（v4 干净环境实测）
+
+v4 干净环境下三模型在 pathfinder 场景表现对等，均可胜任摸底任务。完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/model-eval-2026-06-25.md)。
+
+| 模型 | pathfinder 评级 | 说明 |
+|------|:---:|------|
+| Composer 2.5 | ✅ 生产级 | facts 正确 + 认证-鉴权自检完整 + 跨文件安全 bug 发现能力最强 |
+| Step 3.7 Flash | ✅ 可用 | v4 修复了 facts 产出（v3 FAIL→PASS）；行号精度极高 |
+| DeepSeek-V4-Flash | ✅ 可用 | 首次参与即正确产出 facts + 完整认证-鉴权自检 |
+
+盲测评审见 `eval/runs/blind-2026-06-24-v4-{composer25,step37flash,deepseek-v4-flash}/`，最终结论见 [eval/runs/BLIND-TEST-FINAL-CONCLUSION.md](../../eval/runs/BLIND-TEST-FINAL-CONCLUSION.md)，完整改进过程见 [docs/skill-improvement-2026-06-24.md](../../docs/skill-improvement-2026-06-24.md)。
 
 ## 安全约束(只读)
 
