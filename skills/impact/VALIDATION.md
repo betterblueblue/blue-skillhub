@@ -14,6 +14,8 @@
 
 2026-06-25 T10 完成 v4.1 L1 全量回归（runner: Composer 2.5, judge: GLM-5.2）：4 case 均分 94.8，0 P0 / 0 P1，契约全 PASS，脚本闸门 `impact_validate.py` 全 0 FAIL。v4.1 新特性（链路追踪回流、Context Pack 场景覆盖、方法名预检、完整性自检）全部正确触发。路线图优先级 2（脚本闸门）、3（判档决策证据化）、6（弱模型降级策略）已验证有效。详见 `validation-runs/2026-06-25-T10-l1-full-regression.md`。
 
+2026-06-25 T11 完成 Phase 5 执行阶段盲测（runner: Composer 2.5）：E3 (RuoYi 部门联系邮箱) 93 分，0 P0 / 0 P1。模型正确发现 email 字段已存在并降级 light，实际修改 Vue 文件，走完 Phase 1-5。Phase 5 安全闸（Step 确认、preflight、执行记录）全绿。详见 `validation-runs/2026-06-25-T11-phase5-blind-test.md`。
+
 ## 必须满足的底线
 
 | 能力 | 验收标准 | 失败信号 |
