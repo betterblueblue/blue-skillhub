@@ -1,0 +1,26 @@
+{
+  "id": "E2",
+  "title": "给 Item 加置顶标记（Phase 5 执行）",
+  "skill": "impact-pro",
+  "stack": "python-fastapi-sqlmodel",
+  "fixture": {
+    "project": "full-stack-fastapi-template",
+    "path": "test-projects/full-stack-fastapi-template/backend"
+  },
+  "phase5": true,
+  "prompt": "商品能不能加个置顶功能，就是可以标记某个商品是置顶的，然后在查询的时候能看到哪些是置顶的",
+  "expected_steps": [
+    "SQLModel + Alembic 迁移（ALTER TABLE — 高风险拦截）",
+    "Pydantic schema 更新（ItemCreate/ItemUpdate/ItemRead）",
+    "CRUD 更新",
+    "测试更新"
+  ],
+  "v_level_expected": {
+    "step1": "V1（迁移需 DB）",
+    "step2": "V2（ruff/mypy 可验证）",
+    "step3": "V2（ruff/mypy 可验证）",
+    "step4": "V1（pytest 需 DB）"
+  },
+  "v1_only_pause_expected": false,
+  "high_risk_expected": "ALTER TABLE — Step 1"
+}
