@@ -1,0 +1,12 @@
+{
+  "000-context-pack.md": "e652f0e0861c4d7c154685587fe303b013b6419cbdaed1fd91a6268b33979d75",
+  "005-change-summary.md": "04e75a4125042fa06a8595c12f4ad52ce52a9548d842e19558926a1d34efb9b5",
+  "010-requirements.md": "53d8a26fd2cde96ddc03d3f70455d7632bdfd2935a3db7c6d17cb7761344c180",
+  "020-design.md": "abbb12a3c1d37155bcd0856d39b1bff5c117da75e6498aa4ae4883fbb1aefbe2",
+  "030-implementation.md": "b599c5e99b0d339ca3b92d886200bc8a624d09102c7438bc015b7d9fedcbd24b",
+  "040-light.md": "9fe058f40dead151ee77ece37adf559b6e30e9f4d6f3f6ca5161f925df651237",
+  "060-preflight.md": "d93ef8e56988c5078ef19fdeacd746b56a6dcb92639fdc972e54463ad4d5d57e",
+  "090-execution-record.md": "5724d1b2318cb6223da51b12e8ea7aa81e23bfbd92ce54e44f200d1e53b969ba",
+  "_active-state.md": "c4144da5ef66175656c15b76a819ab596a33f1a61c9a25435ba9dd59a08a99e9",
+  "subagent-decisions.md": "a7661961f55b70a76e2dc0c629a7508ee30313cfdb4993ff1be4c103d731c2df"
+}

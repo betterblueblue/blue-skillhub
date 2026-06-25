@@ -4,7 +4,7 @@
 Checks:
   V1: Line-number claims are real (file:line exists)
   V2: No credential leakage (password=, secret=, etc.)
-  V3: SVG safety (no script/foreignObject/external links)
+  V3: No SVG blocks (SVG removed from template; Mermaid is canonical source)
   V4: Section [13] has at least 1 non-empty entry
   V5: Mermaid solid-arrow source nodes are mentioned in body text
   V6: Facts JSON files (scan.json/git.json) content is non-empty and consistent
@@ -95,23 +95,17 @@ def check_credentials(text: str) -> tuple[list[str], list[str]]:
 # --- V3: SVG safety ---
 
 RE_SVG_BLOCK = re.compile(r"<svg\b", re.I)
-FORBIDDEN_SVG = [
-    (re.compile(r"<script\b", re.I), "<script>"),
-    (re.compile(r"<foreignObject\b", re.I), "<foreignObject>"),
-    (re.compile(r'\bhref\s*=\s*["\']https?://', re.I), "external href"),
-    (re.compile(r'\bxlink:href\s*=\s*["\']https?://', re.I), "external xlink:href"),
-]
 
 
 def check_svg_safety(text: str) -> list[str]:
-    """V3: If SVG present, check for forbidden elements."""
+    """V3: SVG blocks are no longer allowed in project maps.
+    Mermaid is the canonical source; SVG was removed from the template.
+    Any SVG in output is a leftover and must be flagged."""
     errors = []
-    if not RE_SVG_BLOCK.search(text):
-        return errors
-    for i, line in enumerate(text.splitlines(), 1):
-        for pattern, label in FORBIDDEN_SVG:
-            if pattern.search(line):
-                errors.append(f"V3: line {i}: forbidden SVG element ({label})")
+    if RE_SVG_BLOCK.search(text):
+        for i, line in enumerate(text.splitlines(), 1):
+            if RE_SVG_BLOCK.search(line):
+                errors.append(f"V3: line {i}: SVG block found — Mermaid is the canonical source, SVG should not be present")
     return errors
 
 

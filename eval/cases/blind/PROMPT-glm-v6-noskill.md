@@ -1,0 +1,56 @@
+# GLM-5.2 盲测 v6 Prompt — 无 skill 组（C1）
+
+> 复制下面整段内容发给 GLM-5.2 执行。
+> 本 prompt 是「无 skill」对照组：不加载任何 skill 协议，不读 SKILL.md，不使用模板。
+> 模型仍有文件读写、grep、终端等工具能力。
+> 本 cell 使用独立测试项目副本，可与其他 cell 并行执行。
+
+---
+
+你接下来要连续完成 3 个分析任务，按顺序逐个执行。每个任务都是阅读项目源码、分析需求影响面、输出分析文档。
+
+**测试项目路径**（本 cell 专属副本）：
+- Prisma/Express 项目：`eval/runs/blind-2026-06-25-v6/cell-C1/test-projects/prisma-express-ts`
+- RuoYi-Vue 项目：`eval/runs/blind-2026-06-25-v6/cell-C1/test-projects/ruoyi-vue`
+
+**输出目录规则**：每个任务的产出写到该项目目录下的 `change-impact/v6-glm-noskill/[case-id]/`。
+
+---
+
+## 任务 1（B1'）— 并发登录限制
+
+项目路径：`eval/runs/blind-2026-06-25-v6/cell-C1/test-projects/ruoyi-vue`
+输出到：`eval/runs/blind-2026-06-25-v6/cell-C1/test-projects/ruoyi-vue/change-impact/v6-glm-noskill/B1/`
+
+用户需求：
+"系统需要支持同一用户同一时刻只能在一个地方登录。如果用户在A设备登录了，又在B设备登录，A设备要自动下线，就是被踢出去。B设备的登录是正常的。反过来也一样，新登录的踢掉旧的。"
+
+请阅读项目源码，分析这个需求的影响面，输出分析文档。
+
+---
+
+## 任务 2（B2'）— 请求体大小限制
+
+项目路径：`eval/runs/blind-2026-06-25-v6/cell-C1/test-projects/prisma-express-ts`
+输出到：`eval/runs/blind-2026-06-25-v6/cell-C1/test-projects/prisma-express-ts/change-impact/v6-glm-noskill/B2/`
+
+用户需求：
+"目前系统没有对 API 请求体大小做限制，我想加一个全局的请求体大小限制。普通接口限制 1MB，文件上传接口限制 10MB。超过限制的请求直接返回 413 状态码，返回错误信息提示请求体过大。"
+
+请阅读项目源码，分析这个需求的影响面，输出分析文档。
+
+---
+
+## 任务 3（B3'）— 邮箱验证强制检查
+
+项目路径：`eval/runs/blind-2026-06-25-v6/cell-C1/test-projects/prisma-express-ts`
+输出到：`eval/runs/blind-2026-06-25-v6/cell-C1/test-projects/prisma-express-ts/change-impact/v6-glm-noskill/B3/`
+
+用户需求：
+"用户注册后必须验证邮箱才能使用系统功能。现在虽然有发验证邮件的功能，但不验证邮箱也能登录和调用接口，这个安全漏洞要修。要求：未验证邮箱的用户登录时提示请先验证邮箱，已登录但未验证的用户调用受保护接口时也要拦截。"
+
+请阅读项目源码，分析这个需求的影响面，输出分析文档。
+
+---
+
+全部完成后，列出所有 `v6-glm-noskill/` 目录的文件清单作为总结。
