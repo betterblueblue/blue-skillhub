@@ -96,7 +96,7 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 
 和 `impact` 一样，`impact-pro` 会在可用时使用只读 code graph MCP 提升引用发现，再用文本搜索和文件阅读核证；Phase 4/5 会维护 `_active-state.md` 做跨会话恢复，但该文件仍只是检查点，不是写入授权。
 
-上下文包能力的设计复盘见 [docs/impact-context-pack-design.md](docs/impact-context-pack-design.md)，里面记录了需求来源、方案取舍和实现效果。
+上下文包能力的设计复盘见 [docs/archive/2026-06/impact-context-pack-design.md](docs/archive/2026-06/impact-context-pack-design.md)，里面记录了需求来源、方案取舍和实现效果。
 
 ### VL 识图
 
@@ -129,12 +129,12 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 可以先读这些：
 
 - [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)：安装和验证 checklist，说明复制到哪里、MCP JSON 用哪个绝对路径、Skill 怎么验证。
-- [docs/impact-real-case-study.md](docs/impact-real-case-study.md)：ImpactRadar 真实使用案例的匿名复盘，记录它暴露了哪些长会话和多 Step 边界。
+- [docs/archive/2026-06/impact-real-case-study.md](docs/archive/2026-06/impact-real-case-study.md)：ImpactRadar 真实使用案例的匿名复盘，记录它暴露了哪些长会话和多 Step 边界。
 - [docs/archive/2026-06/impact-m3-next-regression-plan.md](docs/archive/2026-06/impact-m3-next-regression-plan.md)：下一轮 MiniMax M3 复测计划，限定后续要测的高价值场景。
 - [docs/archive/2026-06/impact-multisession-write-gate-test-plan.md](docs/archive/2026-06/impact-multisession-write-gate-test-plan.md)：多会话写授权一致性验收方案，覆盖旧授权、延迟确认、非 Git 降级、V1-only 暂停和写入目标边界。
 - [docs/skill-eval/regression.md](docs/skill-eval/regression.md)：ImpactRadar / ImpactRadar Pro 优化后的回归复测协议，规定什么时候跑 RG0-RG3、什么时候必须真实 agent 复测。
 - [docs/archive/2026-06/release-positioning-check-2026-06-08.md](docs/archive/2026-06/release-positioning-check-2026-06-08.md)：阶段性 release 定位自查，确认 RuleBlade、ImpactRadar、ImpactRadar Pro 的边界是否自洽。
-- [docs/not-ace-benchmark-research.md](docs/not-ace-benchmark-research.md)：研究性博客文章，解释 Not ACE 在 MiniMax M3、GLM-5.1、Kimi K2.6、GLM-5、DeepSeek V4 系列上的不同表现。
+- [docs/archive/2026-06/not-ace-benchmark-research.md](docs/archive/2026-06/not-ace-benchmark-research.md)：研究性博客文章，解释 Not ACE 在 MiniMax M3、GLM-5.1、Kimi K2.6、GLM-5、DeepSeek V4 系列上的不同表现。
 - [docs/not-ace-exploration/](docs/not-ace-exploration/)：完整实验记录，包括 V1/V2 检索测试、V3 agent 任务测试、模型复跑、DeepSeek 调用链问题和下一轮计划。
 - [docs/archive/2026-06/agent-iteration-conclusions.md](docs/archive/2026-06/agent-iteration-conclusions.md)：给后续 agent 迭代看的结论，把测试事实映射到 RuleBlade、ImpactRadar、ImpactRadar Pro 和 VL Vision 的优化方向。
 - [benchmarks/（已归档）](docs/archive/2026-06/benchmarks/)：写授权回归夹具（impact-write-gate）+ 模型 agent 能力评测体系（model-agent）。2026-06-09 后无活动，暂停保留历史；not-ace 研究见上。
@@ -270,10 +270,9 @@ blue-skillhub/
 │   ├── skill-eval/          # 统一测评体系入口(含 REVALIDATION.md 复验体系)
 │   ├── not-ace-exploration/
 │   ├── archive/2026-06/     # 历史文档归档(含已迁出的 benchmarks/)
-│   ├── impact-context-pack-design.md
-│   ├── impact-real-case-study.md
 │   ├── install-and-verify-checklist.md
-│   └── not-ace-benchmark-research.md
+│   ├── output-quality-review-2026-06-25.md
+│   └── skill-optimization-roadmap-2026-06-25.md
 ├── eval/                     # 测评体系：case 定义 + 跑分历史 + 基线
 │   ├── cases/<skill>/        # 可复跑用例定义（与跑分历史分离）
 │   ├── runs/<date>-<skill>@<commit>/  # 评分卡时间序列(含 runner_model)

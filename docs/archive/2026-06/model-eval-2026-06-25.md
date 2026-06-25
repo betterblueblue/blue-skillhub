@@ -167,4 +167,4 @@
 | `eval/runs/blind-2026-06-24-v4-deepseek-v4-flash/summary.md` | DeepSeek-V4-Flash v4 评审 |
 | `eval/runs/BLIND-TEST-FINAL-CONCLUSION.md` | 盲测最终结论（含 v1-v4 完整演进） |
 | `eval/cases/blind/BLIND-TEST-V4-DESIGN.md` | v4 测试设计文档 |
-| `docs/skill-improvement-2026-06-24.md` | v3 协议改进方案 |
+| `docs/archive/2026-06/skill-improvement-2026-06-24.md` | v3 协议改进方案 |

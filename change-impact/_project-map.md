@@ -235,7 +235,7 @@ sequenceDiagram
 | `README.md` | 唯一对外门面 | 【已核实】 |
 | `docs/skill-eval/README.md` | 测评体系唯一入口(三层 + 决策树) | 【已核实】 |
 | `docs/skill-eval/REVALIDATION.md` | 复验体系单一权威入口(含 §6 生产就绪判定) | 【已核实: commit 769868d】 |
-| `docs/impact-context-pack-design.md` | context-pack 设计复盘 | 【已核实: 文件存在】 |
+| `docs/archive/2026-06/impact-context-pack-design.md` | context-pack 设计复盘 | 【已核实: 文件存在】 |
 | `docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md` | Pathfinder 设计复盘 | 【已核实: 文件存在,未读内容】 |
 | 各 skill 的 `README.md` + `VALIDATION.md` | skill 自述 + 验证记录 | 【已核实: 三 skill 均有 validation-runs/INDEX.md】 |
 | `mcp/web-search-mcp/web-search-mcp修复记录.md` | MCP 修复历史(18KB) | 【已核实: 文件存在,未读】 |

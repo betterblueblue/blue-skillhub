@@ -190,4 +190,4 @@ Step 4: 对比判定
 | `eval/cases/blind/PROMPT-step37flash-v3.md` | Step 3.7 Flash v3 一键执行 prompt（含 Read SKILL.md 前置步骤） |
 | `eval/cases/blind/JUDGE-RUBRIC.md` | 评审标准（v3 复用，不变） |
 | `eval/runs/blind-2026-06-24-v2-summary.md` | v2 盲测复跑报告（v3 基线） |
-| `docs/skill-improvement-2026-06-24.md` | 改进方案文档（含 v2 结果和 v3 计划） |
+| `docs/archive/2026-06/skill-improvement-2026-06-24.md` | 改进方案文档（含 v2 结果和 v3 计划） |
