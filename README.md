@@ -82,17 +82,21 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路
 
 v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目降级保护、阻塞恢复安全闸和多会话写授权一致性，适合迁移、对齐、重构等多 Step 变更。Claude Code + MiniMax M3 真实 `/impact` 复测已经走完 S1-S7 回归，模糊确认、历史确认、延迟确认、非 Git + V1-only、Health/API 响应字段变化都不能绕过 `确认 Step N`。
 
+经过 V1-V10 共 10 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为：把模糊需求变成显式假设（V7 验证）、苏格拉底式提问不替用户拍板（V9 人工交互 8 项 `[假设]` 100% 转为用户确认）、结构化保障（回滚方案、验证步骤、方法名预检始终做到）、防御性检查（refreshToken TTL 同步等独有发现）、安全闸（逐步确认、写入边界、高风险拦截，弱模型也绕不过）。当前版本 v4.1，最新改进包括多轮触发条件（链路追踪发现的副作用风险必须回流 Phase 3 追问）和链路追踪发现回流，V10 单 case 验证总分 92→96。详细数据见 [skills/impact/README.md](skills/impact/README.md)。
+
 当前还接入了可选 code graph MCP 作为结构化定义/引用候选入口，以及 `change-impact/{需求名称}/_active-state.md` 作为跨会话恢复检查点。`_active-state.md` 只记录 pending Step、文档状态和未确认项，不授权源码/SQL/配置/测试写入，也不能替代当前对话里的 `确认 Step N`。Claude Code 可选启用 `.claude/hooks/impact-write-gate.*`，把 Step 确认补强成工具执行前检查。
 
 ### ImpactRadar Pro
 
 [skills/impact-pro/](skills/impact-pro/)
 
-`impact` 的多栈版本。面向已验证技术栈规则覆盖范围内的现有系统，未知栈会先用通用规则扫描，不直接冒充”已完整支持”。适合 Node、Python、Go、.NET、前端项目等多栈项目里的变更影响分析。
+`impact` 的多栈版本。面向已验证技术栈规则覆盖范围内的现有系统，未知栈会先用通用规则扫描，不直接冒充”已完整支持”。适合 Node、Python、Go、.NET、前端项目等多栈项目里的变更影响分析。当前已验证技术栈规则覆盖 8 个技术栈（Java/Spring/MyBatis、Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core）。
 
 它也可以搭配律刃使用：律刃提供通用行为约束，ImpactRadar Pro 提供多栈 profile 化的影响分析流程。
 
-`impact-pro` 同样补了跨系统对齐规则、接口返回检查清单、验证等级、非 Git 降级、阻塞恢复安全闸和多会话写授权一致性。真实 `/impact-pro` 复测里，Node/Express 响应字段删除能正确判定 full，无 `确认 Step N` 时也不会写文件。
+`impact-pro` 与 `impact` 同步迭代，经过 V1-V10 共 10 轮盲测验证。当前版本 v4.1，与 `impact` 共享同一套核心改进（多轮触发条件、链路追踪回流、配置依赖链路追踪、light 配置化提示、改动完整性自检、模糊点处理清单等）。V10 单 case 验证中，Composer 2.5 + v4.1 总分达 96 分（noskill 73.7），skill 优势 +22.3 分。详细数据见 [skills/impact-pro/README.md](skills/impact-pro/README.md)。
+
+真实 `/impact-pro` 复测里，Node/Express 响应字段删除能正确判定 full，无 `确认 Step N` 时也不会写文件。
 
 和 `impact` 一样，`impact-pro` 会在可用时使用只读 code graph MCP 提升引用发现，再用文本搜索和文件阅读核证；Phase 4/5 会维护 `_active-state.md` 做跨会话恢复，但该文件仍只是检查点，不是写入授权。
 
@@ -257,6 +261,87 @@ E:\project\ruoyi-system\src\main\resources\mapper\system\SysUserMapper.xml，
 用户：确认 Step 2
 Agent：现在执行 Step 2；执行后会更新 090-execution-record.md 和 _active-state.md。
 ```
+
+## 常见问题（FAQ）
+
+### Codegraph MCP 显示已连接，但没有工具（No tools）
+
+**现象**
+
+- Cursor 设置里 `codegraph` MCP 开关是绿的，状态像“已连接”
+- 展开后却是 **No tools**，或只有连接信息、看不到 `codegraph_search` / `codegraph_explore` 等
+- Agent 侧仍提示 workspace 未索引、结构索引不可用
+- 本地其实已有 `.codegraph/codegraph.db`，CLI 查询正常
+
+**原因**
+
+`codegraph serve --mcp` 需要知道**项目根目录**才能找到 `.codegraph/` 索引。若在全局 `~/.cursor/mcp.json`（Windows：`%USERPROFILE%\.cursor\mcp.json`）里只写：
+
+```json
+"codegraph": { "command": "codegraph", "args": ["serve", "--mcp"] }
+```
+
+Cursor 的 Shared MCP **不一定**会把当前 workspace 的工作目录传给子进程。codegraph 启动时找不到 `.codegraph/`，就会注册 **0 个工具**，界面仍可能显示“已连接”。
+
+**解决办法（推荐：项目级 wrapper）**
+
+1. **先建索引**（目标仓库根目录，只需一次）：
+
+```powershell
+cd E:\agent\blue-skillhub
+codegraph init
+```
+
+2. **清空或移除全局 codegraph 配置**，避免和项目配置冲突。全局文件里 `mcpServers` 留空即可：
+
+```json
+{ "mcpServers": {} }
+```
+
+3. **在项目根 `.cursor/mcp.json` 里指向 wrapper**（本仓库已带好，可直接参考）：
+
+```json
+{
+  "mcpServers": {
+    "codegraph": {
+      "command": "E:/agent/blue-skillhub/.cursor/codegraph-mcp.cmd",
+      "args": []
+    }
+  }
+}
+```
+
+4. **wrapper 负责解析项目根并传入 `--path`**（`.cursor/codegraph-mcp.cmd`）：
+
+```bat
+@echo off
+setlocal
+set "ROOT=%~dp0.."
+for %%I in ("%ROOT%") do set "ROOT=%%~fI"
+codegraph serve --mcp --path "%ROOT%"
+```
+
+路径请改成你本机仓库的绝对路径；Linux/macOS 可写等价的 `.sh` wrapper，核心仍是 `codegraph serve --mcp --path "<项目根>"`。
+
+5. **重载 MCP**（Cursor 设置里刷新 codegraph，或重启 Cursor）。
+
+**如何确认生效**
+
+- MCP 面板里 codegraph 应列出 4 个工具：`codegraph_search`、`codegraph_callers`、`codegraph_node`、`codegraph_explore`
+- 新开 Agent 会话后，Pathfinder / Impact 的结构索引辅助应能标为 `used`，而不是长期 `degraded`
+
+**仍不行的排查顺序**
+
+| 检查项 | 说明 |
+|--------|------|
+| `.codegraph/` 是否在**打开的工作区根** | 用 File → Open Folder 打开的目录应与 `codegraph init` 一致 |
+| wrapper 里的 `--path` | 必须指向含 `.codegraph/` 的那一层，不是子目录 |
+| 全局 vs 项目 MCP 重复配置 | 只保留项目级 wrapper，全局不要再用裸 `serve --mcp` |
+| `codegraph` 是否在 PATH | 终端能执行 `codegraph --version` |
+
+Pathfinder / Impact 在 MCP 不可用时会诚实降级到 Read/Grep，不影响基本流程；修好 MCP 后主要是结构发现和 blast radius 更快、更准。
+
+分步安装与验证见 [docs/install-and-verify-checklist.md §4](docs/install-and-verify-checklist.md#4-安装-codegraph-mcp可选)。
 
 ## 目录速览
 
