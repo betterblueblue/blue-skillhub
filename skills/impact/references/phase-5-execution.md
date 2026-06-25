@@ -25,6 +25,8 @@
 
 用户确认继续后，计数和未验证项仍要写入执行记录。计数在达到 V2/V3 验证后清零。
 
+**每步验证提醒**：每个写入 Step 完成后，应立即尝试当前环境可用的验证命令（lint / build / typecheck 等），而不是攒到最后一步统一跑。尽早达到 V2 可以清零 V1-only 计数，避免触发不必要的暂停。
+
 **计数粒度**：按「已确认并执行的写入 Step」计——一个 Step 内修改多个文件仍计 1；该 Step 达到 V2/V3 则清零，仅有 V1 则 +1。「写入 Step」包括：写文件、改代码、生成 migration/SQL、修改配置、修改测试、执行 DDL/DML、外部系统写操作。
 
 ## 非 Git 项目回退保护
@@ -196,6 +198,7 @@
 - DROP TABLE / DROP COLUMN / DROP INDEX / DROP CONSTRAINT / TRUNCATE
 - 无 WHERE 的 DELETE / UPDATE；有 WHERE 但影响行数未知或过大的批量 DELETE / UPDATE
 - ALTER TABLE 影响已有列、约束、索引、默认值、NOT NULL、UNIQUE
+- **修改 Entity/Mapper XML 中字段定义导致表结构变更**——效果等同于 ALTER TABLE，按高风险处理
 - GRANT / REVOKE / 权限角色变更
 - CREATE OR REPLACE VIEW / FUNCTION / TRIGGER / PROCEDURE（覆盖已有对象）
 - 数据回填、状态迁移、历史数据修正
