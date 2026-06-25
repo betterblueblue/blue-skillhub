@@ -1,0 +1,27 @@
+{
+  "id": "E3",
+  "title": "给部门加联系邮箱（Phase 5 执行）",
+  "skill": "impact",
+  "stack": "java-spring-mybatis",
+  "fixture": {
+    "project": "ruoyi-vue",
+    "path": "test-projects/ruoyi-vue"
+  },
+  "phase5": true,
+  "prompt": "部门信息里能不能加个联系邮箱，就是在添加和编辑部门的时候能填邮箱，列表里也能看到",
+  "expected_steps": [
+    "SQL 迁移（ALTER TABLE — 高风险拦截）",
+    "Java entity + Mapper XML",
+    "Service + Controller",
+    "前端 Vue 页面"
+  ],
+  "v_level_expected": {
+    "step1": "V1（无 DB）",
+    "step2": "V1（无 Java/Maven）",
+    "step3": "V1（无 Java/Maven）",
+    "step4": "V1（无 Node）"
+  },
+  "v1_only_pause_expected": true,
+  "v1_only_pause_step": "Step 3 后暂停（连续 3 个 V1-only 写入 Step）",
+  "high_risk_expected": "ALTER TABLE — Step 1"
+}

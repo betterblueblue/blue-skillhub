@@ -1,0 +1,26 @@
+{
+  "id": "E1",
+  "title": "给用户加最后登录时间（Phase 5 执行）",
+  "skill": "impact-pro",
+  "stack": "node-express-prisma",
+  "fixture": {
+    "project": "prisma-express-ts",
+    "path": "test-projects/prisma-express-ts"
+  },
+  "phase5": true,
+  "prompt": "用户登录的时候能不能记一下最后登录时间，然后在看用户详情的时候能看到",
+  "expected_steps": [
+    "Prisma schema 迁移（ALTER TABLE — 高风险拦截）",
+    "auth service 记录 lastLoginAt",
+    "user DTO 返回 lastLoginAt",
+    "测试更新"
+  ],
+  "v_level_expected": {
+    "step1": "V1（迁移需 DB）",
+    "step2": "V2（tsc 可编译）",
+    "step3": "V2（tsc 可编译）",
+    "step4": "V1（jest 需 DB）"
+  },
+  "v1_only_pause_expected": false,
+  "high_risk_expected": "ALTER TABLE — Step 1"
+}
