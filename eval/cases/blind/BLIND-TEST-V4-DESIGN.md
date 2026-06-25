@@ -204,4 +204,4 @@ v4 同时验证 v3 已通过的 5 项（P1-A/P1-B/I1-A/I2-A/IP1-A）不退步。
 | `eval/cases/blind/JUDGE-RUBRIC.md` | 评审标准（v4 复用，不变） |
 | `eval/runs/blind-2026-06-24-v3-composer25/summary.md` | v3 Composer 2.5 结果（v4 基线） |
 | `eval/runs/blind-2026-06-24-v3-step37flash/summary.md` | v3 Step 3.7 Flash 结果（v4 基线） |
-| `docs/skill-improvement-2026-06-24.md` | 改进方案文档（含优化 6-8 详情） |
+| `docs/archive/2026-06/skill-improvement-2026-06-24.md` | 改进方案文档（含优化 6-8 详情） |

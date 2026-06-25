@@ -6,7 +6,7 @@
 
 ## 为什么需要这套回归
 
-`docs/skill-improvement-2026-06-24.md` 实施了 5 个改进项（P1-A/P1-B/I1-A/I2-A/IP1-A），改了 pathfinder/impact/impact-pro 三个 skill 的协议。需要回归测试确认改进没破坏既有能力。
+`docs/archive/2026-06/skill-improvement-2026-06-24.md` 实施了 5 个改进项（P1-A/P1-B/I1-A/I2-A/IP1-A），改了 pathfinder/impact/impact-pro 三个 skill 的协议。需要回归测试确认改进没破坏既有能力。
 
 ## 和盲测（blind/）的区别
 

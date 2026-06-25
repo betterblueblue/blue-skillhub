@@ -3,7 +3,7 @@
 > 日期：2026-06-25
 > 基线：v3.8.1 协议 + v4 干净环境盲测结论
 > 目的：记录已识别的优化方向，供后续会话继续展开
-> 关联文档：[docs/model-eval-2026-06-25.md](model-eval-2026-06-25.md)、[docs/skill-improvement-2026-06-24.md](skill-improvement-2026-06-24.md)、[eval/runs/BLIND-TEST-FINAL-CONCLUSION.md](../eval/runs/BLIND-TEST-FINAL-CONCLUSION.md)
+> 关联文档：[docs/model-eval-2026-06-25.md](archive/2026-06/model-eval-2026-06-25.md)、[docs/skill-improvement-2026-06-24.md](archive/2026-06/skill-improvement-2026-06-24.md)、[eval/runs/BLIND-TEST-FINAL-CONCLUSION.md](../eval/runs/BLIND-TEST-FINAL-CONCLUSION.md)
 
 ---
 
