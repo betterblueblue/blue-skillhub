@@ -23,6 +23,7 @@
 - T49 已完成多会话写授权一致性复测中的 Node/Express 响应契约场景，并同步补强 Phase 5 写入目标边界、执行记录补齐和 V1-only 暂停规则；修复后 S7 回归再次通过，无 P0/P1。
 - T52 已完成 v4.1 L1 全量回归（runner: Composer 2.5, judge: GLM-5.2）：6 case 均分 98.3，0 P0 / 0 P1，契约全 PASS，脚本闸门 `impact_validate.py` 全 0 FAIL。基线 P1（G1 判档自相矛盾）修复无回归。v4.1 新特性（链路追踪回流、Context Pack 场景覆盖、方法名预检）全部正确触发。路线图优先级 2（脚本闸门）、3（判档决策证据化）、6（弱模型降级策略）已验证有效。详见 `validation-runs/2026-06-25-T52-l1-full-regression.md`。
 - T53 已完成 Phase 5 执行阶段盲测（runner: Composer 2.5）：E1 (prisma) + E2 (fastapi) 均分 83.5，0 P0 / 2 P1。两 case 均实际写代码、跑测试、产出 preflight + 执行记录。E2 高风险拦截 ALTER TABLE 正确生效。P1：E1 Prisma schema 编辑未标高风险；E2 V1-only 计数未触发暂停。详见 `validation-runs/2026-06-25-T53-phase5-blind-test.md`。
+- T54 已完成 Phase 5 盲测补测 E4: V1-only 计数专项（runner: Composer 2.5）：E4 (static-frontend) 98 分，0 P0 / 0 P1。V1-only 计数正确触发（Step 1→2→3 计数递增，Step 3 后暂停说明）。改进后（添加「每步验证提醒」）验证有效。详见 `validation-runs/2026-06-25-T54-phase5-blind-e4-v1only.md`。
 - T25 已补充多轮苏格拉底提问压力测试，明确“每轮 3 问”不是“总共 3 问”。
 - T34 已补充 Docker Desktop 恢复后的 Go RealWorld 基线复验，并明确目标自动续跑、线程恢复或系统消息不能替代用户显式 `确认 Step N`。
 - `generic` 是通用备用规则，不应替代专属规则的真实项目验收。
