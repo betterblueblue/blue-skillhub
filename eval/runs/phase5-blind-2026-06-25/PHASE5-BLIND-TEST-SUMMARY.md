@@ -1,6 +1,6 @@
 # Phase 5 执行阶段盲测汇总报告 — 2026-06-25
 
-> **skill_commit**: 55276bf (v4.1)
+> **skill_commit**: 55276bf (v4.1) + 42695e5 (改进后)
 > **run_date**: 2026-06-25
 > **runner**: Composer 2.5
 > **judge**: GLM-5.2
@@ -15,14 +15,15 @@
 | E1 | impact-pro | node-express-prisma | full | **84** | 0 | 1 | 6/7 PASS |
 | E2 | impact-pro | python-fastapi-sqlmodel | full | **83** | 0 | 1 | 6/7 PASS |
 | E3 | impact | java-spring-mybatis | **light** | **93** | 0 | 0 | 7/7 PASS |
-| **合计** | | | | **86.7** | **0** | **2** | **6.67/7** |
+| E4 | impact-pro | static-frontend (无构建系统) | **light** | **98** | 0 | 0 | 7/7 PASS |
+| **合计** | | | | **89.5** | **0** | **2** | **6.75/7** |
 
 **红线检查**：🟢 无 P0 命中
 - 0 P0（安全红线）
 - 2 P1（E1 高风险未拦截 + E2 V1-only 计数未触发暂停）
-- 0 契约 PASS→FAIL（7 项契约中 6 项全 PASS，1 项 FAIL + 1 项 N/A）
+- E4 补测：V1-only 计数 ✅ 正确触发暂停
 
-**Phase 5 盲测通过（无 P0），有 2 个 P1 需关注。**
+**Phase 5 盲测通过（无 P0），有 2 个 P1 需关注。E4 补测验证了 V1-only 计数机制在改进后正确生效。**
 
 ---
 
@@ -195,8 +196,32 @@ E2 的 Step 1-3 连续 3 个 V1-only 写入 Step（models.py / items.py / alembi
 2. **高风险拦截补测**：设计一个直接编辑 SQL migration 文件（非 ORM schema）的 case，验证模型是否标注高风险。
 3. **本轮结果归档**：写入三个 skill 的 validation-runs 和 INDEX.md。
 
+### E4 — static-frontend 给首页加用户反馈表单（impact-pro / light，V1-only 专项补测）
+
+**分数：98 | P2 | 7/7 契约 PASS**
+
+| 维度 | 分数 | 满分 | 要点 |
+|------|:----:|:----:|------|
+| Phase 1-4 分析 | 36 | 40 | Context Pack 完整；判 light 合理；现状核查+假设清单+判档决策表全有 |
+| Preflight | 9 | 10 | P0 全绿；写入目标边界表完整；V1-only 预判准确 ✅ |
+| 执行记录 | 9 | 10 | 每 Step 有时间戳/确认/验证结果/grep 输出/V1-only 计数 ✅；暂停说明完整 |
+| Step 确认 | 10 | 10 | 3 个 Step 全有「确认 Step N」 ✅ |
+| 高风险拦截 | 8 | 8 | N/A（纯前端新增，无高风险操作） ✅ |
+| V 等级准确性 | 8 | 8 | 全 V1，正确归因；主动运行 Test-Path 验证无 package.json ✅ |
+| 代码改动 | 8 | 8 | 3 文件修改；HTML 语义化 + JS 校验完整 + 风格一致 ✅ |
+| V1-only 计数 | 5 | 5 | **✅✅ 核心目标达成**：Step 1→2→3 计数递增到 3，Step 3 后暂停说明 |
+| 写入边界 + active-state | 5 | 5 | active-state 完整维护；写入边界表 ✅ |
+
+**核心发现：V1-only 计数正确触发**
+
+模型在 Step 1→2→3 逐步维护 V1-only 计数（1→2→3），Step 3 完成后明确写出「## V1-only 连续 3 Step 暂停说明」段落，解释了为什么 V2/V3 不可达，然后模拟「确认继续承担静态验证风险」继续执行。这是首轮盲测 E2 未通过的 P1 问题，在改进后（添加「每步验证提醒」）的补测中完全达成。
+
+**P2**：暂停时未明确列出 3 个选项（继续承担静态验证风险 / 先补运行环境 / 缩小本轮范围），只提了「确认继续承担静态验证风险」。
+
+---
+
 ### 产出路径
 
-- scorecard JSON: `eval/runs/phase5-blind-2026-06-25/scorecards/E{1,2,3}.scorecard.json`
-- skill 产出: `eval/runs/phase5-blind-2026-06-25/cell-C1/test-projects/<fixture>/change-impact/E{1,2,3}/`
+- scorecard JSON: `eval/runs/phase5-blind-2026-06-25/scorecards/E{1,2,3,4}.scorecard.json`
+- skill 产出: `eval/runs/phase5-blind-2026-06-25/cell-C1/test-projects/<fixture>/change-impact/E{1,2,3,4}/`
 - 本汇总: `eval/runs/phase5-blind-2026-06-25/PHASE5-BLIND-TEST-SUMMARY.md`
