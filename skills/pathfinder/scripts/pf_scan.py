@@ -30,6 +30,7 @@ SKIP_DIRS = {
     ".gradle", ".idea", ".vscode", ".claude", ".cache",
     "venv", ".venv", "env", ".env", ".tox", "coverage",
     ".m2", "bower_components", "Pods", ".dart_tool",
+    "change-impact",  # skill 自身产出目录，不应计入项目文件数
 }
 
 MANIFEST_NAMES = {
