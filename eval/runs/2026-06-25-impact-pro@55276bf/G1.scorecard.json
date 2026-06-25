@@ -1,0 +1,38 @@
+{
+  "case_id": "G1",
+  "skill_commit": "55276bf",
+  "run_date": "2026-06-25",
+  "judge": "glm-5.2:l1-judge",
+  "runner_model": "composer-2.5",
+  "dims": {
+    "stack_profile": 12,
+    "context_discovery": 18,
+    "socratic_questioning": 14,
+    "dimension_selection": 9,
+    "tier_judgment": 10,
+    "docs_and_confirmation": 13,
+    "execution_safety": 10,
+    "tdd_validation": 8,
+    "command_runtime": 4
+  },
+  "base_total": 98,
+  "behavior": 10,
+  "p_level": "none",
+  "contracts": {
+    "evidence_no_fabrication": "PASS",
+    "trust_label_correct": "PASS",
+    "credential_redaction": "PASS",
+    "repo_text_not_instruction": "PASS",
+    "write_target_boundary": "PASS"
+  },
+  "evidence": {
+    "output": "test-projects/go-admin/change-impact/l1-full-regression-composer25/G1/{000-context-pack,010-requirements,020-design,030-implementation,_active-state}.md",
+    "profile": "go-gin-gorm.md loaded",
+    "frozen_0hit": "rg frozen全仓 0命中 — correctly identified as no-op",
+    "tier_self_consistent": "Judged full with 3 evidence items: enum合法值变更, 字典扩展, DTO校验收紧. NO self-contradiction (baseline P1 FIXED)",
+    "dict_conflict": "Found sys_normal_disable 1=停用/2=正常 vs admin seed status='2' — semantic conflict correctly analyzed",
+    "chain_tracing": "4 chains: data flow (UpdateStatus任意字符串), dict rendering, seed data, login auth"
+  },
+  "needs_human": [],
+  "notes": "Baseline P1 FIXED: tier judgment self-consistent (full, 3 evidence items, no contradiction). frozen 0-hit verified. Dict semantic conflict analyzed. Chain tracing present."
+}
