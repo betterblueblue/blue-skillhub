@@ -1,0 +1,59 @@
+{
+  "case_id": "B1",
+  "cell_id": "cell-C2",
+  "runner_model": "Composer 2.5",
+  "skill_condition": "skill + human-interaction",
+  "judge": "human+agent",
+  "skill_commit": "v4.0",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 18,
+    "evidence_authenticity": 14,
+    "analysis_depth": 19,
+    "tier_judgment": 8,
+    "clarification_quality": 15,
+    "doc_quality": 9,
+    "protocol_compliance": 9
+  },
+  "base_total": 92,
+  "gate_failed": false,
+  "v39_v40_features": {
+    "F1_vague_point_checklist": "PASS",
+    "F2_completeness_selfcheck": "PASS",
+    "F3_chain_tracing": "PASS",
+    "F4_light_deep_check": "N-A",
+    "F5_config_dependency_tracing": "PASS",
+    "F6_light_config_hint": "N-A"
+  },
+  "v39_v40_features_evidence": {
+    "F1": "010-requirements.md §2.2，3 个模糊点全部标注「已提问 → 用户确认」：范围（全局唯一）、提示方式（专用 402）、管理员豁免（不豁免）",
+    "F2": "030-implementation.md §2.1 改动完整性自检表，7 条验收标准全部映射到 Step 1-5，无 ❌ 缺失",
+    "F3": "000-context-pack.md §5 关键链路追踪，4 条链路：错误处理链（被踢→402 前端覆盖问题）、中间件管线（kickOut→refreshToken 顺序）、数据流路径（映射 TTL 同步）、配置依赖（token.expireTime→@Value→kicked 标记 TTL 对齐）",
+    "F4": "N/A（full 模式，无 light 产出）",
+    "F5": "000-context-pack.md §5 配置依赖行：'token.expireTime → application.yml → TokenService.@Value → refreshToken TTL'，指出 kicked 标记 TTL 应与 token 有效期一致",
+    "F6": "N/A（full 模式，无 light 产出）"
+  },
+  "v8_assumption_conversion": {
+    "B1_global_unique_session": "confirmed",
+    "B1_kickout_message": "confirmed",
+    "B1_admin_no_exempt": "confirmed"
+  },
+  "v8_assumption_conversion_evidence": {
+    "B1_global_unique_session": "V8 [假设]：全局唯一会话 → V9 用户确认：Q1 回答 A）全局唯一；010-requirements.md §2.2 第 1 行",
+    "B1_kickout_message": "V8 [假设]：复用 401 → V9 用户确认：Q2 回答 B）专用提示「您的账号已在其他设备登录」；010-requirements.md §2.2 第 2 行；设计文档采用 402 新状态码",
+    "B1_admin_no_exempt": "V8 [假设]：admin 不豁免 → V9 用户确认：Q3 回答 A）所有账号含 admin；010-requirements.md §2.2 第 3 行；Step 2 明确「不对 admin 跳过」"
+  },
+  "key_findings": [
+    "人工交互将 V8 的 3 项 [假设] 全部转为用户确认，D5 从 14 提升到 15",
+    "v4.0 配置依赖链路追踪新增第 4 条链路：token.expireTime → @Value → kicked 标记 TTL 对齐，D3 从 18 提升到 19",
+    "证据行号全部核实通过：TokenService.java:115-125/100/149/229-232、SecurityConfig.java:98、request.js:80-97、CacheConstants.java:13、HttpStatus.java:53",
+    "402 新状态码设计合理，request.js:80 errorCode[code] 覆盖 msg 的二级影响被正确识别"
+  ],
+  "would_approve": "yes",
+  "notes": "v4.0 + 人工交互全面生效。所有模糊点通过真实对话确认，分析质量可作开发依据"
+}

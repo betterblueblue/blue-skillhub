@@ -1,0 +1,58 @@
+{
+  "case_id": "B2",
+  "cell_id": "cell-C2",
+  "runner_model": "Composer 2.5",
+  "skill_condition": "skill + human-interaction",
+  "judge": "human+agent",
+  "skill_commit": "v4.0",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 18,
+    "evidence_authenticity": 14,
+    "analysis_depth": 19,
+    "tier_judgment": 8,
+    "clarification_quality": 15,
+    "doc_quality": 9,
+    "protocol_compliance": 9
+  },
+  "base_total": 92,
+  "gate_failed": false,
+  "v39_v40_features": {
+    "F1_vague_point_checklist": "PASS",
+    "F2_completeness_selfcheck": "PASS",
+    "F3_chain_tracing": "PASS",
+    "F4_light_deep_check": "PASS",
+    "F5_config_dependency_tracing": "PASS",
+    "F6_light_config_hint": "PASS"
+  },
+  "v39_v40_features_evidence": {
+    "F1": "040-light.md §2.2 模糊点处理清单，3 项全部标注「已提问 → 用户确认」：限制大小（1MB）、范围（所有 /v1）、JSON+urlencoded（统一）",
+    "F2": "040-light.md 实施步骤 3 步全部映射到验证用例，§关键链路深度检查 4 项全部勾选",
+    "F3": "000-context-pack.md §5 关键链路追踪，3 条链路：错误处理链（413→production 500 降级）、中间件管线（parser 限定 /v1）、配置依赖（BODY_LIMIT→dotenv→Joi→app.ts limit）",
+    "F4": "040-light.md §关键链路深度检查，4 项全部勾选：错误处理链（413 降级修复）、中间件管线（/v1 前缀）、数据流路径（仅 body 解析）、配置依赖（BODY_LIMIT env）",
+    "F5": "000-context-pack.md §5 配置依赖行：'BODY_LIMIT → .env → dotenv → Joi config.ts → app.ts limit 选项'，指出默认 1mb 生产可调避免硬编码",
+    "F6": "040-light.md 实施步骤后有配置化提示：'阈值通过 BODY_LIMIT 环境变量暴露（如生产 512kb、开发 1mb），避免硬编码'"
+  },
+  "v8_assumption_conversion": {
+    "B2_limit_1mb": "confirmed",
+    "B2_no_file_upload": "confirmed"
+  },
+  "v8_assumption_conversion_evidence": {
+    "B2_limit_1mb": "V8 [假设]：限制 1mb → V9 用户确认：Q1 回答 B）1MB；040-light.md §2.2 第 1 行",
+    "B2_no_file_upload": "V8 [假设]：文件上传不做 → V9 通过代码分析排除（项目无上传路由），040-light.md Out of Scope 第 1 行"
+  },
+  "key_findings": [
+    "V9 B2 额外产出了 000-context-pack.md（V8 light 模式未产出），含 §5 链路追踪含配置依赖，D1 从 17 提升到 18",
+    "v4.0 light 配置化提示生效：BODY_LIMIT 环境变量建议出现在 040-light.md 实施步骤后，F6 ✅",
+    "人工交互将 V8 的 2 项 [假设] 转为用户确认，且多问了 1 个问题（JSON vs urlencoded 统一），D5 从 12 提升到 15",
+    "production 下 413 被降级为 500 的问题在 V8 已识别，V9 同样捕获并设计了修复方案（errorConverter 标记 operational）",
+    "证据行号全部核实通过：app.ts:27-30、error.ts:8-27/11-16/24-27、config.ts:7-30"
+  ],
+  "would_approve": "yes",
+  "notes": "v4.0 改进在 light 模式下全面生效：配置依赖链路追踪 + 配置化提示。人工交互额外提升澄清质量。V9 B2 是 3 个 case 中改进幅度最大的（+6 分）"
+}

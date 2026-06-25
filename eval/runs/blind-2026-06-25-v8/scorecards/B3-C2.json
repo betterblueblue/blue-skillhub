@@ -1,0 +1,60 @@
+{
+  "case_id": "B3",
+  "cell_id": "cell-C2",
+  "runner_model": "Composer 2.5",
+  "skill_condition": "skill",
+  "judge": "human+agent",
+  "skill_commit": "v3.9",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 18,
+    "evidence_authenticity": 13,
+    "analysis_depth": 18,
+    "tier_judgment": 8,
+    "assumption_quality": 14,
+    "doc_quality": 9,
+    "protocol_compliance": 9
+  },
+  "dim7_used": "protocol_compliance",
+  "base_total": 89,
+  "gate_failed": false,
+  "v39_features": {
+    "F1_vague_point_checklist": "PASS",
+    "F2_completeness_selfcheck": "PASS",
+    "F3_chain_tracing": "PASS",
+    "F4_light_deep_check": "N-A"
+  },
+  "v39_features_evidence": {
+    "F1": "010-requirements.md §2.2，3 个模糊点全部标注 [假设]：注册是否自动发邮件、未验证能否登录、拦截范围",
+    "F2": "030-implementation.md 改动完整性自检表，6 条验收标准全部映射到 Step 1-5，无 ❌ 缺失",
+    "F3": "000-context-pack.md §5 关键链路追踪，3 条链路：数据流（注册→createUser→generateAuthTokens 绕过验证）、错误处理链（未验证→403→passport 需加载 isEmailVerified）、中间件管线（auth()→passport jwt→白名单）",
+    "F4": "N/A（full 模式，无 light 产出）"
+  },
+  "v7_omission_tracking": {
+    "B1_refreshToken_TTL": "N-A",
+    "B2_express_default_100kb": "N-A",
+    "B2_xss_memory_amplification": "N-A",
+    "B2_errorConverter_isOperational": "N-A",
+    "B3_passport_select": "captured",
+    "B3_refreshAuth_check": "captured",
+    "B3_chicken_egg": "captured"
+  },
+  "v7_omission_evidence": {
+    "B3_passport_select": "000-context-pack.md §4：'select 缺 role/isEmailVerified'；020-design.md §2：'passport.ts：select 增加 role: true, isEmailVerified: true'；030-implementation.md Step 1",
+    "B3_refreshAuth_check": "000-context-pack.md §7：'refreshAuth 不检查验证状态'；020-design.md §2：'refreshAuth：generateAuthTokens 前检查 isEmailVerified'；030-implementation.md Step 4",
+    "B3_chicken_egg": "010-requirements.md §2.2 拦截范围：'白名单：verify-email、send-verification-email、refresh-tokens、logout'；020-design.md §2 白名单；030-implementation.md Step 2 白名单代码"
+  },
+  "key_findings": [
+    "v3.9 关键链路追踪成功捕获 V7 遗漏的 passport.ts select 和 refreshAuth 检查——通过中间件管线追踪发现 select 缺字段，通过数据流追踪发现 refreshAuth 不检查验证状态",
+    "改动完整性自检表 6 条验收标准全部映射到 Step，包含 refresh 不绕过检查（V7 遗漏项）",
+    "鸡生蛋问题通过白名单方案解决：未验证用户可访问 send-verification-email 和 refresh-tokens",
+    "5 个 Step 覆盖完整：passport select、auth 拦截+白名单、注册自动发信、refreshAuth 检查、测试更新"
+  ],
+  "would_approve": "yes",
+  "notes": "v3.9 改进全面生效，关键链路追踪+完整性自检共同捕获了全部 V7 遗漏项"
+}

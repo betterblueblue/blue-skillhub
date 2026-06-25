@@ -1,0 +1,60 @@
+{
+  "case_id": "B2",
+  "cell_id": "cell-C2",
+  "runner_model": "Composer 2.5",
+  "skill_condition": "skill",
+  "judge": "human+agent",
+  "skill_commit": "v3.9",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 17,
+    "evidence_authenticity": 13,
+    "analysis_depth": 19,
+    "tier_judgment": 8,
+    "assumption_quality": 12,
+    "doc_quality": 8,
+    "protocol_compliance": 9
+  },
+  "dim7_used": "protocol_compliance",
+  "base_total": 86,
+  "gate_failed": false,
+  "v39_features": {
+    "F1_vague_point_checklist": "N-A",
+    "F2_completeness_selfcheck": "N-A",
+    "F3_chain_tracing": "N-A",
+    "F4_light_deep_check": "PASS"
+  },
+  "v39_features_evidence": {
+    "F1": "N/A（light 模式，无 010-requirements.md；040-light.md 有简化版模糊点处理节，2 项 [假设]）",
+    "F2": "N/A（light 模式，无 030-implementation.md）",
+    "F3": "N/A（light 模式，无 000-context-pack.md）",
+    "F4": "040-light.md §关键链路深度检查，3 项全部勾选：错误处理链（413→500 识别+修复）、中间件管线（limit 在 xss 前）、数据流路径（仅 body 解析阶段）"
+  },
+  "v7_omission_tracking": {
+    "B1_refreshToken_TTL": "N-A",
+    "B2_express_default_100kb": "captured",
+    "B2_xss_memory_amplification": "captured",
+    "B2_errorConverter_isOperational": "captured",
+    "B3_passport_select": "N-A",
+    "B3_refreshAuth_check": "N-A",
+    "B3_chicken_egg": "N-A"
+  },
+  "v7_omission_evidence": {
+    "B2_express_default_100kb": "040-light.md 分析依据第 1 行：'json/urlencoded 未设 limit，Express 默认 100kb'，行号 app.ts:27-30 已核实",
+    "B2_xss_memory_amplification": "040-light.md 分析依据第 3 行：'body 解析后再 JSON 序列化，大 body 有内存放大风险'；关键链路深度检查中间件管线：'limit 在 xss 之前生效，超限不会进入 xss 放大路径'",
+    "B2_errorConverter_isOperational": "040-light.md 分析依据第 2 行：'PayloadTooLarge 转 ApiError 时 isOperational=false，production 变 500'；关键链路深度检查错误处理链：'已识别 errorConverter 将 413 标为非 operational → production 500；Step 2 修复'"
+  },
+  "key_findings": [
+    "v3.9 light 深度检查完全生效：3 项 V7 遗漏（Express 100kb、XSS 内存放大、errorConverter 413→500）全部通过深度检查捕获",
+    "light 模式选择合理：2 文件改动、无 schema 变更、无 API 契约破坏",
+    "相比 V7 C4（full 模式但遗漏 3 项），V8 C2 的 light+深度检查反而捕获了更多问题",
+    "模糊点处理仅 2 项（限制大小、文件上传），比 full 模式的 B1/B3 少"
+  ],
+  "would_approve": "yes",
+  "notes": "light 深度检查是 v3.9 最有效的改进，用最小文档量捕获了全部 V7 遗漏"
+}
