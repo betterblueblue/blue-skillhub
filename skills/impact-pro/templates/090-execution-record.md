@@ -1,7 +1,8 @@
 # [变更名称] 执行记录
 
 > 本文件按执行步骤追加记录，不覆盖历史。每个写文件、改代码、DDL/DML、配置变更、测试修复操作都必须先确认，再执行。
-> **凭证脱敏**：任何连接串密码、token、密钥写入本文件前必须脱敏为 `***`，只记键名和来源路径。
+>
+> 导航：[010-requirements.md](010-requirements.md) → [020-design.md](020-design.md) → [030-implementation.md](030-implementation.md) → [060-preflight.md](060-preflight.md) → **090-execution-record.md** | [040-light.md](040-light.md) (light 模式) | [_active-state.md](_active-state.md)
 
 ## 执行前确认
 
@@ -44,8 +45,8 @@
 - 写入目标检查：[所有文件均在目标项目根目录内 / 不适用；如异常，写明已停止和清理结果]
 - 验证结果：[通过 / 失败 / 未执行；附关键输出]
 - 工具调用约定：
-  - `ty check` 必须通过项目 venv 的 `python -m ty` 调用（不直接调二进制，避免 venv 绑错）
-  - alembic migration 验证优先用 `alembic upgrade head --sql`（离线 SQL 渲染，环境无关；比 SQLite online 更可移植）
+  - 构建验证优先用项目自带的构建工具（如 `mvn test` / `npm test` / `go test` / `pytest`），命令必须来自项目证据（发现 `pom.xml`/`package.json`/`go.mod` 等），不得套用占位命令
+  - DDL/DML 验证优先用迁移工具的 dry-run 模式（如 `alembic upgrade head --sql` / `flyway info` / `prisma migrate diff`），离线渲染，环境无关；比直接连 DB online 更可移植
 - 未运行验证及原因：[环境缺失 / 无权限 / 服务不可用 / 未提供命令 / 不适用]
 - 运行时未验证项：[描述]
 - V1-only 计数：[连续仅 V1 的写入 Step 数；不适用则写 0]
@@ -62,6 +63,19 @@
 - 用户确认：[确认时间、确认内容；必须包含修复 Step 编号；未确认不得修复]
 - 修复后重跑命令：`[命令]`
 - 重跑结果：[通过 / 失败]
+
+## 验证等级汇总
+
+<!-- 填写指引：所有已完成 Step 的验证等级汇总，方便快速判断整体覆盖程度。 -->
+
+| Step | 验证等级 | 未运行验证原因 |
+|------|----------|---------------|
+| Step 1 | V0 / V1 / V2 / V3 | [不适用 / 环境缺失 / 无权限] |
+| Step 2 | V0 / V1 / V2 / V3 | |
+
+- 最高验证等级：V0 / V1 / V2 / V3
+- V1-only 连续计数：[N]
+- 未达到 V3 的原因汇总：
 
 ## 收尾检查
 

@@ -1,6 +1,8 @@
 # [变更名称] 执行前检查
 
-> 生成时间：[真实系统时间]  |  版本：1.0  |  生成者：impact + [模型名]
+> 生成时间：[真实系统时间]  |  版本：1.0  |  生成者：[skill名] + [模型名]
+>
+> 导航：[010-requirements.md](010-requirements.md) → [020-design.md](020-design.md) → [030-implementation.md](030-implementation.md) → **060-preflight.md** → [090-execution-record.md](090-execution-record.md) | [040-light.md](040-light.md) (light 模式) | [_active-state.md](_active-state.md)
 
 > 在执行任何写文件、改代码、DDL/DML、配置变更、删除操作、测试修复或外部系统写操作前填写。任何 P0 项未满足，不得进入执行。
 
@@ -13,30 +15,37 @@
 - 执行人：
 - 执行窗口：
 - 回滚负责人：
-- 关联文档：[light / 010-requirements / 020-design / 030-implementation]
+- 关联文档：[light / requirements / design / implementation]
 - 关联恢复状态：`change-impact/[需求名称]/_active-state.md`
 - 关联执行记录：`change-impact/[需求名称]/090-execution-record.md`
 
 ## 执行前核对
 
-| 项目 | 等级 | 必须证据 | 当前结果 | 结论 |
-|------|------|----------|----------|------|
-| 仓库状态 | P0 | `git status --short --branch`，确认无无关脏改 |  |  |
-| 非 Git 回退方案 | P0 | 如果不是 Git 仓库，记录替代审计方式：before/after 摘要、文件 hash、备份路径或用户确认接受无 git 风险 |  |  |
-| 项目背景 | P0 | `000-context-pack.md` 已确认，或对话中的项目背景已被用户接受且仍有效 |  |  |
-| 文档确认 | P0 | light 摘要或 full 当前阶段文档已确认 |  |  |
-| 恢复状态文件 | P1 | `_active-state.md` 位于当前需求目录；状态不替代 `确认 Step N` |  |  |
-| Step 级确认 | P0 | 每个写类操作都有用户显式 `确认 Step N` |  |  |
-| 阻塞恢复 | P0 | blocked/长时间等待/上下文压缩/线程恢复后，已读取 `_active-state.md`、复核 pending Step、目标文件当前状态和最新 `确认 Step N` |  |  |
-| 写入目标边界 | P0 | 声明目标项目根目录；每个文件写入对象已解析为绝对路径且位于目标项目根目录内；`change-impact/` 未写到其他仓库或 agent 当前工作目录 |  |  |
-| 基线验证 | P1 | 执行前 test/lint/build/API/SQL/UI 基线命令及关键输出 |  |  |
-| 影响范围 | P1 | 每个 Step 写明文件/表/配置键/外部服务范围 |  |  |
-| 回滚方式 | P1 | 每个 Step 有回滚命令或回滚操作 |  |  |
-| 语义约定 | P1 | status/enum/常量/错误码/权限名/配置键已查原定义；不涉及则标注 |  |  |
-| 验证命令 | P0 | 执行后要运行的验证命令（build+test）明确、来自项目证据、且在当前环境可执行；不可执行时提前声明"本轮最高 V1" |  |  |
-| 执行记录路径 | P1 | `090-execution-record.md` 路径明确，按时间追加不覆盖历史 |  |  |
-| 执行记录 | P1 | 当前 Step 如果会写代码/配置/DDL/DML/测试修复，已把追加执行记录列入本步动作；用户拒绝记录时已声明本步记录不完整 |  |  |
-| 未确认项 | P0/P1 | 高风险未确认项不得被默认值吞掉 |  |  |
+### P0 硬门禁（任何一项未满足，不得进入执行）
+
+| 项目 | 必须证据 | 当前结果 | 结论 |
+|------|----------|----------|------|
+| 仓库状态 | `git status --short --branch`，确认无无关脏改 |  |  |
+| 非 Git 备选方案 | 如果不是 Git 仓库，记录替代审计方式：before/after 摘要、文件 hash、备份路径或用户确认接受无 git 风险 |  |  |
+| Context Pack | `000-context-pack.md` 已确认，或对话中的 Context Pack 已被用户接受且仍有效 |  |  |
+| 文档确认 | light 摘要或 full 当前阶段文档已确认 |  |  |
+| Step 级确认 | 每个写类操作都有用户显式 `确认 Step N` |  |  |
+| 阻塞恢复 | blocked/长时间等待/上下文压缩/线程恢复后，已读取 `_active-state.md`、复核 pending Step、目标文件当前状态和最新 `确认 Step N` |  |  |
+| 写入目标边界 | 声明目标项目根目录；每个文件写入对象已解析为绝对路径且位于目标项目根目录内；`change-impact/` 未写到其他仓库或 agent 当前工作目录 |  |  |
+| 验证命令 | 执行后要运行的验证命令（build+test）明确、来自项目证据、且在当前环境可执行；不可执行时提前声明"本轮最高 V1" |  |  |
+| 高风险未确认项 | 高风险未确认项不得被默认值吞掉 |  |  |
+
+### P1 建议项（应满足，缺省时需说明理由）
+
+| 项目 | 必须证据 | 当前结果 | 结论 |
+|------|----------|----------|------|
+| 恢复状态文件 | `_active-state.md` 位于当前需求目录；状态不替代 `确认 Step N` |  |  |
+| 基线验证 | 执行前 test/lint/build/API/SQL/UI 基线命令及关键输出 |  |  |
+| 影响范围 | 每个 Step 写明文件/表/配置键/外部服务范围 |  |  |
+| 回滚方式 | 每个 Step 有回滚命令或回滚操作 |  |  |
+| 语义约定 | status/enum/常量/错误码/权限名/配置键已查原定义；不涉及则标注 |  |  |
+| 执行记录路径 | `090-execution-record.md` 路径明确，按时间追加不覆盖历史 |  |  |
+| 执行记录 | 当前 Step 如果会写代码/配置/DDL/DML/测试修复，已把追加执行记录列入本步动作；用户拒绝记录时已声明本步记录不完整 |  |  |
 
 ## 阻塞恢复检查（如适用）
 
@@ -65,9 +74,9 @@
 ## 写入目标边界
 
 - 目标项目根目录：
-  - 绝对路径：
-  - 确定方式：[git rev-parse --show-toplevel / 用户指定 / 从 pom.xml 位置推断 / 其他]
-  - 验证时间：[真实系统时间]
+  - absolute_path: [绝对路径，如 E:\projects\ruoyi-vue]
+  - determination_method: [git-rev-parse / user-specified / pom-dot-xml / build-dot-gradle / package-dot-json / inferred-from-cwd / other]
+  - verification_timestamp: [真实系统时间 ISO 8601]
 - 当前进程工作目录：
 - `change-impact/` 绝对路径：
 
@@ -84,7 +93,7 @@
 
 ## 基线命令
 
-```bash
+```powershell
 # 在执行写操作前运行
 ```
 
@@ -102,10 +111,10 @@
 
 ## 上线准出阈值（如有上线步骤才填）
 
-[每一项都能用"是 / 否"判断，不满足则 No-Go：]
+<!-- 填写指引：每一项都能用"是 / 否"判断，不满足则 No-Go。 -->
 - [ ] 单测通过率 100%
 - [ ] API 响应延迟 P99 < [阈值]
 - [ ] 错误率 < [阈值]
 - [ ] 数据一致性校验通过
 
-如果结论为"否"，只能继续只读分析、补证据或请求用户确认，不得写文件、改代码、执行 DDL/DML、改配置或修测试。
+如果结论为”否”，只能继续只读分析、补证据或请求用户确认，不得写文件、改代码、执行 DDL/DML、改配置或修测试。

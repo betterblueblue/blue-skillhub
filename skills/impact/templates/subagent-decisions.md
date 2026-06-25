@@ -6,6 +6,16 @@
 
 ---
 
+## 上下文快照
+
+- 加载的 profile：
+- profile 选择依据（matchers 命中项）：
+- 加载的 db-adapter：
+- db-adapter 选择依据（运行时探测 / profile 默认 / 兜底）：
+- 栈检测确认状态：[已确认 / 用户覆盖 / 降级 generic]
+
+---
+
 ## 决策矩阵汇总（必填）
 
 | Step | DECIDE | 高风险清单命中 | 决策依据（1 行） |
@@ -46,7 +56,7 @@
 
 ## 决策偏离说明（如有）
 
-如果实际执行**与 030-implementation.md 计划有偏离**（如用手写 migration 替代 autogenerate），必须在此段显式说明：
+如果实际执行**与 implementation.md 计划有偏离**（如用手写 migration 替代 autogenerate），必须在此段显式说明：
 
 - **偏离内容**：[简述]
 - **偏离原因**：[为什么]
