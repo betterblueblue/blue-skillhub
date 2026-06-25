@@ -1,0 +1,52 @@
+{
+  "case_id": "B3",
+  "cell_id": "cell-C2",
+  "runner_model": "Composer 2.5",
+  "skill_condition": "skill v4.1 + human-interaction",
+  "judge": "human+agent",
+  "skill_commit": "v4.1",
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "PASS",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS"
+  },
+  "dims": {
+    "context_discovery": 19,
+    "evidence_authenticity": 14,
+    "analysis_depth": 20,
+    "tier_judgment": 8,
+    "clarification_quality": 15,
+    "doc_quality": 10,
+    "protocol_compliance": 10
+  },
+  "base_total": 96,
+  "gate_failed": false,
+  "v41_features": {
+    "F7_multi_round_trigger": "PASS",
+    "F8_chain_tracing_feedback": "PASS",
+    "F9_side_effect_handling": "PASS"
+  },
+  "v41_features_evidence": {
+    "F7": "对话记录显示 2 轮提问：第 1 轮 Q1-Q3（登录拦截/老用户/白名单），第 2 轮 Q4-Q5（公开重发防滥用/注册自动发邮件）",
+    "F8": "000-context-pack.md §5 新增「数据流路径（副作用）」行：'公开重发接口 | 无 token 限制 → 可被刷邮件 | Phase 3 第 2 轮确认'。010 §2.2 第 4 项标注「公开重发接口可被无限调用（链路追踪副作用）→ 已提问 → 用户确认」",
+    "F9": "010 §2.2 第 4 项标注「已提问 → 用户确认」，设计文档 §3 新增 verifyEmailLimiter 和 VERIFY_EMAIL_RATE_LIMIT_* 配置项，030 Step 6 实施限流"
+  },
+  "v9_comparison": {
+    "rounds": "V9: 1 轮 3 题 → V10: 2 轮 5 题",
+    "chain_tracing_rows": "V9: 4 行 → V10: 6 行（+副作用行 +新增配置行）",
+    "implementation_steps": "V9: 6 Step → V10: 7 Step（+Step 6 限流）",
+    "completeness_selfcheck": "V9: 8/8 → V10: 9/9",
+    "total_score": "V9: 92 → V10: 96 (+4)"
+  },
+  "key_findings": [
+    "v4.1 多轮触发条件生效：agent 在第 1 轮 3 题后自检链路追踪 §5，发现「公开重发接口可被无限调用」副作用风险未覆盖，进入第 2 轮追问 Q4-Q5",
+    "v4.1 链路追踪回流生效：000-context-pack §5 新增「数据流路径（副作用）」行，明确标注 Phase 3 第 2 轮确认",
+    "副作用风险转化为具体设计：Step 6 新增 verifyEmailLimiter（按邮箱维度，可配置 N/M），配置键 VERIFY_EMAIL_RATE_LIMIT_WINDOW_MINUTES（默认 15）和 VERIFY_EMAIL_RATE_LIMIT_MAX（默认 1）",
+    "证据行号全部核实通过：rateLimiter.ts:3-7、config.ts:21-23、passport.ts:16-21、schema.prisma:20、auth.service.ts:17-35、auth.controller.ts:7-12、auth.route.ts:27",
+    "Step 3 设计细节精准：sendVerificationEmail 用 isPasswordMatch 校验而非 loginUserWithEmailAndPassword，避免触发 Step 1 的 403 拦截",
+    "方法名预检 8/8 全部通过：loginUserWithEmailAndPassword、generateVerifyEmailToken、sendVerificationEmail、verifyEmail、refreshAuth、getUserByEmail、isPasswordMatch、getUserById"
+  ],
+  "would_approve": "yes",
+  "notes": "v4.1 两项核心改进全面生效。多轮触发让 agent 不再止步于 3 题，链路追踪回流让副作用风险被识别并转化为具体设计。V9→V10 总分 92→96，+4 分来自 D1(+1)、D3(+1)、D6(+1)、D7(+1)。"
+}
