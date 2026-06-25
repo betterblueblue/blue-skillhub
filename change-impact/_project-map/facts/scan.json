@@ -1,0 +1,47 @@
+{
+  "file_count": 120,
+  "file_ext_counts": {
+    ".md": 43,
+    ".ts": 40,
+    ".json": 16,
+    "<no-ext>": 9,
+    ".yml": 7,
+    ".http": 2,
+    ".example": 1,
+    ".lock": 1,
+    ".prisma": 1
+  },
+  "dir_tree": [
+    "/",
+    "change-impact/",
+    "change-impact/_project-map/",
+    "change-impact/blind-composer25/",
+    "change-impact/blind-step37flash/",
+    "change-impact/blind-v3-composer25/",
+    "change-impact/blind-v3-step37flash/",
+    "change-impact/blind-v4-composer25/",
+    "change-impact/blind-v4-deepseek-v4-flash/",
+    "change-impact/blind-v4-step37flash/",
+    "change-impact/role-add-moderator/",
+    "change-impact/user-add-phone/",
+    "prisma/",
+    "src/",
+    "src/config/",
+    "src/controllers/",
+    "src/docs/",
+    "src/middlewares/",
+    "src/routes/",
+    "src/services/",
+    "src/types/",
+    "src/utils/",
+    "src/validations/",
+    "tests/",
+    "tests/fixtures/",
+    "tests/integration/",
+    "tests/utils/"
+  ],
+  "manifest_files": [
+    "package.json"
+  ],
+  "budget_tier": "small"
+}

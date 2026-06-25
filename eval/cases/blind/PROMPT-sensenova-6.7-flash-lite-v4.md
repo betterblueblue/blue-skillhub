@@ -1,8 +1,9 @@
-# Step 3.7 Flash 盲测 v4 Prompt
+# SenseNova-6.7-Flash-Lite 盲测 v4 Prompt
 
-> 复制下面整段内容发给 Step 3.7 Flash 执行。
-> v4 跑 4 个 case（B6/B1/B2/B3），验证 v3 后续优化（优化 6-8）是否修复 Step 3.7 Flash 剩余 2/5 失败项（P1-A、I2-A）。
-> v4 保留 v3 的"强制 Read SKILL.md"前置步骤。
+> 复制下面整段内容发给 SenseNova-6.7-Flash-Lite 执行。
+> v4 跑 4 个 case（B6/B1/B2/B3），验证 v3.8 协议（优化 6-8）在新模型上的表现。
+> 本模型为首次参与盲测，无 v3 基线，v4 结果将作为初始基线。
+> 每个任务开始前先 Read 对应 skill 的 SKILL.md，确保加载含优化 6-8 的最新协议。
 > v4 修正：测试前清理 change-impact/ 隔离环境，使用默认输出路径，完成后统一归档。
 
 ---
@@ -26,11 +27,11 @@ rm -rf test-projects/ruoyi-vue/change-impact/
 - 每个任务使用 skill 的默认输出路径，不指定自定义子目录
 - pathfinder 输出到 `change-impact/_project-map.md`（SKILL.md 默认路径）
 - impact/impact-pro 输出到 `change-impact/B1/`、`change-impact/B2/`、`change-impact/B3/`（用 case-id 作为需求名称）
-- 所有任务完成后，统一归档到 `blind-v4-step37flash/` 目录（见最后一步）
+- 所有任务完成后，统一归档到 `blind-v4-sensenova-6.7-flash-lite/` 目录（见最后一步）
 
 **重要**：每个任务请完整走完 skill 的流程（分析 → 提问 → 出文档），不要省略。如果 skill 要求确认，你在 prompt 里自行模拟用户回答"继续"即可，不要停下来等我确认。
 
-**关键前置步骤**：每个任务开始前，你必须先 Read 对应 skill 的 `SKILL.md` 文件，确保你使用的是最新版协议。具体来说：
+**关键前置步骤（v4 新增）**：每个任务开始前，你必须先 Read 对应 skill 的 `SKILL.md` 文件，确保你使用的是最新版协议。具体来说：
 - pathfinder 任务前 Read `skills/pathfinder/SKILL.md`
 - impact 任务前 Read `skills/impact/SKILL.md`
 - impact-pro 任务前 Read `skills/impact-pro/SKILL.md`
@@ -90,15 +91,15 @@ rm -rf test-projects/ruoyi-vue/change-impact/
 
 ```bash
 # prisma-express-ts（B6 + B3）
-mkdir -p test-projects/prisma-express-ts/change-impact/blind-v4-step37flash/B6/
-mv test-projects/prisma-express-ts/change-impact/_project-map.md test-projects/prisma-express-ts/change-impact/blind-v4-step37flash/B6/
-mv test-projects/prisma-express-ts/change-impact/_project-map/ test-projects/prisma-express-ts/change-impact/blind-v4-step37flash/B6/
-mv test-projects/prisma-express-ts/change-impact/B3/ test-projects/prisma-express-ts/change-impact/blind-v4-step37flash/B3/
+mkdir -p test-projects/prisma-express-ts/change-impact/blind-v4-sensenova-6.7-flash-lite/B6/
+mv test-projects/prisma-express-ts/change-impact/_project-map.md test-projects/prisma-express-ts/change-impact/blind-v4-sensenova-6.7-flash-lite/B6/
+mv test-projects/prisma-express-ts/change-impact/_project-map/ test-projects/prisma-express-ts/change-impact/blind-v4-sensenova-6.7-flash-lite/B6/
+mv test-projects/prisma-express-ts/change-impact/B3/ test-projects/prisma-express-ts/change-impact/blind-v4-sensenova-6.7-flash-lite/B3/
 
 # ruoyi-vue（B1 + B2）
-mkdir -p test-projects/ruoyi-vue/change-impact/blind-v4-step37flash/
-mv test-projects/ruoyi-vue/change-impact/B1/ test-projects/ruoyi-vue/change-impact/blind-v4-step37flash/B1/
-mv test-projects/ruoyi-vue/change-impact/B2/ test-projects/ruoyi-vue/change-impact/blind-v4-step37flash/B2/
+mkdir -p test-projects/ruoyi-vue/change-impact/blind-v4-sensenova-6.7-flash-lite/
+mv test-projects/ruoyi-vue/change-impact/B1/ test-projects/ruoyi-vue/change-impact/blind-v4-sensenova-6.7-flash-lite/B1/
+mv test-projects/ruoyi-vue/change-impact/B2/ test-projects/ruoyi-vue/change-impact/blind-v4-sensenova-6.7-flash-lite/B2/
 ```
 
-归档完成后，列出所有 `blind-v4-step37flash/` 目录的文件清单作为总结。
+归档完成后，列出所有 `blind-v4-sensenova-6.7-flash-lite/` 目录的文件清单作为总结。
