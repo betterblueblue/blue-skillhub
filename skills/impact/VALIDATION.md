@@ -12,6 +12,8 @@
 
 2026-06-15 T08 完成 `_active-state.md` 跨会话恢复 dry-run：Claude Code CLI 默认配置在只读工具限制下能识别 `_active-state.md` 只是 checkpoint，不替代 `确认 Step N`；用户只说"继续"不会授权 Step 写入，恢复后仍需重读执行文档、磁盘/Git 状态并等待当前对话新的 `确认 Step N`。
 
+2026-06-25 T10 完成 v4.1 L1 全量回归（runner: Composer 2.5, judge: GLM-5.2）：4 case 均分 94.8，0 P0 / 0 P1，契约全 PASS，脚本闸门 `impact_validate.py` 全 0 FAIL。v4.1 新特性（链路追踪回流、Context Pack 场景覆盖、方法名预检、完整性自检）全部正确触发。路线图优先级 2（脚本闸门）、3（判档决策证据化）、6（弱模型降级策略）已验证有效。详见 `validation-runs/2026-06-25-T10-l1-full-regression.md`。
+
 ## 必须满足的底线
 
 | 能力 | 验收标准 | 失败信号 |
