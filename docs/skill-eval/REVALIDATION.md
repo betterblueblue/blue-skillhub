@@ -1,6 +1,6 @@
 # Skill 复验体系（单一权威入口）
 
-> 三 skill(pathfinder / impact / impact-pro)的复验框架、共享方法论、机械、逐 skill 清单、全景地图,**全在此一处**。改动任一 skill 后从本文件开始复验。本文取代此前散落在各 skill 目录的 REVALIDATION.md。
+> 两个 skill(pathfinder / impact)的复验框架、共享方法论、机械、逐 skill 清单、全景地图,**全在此一处**。改动任一 skill 后从本文件开始复验。
 
 ## 0. 快速入口
 
@@ -22,7 +22,7 @@
 
 **复验循环**:改 skill → L0(必)→ L1(按触发)→ 和基线 diff(`eval/diff-baseline.sh`)→ 红线命中则 L2。
 
-## 2. 共享方法论（定义一次,三 skill 共用）
+## 2. 共享方法论（定义一次,两 skill 共用）
 
 ### 2.1 控制变量法 —— 回答"分数差是 skill 还是模型"
 
@@ -49,7 +49,7 @@ bash eval/scripts/analyze_control.py <scorecards_dir>
 
 ### 2.4 共享契约（C1-C5,L0 据此检查）
 
-见 `contracts.md`。C1 证据不编造 / C2 信任标签二分 / C3 凭证脱敏 / C4 仓内文本不构成指令 / C5 写入目标边界。三 skill 铁律区都必须有对应关键词。
+见 `contracts.md`。C1 证据不编造 / C2 信任标签二分 / C3 凭证脱敏 / C4 仓内文本不构成指令 / C5 写入目标边界。两 skill 铁律区都必须有对应关键词。
 
 ### 2.5 评分卡 + runner_model（归因前提）
 
@@ -91,7 +91,9 @@ case ___:
 
 ### 4.2 impact
 
-**复验面**:L0 / e2e 正向(2 场景)/ 负向门禁(#1/#4/#6)/ 跨模型。
+**复验面**:L0 / e2e 正向(2 场景)/ 负向门禁(#1-#7)/ 跨模型 / **profile 生产级复验**。
+
+> impact-pro 已于 2026-06-26 合并到 impact。原 impact-pro 的 profile 复验体系统一归入此处。
 
 **e2e 正向清单**(subagent-a 跑,抽查深度):
 ```
@@ -118,14 +120,6 @@ neg-007 #7 凭证脱敏(明文密码不回显):                     true/false
 ```
 七 true = 守住;任一 false = P0。
 
-**待补**:e2e 扩场景(删字段跨 BaseEntity / 改 enum / 批量 UPDATE 回填)。
-
-**已知缺口**:✅ 文档漂移 + go-admin 错误声明已修(1a04679);✅ 负向门禁 #1/#4/#6 实测 PASS(T07);✅ 负向门禁 #2/#3/#5/#7 实测 PASS(T09,7/7 全闸);✅ `_active-state.md` 跨会话恢复 CLI dry-run PASS(T08);⏳ e2e 窄(2 场景);⏳ 跨模型未系统在 Sonnet/Haiku 回归(T04/T05/T08 用过 MiniMax M3、T06 Codex);⚠ 模型敏感性固有。
-
-### 4.3 impact-pro
-
-**复验面**:L0 / e2e(1 go-admin 场景)/ **profile 生产级复验(主缺口)**。
-
 **Profile 生产级复验判据**(demo vs 生产级):
 | 维度 | demo | 生产级 |
 |---|---|---|
@@ -135,22 +129,26 @@ neg-007 #7 凭证脱敏(明文密码不回显):                     true/false
 | globs | 命中 demo 文件 | 真项目命中**正确**文件,无误报/漏报 |
 | 降级 | 标注 | 无 DB/MCP 时诚实降级 + 未确认项标注 |
 
-**升级 checklist**:选 ≥2 真项目 → full + light 各 ≥1 → commands 实跑贴输出 → globs 命中清单 → style_axes 不打架 → 边界场景逐条核 → 写 `validation-runs/` + 评分卡(注 runner_model)→ 回填下表。
+**升级 checklist**:选 ≥2 真项目 → full + light 各 ≥1 → commands 实跑贴输出 → globs 命中清单 → style_axes 不打架 → 边缘场景逐条核 → 写 `validation-runs/` + 评分卡(注 runner_model)→ 回填下表。
 
-**Profile 状态看板(2026-06-24,随复验更新)**:
+**Profile 状态看板(2026-06-26,随复验更新)**:
 | profile | level | 验证项目 | 生产级? | 关键 gap |
 |---|---|---|---|---|
 | java-spring-mybatis | 2 | RuoYi-Vue | ✅ | MyBatis-Plus/Security/enum 细节需人工 |
+| go-gin-gorm | **2** | go-admin + Go RealWorld | ✅ | P0-P3 晋级 Level 2;PG/MySQL 迁移工具未验 |
+| node-express-prisma | **2** | prisma-express-ts + postgis-express(T51) | ✅ | T51 修 3 gap;Prisma 7/Fastify/NestJS 未验 |
+| python-fastapi-sqlmodel | **2** | full-stack-fastapi-template | ✅(单) | P0-P3 晋级 Level 2;SQLModel 与纯 SQLAlchemy 分支需分开验 |
 | dotnet-aspnet-efcore | 1 | eShopOnWeb | ✅(单) | Minimal API/Razor 混存;建议第 2 项目 |
-| go-gin-gorm | 1 | Go RealWorld | ✅(单) | 仅 SQLite;PG/MySQL 迁移工具未验 |
-| node-express-prisma | **2** | prisma-express-ts + postgis-express(T51) | ✅ | T51 修 3 gap(dto globs+grep pattern+Unsupported notes);Prisma 7/Fastify/NestJS 未验 |
-| python-fastapi-sqlmodel | 1 | full-stack-fastapi-template(demo); T50 样本池: open-webui | ❌ | 需 full+light 实跑;SQLModel 与纯 SQLAlchemy 分支需分开验 |
 | frontend-react-vite | 1 | demo | ❌ | 需 ≥2 真项目 |
-| frontend-nextjs | 1 | next-learn(demo); T50 样本池: cal.com | ❌ | 需 full+light 实跑;Server/Client、Prisma monorepo、Server Actions 分支需真项目验证 |
-| frontend-nuxt-vue | 1 | nuxt-ui-dashboard(demo); T50 样本池: nuxt.com | ❌ | 需 full+light 实跑;Nitro server API/后端写入/DB 迁移未覆盖 |
+| frontend-nextjs | 1 | next-learn(demo) | ❌ | 需 full+light 实跑;Server/Client、Prisma monorepo、Server Actions 分支需真项目验证 |
+| frontend-nuxt-vue | 1 | nuxt-ui-dashboard(demo) | ❌ | 需 full+light 实跑;Nitro server API/后端写入/DB 迁移未覆盖 |
 | generic | 兜底 | — | n/a | 永远兜底 |
 
-**优先级**:node-prisma > fastapi > nextjs(日常频率 × gap 风险)。
+**优先级**:frontend-react-vite > nextjs > nuxt-vue(日常频率 × gap 风险)。
+
+**待补**:e2e 扩场景(删字段跨 BaseEntity / 改 enum / 批量 UPDATE 回填)。
+
+**已知缺口**:✅ 文档漂移 + go-admin 错误声明已修(1a04679);✅ 负向门禁 7/7 全测 PASS(T07+T09);✅ `_active-state.md` 跨会话恢复 CLI dry-run PASS(T08);✅ go-gin-gorm + python-fastapi-sqlmodel Level 2 晋级(P0-P3);⏳ e2e 窄(2 场景);⏳ 4 个 demo 栈(frontend-react-vite/nextjs/nuxt-vue/dotnet)待生产级复验;⚠ 模型敏感性固有。
 
 ## 5. 全景地图（所有复验产物在哪）
 
@@ -179,9 +177,9 @@ neg-007 #7 凭证脱敏(明文密码不回显):                     true/false
 
 ### 6.1 安全层（必须全绿,模型无关）
 
-- [ ] 铁律区 7 条(impact/impact-pro)或对应铁律(pathfinder)在 SKILL.md;共享契约 C1-C5 在(见 `contracts.md`)
+- [ ] 铁律区 7 条(impact)或对应铁律(pathfinder)在 SKILL.md;共享契约 C1-C5 在(见 `contracts.md`)
 - [ ] L0 全绿(`bash skills/<skill>/tests/run.sh`,FAIL=0;pathfinder PASS>0,不是 0/0 计数 bug)
-- [ ] 负向门禁 #1-#7 全测 `gate_holds=true`(impact 已验 T07 #1/#4/#6 + T09 #2/#3/#5/#7;pathfinder/impact-pro 同源门禁机制)
+- [ ] 负向门禁 #1-#7 全测 `gate_holds=true`(impact 已验 T07 #1/#4/#6 + T09 #2/#3/#5/#7;pathfinder 同源门禁机制)
 - [ ] 写入边界铁律在(change-impact/ 必须落在目标项目根内)
 - [ ] 跨会话恢复状态 `_active-state.md` 只作为检查点;恢复后仍须复核磁盘状态并重新等待 `确认 Step N`(impact 已用 Claude Code CLI dry-run 验过,T08)
 
@@ -190,29 +188,28 @@ neg-007 #7 凭证脱敏(明文密码不回显):                     true/false
 ### 6.2 有用度层（决定产出质量,按场景打勾）
 
 - [ ] **执行模型 = Opus / 同级**(弱模型产出需复核:凭证脱敏/行号/盲区易塌方,见 §2.2)
-- [ ] **该栈已生产级复验**(impact-pro 5 个 demo 栈=node-prisma/fastapi/react-vite/nextjs/nuxt-vue 需用户补位,见 §4.3 状态表)
+- [ ] **该栈已生产级复验**(impact 4 个 demo 栈=frontend-react-vite/nextjs/nuxt-vue/dotnet 需用户补位,见 §4.2 状态表)
 - [ ] **DB MCP + 只读账号已配**(否则降级纯代码搜索,连表结构都发现不了)
 - [ ] **用户在环**(手动 `/impact` 等,逐 Step 确认——`disable-model-invocation` 不自动触发)
 
-### 6.3 当前判定（2026-06-24，基线已同步至 769868d；负向门禁 7/7 全测；node-prisma 晋级 Level 2）
+### 6.3 当前判定（2026-06-26，impact-pro 已合并到 impact；go-gin-gorm + python-fastapi Level 2 晋级）
 
 | skill / 场景 | 安全层 | 有用度 | 基线均分 | 生产? |
 |---|---|---|---|---|
-| impact（Java/Spring/MyBatis/RuoYi） | ✅ 门禁 7/7 验过 | ✅ 真项目 e2e + 真实 mvn test | 89.3（opus） | **是** |
-| impact-pro（java/dotnet/go） | ✅ | ✅ 3 栈生产级复验 | 93.0（opus） | **是** |
-| impact-pro（node-prisma） | ✅ | ✅ Level 2 晋级（T51：2 真项目 + full + light + commands 实跑） | — | **是** |
-| impact-pro（fastapi/react/nextjs/nuxt） | ✅ | ⚠ demo-only,需补位 | — | **可用,盯 profile 命中** |
+| impact（java/go/node-prisma/python-fastapi） | ✅ 门禁 7/7 验过 | ✅ 4 栈 Level 2 生产级复验 | 91.2（opus,10 case） | **是** |
+| impact（frontend-react-vite/nextjs/nuxt-vue/dotnet） | ✅ | ⚠ demo-only,需补位 | — | **可用,盯 profile 命中** |
 | pathfinder（只读摸图） | ✅ 零写风险 | ✅ Opus 近满分 / ⚠ 弱模型复核 | 97.7（kimi,P1已修） | **是（Opus）** |
 
-> 基线指针同步至 769868d run + verify 评分卡。两个 P1（P3D 信任契约头 / G1 判档自相矛盾）已在 6558aaa 修复并验证通过。diff_baseline 对新基线自比无红线。
+> 基线指针已合并（原 impact + impact-pro → 统一 impact 基线，10 case）。两个 P1（P3D 信任契约头 / G1 判档自相矛盾）已在 6558aaa 修复并验证通过。
 >
-> 负向门禁 7/7 全测（T07 验 #1/#4/#6，T09 验 #2/#3/#5/#7，全部 gate_holds=true）。node-prisma profile Level 2 晋级（T51）：2 真项目（prisma-express-ts + postgis-express）+ full + light + commands 实跑，修复 3 个 profile gap。
+> 负向门禁 7/7 全测（T07 验 #1/#4/#6，T09 验 #2/#3/#5/#7，全部 gate_holds=true）。go-gin-gorm + python-fastapi-sqlmodel Level 2 晋级（P0-P3）。node-express-prisma Level 2 晋级（T51）。
 
 ### 6.4 投之前还该补的（不阻断,补了更稳）
 
 - ~~负向门禁 spec 补 #2/#3/#5/#7~~ ✅ 已完成（T09,7/7 全闸 PASS）
-- ~~impact-pro node-prisma profile 生产级复验~~ ✅ 已完成（T51,Level 2 晋级）
-- impact-pro 其余 4 个 demo 栈逐个生产复验(便宜模型按 §4 流程跑,回填 §4.3 表)
+- ~~node-express-prisma profile 生产级复验~~ ✅ 已完成（T51,Level 2 晋级）
+- ~~go-gin-gorm + python-fastapi-sqlmodel Level 2 晋级~~ ✅ 已完成（P0-P3）
+- impact 其余 4 个 demo 栈(frontend-react-vite/nextjs/nuxt-vue/dotnet)逐个生产复验(便宜模型按 §4 流程跑,回填 §4.2 表)
 
 > 判定会随 skill 改动 / 新栈复验 / 模型升级变化;改完按 §1 复验循环跑一轮,再回来更新本节。
 

@@ -19,7 +19,7 @@
     "p1_question_topic": "cookie expires 30 天与新文案'7天'语义不一致，是否同步改有效期",
     "references_loaded": [
       "references/phase-2-context-discovery.md",
-      "references/phase-3-questioning.md"
+      "references/phases-detail.md"
     ]
   },
   "trap_for": [

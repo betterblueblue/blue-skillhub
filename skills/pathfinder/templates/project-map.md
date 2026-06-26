@@ -10,7 +10,7 @@
 
 # [项目名] 认知地图
 
-> 本地图由 Pathfinder(领航)生成,供 impact/impact-pro 当 L1 导航上下文。
+> 本地图由 Pathfinder(领航)生成,供 impact 当 L1 导航上下文。
 > 地图是**导航图不是权威源**:`【推断】`项动手前必须重新取证。
 
 ## Executive Summary（30 秒读懂）

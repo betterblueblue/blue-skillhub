@@ -16,7 +16,7 @@
     },
     "skill": {
       "type": "string",
-      "enum": ["impact", "impact-pro", "pathfinder"],
+      "enum": ["impact", "pathfinder"],
       "description": "目标 skill"
     },
     "stack": {
@@ -76,7 +76,7 @@
         },
         "profile_expected": {
           "type": "string",
-          "description": "impact-pro 专属：预期加载的 profile"
+          "description": "impact 专属：预期加载的 profile"
         },
         "map_sections_expected": {
           "type": "array",

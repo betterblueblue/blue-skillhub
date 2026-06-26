@@ -1,6 +1,16 @@
-# VL Vision Skill
+---
+name: vl-vision
+description: >
+  Utility tool — 通用 VL 识图工具（非核心 Skill）。调用外部视觉语言模型 API，让不具备视觉能力的 LLM 也能识别和理解图片。
+  不参与 Skill 评测体系，不作为变更影响分析工具使用。仅在 agent 工作流中需要"看懂"图片时按需调用。
+disable-model-invocation: true
+---
 
-通用 VL 识图技能。调用外部视觉语言模型 API，让不具备视觉能力的 LLM 也能识别和理解图片。
+# VL Vision — 识图工具（Utility）
+
+> **定位**：本工具是 utility，不是核心 Skill（pathfinder / impact / triage 等的同类）。
+> 不参与 Skill 评测体系的 L0/L1/L2 评测，不纳入变更影响分析流程。
+> 仅在 agent 遇到图片处理需求时按需调用。
 
 ## 适用场景
 

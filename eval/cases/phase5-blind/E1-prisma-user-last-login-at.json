@@ -1,7 +1,7 @@
 {
   "id": "E1",
   "title": "给用户加最后登录时间（Phase 5 执行）",
-  "skill": "impact-pro",
+  "skill": "impact",
   "stack": "node-express-prisma",
   "fixture": {
     "project": "prisma-express-ts",

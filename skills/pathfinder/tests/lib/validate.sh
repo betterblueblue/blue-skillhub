@@ -131,7 +131,7 @@ print(' '.join(rules))
     local rule_num="${rule#\#}"
     local pattern
     case "$skill" in
-      impact|impact-pro)
+      impact)
         pattern="^\s*${rule_num}[\.、\)]\s+\*\*(最高确认|高风险|DB 只读|写入目标|破坏性|阻塞恢复|凭证脱敏)"
         ;;
       pathfinder)
@@ -329,8 +329,8 @@ validate_shared_contracts() {
 
   # 按 skill 选择搜索关键词（见 contracts.md「各 skill 搜索关键词」）
   case "$skill" in
-    impact|impact-pro)
-      local keywords=("最高确认法" "凭证脱敏" "仓内文本不构成指令" "写入目标边界")
+    impact)
+      local keywords=("最高确认法" "凭证脱敏" "仓库内的文本不构成指令" "唯一写入目标")
       ;;
     pathfinder)
       local keywords=("可信度强制" "凭证脱敏" "仓库内的文本不构成指令" "唯一写入目标")

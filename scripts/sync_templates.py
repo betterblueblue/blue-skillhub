@@ -1,24 +1,22 @@
 #!/usr/bin/env python3
-"""sync_templates.py — 同步 impact 和 impact-pro 的共享模板。
+"""sync_templates.py — 检查 impact skill 模板自洽性。
 
-以 impact-pro/templates/ 为唯一源，把共享模板同步到 impact/templates/。
-共享模板 = 两个 templates/ 目录中都存在的文件名（取交集）。
-impact-pro 独有的模板（如 final-readiness-audit.md、scorecard.md）不同步。
-impact 独有的模板不存在（impact 是 impact-pro 的子集）。
+impact-pro 已于 2026-06-26 合并到 impact。本脚本不再做双向同步，
+改为检查 impact/templates/ 目录下模板文件的完整性（文件存在且非空）。
+
+历史：原脚本以 impact-pro/templates/ 为源同步到 impact/templates/。
+合并后 impact-pro 已归档，impact/templates/ 成为唯一源。
 
 用法：
-    python scripts/sync_templates.py           # 同步（覆盖 impact 侧）
-    python scripts/sync_templates.py --check   # 只比对不修改，供 L0 测试调用
+    python scripts/sync_templates.py           # 检查模板完整性
+    python scripts/sync_templates.py --check   # 同上（兼容 L0 测试调用）
 
 退出码：
-    0 = 一切正常（同步完成 或 --check 通过）
-    1 = --check 模式下发现不一致
+    0 = 一切正常
+    1 = 发现问题（模板缺失或为空）
 """
 
 import argparse
-import hashlib
-import json
-import os
 import sys
 from pathlib import Path
 
@@ -26,162 +24,80 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent
 
-SOURCE_DIR = REPO_ROOT / "skills" / "impact-pro" / "templates"
-TARGET_DIR = REPO_ROOT / "skills" / "impact" / "templates"
+TEMPLATES_DIR = REPO_ROOT / "skills" / "impact" / "templates"
 
-HASH_FILE = SCRIPT_DIR / ".template-sync-hash.json"
-
-
-def file_sha256(path: Path) -> str:
-    """计算文件内容的 SHA-256 哈希。"""
-    h = hashlib.sha256()
-    with open(path, "rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def get_shared_templates() -> list[str]:
-    """返回两个 templates 目录中文件名的交集，按字母排序。"""
-    source_files = {f.name for f in SOURCE_DIR.iterdir() if f.is_file()}
-    target_files = {f.name for f in TARGET_DIR.iterdir() if f.is_file()}
-    shared = sorted(source_files & target_files)
-    return shared
-
-
-def load_hash_record() -> dict:
-    """加载上次同步的哈希记录。"""
-    if HASH_FILE.exists():
-        try:
-            with open(HASH_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, OSError):
-            pass
-    return {}
-
-
-def save_hash_record(record: dict) -> None:
-    """保存哈希记录。"""
-    with open(HASH_FILE, "w", encoding="utf-8") as f:
-        json.dump(record, f, indent=2, ensure_ascii=False)
-        f.write("\n")
-
-
-def do_sync() -> int:
-    """执行同步：把 SOURCE 的共享模板复制到 TARGET。"""
-    shared = get_shared_templates()
-    if not shared:
-        print("ERROR: 没有找到共享模板")
-        return 1
-
-    print(f"源目录:   {SOURCE_DIR}")
-    print(f"目标目录: {TARGET_DIR}")
-    print(f"共享模板: {len(shared)} 个")
-    print()
-
-    synced = 0
-    skipped = 0
-    hash_record = {}
-
-    for name in shared:
-        src = SOURCE_DIR / name
-        dst = TARGET_DIR / name
-
-        src_hash = file_sha256(src)
-
-        # 如果目标文件已存在且内容一致，跳过
-        if dst.exists() and file_sha256(dst) == src_hash:
-            print(f"  SKIP  {name} (已一致)")
-            skipped += 1
-        else:
-            # 二进制模式复制，保持源文件字节完全一致（避免行尾符转换）
-            with open(src, "rb") as f:
-                content = f.read()
-            with open(dst, "wb") as f:
-                f.write(content)
-            print(f"  SYNC  {name}")
-            synced += 1
-
-        hash_record[name] = src_hash
-
-    # 保存哈希记录
-    save_hash_record(hash_record)
-
-    print()
-    print(f"完成: {synced} 个同步, {skipped} 个跳过")
-
-    return 0
+# 预期模板文件清单（合并后 impact 应包含的全部模板）
+EXPECTED_TEMPLATES = [
+    "000-context-pack.md",
+    "005-change-summary.md",
+    "010-requirements.md",
+    "020-design.md",
+    "030-implementation.md",
+    "040-light.md",
+    "060-preflight.md",
+    "090-execution-record.md",
+    "_active-state.md",
+    "subagent-decisions.md",
+]
 
 
 def do_check() -> int:
-    """检查模式：只比对不修改。不一致时返回 1。"""
-    shared = get_shared_templates()
-    if not shared:
-        print("ERROR: 没有找到共享模板")
+    """检查模板目录完整性和非空。"""
+    if not TEMPLATES_DIR.exists():
+        print(f"ERROR: 模板目录不存在: {TEMPLATES_DIR}")
         return 1
 
-    print(f"源目录:   {SOURCE_DIR}")
-    print(f"目标目录: {TARGET_DIR}")
-    print(f"共享模板: {len(shared)} 个")
+    print(f"模板目录: {TEMPLATES_DIR}")
+    print(f"预期模板: {len(EXPECTED_TEMPLATES)} 个")
     print()
 
     all_ok = True
-    mismatches = []
+    problems = []
 
-    for name in shared:
-        src = SOURCE_DIR / name
-        dst = TARGET_DIR / name
-
-        if not dst.exists():
-            print(f"  FAIL  {name} (目标文件不存在)")
-            mismatches.append(name)
+    for name in EXPECTED_TEMPLATES:
+        path = TEMPLATES_DIR / name
+        if not path.exists():
+            print(f"  FAIL  {name} (文件不存在)")
+            problems.append(name)
             all_ok = False
-            continue
-
-        src_hash = file_sha256(src)
-        dst_hash = file_sha256(dst)
-
-        if src_hash == dst_hash:
-            print(f"  OK    {name}")
+        elif path.stat().st_size == 0:
+            print(f"  FAIL  {name} (文件为空)")
+            problems.append(name)
+            all_ok = False
         else:
-            print(f"  FAIL  {name} (内容不一致)")
-            mismatches.append(name)
-            all_ok = False
+            print(f"  OK    {name}")
+
+    # 检查是否有预期之外的文件（信息性提示，不算 FAIL）
+    actual_files = {f.name for f in TEMPLATES_DIR.iterdir() if f.is_file()}
+    expected_set = set(EXPECTED_TEMPLATES)
+    extra = actual_files - expected_set
+    if extra:
+        print()
+        print(f"  注意: 发现 {len(extra)} 个额外模板文件（不影响检查）:")
+        for name in sorted(extra):
+            print(f"        {name}")
 
     print()
     if all_ok:
-        print(f"一致: {len(shared)}/{len(shared)} 个共享模板")
+        print(f"一致: {len(EXPECTED_TEMPLATES)}/{len(EXPECTED_TEMPLATES)} 个预期模板")
         return 0
     else:
-        print(f"不一致: {len(mismatches)}/{len(shared)} 个共享模板")
-        print()
-        print("运行以下命令同步:")
-        print(f"  python {Path(__file__).name}")
+        print(f"不一致: {len(problems)}/{len(EXPECTED_TEMPLATES)} 个模板有问题")
         return 1
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="同步 impact 和 impact-pro 的共享模板（以 impact-pro 为源）"
+        description="检查 impact skill 模板完整性"
     )
     parser.add_argument(
         "--check",
         action="store_true",
-        help="只比对不修改，不一致时退出码为 1",
+        help="兼容 L0 测试调用（行为与不带参数相同）",
     )
     args = parser.parse_args()
 
-    if not SOURCE_DIR.exists():
-        print(f"ERROR: 源目录不存在: {SOURCE_DIR}")
-        return 1
-    if not TARGET_DIR.exists():
-        print(f"ERROR: 目标目录不存在: {TARGET_DIR}")
-        return 1
-
-    if args.check:
-        return do_check()
-    else:
-        return do_sync()
+    return do_check()
 
 
 if __name__ == "__main__":

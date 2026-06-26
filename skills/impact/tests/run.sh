@@ -10,9 +10,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 source "$SCRIPT_DIR/lib/validate.sh"
 
 # 共享模板一致性检查（L0 前置）
-if command -v python3 &>/dev/null; then
+if python3 -c "print(1)" &>/dev/null; then
   PYTHON_BIN=python3
-elif command -v python &>/dev/null; then
+elif python -c "print(1)" &>/dev/null; then
   PYTHON_BIN=python
 else
   echo "  ⚠ python 未找到，跳过模板一致性检查"

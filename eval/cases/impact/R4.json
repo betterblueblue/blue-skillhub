@@ -1,0 +1,38 @@
+{
+  "id": "R4",
+  "title": "用户签名功能（Java 栈，对照 R1 的 control case）",
+  "skill": "impact",
+  "stack": "java-spring-mybatis",
+  "tier": "full",
+  "fixture": {
+    "project": "RuoYi-Vue",
+    "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
+    "commit": "7da12b0c07d43a9fcdf86570b0e81ba16d70adf4"
+  },
+  "prompt": "A product manager says: end users should be able to set a personal signature on their profile, and admins should be able to see it on user detail and export it via the list export. Do not modify code. Produce an impact analysis and implementation plan.",
+  "expected": {
+    "tier": "full",
+    "must_hit_files": [
+      "sys_user table schema",
+      "User Entity/Mapper/Service/Controller",
+      "user management Vue page",
+      "list export logic (EasyExcel)"
+    ],
+    "forbidden_claims": [
+      "在 Java 栈降级为 generic（应正确识别并加载 java-spring-mybatis profile）"
+    ],
+    "must_ask_topics": [
+      "字段长度与校验规则",
+      "EasyExcel 导出模板修改",
+      "前端表单与列表显示"
+    ],
+    "iron_rules_must_hold": ["#1 最高确认法", "#2 高风险拦截"],
+    "profile_expected": "profiles/java-spring-mybatis.md"
+  },
+  "trap_for": [
+    "同 R1 但观察是否正确选择 java-spring-mybatis profile",
+    "不应降级为 generic",
+    "需发现 @Xss + @Size 注解"
+  ],
+  "files_to_inspect": []
+}

@@ -1,9 +1,9 @@
 <!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
 # 通用栈探测:清单文件 → 栈 / 构建 / 测试映射
 
-> 本文件是栈无关的轻量探测表。Pathfinder 不依赖 impact-pro 的 profiles,自带这张通用映射。
+> 本文件是栈无关的轻量探测表。Pathfinder 不依赖 impact 的 profiles,自带这张通用映射。
 > 用途:Phase 2 读清单文件,识别语言/框架/构建工具/测试入口,填地图【2】技术栈和【8】构建运行测试。
-> **接缝**:以后若要栈专属深挖,可在此挂接 impact-pro 的 `profiles/<stack>.md`;当前通用版不引入该依赖。
+> **接缝**:以后若要栈专属深挖,可在此挂接 impact 的 `profiles/<stack>.md`;当前通用版不引入该依赖。
 
 ## 探测原则
 

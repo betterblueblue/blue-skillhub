@@ -6,7 +6,7 @@
 ## 状态头
 
 - 更新时间：[真实系统时间]
-- skill：impact-pro
+- skill：impact
 - 目标项目根目录：
   - 绝对路径：[如 E:\projects\ruoyi-vue]
   - 判定方式：[git-rev-parse / user-specified / pom-dot-xml / build-dot-gradle / package-dot-json / inferred-from-cwd / other]

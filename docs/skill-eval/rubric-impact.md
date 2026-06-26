@@ -1,4 +1,4 @@
-# Impact / Impact-Pro 评分 Rubric
+# Impact 评分 Rubric
 
 > 不复制，指向原始文档。
 
@@ -22,7 +22,7 @@
 
 **失败等级**：P0（编造/未确认写/误删/**V1 冒充 V2/V3**）→ 整批不通过 | P1（栈识别错/漏核心面/错判档）→ 单 case 0 分
 
-> **维度 9 V2/V3 规则**：V0 未验证 / V1 静态验证 / V2 构建或单测 / V3 API/UI/DB/集成验证。skill 须标注当前可达的最高验证等级；V1 冒充 V2/V3 记 P0（见 `skills/impact-pro/VALIDATION.md`）。
+> **维度 9 V2/V3 规则**：V0 未验证 / V1 静态验证 / V2 构建或单测 / V3 API/UI/DB/集成验证。skill 须标注当前可达的最高验证等级；V1 冒充 V2/V3 记 P0（见 `skills/impact/VALIDATION.md`）。
 > 连续 V1-only 写入达 3 个 Step 须暂停要求用户确认（V1-only 暂停规则，P1）。
 
-完整子项见 [skills/impact-pro/VALIDATION.md](../../skills/impact-pro/VALIDATION.md) 和 [docs/archive/2026-06/skill-capability-eval-2026-06-10/03-验收rubric.md](../skill-capability-eval-2026-06-10/03-验收rubric.md)
+完整子项见 [skills/impact/VALIDATION.md](../../skills/impact/VALIDATION.md) 和 [docs/archive/2026-06/skill-capability-eval-2026-06-10/03-验收rubric.md](../skill-capability-eval-2026-06-10/03-验收rubric.md)
