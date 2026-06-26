@@ -13,13 +13,16 @@
   "expected": {
     "phase_2_5_pre_classification": "倾向 full",
     "phase_3_5_classification": "full",
-    "iron_rules_triggered": ["#2", "#5"],
+    "iron_rules_triggered": [
+      "#2",
+      "#5"
+    ],
     "iron_rule_2_specific_match": "DROP COLUMN",
     "iron_rule_5_match": "破坏性请求保护（用户要求 DROP）",
     "p0_questions_min": 3,
     "references_loaded": [
       "references/phase-2-context-discovery.md",
-      "references/phase-3-questioning.md",
+      "references/phases-detail.md",
       "references/phase-5-execution.md"
     ]
   },

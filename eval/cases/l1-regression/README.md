@@ -6,7 +6,7 @@
 
 ## 为什么需要这套回归
 
-`docs/archive/2026-06/skill-improvement-2026-06-24.md` 实施了 5 个改进项（P1-A/P1-B/I1-A/I2-A/IP1-A），改了 pathfinder/impact/impact-pro 三个 skill 的协议。需要回归测试确认改进没破坏既有能力。
+`docs/archive/2026-06/skill-improvement-2026-06-24.md` 实施了 5 个改进项（P1-A/P1-B/I1-A/I2-A/IP1-A），改了 pathfinder/impact 两个 skill 的协议。需要回归测试确认改进没破坏既有能力。
 
 ## 和盲测（blind/）的区别
 
@@ -27,7 +27,7 @@
 |------|-------|---------|------------------|
 | P1 | pathfinder | P1-A + P1-B | go-admin 是独立 Git 仓库 + 有 DB，能触发 P1-A 的 facts 校验；有 casbin + JWT auth 流程，能触发 P1-B 的认证-鉴权字段一致性自检 |
 | R1 | impact | I1-A + I2-A | full 模式，会生成 `030-implementation.md`，能触发 I1-A 方法名存在性验证 + I2-A 被调方法异常行为确认 |
-| F1 | impact-pro | IP1-A | full 模式，有 context-pack 的"暂不纳入范围"环节，能触发 IP1-A 用户场景覆盖验证 |
+| F1 | impact | IP1-A | full 模式，有 context-pack 的"暂不纳入范围"环节，能触发 IP1-A 用户场景覆盖验证 |
 
 ## 执行方式
 
@@ -68,4 +68,4 @@ eval/cases/l1-regression/
 └── PROMPT-step37flash-regression.md   # Step 3.7 Flash 一键执行 prompt
 ```
 
-L1 case 原始定义在 `eval/cases/{pathfinder,impact,impact-pro}/`，本目录只放批量执行的 prompt。
+L1 case 原始定义在 `eval/cases/{pathfinder,impact}/`，本目录只放批量执行的 prompt。

@@ -1,0 +1,38 @@
+{
+  "id": "G2",
+  "title": "改 API 返回 msg 文案（轻量，陷阱：用户口述与代码原文不一致）",
+  "skill": "impact",
+  "stack": "go-gin-gorm",
+  "tier": "light",
+  "fixture": {
+    "project": "go-admin",
+    "url": "https://github.com/go-admin-team/go-admin",
+    "commit": "b83eef8670b09533213cdd29635e01842704ddd8"
+  },
+  "prompt": "go-admin 用户列表 API，返回的 msg 字段从'操作成功'改成'请求成功'",
+  "expected": {
+    "tier": "light",
+    "must_hit_files": [
+      "common/models/response.go (Msg 字段)",
+      "app/admin/apis/sys_user.go (实际返回文案)"
+    ],
+    "forbidden_claims": [
+      "直接改 sys_user.go 的'操作成功'（实际 sys_user 返回'查询成功'）"
+    ],
+    "must_ask_topics": [
+      "sys_user 实际返回'查询成功'，'操作成功'在 sys_role.go:283 — 用户原话与代码不一致"
+    ],
+    "iron_rules_must_hold": [],
+    "profile_expected": "profiles/go-gin-gorm.md"
+  },
+  "trap_for": [
+    "用户口述'操作成功'，但 sys_user.GetPage 实际是'查询成功'",
+    "'操作成功'全仓仅 1 处在 sys_role.go:283（不能盲改 sys_user.go）",
+    "无 DB/API 契约/状态机变更 → 判 light 必须准确"
+  ],
+  "files_to_inspect": [
+    { "path": "common/models/response.go", "must_exist": true, "must_contain": "Msg" },
+    { "path": "app/admin/apis/sys_user.go", "must_exist": true, "must_contain": "查询成功" },
+    { "path": "app/admin/apis/sys_role.go", "must_exist": true, "must_contain": "操作成功" }
+  ]
+}

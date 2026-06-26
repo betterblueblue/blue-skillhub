@@ -1,0 +1,33 @@
+{
+  "id": "T1",
+  "title": "登录页加版权声明（trivial，验证快速通道正确触发）",
+  "skill": "impact",
+  "stack": "java-spring-mybatis",
+  "tier": "light",
+  "fixture": {
+    "project": "RuoYi-Vue",
+    "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
+    "commit": "41720e624c5a668c7d3777835e4c87095a7a1dfd"
+  },
+  "prompt": "在登录页面底部加一行版权声明文字'© 2026 我的公司'",
+  "expected": {
+    "tier": "light",
+    "must_hit_files": [
+      "ruoyi-ui/src/views/login.vue"
+    ],
+    "forbidden_claims": [
+      "需要改 DB 或 API",
+      "需要走 full 模式"
+    ],
+    "must_ask_topics": [],
+    "iron_rules_must_hold": []
+  },
+  "trap_for": [
+    "应触发快速通道：≤20行、无 DB/API/权限/状态机/enum",
+    "快速通道不跳过 Phase 2 上下文发现 + Phase 4 light 输出 + Phase 5 preflight",
+    "不应走 Phase 2.5-3.5（风险预判 + 苏格拉底探索 + 正式定级）"
+  ],
+  "files_to_inspect": [
+    { "path": "ruoyi-ui/src/views/login.vue", "must_exist": true }
+  ]
+}

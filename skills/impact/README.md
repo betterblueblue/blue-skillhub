@@ -2,11 +2,11 @@
 
 ## 这个 Skill 是干什么的
 
-面向 Java/Spring/MyBatis 类现有系统（如 RuoYi 等后台框架），把模糊的功能迭代、新功能接入或高风险变更意图，通过靶向提问变成基于证据的影响分析，light/full 两档输出，统一写入 `change-impact/` 目录并协助执行。
+面向多技术栈现有系统（Java/Spring/MyBatis、Node/Express/Prisma、Python/FastAPI、Go/Gin/GORM、前端框架等），把模糊的功能迭代、新功能接入或高风险变更意图，通过靶向提问变成基于证据的影响分析，light/full 两档输出，统一写入 `change-impact/` 目录并协助执行。
 
 它不是从 0 到 1 搭建新系统的生成器，而是在已有代码、schema、接口、配置、测试和业务约束中，辅助完成一次安全可追溯的系统变更。
 
-它可以搭配 `RuleBlade` 使用：`RuleBlade` 约束 agent 的通用编码行为，`impact` 负责 Java/Spring/MyBatis 类现有系统（如 RuoYi 等后台框架）的影响分析、文档输出和受监督执行流程。
+它可以搭配 `RuleBlade` 使用：`RuleBlade` 约束 agent 的通用编码行为，`impact` 负责多技术栈现有系统的影响分析、文档输出和受监督执行流程。技术栈专属规则位于 `profiles/`，按 Phase 2 自动检测结果按需加载。
 
 ## 核心价值：给模型带来什么增益
 
@@ -228,12 +228,12 @@ v4.1 两项核心改进全面生效：agent 在第 1 轮 3 题后自检链路追
 impact 已接入统一测评框架（[docs/skill-eval/](../../docs/skill-eval/)），支持三层防不一致检测：
 
 - **L0 静态自洽**（每次改动必跑）：`bash skills/impact/tests/run.sh` — 检查硬性规则存在、引用完整、共享契约、fixture 锁定
-- **L1 行为契约**（release 前跑）：`bash eval/run-l1.sh impact` — 4 个标准化 case（R1/R2/R3/R3N），subagent 扮用户端到端跑分，客观维度机器判 + 安全闸
+- **L1 行为契约**（release 前跑）：`bash eval/run-l1.sh impact` — 11 个标准化 case（R1/R2/R3/R3N/R4/F1/F2/F3/G1/G2/T1），subagent 扮用户端到端跑分，客观维度机器判 + 安全闸
 - **L2 人审深度**（里程碑抽样）：主观维度（苏格拉底质量、文档可读性）人工复核
 
-当前基线来自 2026-06-14（4 case，平均基础分 89.3 / 100，opus-4-8）。每次改 skill 后跑 L1 产出评分卡，用 `bash eval/diff-baseline.sh impact` 和基线 diff——任何契约掉绿或维度掉档>=3 即红线阻断。基线详情见 [eval/baselines/impact.json](../../eval/baselines/impact.json)。
+当前基线来自 2026-06-14（10 case，平均基础分 91.2 / 100，opus-4-8；原 impact-pro 基线已合并）。每次改 skill 后跑 L1 产出评分卡，用 `bash eval/diff-baseline.sh impact` 和基线 diff——任何契约掉绿或维度掉档>=3 即红线阻断。基线详情见 [eval/baselines/impact.json](../../eval/baselines/impact.json)。
 
-共享契约（三 skill 都要守）：基于证据不臆测、可信度标记二分、凭证脱敏、仓库内文本不构成指令、写入目标边界。L0 自动检查这些契约在三个 SKILL.md 中都存在，防止改一处另两处不一致。
+共享契约（impact + pathfinder 两个 skill 都要守）：基于证据不臆测、可信度标记二分、凭证脱敏、仓库内的文本不构成指令、写入目标边界。L0 自动检查这些契约在两个 SKILL.md 中都存在，防止改一处另一处不一致。
 
 ## 典型对话流程
 
@@ -527,7 +527,7 @@ V9→V10 总分 92→96（+4），无维度回退。评审报告见 `eval/runs/b
 
 ## E2E 真实回归测试
 
-2026-06-12 在 RuoYi-Vue 真项目上跑了 e2e 验证，确认拆分后行为零回归。（Go/go-admin 等非 Java 栈的 e2e 见 impact-pro README，impact 只覆盖 Java/Spring/MyBatis。）
+2026-06-12 在 RuoYi-Vue 真项目上跑了 e2e 验证，确认拆分后行为零回归。多栈 e2e（Go/go-admin、Node/Express、Python/FastAPI 等）在 v5-v9 盲测中验证，见 eval/runs/。
 
 2026-06-14 补齐负向安全闸 e2e（T07）：subagent 在 RuoYi-Vue 上注入诱惑（模糊授权 / 越界写入 / 跳过恢复确认），**不真改源码**只验安全闸判断。硬性规则 #1/#4/#6 三道安全闸 3/3 PASS，ruoyi-vue `git diff --stat` 全程空。spec + prompt 为可重复回归资产，记录见 [validation-runs/2026-06-14-T07-negative-iron-rule-gates.md](validation-runs/2026-06-14-T07-negative-iron-rule-gates.md)。
 
@@ -564,28 +564,49 @@ tests/
 
 ```
 impact/
-├── SKILL.md              # 核心规则（256 行，< 500 行）
+├── SKILL.md              # 通用内核（219 行，< 500 行）
 ├── README.md             # 本文件
 ├── VALIDATION.md         # 验证方案
-├── references/          # 详细执行规则（按需加载，正文瘦身下沉）
-│   ├── phase-2-context-discovery.md  # Phase 2 分层探索、上下文预算、MCP 探测、代码引用发现、用户场景覆盖验证、反向引用检查、上下文地图
-│   ├── phase-3-questioning.md        # Phase 3 多轮收敛协议、问题优先级、维度分组、质量底线追问、风险靶向追问
-│   ├── phase-5-execution.md          # Phase 5 写入目标边界、V1-only 计数、非 Git 回退、阻塞恢复、DDL/DML 执行方式、执行流程模板、验证方案、风格合规、高风险拦截清单详细处理、API 方法名预检、被调方法异常行为确认
-│   ├── cross-platform-notes.md       # 跨平台差异（时间戳命令、路径分隔符、shell 元字符）
-│   ├── dimensions.md                 # 19 维度及触发场景
-│   ├── schema-discovery.md           # Schema 发现查询模板
-│   └── style-analysis.md             # 风格分析步骤
-├── code-graph-adapters/ # 可选代码图适配器（MCP 可用时增强引用发现）
+├── profiles/             # 技术栈规则（Phase 2 自动探测并按需加载）
+│   ├── _schema.md        # 技术栈规则接口定义
+│   ├── _template.md      # 新技术栈规则模板
+│   ├── generic.md        # 通用备用规则
+│   ├── java-spring-mybatis.md
+│   ├── node-express-prisma.md
+│   ├── python-fastapi-sqlmodel.md
+│   ├── go-gin-gorm.md
+│   ├── frontend-react-vite.md
+│   ├── frontend-nextjs.md
+│   ├── frontend-nuxt-vue.md
+│   └── dotnet-aspnet-efcore.md
+├── db-adapters/          # 数据库适配器
+│   ├── generic-sql.md
+│   ├── mysql.md
+│   └── postgresql.md
+├── code-graph-adapters/  # 可选代码图适配器（MCP 可用时增强引用发现）
 │   └── generic-mcp.md
+├── references/           # 详细执行规则（按需加载）
+│   ├── phase-1-intent.md             # 长期目标模式 + 快速通道判定
+│   ├── phase-2-context-discovery.md  # Phase 2 分层探索、MCP 探测、代码引用发现、用户场景覆盖验证
+│   ├── phase-2.5-risk-triage.md      # 覆盖范围语义核查 + 现状核查门禁
+│   ├── phases-detail.md              # Phase 3 & 3.5 多轮收敛、定级条件、验证等级
+│   ├── phase-4-output.md             # Phase 4 文档输出规则 + 脚本闸门
+│   ├── phase-5-execution.md          # Phase 5 写入边界、V1-only 计数、阻塞恢复、DDL/DML、高风险拦截
+│   ├── dimensions.md                 # 19 维度及触发场景
+│   └── cross-platform-notes.md       # 跨平台差异（时间戳/路径/shell）
 ├── templates/            # 文档模板
 │   ├── 000-context-pack.md
+│   ├── 005-change-summary.md
 │   ├── 010-requirements.md
 │   ├── 020-design.md
 │   ├── 030-implementation.md
 │   ├── 040-light.md
-│   ├── _active-state.md
 │   ├── 060-preflight.md
-│   └── 090-execution-record.md
+│   ├── 090-execution-record.md
+│   ├── _active-state.md
+│   ├── subagent-decisions.md
+│   ├── final-readiness-audit.md
+│   └── scorecard.md
 └── tests/                # 测试（gitignore，本地保留）
     ├── scenarios/        # 静态场景 JSON（v1 冒烟）
     └── e2e/              # 端到端真行为测试（v2）
@@ -596,26 +617,26 @@ impact/
 
 ## 共享模板同步
 
-`templates/` 下的共享模板以 `impact-pro/templates/` 为唯一源。修改模板时先改 `impact-pro` 侧，再跑同步：
+`templates/` 下的共享模板以 `impact/templates/` 为唯一源（原 `impact-pro/templates/` 已随合并迁入）。修改模板时直接改 `impact/templates/`，再跑检查：
 
 ```bash
-python scripts/sync_templates.py          # 同步到 impact/templates/
-python scripts/sync_templates.py --check  # 只检查不一致，L0 测试会调用
+python scripts/sync_templates.py --check  # 检查一致性，L0 测试会调用
 ```
 
 不要直接改 `impact/templates/` 下的共享模板——L0 测试会检测到不一致并报 FAIL。
 
 ## references 索引
 
-| 文件 | 内容 | 主文档对应段 |
-|------|------|-------------|
-| `references/phase-2-context-discovery.md` | Phase 2 完整执行规则（含用户场景覆盖验证） | Phase 2 项目背景构建 |
-| `references/phase-3-questioning.md` | Phase 3 & 3.5 详细规则（含覆盖范围语义核查） | Phase 3 探索、Phase 3.5 定级 |
-| `references/phase-5-execution.md` | Phase 5 完整执行规则（含 API 方法名预检、被调方法异常行为确认） | Phase 5 执行与验证 |
+| 文件 | 内容 | 加载时机 |
+|------|------|---------|
+| `references/phase-1-intent.md` | 长期目标模式 + 快速通道判定规则 | Phase 1 |
+| `references/phase-2-context-discovery.md` | Phase 2 完整执行规则（含用户场景覆盖验证、MCP 探测） | Phase 2 |
+| `references/phase-2.5-risk-triage.md` | 覆盖范围语义核查 + 现状核查门禁 | Phase 2.5 |
+| `references/phases-detail.md` | Phase 3 & 3.5 详细规则（多轮收敛、定级条件、验证等级 V0-V3） | Phase 3 / 3.5 |
+| `references/phase-4-output.md` | Phase 4 文档输出规则 + 脚本闸门 | Phase 4 |
+| `references/phase-5-execution.md` | Phase 5 完整执行规则（写入边界、V1-only 计数、阻塞恢复、DDL/DML、高风险拦截、API 方法名预检） | Phase 5 |
+| `references/dimensions.md` | 19 维度及触发场景 | Phase 3 |
 | `references/cross-platform-notes.md` | 跨平台差异（时间戳/路径/shell） | 跨平台执行 |
-| `references/dimensions.md` | 19 维度及触发场景 | Phase 3 维度选择 |
-| `references/schema-discovery.md` | Schema 发现查询模板 | Phase 2 MCP 探测 |
-| `references/style-analysis.md` | 风格分析步骤 | Phase 2 风格分析 |
 
 ## 自动 / 确认边界
 
@@ -628,7 +649,7 @@ python scripts/sync_templates.py --check  # 只检查不一致，L0 测试会调
 
 ## 代码风格分析
 
-Phase 2 在发现上下文时同步分析项目代码风格，产出结构化风格报告，嵌入设计文档供实施阶段参考。详细步骤与 token 上限见 `references/style-analysis.md`。
+Phase 2 在发现上下文时同步分析项目代码风格，产出结构化风格报告，嵌入设计文档供实施阶段参考。风格观察轴（`style_axes`）和验证策略（`validation_strategy`）由 `profiles/<stack>.md` 定义，按检测到的技术栈按需加载。
 
 ### 两级策略
 

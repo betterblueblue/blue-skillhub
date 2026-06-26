@@ -5,7 +5,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
 TS = "2026-06-25 17:53:11"
-GEN = "impact/impact-pro + Composer 2.5"
+GEN = "impact + Composer 2.5"
 
 NAV_FULL = (
     "**000-context-pack.md** → [010-requirements.md](010-requirements.md) → "
@@ -386,7 +386,7 @@ w(B2 / "_active-state.md", f"""# B2 活跃状态
 
 > 生成时间：{TS}
 
-- skill：impact-pro
+- skill：impact
 - 模式：light
 - 阶段：Phase 4 完成
 """)
@@ -565,7 +565,7 @@ if (!user?.isEmailVerified) {
 w(B3 / "_active-state.md", f"""# B3 活跃状态
 
 > 生成时间：{TS}
-- skill：impact-pro
+- skill：impact
 - 模式：full
 - 阶段：Phase 4 完成
 """)

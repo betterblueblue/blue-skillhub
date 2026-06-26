@@ -1,7 +1,7 @@
 {
   "id": "E2",
   "title": "给 Item 加置顶标记（Phase 5 执行）",
-  "skill": "impact-pro",
+  "skill": "impact",
   "stack": "python-fastapi-sqlmodel",
   "fixture": {
     "project": "full-stack-fastapi-template",

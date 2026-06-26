@@ -26,14 +26,14 @@
 
 ## 关联文档
 
-- [共享契约清单](contracts.md) — 三 skill 都要守的契约，L0 据此检查
-- [impact/impact-pro rubric](rubric-impact.md) — 指向 VALIDATION.md 的 9 维
+- [共享契约清单](contracts.md) — 两个 skill 都要守的契约，L0 据此检查
+- [Impact rubric](rubric-impact.md) — 指向 VALIDATION.md 的 9 维
 - [Pathfinder rubric](rubric-pathfinder.md) — Pathfinder 专属 9 维
 - [回归触发矩阵](regression.md) — 改了什么 → 跑哪些复测
 - [基线与红线规则](../../eval/baselines/) — 防漂移硬机制
 
 ## 复验体系(单一权威入口)
 
-**完整复验体系见 [REVALIDATION.md](REVALIDATION.md)** —— 框架(L0/L1/L2)+ 共享方法论(控制变量法 / 模型敏感性 / 客观清单+抽查 / 契约)+ 机械(eval 工具)+ 逐 skill 复验清单(pathfinder/impact/impact-pro)+ 全景地图。改任一 skill 后从那里开始。
+**完整复验体系见 [REVALIDATION.md](REVALIDATION.md)** —— 框架(L0/L1/L2)+ 共享方法论(控制变量法 / 模型敏感性 / 客观清单+抽查 / 契约)+ 机械(eval 工具)+ 逐 skill 复验清单(pathfinder/impact)+ 全景地图。改任一 skill 后从那里开始。
 
 一句话:L1 由模型执行 + 判分,**方差不可消灭**;跨 run 归因前先看 `runner_model` 一致性(评分卡必填),要隔离 skill 效应用控制变量法(同模型重跑,`eval/scripts/analyze_control.py` 裁决)。

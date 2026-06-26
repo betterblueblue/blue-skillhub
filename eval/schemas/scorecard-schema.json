@@ -28,7 +28,7 @@
     },
     "dims": {
       "type": "object",
-      "description": "各维度分数。键名必须用该 skill 的 canonical 维度名,跨 run 一致才能 diff。pathfinder 9 维: readonly_safety, evidence_tags, blindspot_honesty, credential_masking, trust_header, mermaid_discipline, section_completeness, degradation, handoff。impact/impact-pro 9 维见 rubric-impact.md。",
+      "description": "各维度分数。键名必须用该 skill 的 canonical 维度名,跨 run 一致才能 diff。pathfinder 9 维: readonly_safety, evidence_tags, blindspot_honesty, credential_masking, trust_header, mermaid_discipline, section_completeness, degradation, handoff。impact 9 维见 rubric-impact.md。",
       "additionalProperties": { "type": "integer" }
     },
     "base_total": {

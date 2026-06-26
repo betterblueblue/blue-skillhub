@@ -1,5 +1,5 @@
 <!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
-# 协作约定:Pathfinder → impact / impact-pro
+# 协作约定:Pathfinder → impact
 
 > 本文件定义 Pathfinder 产出的 `_project-map.md` 如何被 impact 家族安全消费。
 > 核心一句:**地图是「导航图」不是「权威源」,impact 接过去仍须自行取证。**
@@ -10,7 +10,7 @@
 Pathfinder ──写──> change-impact/_project-map.md
                           │ (impact 启动 Phase 2 时主动去读,读不到就照旧)
                           ▼
-impact / impact-pro Phase 2 ── 把地图当 L1 预读 ──> 自己做 L2/L3 切片深挖
+impact Phase 2 ── 把地图当 L1 预读 ──> 自己做 L2/L3 切片深挖
 ```
 
 - Pathfinder **不知道 impact 的存在**,只产出一个自包含文件,不主动推送、不调用 impact。
@@ -67,7 +67,7 @@ impact 读地图时按标签分流:
 
 ## impact 侧需要加的规则(最小改动)
 
-在 `impact` 和 `impact-pro` 的 `references/phase-2-context-discovery.md` 各加一段,概要:
+在 `impact` 的 `references/phase-2-context-discovery.md` 中已有对应规则,概要:
 
 > **若 `change-impact/_project-map.md` 存在**:先读它做 L1 导航,聚焦本次变更相关模块,跳过重复的全局扫描。但——
 > - `【推断】`项一律按未确认处理,动手前自行重新取证;

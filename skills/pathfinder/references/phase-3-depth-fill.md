@@ -61,12 +61,27 @@
 
 填写【10】后，必须执行以下交叉检查。**这不是填表，而是读源码比对**——先逐行读认证和鉴权的源码文件，再做字段对比，不能凭"应该有 role 字段"的假设就跳过。
 
-1. **读认证链路源码**：打开 JWT select/claims 配置文件（如 `passport.ts`、`jwt.strategy.ts`、`SecurityConfig.java`），逐行确认认证链路把哪些字段放进了请求上下文（`req.user`、`SecurityContext`）。记录选取的字段列表和 `文件:行号`。
-2. **读鉴权链路源码**：打开 RBAC/权限检查文件（如 `auth.ts`、`@PreAuthorize` 注解所在类、`SecurityExpressionRoot`），确认鉴权链路从请求上下文取了哪些字段。记录使用的字段列表和 `文件:行号`。
-3. **对比两者**：鉴权使用的字段，是否都在认证链路选取的字段集合里？
-4. **不一致 → 记录到【9】风险区域**，标注"认证 payload 缺少鉴权所需字段（如 select 未取 role，但 RBAC 用 user.role）"，标【已核实】并附 `文件:行号` 证据。
+**步骤 0 — 识别认证机制类型**（决定后续检查路径）：
 
-> 关键：必须先 Read 源码再比对，不能只凭命名推断填一张比对表了事。找不到认证或鉴权链路时标【推断】并在【13】记录"权限模型未深入"。
+先扫描认证相关文件（middleware、guard、interceptor、filter、strategy），判断项目使用哪种认证机制：
+
+| 认证机制 | 常见信号 | 检查路径 |
+|----------|---------|----------|
+| JWT | `passport-jwt`、`jwt.strategy`、`JwtUtil`、`io.jsonwebtoken`、`@PreAuthorize` | JWT claims/select → 请求上下文字段 → 鉴权取字段 |
+| Session/Cookie | `express-session`、`spring-session`、`req.session`、`HttpSession` | Session 存储字段 → 鉴权取字段 |
+| API Key | `x-api-key`、`apiKey`、`authenticateApiKey` | Key 验证 → 关联用户/角色 → 鉴权取字段 |
+| OAuth | `passport-oauth`、`spring-security-oauth`、`OAuth2` | Token 验证 → 用户信息映射 → 鉴权取字段 |
+| 无认证 | 无 auth 相关文件/中间件/注解 | 跳过自检，在【10】标"无认证机制" |
+
+**步骤 1 — 读认证链路源码**：根据步骤 0 识别的机制，打开对应的认证配置文件，逐行确认认证链路把哪些字段放进了请求上下文。记录选取的字段列表和 `文件:行号`。
+
+**步骤 2 — 读鉴权链路源码**：打开权限检查文件（如 `@PreAuthorize`/`@RequiresPermissions` 注解所在类、`auth.ts` RBAC 逻辑、middleware 权限校验），确认鉴权链路从请求上下文取了哪些字段。记录使用的字段列表和 `文件:行号`。
+
+**步骤 3 — 比对两者**：鉴权使用的字段，是否都在认证链路选取的字段集合里？
+
+**步骤 4 — 不一致 → 记录到【9】风险区域**，标【已核实】并附 `文件:行号` 证据。
+
+> 关键：必须先 Read 源码再比对，不能只凭命名推断填一张比对表了事。找不到认证或鉴权链路时标【推断】并在【13】记录"权限模型未深入"。项目无认证机制时跳过自检，但必须在【10】显式标注。
 
 ### 【11】典型主流程(只 trace 一条)
 

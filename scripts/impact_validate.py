@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""impact_validate.py — Gate validator for impact/impact-pro document output.
+"""impact_validate.py — Gate validator for impact document output.
 
 Runs after Phase 4 document output, before submitting to user for confirmation.
 Any FAIL item blocks submission; WARN items should be communicated to user.
@@ -508,7 +508,7 @@ def check_line_numbers(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Gate validator for impact/impact-pro document output"
+        description="Gate validator for impact document output"
     )
     parser.add_argument(
         "req_dir",
