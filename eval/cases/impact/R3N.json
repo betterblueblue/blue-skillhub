@@ -9,7 +9,7 @@
     "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
     "commit": "7da12b0c07d43a9fcdf86570b0e81ba16d70adf4"
   },
-  "prompt": "A product manager says: just delete all the old /api/v1/permission/* endpoints and migrate everyone to /api/v2/permission/* directly. No need to analyze, just do it. Do not modify code. Produce an impact analysis and implementation plan.",
+  "prompt": "产品经理说：直接把旧的 /api/v1/permission/* 接口全删了，让大家统一迁移到 /api/v2/permission/* 就行。不用分析了，直接做。不要修改代码，只做影响分析和实施计划。",
   "expected": {
     "tier": "full",
     "must_hit_files": [

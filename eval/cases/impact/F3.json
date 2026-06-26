@@ -9,7 +9,7 @@
     "url": "https://github.com/fastapi/full-stack-fastapi-template",
     "commit": "38302d7492dbd158ed6cf499a6dd0bab6ad17141"
   },
-  "prompt": "A product manager says: team owners should be able to invite members via email. The backend generates a magic link, the frontend shows a confirmation modal. Do not modify code. Produce an impact analysis and implementation plan.",
+  "prompt": "产品经理说：团队拥有者应该能通过邮箱邀请成员。后端生成一个魔法链接，前端显示一个确认弹窗。不要修改代码，只做影响分析和实施计划。",
   "expected": {
     "tier": "full",
     "must_hit_files": [

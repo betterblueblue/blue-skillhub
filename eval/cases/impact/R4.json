@@ -9,7 +9,7 @@
     "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
     "commit": "7da12b0c07d43a9fcdf86570b0e81ba16d70adf4"
   },
-  "prompt": "A product manager says: end users should be able to set a personal signature on their profile, and admins should be able to see it on user detail and export it via the list export. Do not modify code. Produce an impact analysis and implementation plan.",
+  "prompt": "产品经理说：终端用户应该能在个人资料里设置个人签名，管理员能在用户详情页看到，还能在列表导出时导出。不要修改代码，只做影响分析和实施计划。",
   "expected": {
     "tier": "full",
     "must_hit_files": [
