@@ -165,7 +165,7 @@ SVG 是预览层,不是事实层。生成 SVG 时必须遵守:
 - V3: SVG 安全（替代原 #5）
 - V4: 未覆盖项非空（替代原 #3）
 - V5: Mermaid 实线一致性（替代原 #4）
-- V6: facts 文件内容校验（scan.json file_count > 0、dir_tree 含根目录；git.json head_short 非 null、toplevel 与 --repo-root 一致）。facts 文件缺失时只 WARN 不 FAIL；内容不合理时 FAIL。
+- V6: facts 文件内容校验（scan.json file_count > 0、dir_tree 含根目录且条目 > 1、dir_tree 条目对应磁盘真实目录、file_count 与磁盘实际文件数比值在 0.3-3.0 范围内；git.json head_short 非 null、toplevel 与 --repo-root 一致）。facts 文件缺失时只 WARN 不 FAIL；内容不合理时 FAIL。
 
 > 设计理由：模型自查（Phase 4.5）是循环的——编造行号的模型可能在自检环节继续出错。脚本闸门是外部进程，exit code ≠ 0 时无法绕过，不受模型诚信度影响。
 
