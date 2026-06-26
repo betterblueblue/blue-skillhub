@@ -9,7 +9,7 @@
     "url": "https://github.com/fastapi/full-stack-fastapi-template",
     "commit": "38302d7492dbd158ed6cf499a6dd0bab6ad17141"
   },
-  "prompt": "A product manager says: items should have a warning threshold. When stock falls below it, the item detail API should return low_stock: true. Do not modify code. Produce an impact analysis and implementation plan.",
+  "prompt": "产品经理说：商品应该有个库存预警阈值。当库存低于阈值时，商品详情 API 应该返回 low_stock: true。不要修改代码，只做影响分析和实施计划。",
   "expected": {
     "tier": "full",
     "must_hit_files": [

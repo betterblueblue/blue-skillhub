@@ -59,13 +59,25 @@
 | R1 | `030-implementation.md` 中的方法名是否经 grep 验证存在；对已有方法的调用是否确认了异常行为 |
 | F1 | context-pack 的"暂不纳入范围"是否做了用户场景覆盖验证；排除文件是否附 trace 证据 |
 
+## 合并后全量回归（2026-06-26）
+
+impact-pro 合并到 impact 后的全量回归，11 个 case 全部用单一 `/impact` skill 跑，走完整 Phase 1-5。
+
+| 模型 | prompt 文件 | 产出目录前缀 | run 目录 |
+|------|------------|-------------|---------|
+| Composer 2.5 | `PROMPT-composer25-merge-regression.md` | `l1-regression-2026-06-26/` | `eval/runs/2026-06-26-impact@3b3148b/` |
+
+评审模型：GLM-5.2。详细方案见 `eval/runs/2026-06-26-impact@3b3148b/README.md`。
+
 ## 目录结构
 
 ```
 eval/cases/l1-regression/
-├── README.md                          # 本文件
-├── PROMPT-composer25-regression.md    # Composer 2.5 一键执行 prompt
-└── PROMPT-step37flash-regression.md   # Step 3.7 Flash 一键执行 prompt
+├── README.md                              # 本文件
+├── PROMPT-composer25-regression.md        # Composer 2.5 定向回归 prompt（v4.1）
+├── PROMPT-step37flash-regression.md       # Step 3.7 Flash 定向回归 prompt（v4.1）
+├── PROMPT-composer25-full-regression.md   # Composer 2.5 全量回归 prompt（v4.1，13 case × 3 skill）
+└── PROMPT-composer25-merge-regression.md  # Composer 2.5 合并后回归 prompt（11 case × 1 skill + Phase 5）
 ```
 
 L1 case 原始定义在 `eval/cases/{pathfinder,impact}/`，本目录只放批量执行的 prompt。

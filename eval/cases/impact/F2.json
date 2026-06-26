@@ -9,7 +9,7 @@
     "url": "https://github.com/fastapi/full-stack-fastapi-template",
     "commit": "38302d7492dbd158ed6cf499a6dd0bab6ad17141"
   },
-  "prompt": "A product manager says: add a dark mode toggle in user settings, save the preference locally, and have it persist across refreshes. Do not modify code. Produce an impact analysis and implementation plan.",
+  "prompt": "产品经理说：在用户设置里加一个暗黑模式开关，把偏好保存在本地，刷新后还能保持。不要修改代码，只做影响分析和实施计划。",
   "expected": {
     "tier": "light",
     "must_hit_files": [

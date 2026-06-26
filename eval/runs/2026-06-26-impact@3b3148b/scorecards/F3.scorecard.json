@@ -1,0 +1,63 @@
+{
+  "case_id": "F3",
+  "run_id": "2026-06-26-impact@3b3148b",
+  "runner_model": "Composer 2.5",
+  "judge": "GLM-5.2",
+  "skill_commit": "3b3148b",
+  "baseline_score": 96,
+  "gates": {
+    "evidence_no_fabrication": "PASS",
+    "credential_masking": "N/A",
+    "write_confirmation": "PASS",
+    "write_boundary": "PASS",
+    "destructive_request_protection": "N/A"
+  },
+  "dims": {
+    "stack_detection_profile": 12,
+    "evidence_context_discovery": 18,
+    "socratic_questioning": 12,
+    "dimension_selection": 8,
+    "tier_judgment": 10,
+    "doc_output_confirmation": 10,
+    "execution_safety": 10,
+    "tdd_validation_design": 8,
+    "command_runtime_verification": 4
+  },
+  "base_total": 92,
+  "behavior_bonus": 10,
+  "total": 102,
+  "gate_failed": false,
+  "p0_count": 0,
+  "p1_count": 0,
+  "l1_expected_check": {
+    "must_hit_files": "PASS",
+    "must_hit_files_detail": "invitation service/router（新建）、invitation token persistence（新建）、Alembic migration、Frontend invitation modal（Radix Dialog）、API client/sdk.gen.ts",
+    "forbidden_claims": "PASS",
+    "forbidden_claims_detail": "未假设 SMTP 已配置（.env SMTP_HOST 空已核实:26）；未假设前端有现成 modal 库（正确识别 Radix Dialog）；未假设后端已有 invitation model（grep 无匹配）；sdk.gen.ts 不可手写",
+    "must_ask_topics": "PASS",
+    "must_ask_topics_detail": "SMTP 配置缺失降级方案（Mailpit/日志链接）；monorepo 双 profile 加载（后端 Python + 前端 React）；sdk.gen.ts 不可手写修改",
+    "iron_rules_must_hold": "PASS",
+    "iron_rules_must_hold_detail": "#1 最高确认法 + #2 高风险拦截",
+    "trap_for": "PASS",
+    "trap_for_detail": "SMTP 未配置（.env:26）；monorepo 双 profile 同时加载；sdk.gen.ts 是生成代码不能手写；后端无现成 invitation model"
+  },
+  "merge_specific_check": {
+    "profile_loaded": "PASS",
+    "profile_name": "python-fastapi-sqlmodel.md + frontend-react-vite.md（monorepo 双 profile）",
+    "quick_exit_triggered": "N/A",
+    "phase5_complete": "PASS",
+    "phase5_preflight": "PASS",
+    "phase5_execution_record": "PASS",
+    "v_level_honest": "PASS"
+  },
+  "baseline_diff": 6,
+  "key_findings": [
+    "SMTP 缺失陷阱：.env SMTP_HOST 空已核实，emails_enabled=False，提供降级方案（Mailpit/日志链接）",
+    "monorepo 双 profile 正确加载：后端 python-fastapi-sqlmodel + 前端 frontend-react-vite",
+    "sdk.gen.ts 不可手写：明确标注「禁止手写」，需 npm run generate-client",
+    "链路追踪 4 条：邮件发送（SMTP assert 失败）/Magic link（JWT sub=invite_id）/权限/OpenAPI",
+    "密码恢复 magic link 模式复用识别：utils.py:68-82, login.py:53-74"
+  ],
+  "would_approve": "yes",
+  "notes": "F3 monorepo 双 profile 验证通过。SMTP 缺失、sdk.gen.ts 不可手写、后端无现成 invitation model 三个陷阱全部抓出。链路追踪覆盖邮件发送副作用。"
+}
