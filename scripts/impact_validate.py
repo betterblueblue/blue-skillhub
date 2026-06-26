@@ -11,6 +11,7 @@ Checks:
   V4: Grading decision table (判档决策表 present in output)                 — WARN
   V5: Credential sanitization (all output files sanitized)                  — FAIL
   V6: Line number spot check (random 3 references verified)                 — WARN
+  V7: Tier judgment sanity (universal-quantifier coverage gate + over/under) — FAIL/WARN
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -502,6 +503,115 @@ def check_line_numbers(
 
 
 # ===========================================================================
+# V7: Tier judgment sanity check — detect over/under judgment and
+#     enforce coverage analysis when universal quantifiers present
+# ===========================================================================
+
+# Universal quantifier words that indicate broad scope
+UNIVERSAL_WORDS = ["每次", "所有", "全部", "任何", "一律", "每个"]
+
+# Extract user request from context-pack
+RE_USER_REQUEST = re.compile(r"用户原话[：:]\s*(.+)")
+
+# Count "必须同步修改" table rows
+RE_MUST_MODIFY = re.compile(r"必须同步修改\s*\|")
+
+# Coverage analysis keywords (should appear when universal quantifiers present)
+RE_COVERAGE_ANALYSIS = re.compile(r"覆盖范围|覆盖缺口|覆盖面|覆盖率")
+
+
+def check_tier_judgment(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
+    """V7: Sanity check tier judgment against user request and change scope.
+
+    Three sub-checks:
+      A. Universal-quantifier coverage gate (FAIL): If user request contains
+         universal words (每次/所有/全部/任何/一律/每个), output must include
+         coverage analysis (覆盖范围/缺口).
+      B. Over-judgment detection (WARN): Full mode with <=2 implementation
+         steps and <=3 must-modify files and no universal quantifiers
+         -> may be Light.
+      C. Under-judgment detection (WARN): Light mode with >5 must-modify
+         files -> may be Full.
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    ctx_file = req_dir / "000-context-pack.md"
+    if not ctx_file.exists():
+        return [], [], []  # V1 handles missing file
+
+    ctx_text = ctx_file.read_text(encoding="utf-8")
+
+    # Extract user request
+    user_request_match = RE_USER_REQUEST.search(ctx_text)
+    user_request = user_request_match.group(1).strip() if user_request_match else ""
+
+    # Check for universal quantifiers
+    found_universal = [w for w in UNIVERSAL_WORDS if w in user_request]
+
+    # Count must-modify table rows in context-pack
+    must_modify_count = len(RE_MUST_MODIFY.findall(ctx_text))
+
+    # Count implementation steps in 030-implementation.md
+    step_count = 0
+    impl_file = req_dir / "030-implementation.md"
+    if impl_file.exists():
+        impl_text = impl_file.read_text(encoding="utf-8")
+        step_count = len(re.findall(r"###\s*Step\s*\d+", impl_text))
+
+    # Collect all text for coverage analysis check
+    all_text = ""
+    for f in sorted(req_dir.glob("*.md")):
+        try:
+            all_text += f.read_text(encoding="utf-8") + "\n"
+        except Exception:
+            pass
+
+    # --- Check A: Universal-quantifier coverage gate (FAIL) ---
+    if found_universal:
+        if not RE_COVERAGE_ANALYSIS.search(all_text):
+            fails.append(
+                f"V7: User request contains universal quantifier(s) "
+                f"({', '.join(found_universal)}) but no coverage analysis "
+                f"(覆盖范围/缺口) found in output — must include coverage "
+                f"analysis showing existing implementation scope vs. user's "
+                f"full-scope requirement"
+            )
+        else:
+            passes.append(
+                f"V7: Universal quantifier(s) ({', '.join(found_universal)}) "
+                f"in user request, coverage analysis present"
+            )
+    else:
+        passes.append("V7: No universal quantifiers in user request")
+
+    # --- Check B: Over-judgment detection (WARN) ---
+    if mode == "full" and not found_universal:
+        if step_count <= 2 and must_modify_count <= 3:
+            warns.append(
+                f"V7: Full mode selected but only {step_count} implementation "
+                f"step(s) and {must_modify_count} must-modify file(s) — "
+                f"this may be a Light scenario (config/parameter change). "
+                f"Verify Full is justified."
+            )
+        else:
+            passes.append(
+                f"V7: Full mode with {step_count} step(s), "
+                f"{must_modify_count} must-modify file(s) — scope justifies Full"
+            )
+
+    # --- Check C: Under-judgment detection (WARN) ---
+    if mode == "light" and must_modify_count > 5:
+        warns.append(
+            f"V7: Light mode selected but {must_modify_count} files require "
+            f"sync modification — this may be a Full scenario"
+        )
+
+    return passes, fails, warns
+
+
+# ===========================================================================
 # Main
 # ===========================================================================
 
@@ -587,6 +697,12 @@ def main():
 
     # V6: Line number spot check
     p, f, w = check_line_numbers(req_dir, repo_root, args.seed)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V7: Tier judgment sanity check
+    p, f, w = check_tier_judgment(req_dir, mode)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

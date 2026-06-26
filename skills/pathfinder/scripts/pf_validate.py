@@ -7,7 +7,8 @@ Checks:
   V3: No SVG blocks (SVG removed from template; Mermaid is canonical source)
   V4: Section [13] has at least 1 non-empty entry
   V5: Mermaid solid-arrow source nodes are mentioned in body text
-  V6: Facts JSON files (scan.json/git.json) content is non-empty and consistent
+  V6: Facts JSON files (scan.json/git.json) content is non-empty, consistent,
+      and matches actual project structure on disk
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass, 1 = fail (any FAIL item).
@@ -184,7 +185,9 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
 
     Checks change-impact/_project-map/facts/scan.json and git.json for:
       - scan.json file_count > 0
-      - scan.json dir_tree contains root '/'
+      - scan.json dir_tree contains root '/' and has > 1 entry
+      - scan.json dir_tree entries correspond to actual directories on disk
+      - scan.json file_count is within reasonable range of actual file count
       - git.json head_short non-null (for independent Git repos)
       - git.json toplevel matches --repo-root
 
@@ -222,6 +225,38 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
             dir_tree = scan.get("dir_tree", [])
             if not isinstance(dir_tree, list) or "/" not in dir_tree:
                 errors.append("V6: scan.json dir_tree missing root '/' entry")
+            elif len(dir_tree) <= 1:
+                errors.append(
+                    "V6: scan.json dir_tree has only root '/' — "
+                    "a real project should have subdirectories"
+                )
+            else:
+                # Check that dir_tree entries correspond to actual directories
+                existing_dirs = 0
+                for entry in dir_tree:
+                    if entry == "/":
+                        existing_dirs += 1
+                        continue
+                    dir_path = os.path.join(repo_root, entry.rstrip("/"))
+                    if os.path.isdir(dir_path):
+                        existing_dirs += 1
+                if existing_dirs <= 1:
+                    errors.append(
+                        "V6: scan.json dir_tree entries do not match any actual "
+                        "directories on disk — facts may be corrupted"
+                    )
+
+            # Cross-check file_count against actual files on disk (quick count)
+            if isinstance(file_count, int) and file_count > 0:
+                actual_count = _count_files_quick(repo_root)
+                if actual_count > 0:
+                    ratio = file_count / actual_count
+                    if ratio < 0.3 or ratio > 3.0:
+                        errors.append(
+                            f"V6: scan.json file_count ({file_count}) is wildly "
+                            f"different from actual file count ({actual_count}) "
+                            f"on disk — facts may be corrupted"
+                        )
         except (json.JSONDecodeError, OSError) as e:
             errors.append(f"V6: cannot read/parse scan.json: {e}")
     else:
@@ -265,6 +300,33 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
         )
 
     return errors, warnings
+
+
+# Directories to skip when cross-checking file count (must match pf_scan.py)
+_V6_SKIP_DIRS = {
+    "node_modules", ".git", "__pycache__", ".svn", ".hg",
+    "vendor", "dist", "build", ".next", ".nuxt", "target",
+    ".gradle", ".idea", ".vscode", ".claude", ".cache",
+    "venv", ".venv", "env", ".env", ".tox", "coverage",
+    ".m2", "bower_components", "Pods", ".dart_tool",
+    "change-impact",
+}
+
+
+def _count_files_quick(root: str, max_depth: int = 3) -> int:
+    """Quick file count with limited depth, matching pf_scan.py skip logic."""
+    count = 0
+    root_path = Path(root)
+    for dirpath, dirnames, filenames in os.walk(root_path):
+        depth = len(Path(dirpath).relative_to(root_path).parts)
+        if depth >= max_depth:
+            dirnames.clear()
+            continue
+        dirnames[:] = [
+            d for d in dirnames if d not in _V6_SKIP_DIRS and not d.startswith(".")
+        ]
+        count += len(filenames)
+    return count
 
 
 # --- Main ---
