@@ -15,7 +15,6 @@
 ```powershell
 Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.claude\skills\impact-pro" -Recurse -Force
 ```
 
 Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路径见 [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)。
@@ -30,7 +29,7 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路
 我想删除 sys_user.remark 字段，先做影响分析，不要直接改代码。
 ```
 
-非 Java/Spring/MyBatis 项目用 `/impact-pro`。如果已经知道项目结构，也可以跳过 `/pathfinder` 直接进 `/impact` 或 `/impact-pro`。
+`/impact` 支持多技术栈（Java/Spring/MyBatis、Node/Express/Prisma、Python/FastAPI、Go/Gin/GORM、前端框架等），Phase 2 自动探测技术栈并加载对应规则。如果已经知道项目结构，也可以跳过 `/pathfinder` 直接进 `/impact`。
 
 3. 只在看到 Step 说明后确认写入。
 
@@ -76,31 +75,15 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路
 
 [skills/impact/](skills/impact/)
 
-面向 Java/Spring/MyBatis/RuoYi 类现有系统。它不是从 0 到 1 生成新项目，而是帮你在已有代码、表结构、接口和业务约束里，做一次功能迭代、新功能接入、字段/API/权限/配置变更或重构。
+面向多技术栈现有系统（Java/Spring/MyBatis、Node/Express/Prisma、Python/FastAPI、Go/Gin/GORM、前端框架等）。它不是从 0 到 1 生成新项目，而是帮你在已有代码、表结构、接口和业务约束里，做一次功能迭代、新功能接入、字段/API/权限/配置变更或重构。技术栈专属规则位于 `profiles/`，Phase 2 自动探测并按需加载。
 
-它可以搭配律刃使用：律刃约束 agent 的通用编码行为，ImpactRadar 负责 Java/RuoYi 现有系统的影响分析流程。
+它可以搭配律刃使用：律刃约束 agent 的通用编码行为，ImpactRadar 负责多技术栈现有系统的影响分析流程。
 
 v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目降级保护、阻塞恢复安全闸和多会话写授权一致性，适合迁移、对齐、重构等多 Step 变更。Claude Code + MiniMax M3 真实 `/impact` 复测已经走完 S1-S7 回归，模糊确认、历史确认、延迟确认、非 Git + V1-only、Health/API 响应字段变化都不能绕过 `确认 Step N`。
 
 经过 V1-V10 共 10 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为：把模糊需求变成显式假设（V7 验证）、苏格拉底式提问不替用户拍板（V9 人工交互 8 项 `[假设]` 100% 转为用户确认）、结构化保障（回滚方案、验证步骤、方法名预检始终做到）、防御性检查（refreshToken TTL 同步等独有发现）、安全闸（逐步确认、写入边界、高风险拦截，弱模型也绕不过）。当前版本 v4.1，最新改进包括多轮触发条件（链路追踪发现的副作用风险必须回流 Phase 3 追问）和链路追踪发现回流，V10 单 case 验证总分 92→96。详细数据见 [skills/impact/README.md](skills/impact/README.md)。
 
 当前还接入了可选 code graph MCP 作为结构化定义/引用候选入口，以及 `change-impact/{需求名称}/_active-state.md` 作为跨会话恢复检查点。`_active-state.md` 只记录 pending Step、文档状态和未确认项，不授权源码/SQL/配置/测试写入，也不能替代当前对话里的 `确认 Step N`。Claude Code 可选启用 `.claude/hooks/impact-write-gate.*`，把 Step 确认补强成工具执行前检查。
-
-### ImpactRadar Pro
-
-[skills/impact-pro/](skills/impact-pro/)
-
-`impact` 的多栈版本。面向已验证技术栈规则覆盖范围内的现有系统，未知栈会先用通用规则扫描，不直接冒充”已完整支持”。适合 Node、Python、Go、.NET、前端项目等多栈项目里的变更影响分析。当前已验证技术栈规则覆盖 8 个技术栈（Java/Spring/MyBatis、Node/Express/Prisma、FastAPI/SQLModel、React/Vite、Next.js、Nuxt/Vue、Go/Gin/GORM、ASP.NET Core/EF Core）。
-
-它也可以搭配律刃使用：律刃提供通用行为约束，ImpactRadar Pro 提供多栈 profile 化的影响分析流程。
-
-`impact-pro` 与 `impact` 同步迭代，经过 V1-V10 共 10 轮盲测验证。当前版本 v4.1，与 `impact` 共享同一套核心改进（多轮触发条件、链路追踪回流、配置依赖链路追踪、light 配置化提示、改动完整性自检、模糊点处理清单等）。V10 单 case 验证中，Composer 2.5 + v4.1 总分达 96 分（noskill 73.7），skill 优势 +22.3 分。详细数据见 [skills/impact-pro/README.md](skills/impact-pro/README.md)。
-
-真实 `/impact-pro` 复测里，Node/Express 响应字段删除能正确判定 full，无 `确认 Step N` 时也不会写文件。
-
-和 `impact` 一样，`impact-pro` 会在可用时使用只读 code graph MCP 提升引用发现，再用文本搜索和文件阅读核证；Phase 4/5 会维护 `_active-state.md` 做跨会话恢复，但该文件仍只是检查点，不是写入授权。
-
-上下文包能力的设计复盘见 [docs/archive/2026-06/impact-context-pack-design.md](docs/archive/2026-06/impact-context-pack-design.md)，里面记录了需求来源、方案取舍和实现效果。
 
 ### VL 识图
 
@@ -112,7 +95,7 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 
 [docs/skill-eval/](docs/skill-eval/) + [eval/](eval/)
 
-三个 skill 共用的防漂移测评体系。核心思路：**不新建测评方法，而是把已有的强资产收敛成能定期复跑、自动检测负向漂移的活体系。**
+两个 skill 共用的防漂移测评体系。核心思路：**不新建测评方法，而是把已有的强资产收敛成能定期复跑、自动检测负向漂移的活体系。**
 
 三层金字塔：
 
@@ -128,7 +111,7 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 
 ### Not ACE 上下文检索探索
 
-这部分记录 2026 年 6 月 8 日围绕 [Not ACE](https://not-ace.ame.rip/) 做的一轮上下文检索实验。它不是仓库里的可安装 skill，而是一次用来反推 RuleBlade、ImpactRadar、ImpactRadar Pro 后续该怎么迭代的研究材料。
+这部分记录 2026 年 6 月 8 日围绕 [Not ACE](https://not-ace.ame.rip/) 做的一轮上下文检索实验。它不是仓库里的可安装 skill，而是一次用来反推 RuleBlade、ImpactRadar 后续该怎么迭代的研究材料。
 
 可以先读这些：
 
@@ -136,11 +119,11 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 - [docs/archive/2026-06/impact-real-case-study.md](docs/archive/2026-06/impact-real-case-study.md)：ImpactRadar 真实使用案例的匿名复盘，记录它暴露了哪些长会话和多 Step 边界。
 - [docs/archive/2026-06/impact-m3-next-regression-plan.md](docs/archive/2026-06/impact-m3-next-regression-plan.md)：下一轮 MiniMax M3 复测计划，限定后续要测的高价值场景。
 - [docs/archive/2026-06/impact-multisession-write-gate-test-plan.md](docs/archive/2026-06/impact-multisession-write-gate-test-plan.md)：多会话写授权一致性验收方案，覆盖旧授权、延迟确认、非 Git 降级、V1-only 暂停和写入目标边界。
-- [docs/skill-eval/regression.md](docs/skill-eval/regression.md)：ImpactRadar / ImpactRadar Pro 优化后的回归复测协议，规定什么时候跑 RG0-RG3、什么时候必须真实 agent 复测。
-- [docs/archive/2026-06/release-positioning-check-2026-06-08.md](docs/archive/2026-06/release-positioning-check-2026-06-08.md)：阶段性 release 定位自查，确认 RuleBlade、ImpactRadar、ImpactRadar Pro 的边界是否自洽。
+- [docs/skill-eval/regression.md](docs/skill-eval/regression.md)：ImpactRadar 优化后的回归复测协议，规定什么时候跑 RG0-RG3、什么时候必须真实 agent 复测。
+- [docs/archive/2026-06/release-positioning-check-2026-06-08.md](docs/archive/2026-06/release-positioning-check-2026-06-08.md)：阶段性 release 定位自查，确认 RuleBlade、ImpactRadar 的边界是否自洽。
 - [docs/archive/2026-06/not-ace-benchmark-research.md](docs/archive/2026-06/not-ace-benchmark-research.md)：研究性博客文章，解释 Not ACE 在 MiniMax M3、GLM-5.1、Kimi K2.6、GLM-5、DeepSeek V4 系列上的不同表现。
 - [docs/not-ace-exploration/](docs/not-ace-exploration/)：完整实验记录，包括 V1/V2 检索测试、V3 agent 任务测试、模型复跑、DeepSeek 调用链问题和下一轮计划。
-- [docs/archive/2026-06/agent-iteration-conclusions.md](docs/archive/2026-06/agent-iteration-conclusions.md)：给后续 agent 迭代看的结论，把测试事实映射到 RuleBlade、ImpactRadar、ImpactRadar Pro 和 VL Vision 的优化方向。
+- [docs/archive/2026-06/agent-iteration-conclusions.md](docs/archive/2026-06/agent-iteration-conclusions.md)：给后续 agent 迭代看的结论，把测试事实映射到 RuleBlade、ImpactRadar 和 VL Vision 的优化方向。
 - [benchmarks/（已归档）](docs/archive/2026-06/benchmarks/)：写授权回归夹具（impact-write-gate）+ 模型 agent 能力评测体系（model-agent）。2026-06-09 后无活动，暂停保留历史；not-ace 研究见上。
 
 这轮实验的核心判断是：Not ACE 不是 `rg` 的替代品，而是语义上下文入口。它对 MiniMax M3 更像是在补稳定性，对 GLM-5.1 更像是在省时间、省成本；但在 Kimi K2.6、GLM-5、DeepSeek V4 系列上，这轮没有跑出稳定收益。DeepSeek V4 Pro / Flash 通过硅基流动平台接入，不代表 DeepSeek 官方模型真实能力。
@@ -149,7 +132,7 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 
 律刃最初版参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后续是在真实中文编码任务和复杂链路测试里一轮轮收紧出来的。
 
-“改代码前先反查调用方和引用方，查到后再分级处理”来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提出的 issue。这个建议已经同步进 RuleBlade、ImpactRadar 和 ImpactRadar Pro，用来减少只改当前文件却漏掉接口、生成物、测试或注册点的风险。
+“改代码前先反查调用方和引用方，查到后再分级处理”来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提出的 issue。这个建议已经同步进 RuleBlade 和 ImpactRadar，用来减少只改当前文件却漏掉接口、生成物、测试或注册点的风险。
 
 ImpactRadar 近期关于长期目标、阻塞恢复、接口返回检查、验证等级、多会话写授权、写入目标边界和连续 V1-only 暂停的补强，也来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提供的真实使用案例。这个案例暴露了长会话、多 Step 迁移、非 Git 项目、延迟确认和弱模型执行时更容易出现的边界问题。
 
@@ -225,7 +208,6 @@ Codex：
 ```powershell
 Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.codex\skills\pathfinder" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.codex\skills\impact" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.codex\skills\impact-pro" -Recurse -Force
 ```
 
 Claude Code：
@@ -233,16 +215,14 @@ Claude Code：
 ```powershell
 Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.claude\skills\impact-pro" -Recurse -Force
 ```
 
-重启客户端后触发 `/pathfinder`(陌生项目摸底)、`/impact` 或 `/impact-pro`(变更影响分析),能进入对应流程即可。完整安装和验证 checklist 见 [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)。
+重启客户端后触发 `/pathfinder`(陌生项目摸底)、`/impact`(变更影响分析),能进入对应流程即可。完整安装和验证 checklist 见 [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)。
 
 几个边界要记住：
 
 - `pathfinder` 面向刚接手的陌生项目,产全项目认知地图,100% 只读、只描述不开药方。
-- `impact` 面向 Java/Spring/MyBatis/RuoYi 类现有系统。
-- `impact-pro` 面向已验证技术栈规则覆盖范围内的多栈现有系统。
+- `impact` 面向多技术栈现有系统（Java/Spring/MyBatis、Node/Express/Prisma、Python/FastAPI、Go/Gin/GORM、前端框架等），Phase 2 自动探测技术栈并加载对应规则。
 - 写文件、改代码、DDL/DML、配置变更、删除、测试修复,都必须由用户明确回复 `确认 Step N`。
 - 不能用 `yes`、`继续`、`全部确认` 代替 Step 级确认。
 - 中断后恢复时，`_active-state.md` 只能帮助复述 pending Step 和核验磁盘状态，不能当成授权。
@@ -369,6 +349,5 @@ blue-skillhub/
 └── skills/
     ├── pathfinder/
     ├── impact/
-    ├── impact-pro/
     └── vl-vision/
 ```
