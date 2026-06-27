@@ -12,6 +12,7 @@ Checks:
   V5: Credential sanitization (all output files sanitized)                  — FAIL
   V6: Line number spot check (random 3 references verified)                 — WARN
   V7: Tier judgment sanity (universal-quantifier coverage gate + over/under) — FAIL/WARN
+  V8: Style rules check (_style-rules.md enforcement feasibility)            — WARN
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -612,6 +613,180 @@ def check_tier_judgment(req_dir: Path, mode: str) -> tuple[list[str], list[str],
 
 
 # ===========================================================================
+# V8: Style rules check — verify _style-rules.md enforcement feasibility
+#     and context-pack style section
+# ===========================================================================
+
+# Match table rows in强制规则 and建议规则 sections of _style-rules.md
+RE_STYLE_RULE_ROW = re.compile(
+    r"\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|"
+)
+
+RE_STYLE_RULES_HEADER = re.compile(r"##\s*强制规则")
+RE_STYLE_ADVISORY_HEADER = re.compile(r"##\s*建议规则")
+
+# Context-pack style section markers
+RE_CTX_STYLE_SECTION = re.compile(r"###\s*风格规范")
+RE_CTX_STYLE_FILLED = re.compile(
+    r"_style-rules\.md`\s*状态[：:]\s*已读取"
+)
+
+
+def _parse_style_rules_table(text: str, header_pattern: re.Pattern) -> list[dict]:
+    """Parse a markdown table following a header pattern.
+
+    Returns list of {rule, method, note} dicts.
+    """
+    lines = text.splitlines()
+    rules = []
+    in_table = False
+    for i, line in enumerate(lines):
+        if header_pattern.search(line):
+            in_table = True
+            continue
+        if in_table:
+            # Skip separator rows and non-table lines
+            stripped = line.strip()
+            if not stripped.startswith("|"):
+                if stripped.startswith("##") or stripped.startswith("**"):
+                    break
+                continue
+            if re.match(r"\|[-:\s|]+\|", stripped):
+                continue
+            # Parse table row: | rule | method | note |
+            m = RE_STYLE_RULE_ROW.match(stripped)
+            if m:
+                rule_text = m.group(1).strip()
+                # Skip header rows and HTML comment placeholders
+                if rule_text.startswith("规则") or rule_text.startswith("<!--"):
+                    continue
+                method = m.group(2).strip()
+                note = m.group(3).strip() if m.lastindex >= 3 else ""
+                rules.append({"rule": rule_text, "method": method, "note": note})
+    return rules
+
+
+def check_style_rules(
+    req_dir: Path, repo_root: str
+) -> tuple[list[str], list[str], list[str]]:
+    """V8: Check _style-rules.md enforcement feasibility.
+
+    If _style-rules.md exists in {repo_root}/change-impact/:
+    - Parse强制规则 and建议规则 tables
+    - For强制 rules, verify校验手段 is auto-enforceable (grep/grep-exclude)
+    - Warn if强制 rule uses人工确认 or code-graph (not auto-enforceable)
+    - Warn if context-pack lacks风格规范 section
+
+    If _style-rules.md does not exist → PASS (退回现有行为).
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    style_rules_path = Path(repo_root) / "change-impact" / "_style-rules.md"
+    if not style_rules_path.exists():
+        passes.append("V8: No _style-rules.md found — style checks退回 profile style_axes")
+        return passes, fails, warns
+
+    try:
+        rules_text = style_rules_path.read_text(encoding="utf-8")
+    except Exception as e:
+        warns.append(f"V8: Cannot read _style-rules.md: {e}")
+        return passes, fails, warns
+
+    mandatory_rules = _parse_style_rules_table(rules_text, RE_STYLE_RULES_HEADER)
+    advisory_rules = _parse_style_rules_table(rules_text, RE_STYLE_ADVISORY_HEADER)
+
+    passes.append(
+        f"V8: _style-rules.md found — {len(mandatory_rules)} mandatory, "
+        f"{len(advisory_rules)} advisory rules"
+    )
+
+    # Check each mandatory rule's enforcement method
+    enforceable_count = 0
+    human_only_count = 0
+    for rule in mandatory_rules:
+        method = rule["method"]
+        rule_desc = rule["rule"][:60]
+
+        if method.startswith("grep:"):
+            pattern = method[len("grep:"):].strip()
+            try:
+                re.compile(pattern)
+                enforceable_count += 1
+                passes.append(f"V8: 强制规则 '{rule_desc}' — grep enforceable")
+            except re.error as e:
+                warns.append(
+                    f"V8: 强制规则 '{rule_desc}' — invalid grep pattern "
+                    f"'{pattern}': {e}"
+                )
+        elif method.startswith("grep-exclude:"):
+            rest = method[len("grep-exclude:"):].strip()
+            parts = rest.split(":", 1)
+            if len(parts) == 2:
+                pattern, exclude_dir = parts[0].strip(), parts[1].strip()
+                try:
+                    re.compile(pattern)
+                    enforceable_count += 1
+                    passes.append(
+                        f"V8: 强制规则 '{rule_desc}' — grep-exclude enforceable "
+                        f"(exclude: {exclude_dir})"
+                    )
+                except re.error as e:
+                    warns.append(
+                        f"V8: 强制规则 '{rule_desc}' — invalid grep pattern: {e}"
+                    )
+            else:
+                warns.append(
+                    f"V8: 强制规则 '{rule_desc}' — grep-exclude missing ':dir' "
+                    f"(format: grep-exclude:pattern:directory)"
+                )
+        elif method.startswith("人工") or method.startswith("code-graph"):
+            human_only_count += 1
+            warns.append(
+                f"V8: 强制规则 '{rule_desc}' — 校验手段为 '{method}'，"
+                f"无法自动 FAIL。建议降级为建议规则，或提供 grep 校验模式。"
+            )
+        elif method.startswith("<!--") or not method:
+            # Placeholder/empty — skip
+            pass
+        else:
+            warns.append(
+                f"V8: 强制规则 '{rule_desc}' — 未知校验手段 '{method}'，"
+                f"无法自动执行"
+            )
+
+    if enforceable_count > 0:
+        passes.append(
+            f"V8: {enforceable_count} mandatory rules are auto-enforceable (grep)"
+        )
+    if human_only_count > 0:
+        warns.append(
+            f"V8: {human_only_count} mandatory rules require human review — "
+            f"listed in需人工复核清单"
+        )
+
+    # Check context-pack has style section filled in
+    ctx_file = req_dir / "000-context-pack.md"
+    if ctx_file.exists():
+        ctx_text = ctx_file.read_text(encoding="utf-8")
+        if not RE_CTX_STYLE_SECTION.search(ctx_text):
+            warns.append(
+                "V8: 000-context-pack.md missing '### 风格规范' section "
+                "— should record _style-rules.md status"
+            )
+        elif not RE_CTX_STYLE_FILLED.search(ctx_text):
+            warns.append(
+                "V8: 000-context-pack.md风格规范 section not filled in "
+                "— should record how many rules were loaded"
+            )
+        else:
+            passes.append("V8: 000-context-pack.md风格规范 section filled in")
+
+    return passes, fails, warns
+
+
+# ===========================================================================
 # Main
 # ===========================================================================
 
@@ -703,6 +878,12 @@ def main():
 
     # V7: Tier judgment sanity check
     p, f, w = check_tier_judgment(req_dir, mode)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V8: Style rules check
+    p, f, w = check_style_rules(req_dir, repo_root)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

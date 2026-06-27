@@ -682,6 +682,30 @@ Phase 2 在发现上下文时同步分析项目代码风格，产出结构化风
 
 风格报告作为独立章节插入设计文档，排在"变更细则"之后。原因：代码风格是"怎么改"的重要约束，实施阶段直接参考，不需要跨文档翻找。
 
+### 项目级风格规范（`_style-rules.md`）
+
+除了 profile 的 `style_axes`，impact 还支持项目级风格规范文件 `change-impact/_style-rules.md`（由项目维护者填写）。它是代码风格的**权威源**，优先级高于 profile 的通用提示。
+
+**风格来源优先级链（高 → 低）**：
+
+1. `_style-rules.md` 强制规则（用户权威源，违反即 FAIL）
+2. `_style-rules.md` 建议规则（用户参考，违反仅 WARN）
+3. `_project-map.md` 【14】代码风格观察（Pathfinder 产出的机器观察补充）
+4. profile `style_axes`（栈级通用提示）
+5. 运行时从 git diff 现采（最后补充）
+
+**校验能力分级**：强制规则只有在校验手段能真正落地拦截时才标"强制"。grep 做词法存在检查（命中禁用规则即 FAIL）；语义级判断（如返回类型、硬编码值）标"人工确认"，由 `impact_validate.py` V8 列入"需人工复核"清单。
+
+### 渐进积累：用户不写也能用
+
+风格规则不需要提前写全。用户没有 `_style-rules.md` 时，impact 退回现有行为（profile `style_axes` + 运行时现采），不报错。在实际变更中，Phase 3 会检测风格分歧——当实施计划的代码风格与现状不一致时，触发追问：
+
+> "现有 Controller 统一返回 R<T>（证据：`UserController.java:23`）。你这次新增的接口没有用这个包装。这是故意的，还是应该统一？"
+
+用户回答"应该统一"后，这条规则经 `确认 Step N` 追加到 `_style-rules.md`。同一个项目多跑几次，规则越来越完整，后续变更自动遵循。
+
+> `_style-rules.md` 模板见 `templates/_style-rules.md`。校验由 `impact_validate.py` V8 完成。完整执行规则见 `references/phase-2-context-discovery.md`（预读）和 `references/phase-5-execution.md`（合规检查）。
+
 ## 19个维度参考
 
 完整维度及触发场景见 `references/dimensions.md`。按需选择，不强制全覆盖。

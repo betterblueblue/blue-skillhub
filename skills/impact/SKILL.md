@@ -148,7 +148,9 @@ Phase 1 结束后，如果**全部满足**以下条件，可以跳过 Phase 2.5-
 
 栈/DB 专属发现查询和构建/测试命令由 `profiles/<stack>.md` 的 `discovery_globs` / `commands` 和 `db-adapters/<db>.md` 的 `schema_queries` 注入。
 
-→ **进入前必须 Read `references/phase-2-context-discovery.md`**（含完整执行规则、分层探索、相关性分级、引用检查、用户场景覆盖验证、地图过期检测）
+Phase 2 还预读项目级风格规范 `change-impact/_style-rules.md`（若存在），作为最高优先级风格来源；同时预读 `_project-map.md`【14】代码风格观察（若存在）。两者都不存在时退回 profile `style_axes` + 运行时现采。
+
+→ **进入前必须 Read `references/phase-2-context-discovery.md`**（含完整执行规则、分层探索、相关性分级、引用检查、用户场景覆盖验证、地图过期检测、风格规范预读）
 
 ## Phase 2.5: 初步风险预判
 
