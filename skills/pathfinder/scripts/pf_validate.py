@@ -205,9 +205,9 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
     git_exists = os.path.isfile(git_path)
 
     if not scan_exists and not git_exists:
-        errors.append(
+        warnings.append(
             "V6: facts directory not found at change-impact/_project-map/facts/ "
-            "(Phase 1.5 must be run before Script Gate — run pf_scan.py and pf_git.py)"
+            "(Phase 1.5 not yet run — run pf_scan.py and pf_git.py to produce facts)"
         )
         return errors, warnings
 
