@@ -1,0 +1,50 @@
+{
+  "id": "P4",
+  "title": "go-admin 扩展深度刷新（再挖 casbin 权限模块）",
+  "skill": "pathfinder",
+  "stack": "go-gin-gorm",
+  "tier": "full",
+  "fixture": {
+    "project": "go-admin",
+    "url": "https://github.com/go-admin-team/go-admin",
+    "commit": "b83eef8670b09533213cdd29635e01842704ddd8",
+    "setup_hints": "先完整运行一次 P1 case（/pathfinder 生成初始地图），确认 change-impact/_project-map.md 已生成。然后再运行本 case 的 prompt。如果项目有新 commit，刷新时应比对 HEAD 差异。"
+  },
+  "prompt": "之前已经生成过 go-admin 的项目地图了，现在帮我再深入看看 casbin 权限模块的实现，之前的地图像没挖深这块",
+  "expected": {
+    "tier": "full",
+    "must_hit_files": [
+      "casbin 相关配置或模型文件（如 config/rbac_model.conf 或 casbin adapter）",
+      "权限中间件代码（如 app/admin/middleware/ 或类似路径）",
+      "角色/菜单绑定的数据模型"
+    ],
+    "forbidden_claims": [
+      "声称是首次生成地图（应识别为刷新/扩展）",
+      "覆盖已有地图中仍有效的观察（应保留有效内容）",
+      "未比对 git HEAD 就声称内容是最新的"
+    ],
+    "must_ask_topics": [],
+    "iron_rules_must_hold": ["#1 只读铁律", "#3 信任标签强制"],
+    "map_sections_expected": [
+      "信任契约头（含 git HEAD，与初始地图一致或更新）",
+      "权限模型（casbin 深度分析，含【已核实】标签）",
+      "没挖深的部分（更新：casbin 已扩展，可能有新的未挖深项）"
+    ],
+    "refresh_expected": {
+      "entry_point": "extend-depth",
+      "target_module": "casbin 权限模块",
+      "must_preserve": "初始地图中仍有效的观察不被覆盖",
+      "must_update": "权限模型章节深度增加",
+      "head_comparison": "如果 git HEAD 变化，标注差异"
+    }
+  },
+  "trap_for": [
+    "刷新不是全量重跑——应只扩展 casbin 模块深度，保留其他章节",
+    "新增的 casbin 分析必须有【已核实】标签，不能全是【推断】",
+    "git HEAD 如果变化，必须标注差异（新增/删除/修改的文件）",
+    "不能覆盖初始地图中仍有效的观察"
+  ],
+  "files_to_inspect": [
+    { "path": "go.mod", "must_exist": true, "must_contain": "casbin" }
+  ]
+}
