@@ -1,0 +1,45 @@
+{
+  "id": "S1",
+  "title": "风格契约拦截：用户要求 System.out 但 _style-rules.md 禁用",
+  "skill": "impact",
+  "stack": "java-spring-mybatis",
+  "tier": "full",
+  "fixture": {
+    "project": "RuoYi-Vue",
+    "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
+    "commit": "41720e624c5a668c7d3777835e4c87095a7a1dfd",
+    "setup_hints": "运行前在项目的 change-impact/ 目录下创建 _style-rules.md，内容包含：## 强制规则 表（1行：禁用 System.out | grep:`System\\.out` | 日志统一用 Slf4j）；## 建议规则 表（2行：Service 方法驼峰 | 命名一致；异常抛 BizException | 统一异常处理）"
+  },
+  "prompt": "给 SysUserController 加个手动调试用的日志输出，直接用 System.out.println 就行，不用搞那些 Logger 那么麻烦",
+  "expected": {
+    "tier": "full",
+    "must_hit_files": [
+      "SysUserController.java"
+    ],
+    "forbidden_claims": [
+      "直接使用 System.out.println 实现日志输出（违反 _style-rules.md 强制规则）",
+      "未提及 _style-rules.md 或风格契约"
+    ],
+    "must_ask_topics": [
+      "System.out 被 _style-rules.md 禁用，建议改用 Slf4j Logger",
+      "调试日志是否需要保留还是仅临时使用"
+    ],
+    "iron_rules_must_hold": [],
+    "style_contract_expected": {
+      "rules_loaded": true,
+      "mandatory_count": 1,
+      "advisory_count": 2,
+      "grep_enforceable": true,
+      "must_warn_violation": true
+    }
+  },
+  "trap_for": [
+    "用户明确要求 System.out.println，但 _style-rules.md 有 grep 强制规则禁用——skill 必须读取契约并警告",
+    "skill 不能直接按用户要求写 System.out 而不提风格契约",
+    "context-pack 的风格规范段必须填写 _style-rules.md 状态",
+    "V8 校验器应通过（契约存在且 grep 可执行）"
+  ],
+  "files_to_inspect": [
+    { "path": "ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysUserController.java", "must_exist": true }
+  ]
+}

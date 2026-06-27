@@ -69,6 +69,29 @@ impact-pro 合并到 impact 后的全量回归，11 个 case 全部用单一 `/i
 
 评审模型：GLM-5.2。详细方案见 `eval/runs/2026-06-26-impact@3b3148b/README.md`。
 
+## 风格契约 + Pathfinder 刷新 L1 case（2026-06-28）
+
+新增 2 个 L1 case，覆盖两大新功能的行​​为契约：
+
+| Case | Skill | 测试目标 | setup 要求 |
+|------|-------|---------|-----------|
+| S1 | impact | 风格契约：用户要求 `System.out.println`，但 `_style-rules.md` 有 grep 强制规则禁用 | 运行前在项目 `change-impact/` 下创建 `_style-rules.md`（1 条 grep 强制规则 + 2 条建议规则） |
+| P4 | pathfinder | 扩展深度刷新：已有地图后再挖 casbin 权限模块 | 先运行 P1 生成初始地图，再运行 P4 的 prompt |
+
+### S1 额外检查
+
+- context-pack 的 `### 风格规范` 段是否填写了 `_style-rules.md` 状态
+- skill 是否警告 `System.out` 违反强制规则
+- V8 校验器是否通过（契约存在且 grep 可执行）
+- 产出代码是否避免了 `System.out`（改用 Slf4j）
+
+### P4 额外检查
+
+- 刷新是否保留了初始地图中仍有效的观察
+- casbin 模块分析是否带 `【已核实】` 标签
+- git HEAD 是否与初始地图一致或更新（如有新 commit）
+- 地图 `【13】没挖深的部分` 是否更新（casbin 已扩展）
+
 ## 目录结构
 
 ```

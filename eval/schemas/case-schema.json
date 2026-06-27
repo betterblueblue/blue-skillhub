@@ -86,6 +86,28 @@
         "degradation_expected": {
           "type": "string",
           "description": "pathfinder 专属：预期降级行为（如 'non-git', 'no-manifest'）"
+        },
+        "style_contract_expected": {
+          "type": "object",
+          "description": "impact 专属：风格契约预期（S1 等 case 使用）",
+          "properties": {
+            "rules_loaded": { "type": "boolean", "description": "skill 是否读取了 _style-rules.md" },
+            "mandatory_count": { "type": "integer", "description": "预期强制规则数量" },
+            "advisory_count": { "type": "integer", "description": "预期建议规则数量" },
+            "grep_enforceable": { "type": "boolean", "description": "是否存在 grep 可执行规则" },
+            "must_warn_violation": { "type": "boolean", "description": "是否必须警告违规" }
+          }
+        },
+        "refresh_expected": {
+          "type": "object",
+          "description": "pathfinder 专属：刷新机制预期（P4 等 case 使用）",
+          "properties": {
+            "entry_point": { "type": "string", "description": "刷新入口类型（extend-depth, refresh-facts, full-rerun）" },
+            "target_module": { "type": "string", "description": "扩展深度的目标模块" },
+            "must_preserve": { "type": "string", "description": "必须保留的已有内容" },
+            "must_update": { "type": "string", "description": "必须更新的章节" },
+            "head_comparison": { "type": "string", "description": "git HEAD 比对预期" }
+          }
         }
       }
     },
