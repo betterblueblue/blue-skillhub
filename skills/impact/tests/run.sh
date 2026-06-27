@@ -27,6 +27,19 @@ if [[ -n "$PYTHON_BIN" ]]; then
   fi
 fi
 
+# V8 validator 单元测试（验证 impact_validate.py 本身行为正确）
+if [[ -n "$PYTHON_BIN" ]]; then
+  echo "═══════════════════════════════════════"
+  echo "  V8 validator 单元测试 (test_impact_validate.py)"
+  echo "═══════════════════════════════════════"
+  if $PYTHON_BIN -m pytest "$SCRIPT_DIR/test_scripts/test_impact_validate.py" -v 2>&1; then
+    echo "  🟢 V8 单元测试全部通过"
+  else
+    echo "  🔴 V8 单元测试有失败 — 检查上面输出"
+    exit 1
+  fi
+fi
+
 echo "═══════════════════════════════════════"
 echo "  impact skill — scenarios runner"
 echo "═══════════════════════════════════════"
