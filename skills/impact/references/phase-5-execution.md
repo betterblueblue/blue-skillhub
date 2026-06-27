@@ -186,7 +186,22 @@
 
 ## 风格合规检查（自动执行）
 
-按技术栈规则中的 `style_axes` 和 `validation_strategy` 跑 grep/Bash 检查。
+按以下优先级链检查代码风格合规性：
+
+1. **`change-impact/_style-rules.md` 强制规则**（若存在）→ 逐条检查，违反即 FAIL
+2. **`change-impact/_style-rules.md` 建议规则**（若存在）→ 违反仅 WARN
+3. **profile `style_axes` + `validation_strategy`** → 按技术栈规则跑 grep/Bash 检查
+
+`_style-rules.md` 中强制规则的校验手段按实际能力分级：
+
+| 校验手段写法 | 能力 | V8 行为 |
+|-------------|------|---------|
+| `grep:<正则>` | 词法存在检查 | 命中禁用规则时 FAIL |
+| `grep-exclude:<正则>:<目录>` | 词法+范围检查 | 排除后命中禁用规则时 FAIL |
+| `人工确认` | 需语义判断，grep 做不到 | WARN，列入"需人工复核"清单 |
+| `code-graph + 人工` | 有 code-graph MCP 时缩小候选 | WARN，列入"需人工复核"清单 |
+
+> **铁律**：只有校验手段能真正落地拦截时才标"强制"。grep 做不到语义判断（如"返回类型是不是 Result<T>""某个值是不是硬编码"），这类规则必须标"人工确认"，不用 grep 的 token 出现冒充语义成立。
 
 栈专属风格项（Go 的 `err` 处理与 `errors.Is/As`、Python 的 type hint、Next.js 的 Server Action `'use server'` 边界等）由 profile 追加。
 
@@ -226,9 +241,18 @@
 
 > **维护注意**：本清单是 SKILL.md 强制规则 #2 的完整版。两处必须保持同步。
 
-## 实施步骤的风格约束（style_axes）
+## 实施步骤的风格约束
 
-通用约束：按 profile 的 `style_axes` 逐轴检查（naming、layering、orm、transaction、exception、logging、api_response、dependency_injection 等），同时用 `validation_strategy` 的 grep_patterns 和 file_patterns 做合规扫描。栈专属风格约束由 profile 补充（Go profile 的 `err` 处理与 `errors.Is/As`、Python profile 的 type hint、Next.js profile 的 Server Action `'use server'` 边界等）。
+通用约束：按以下优先级链检查代码风格：
+
+1. `change-impact/_style-rules.md` 强制规则（若存在）→ 违反即 FAIL
+2. `change-impact/_style-rules.md` 建议规则（若存在）→ 违反仅 WARN
+3. profile 的 `style_axes` 逐轴检查（naming、layering、orm、transaction、exception、logging、api_response、dependency_injection 等）
+4. profile 的 `validation_strategy` grep_patterns 和 file_patterns 做合规扫描
+
+`_style-rules.md` 不存在时，退回 3+4（现有行为不变）。
+
+栈专属风格约束由 profile 补充（Go profile 的 `err` 处理与 `errors.Is/As`、Python profile 的 type hint、Next.js profile 的 Server Action `'use server'` 边界等）。
 
 ## 执行记录
 

@@ -192,6 +192,25 @@ flowchart LR
 
 ---
 
+## 【14】代码风格观察（可选节，仅关注重点命中或扩展时补）
+
+> 本节只描述现状，不规定该怎么写。impact 消费时作为风格参考线索。
+> 与 impact 的 `_style-rules.md`（用户自写的规范性文件）互补：本节是机器观察的"是什么"，`_style-rules.md` 是人写的"该怎样"。
+
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| API 响应包装 | `[如: Controller 统一返回 R<T>]` | `[file:line]` | 【已核实】/【推断】 |
+| 日志方式 | `[如: Slf4j + {} 占位符]` | `[file:line]` | |
+| 事务管理 | `[如: @Transactional 在 ServiceImpl 方法上]` | `[file:line]` | |
+| 命名约定 | `[如: DTO 带前缀 Xx]` | `[file:line]` | |
+| 异常处理 | `[如: 自定义 BizException + ControllerAdvice]` | `[file:line]` | |
+| DI 方式 | `[如: @Autowired 字段注入]` | `[file:line]` | |
+
+> 观察项使用默认观察轴列表（naming、layering、orm、transaction、exception、logging、api_response、dependency_injection）；若 impact profiles 可读，可补充栈专属轴。按实际代码现采填写。
+> 找不到写"未发现"，不编造。只记录"代码里是什么样的"，不写"应该怎样"。
+
+---
+
 ## 可选集（仅关注重点命中或扩展时输出）
 
 ### 仓库活跃度 / 协作信号
