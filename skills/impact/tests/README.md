@@ -16,6 +16,7 @@ bash skills/impact/tests/run.sh
 5. `phase_3_5_classification` 是 light 或 full
 6. `files_to_inspect` 中的文件存在 + 含必须字符串
 7. **共享契约存在性**（新增）：检查 `docs/skill-eval/contracts.md` 中的共享契约在 impact/SKILL.md 铁律区都存在，防止改一处另两处漂移
+8. **V8 风格规则校验**（新增）：验证 `impact_validate.py` 中 V8 检查器的行为正确性——`_style-rules.md` 存在/不存在、grep 可执行/不可执行、grep-exclude 格式、建议规则解析、context-pack 风格规范段填写检测。10 个单元测试覆盖 6 类场景。
 
 > **定位**：每次改动必跑，免费、确定性、零主观。全绿才允许进入 L1。
 
@@ -73,8 +74,10 @@ impact 已接入三层防漂移测评体系，详见 [docs/skill-eval/](../../..
 
 ```
 tests/
-├── run.sh               # L0 入口
+├── run.sh               # L0 入口（含 V8 单元测试）
 ├── lib/validate.sh      # 校验函数库（含共享契约检查）
+├── test_scripts/        # Python 单元测试
+│   └── test_impact_validate.py  # V8 风格规则校验器测试（10 cases）
 ├── scenarios/           # 静态场景 JSON（v1，git 追踪）
 │   ├── java-spring-mybatis/
 │   │   ├── 001-delete-sys-user-remark.json
