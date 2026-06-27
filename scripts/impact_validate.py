@@ -617,9 +617,10 @@ def check_tier_judgment(req_dir: Path, mode: str) -> tuple[list[str], list[str],
 #     and context-pack style section
 # ===========================================================================
 
-# Match table rows in强制规则 and建议规则 sections of _style-rules.md
+# Match table rows in强制规则 (3-col) and建议规则 (2-col) sections of _style-rules.md
+# Third column is optional so 2-column advisory tables also parse
 RE_STYLE_RULE_ROW = re.compile(
-    r"\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|"
+    r"\|\s*([^|]+?)\s*\|\s*([^|]+?)(?:\s*\|\s*([^|]*?))?\s*\|"
 )
 
 RE_STYLE_RULES_HEADER = re.compile(r"##\s*强制规则")
