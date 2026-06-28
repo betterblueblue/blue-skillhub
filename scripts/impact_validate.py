@@ -91,6 +91,15 @@ def check_file_completeness(req_dir: Path, mode: str) -> tuple[list[str], list[s
             "_active-state.md)"
         )
 
+    # Check 000-context-pack.md for light mode (WARN — required for both modes
+    # per phase-4-output.md, but light mode may have simpler context-pack)
+    if mode == "light" and not (req_dir / "000-context-pack.md").exists():
+        warns.append(
+            "V1: 000-context-pack.md missing in light mode — "
+            "context-pack is required for both light and full modes "
+            "(see SKILL.md Phase 4 必产出清单)"
+        )
+
     return passes, fails, warns
 
 
