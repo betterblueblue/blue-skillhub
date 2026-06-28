@@ -614,6 +614,34 @@ V9→V10 总分 92→96（+4），无维度回退。评审报告见 `eval/runs/b
 
 与标杆 GLM-5.2（96 分）的质量差距：Composer 2.5 从 R1 的 -10 缩小到 R3 的 **-4**，Step 3.7 Flash 从 -6 缩小到 **-4**。两模型质量分首次并列（52/60），剩余 -4 差距主要在 Q4（风格适配，缺行号引用）和 Q6（决策质量，方案对比深度）。评审报告见 `eval/runs/e2e-skill-optimization-2026-06-28/REVIEW-r3.md`。`impact_validate.py` 现有 V1-V10 共 10 项检查。
 
+**v4.5（2026-06-28：R4 跨栈+弱引导验证）**
+
+R3 优化后换到 Java/Spring Boot/MyBatis 栈 + 弱引导 prompt（不给文件列表、不提示涉及哪些层、不标 light/full）重新验证。R4 暴露了**模板引导力不足**的根本问题：去掉 prompt 提示后，两模型都没跑 `impact_validate.py`，C25 完全自创章节结构（§3.2 和 §6 都丢了），S37 跳过 context-pack，S37 设计解读偏差（用户说"先存草稿"但默认 PUBLISHED）。C25=83/B、S37=85/B。评审报告见 `eval/runs/e2e-skill-optimization-2026-06-28/REVIEW-r4.md`。
+
+**v4.6（2026-06-28：R5-R6 弱引导下强制规则修复）**
+
+针对 R4 暴露的问题落地 O10-O16 共 7 项优化：
+
+- **O10 §3.2 强制规则**：SKILL.md 强制规则加第 8 条（Phase 4 输出后必须跑 `impact_validate.py`，有 FAIL 不得提交）；030 模板 §3.2 标题改为 `⚠️ 强制必做 — 缺此节 V3 FAIL 阻止提交`
+- **O11 §6 强制规则**：SKILL.md Phase 4 必产出清单明确列出 `## 6. 横切关注点` 为必含节；加"写每份文档前必须先 Read 对应模板，按模板章节结构产出，不得自创章节编号"
+- **O12 context-pack 必产出**：phase-4-output.md 说明改为"light 和 full 模式均必产出"；V1 检查在 light 模式下对缺 context-pack 报 WARN
+- **O13 设计意图映射**：phase-1-intent.md 新增"用户意图→设计假设映射"节
+- **O14 脚本门禁**：_active-state.md 模板加 placeholder 禁止写 N/A
+- **O16 读路径 SQL 判 light**：phases-detail.md 新增"仅调整读路径 SQL 的 WHERE/SELECT 投影属于 light"规则
+
+R5 结果：C25 从 83 提升到 **95**（R4 暴露的三个问题全部解决），S37 从 85 提升到 **87**（§3.2 和 context-pack 修复，但设计解读偏差和跑脚本未生效）。R6 结果：S37 C1 正确判 light（O16 修复），S37 知道要跑脚本但找不到路径（O14 部分修复），S37 意外默认 DRAFT（O13 非确定性修复）。C25=95 不退步，S37=90。评审报告见 `eval/runs/e2e-skill-optimization-2026-06-28/REVIEW-r5.md` 和 `REVIEW-r6.md`。
+
+**v4.7（2026-06-28：R7 脚本路径澄清 + _active-state 模板强制，优化收尾）**
+
+针对 R6 遗留问题落地 O14（最终版）+ O18：
+
+- **O14 脚本路径澄清**：`impact_validate.py` 从根目录 `scripts/` 移到 `skills/impact/scripts/`，消除路径歧义；SKILL.md、phase-4-output.md、_active-state.md 模板中所有引用统一为新路径
+- **O18 _active-state 模板强制**：SKILL.md 模板章节结构强制规则扩展覆盖 `_active-state.md`
+
+R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟模板），O14 路径修复但 S37 仍未实际执行脚本（标"待执行"而非当场跑完），O13 回退（S37 重新默认 PUBLISHED，证实 R6 的 DRAFT 修复是非确定性的）。C25=95 不退步，S37=90 持平。
+
+**优化 loop 收尾**：R1-R7 共 7 轮验证，O1-O18 共 18 项优化措施。Composer 2.5 从 86 分提升到 95 分并稳定，弱引导+跨栈下不靠 prompt 提示即可高质量完成。Step 3.7 Flash 剩余问题（脚本执行、O13 非确定性）属 LLM 行为层面，skill 框架层面已做到极限。详细数据见 `eval/runs/e2e-skill-optimization-2026-06-28/REVIEW-r7.md`。
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。
