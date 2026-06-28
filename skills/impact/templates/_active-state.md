@@ -71,7 +71,7 @@
 
 > Phase 4 文档输出后必须运行 `impact_validate.py`，以下填入实际命令和结果。不得写 N/A 或「未执行」。
 
-- 命令：`python scripts/impact_validate.py [需求目录] --mode [light|full] --repo-root [项目根目录]`
+- 命令：`python skills/impact/scripts/impact_validate.py [需求目录] --mode [light|full] --repo-root [项目根目录]`
 - 结果：[X passed, Y failed, Z warnings]
 - 验证等级：[V0 / V1 / V2 / V3]
 - 跳过原因：[不适用 — 必须运行]
