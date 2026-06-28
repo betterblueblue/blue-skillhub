@@ -670,7 +670,7 @@ Phase 2 在发现上下文时同步分析项目代码风格，产出结构化风
 
 **基础层（始终执行）**：从最近 20 条 git commits diff 中自动提取风格特征。Git diff 本身包含命名、格式、注解位置的上下文，token 消耗极低。
 
-**采样过滤**：排除 merge、revert、cherry-pick 等非正常开发 commit（`git log --no-merges --invert-grep --grep='^revert' --grep='^cherry-pick'`），避免把合并冲突解决、回滚操作或自动同步提交当作风格样本。
+**采样过滤**：默认排除 merge、revert、cherry-pick 等非正常开发 commit（`git log --no-merges --invert-grep --grep='^revert' --grep='^cherry-pick'`），避免把合并冲突解决、回滚操作或自动同步提交当作风格样本。排除模式可在 `_style-rules.md` 的「采样配置」小节自定义（如 hotfix、tmp、WIP），不填则用默认值。
 
 > **基础层的局限性**（作为兜底补充，不作为风格主要依据）：
 > - **样本偏斜**：最近 20 条 commit 可能只覆盖少数模块或个别人的写法，不代表全项目风格

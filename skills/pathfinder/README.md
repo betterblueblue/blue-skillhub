@@ -29,7 +29,7 @@
 
 - **FACTS 层（Phase 1.5，必做不可跳过）** — 运行 `pf_scan.py` + `pf_git.py` 产出确定性事实 JSON（文件数/扩展名分布/目录树/清单文件 + Git HEAD/hotspots），填入地图【0】【2】节；这是 Script Gate 的前置输入，缺一不可，跳过会导致 V6 报 FAIL、地图无法写入
 - **认证机制识别 + 鉴权字段一致性自检** — 填写【10】权限/认证模型后必做：Step 0 先识别认证机制类型（JWT/Session/API Key/OAuth/无认证），再读认证链路源码 + 读鉴权链路源码，交叉比对发现字段缺失类安全 bug
-- **Script Gate（脚本闸门，替代 Phase 4.5 自检）** — 写入 `_project-map.md` 前必须运行 `pf_validate.py`，6 项检查（V1 行号真实性、V2 凭证脱敏、V3 SVG 安全、V4 未覆盖项非空、V5 Mermaid 一致性、V6 facts 文件内容校验含 dir_tree 磁盘匹配 + file_count 交叉校验），exit code ≠ 0 禁止写入
+- **Script Gate（脚本闸门，替代 Phase 4.5 自检）** — 写入 `_project-map.md` 前必须运行 `pf_validate.py`，7 项检查（V1 行号真实性、V2 凭证脱敏、V3 SVG 安全、V4 未覆盖项非空、V5 Mermaid 一致性、V6 facts 文件内容校验含 dir_tree 磁盘匹配 + file_count 交叉校验、V7 【14】代码风格观察节存在），exit code ≠ 0 禁止写入
 - **全景广度优先** — 所有核心模块都上地图，关注重点只决定哪片挖更深，不裁剪广度
 - **自适应分档 + 可扩展** — 先量体量定预算，大仓不硬扫；没挖深的显式进未覆盖项，用户可「再挖 X」续扫
 - **可信度** — 每条结论标【已核实: 证据】或【推断: 待验证】，直接对接 impact 的「已确认/未确认」二分
@@ -38,7 +38,7 @@
 - **可选结构索引辅助** — 如果 code graph / repo-map MCP 已可读，优先用它找入口、依赖边和核心 hubs，再用 Read/Grep 核证；索引过期/截断/需写项目缓存时诚实降级
 - **架构可视化** — 三张 Mermaid 文本图（架构/模块图、数据模型 ER 图、主流程图），一眼掌握全局；实线=已核实关系、虚线=推断关系，图也守信任纪律
 - **100% 只读 + 只描述不开药方** — 不改项目本体，不给"该怎么改"的建议
-- **代码风格观察（【14】可选节）** — 按默认观察轴列表逐轴观察项目实际写法（naming/layering/orm/exception/logging/api_response/DI），只记录"是什么"（如"Controller 统一返回 R<T>"），不写"该怎样"（如"必须返回 R<T>"）。产出供 impact 消费，与用户自写的 `_style-rules.md`（规范性）互补
+- **代码风格观察（【14】默认产出节）** — 按默认观察轴列表逐轴观察项目实际写法（naming/layering/orm/exception/logging/api_response/DI），只记录"是什么"（如"Controller 统一返回 R<T>"），不写"该怎样"（如"必须返回 R<T>"）。产出供 impact 消费，与用户自写的 `_style-rules.md`（规范性）互补。超大仓或预算耗尽时可跳过，但必须在【13】说明原因
 - **栈无关通用版** — 自带轻量清单文件栈探测，不依赖 impact 的 profiles，留接缝以后可挂接
 
 ## 什么时候用
@@ -177,11 +177,11 @@ pathfinder/
 ├── scripts/                      # 脚本（Phase 1.5 facts 产出 + Phase 4 Script Gate）
 │   ├── pf_scan.py                # 项目体量扫描(文件数/扩展名/目录树/清单)
 │   ├── pf_git.py                 # Git 元数据提取(HEAD/hotspots/modules)
-│   └── pf_validate.py            # 闸门验证(V1-V6: 行号/凭证/SVG/未覆盖项/Mermaid/facts内容)
+│   └── pf_validate.py            # 闸门验证(V1-V7: 行号/凭证/SVG/未覆盖项/Mermaid/facts内容/【14】节存在)
 ├── code-graph-adapters/
 │   └── generic-mcp.md            # 可选只读结构索引 / code graph MCP 规则
 ├── templates/
-│   └── project-map.md            # _project-map.md 章节模板(14 核心 + 4 可选,含【14】代码风格观察)
+│   └── project-map.md            # _project-map.md 章节模板(15 核心 + 3 可选,含【14】代码风格观察)
 ├── tests/                        # 测试（gitignore，本地保留）
 │   ├── run.sh                    # L0 静态自洽运行器
 │   ├── lib/validate.sh           # 共享验证函数库

@@ -9,6 +9,7 @@ Checks:
   V5: Mermaid solid-arrow source nodes are mentioned in body text
   V6: Facts JSON files (scan.json/git.json) content is non-empty, consistent,
       and matches actual project structure on disk
+  V7: Section [14] code style observation exists (default output, not optional)
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass, 1 = fail (any FAIL item).
@@ -329,6 +330,26 @@ def _count_files_quick(root: str, max_depth: int = 3) -> int:
     return count
 
 
+# --- V7: Section [14] existence ---
+
+RE_SECTION_14 = re.compile(r"【14】|代码风格观察")
+
+
+def check_section_14(text: str) -> list[str]:
+    """V7: Section [14] must exist (default output, not optional).
+
+    Only super-large repos or budget exhaustion may skip this section,
+    and must note the reason in [13].
+    """
+    if not RE_SECTION_14.search(text):
+        return [
+            "V7: Section 【14】代码风格观察 not found — this section is now default output. "
+            "Only super-large repos or budget exhaustion may skip it, "
+            "and must note the reason in 【13】."
+        ]
+    return []
+
+
 # --- Main ---
 
 def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]]:
@@ -378,6 +399,13 @@ def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]
     warnings.extend(v6_warnings)
     if not v6_errors and not v6_warnings:
         passes.append("V6: facts file content validated")
+
+    # V7
+    v7_errors = check_section_14(text)
+    if v7_errors:
+        fails.extend(v7_errors)
+    else:
+        passes.append("V7: section [14] code style observation exists")
 
     return passes, fails, warnings
 
