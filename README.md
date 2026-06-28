@@ -83,7 +83,7 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路
 
 v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目降级保护、阻塞恢复安全闸和多会话写授权一致性，适合迁移、对齐、重构等多 Step 变更。最新新增**风格契约**（`change-impact/_style-rules.md`）：用户把团队强制/建议规则写进去，Impact 在分析和校验时会读取并检查代码是否符合。优先级链为：契约文件 > 地图观察 > Profile 提示 > 运行时现采；规则在实际变更中发现并追加，不要求预先写全。Claude Code + MiniMax M3 真实 `/impact` 复测已经走完 S1-S7 回归，模糊确认、历史确认、延迟确认、非 Git + V1-only、Health/API 响应字段变化都不能绕过 `确认 Step N`。
 
-经过 V1-V10 共 10 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为：把模糊需求变成显式假设（V7 验证）、苏格拉底式提问不替用户拍板但自主推断代码事实（代码可推断项不问用户，业务决策项才问）、结构化保障（回滚方案、验证步骤、方法名预检始终做到）、防御性检查（refreshToken TTL 同步等独有发现）、安全闸（逐步确认、写入边界、高风险拦截，弱模型也绕不过）。当前版本 v4.3，最新改进包括不确定项分类（Pathfinder 场景下避免把技术细节推给不熟悉项目的用户）和判档表事实一致性检查（V9 脚本闸门，防止文档间事实矛盾），V10 单 case 验证总分 92→96。`impact_validate.py` 现有 V1-V9 共 9 项自动化检查。详细数据见 [skills/impact/README.md](skills/impact/README.md)。
+经过 V1-V10 共 10 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为：把模糊需求变成显式假设（V7 验证）、苏格拉底式提问不替用户拍板但自主推断代码事实（代码可推断项不问用户，业务决策项才问）、结构化保障（回滚方案、验证步骤、方法名预检始终做到）、防御性检查（refreshToken TTL 同步等独有发现）、安全闸（逐步确认、写入边界、高风险拦截，弱模型也绕不过）。当前版本 v4.4，最新改进包括横切关注点表 V10 脚本门禁（防止模型改名绕过）、Prisma ORM 异常行为模式参考（纠正弱模型对 create/update 异常码的误判）、`_active-state.md` 存在性检查（V1 WARN 门禁）和 §6 标题防改名。三轮 e2e 优化验证中，Composer 2.5 从 86→92、Step 3.7 Flash 从 90→92，与标杆 GLM-5.2（96）的质量差距从 -10/-6 缩小到 -4/-4。`impact_validate.py` 现有 V1-V10 共 10 项自动化检查。详细数据见 [skills/impact/README.md](skills/impact/README.md)。
 
 当前还接入了可选 code graph MCP 作为结构化定义/引用候选入口，以及 `change-impact/{需求名称}/_active-state.md` 作为跨会话恢复检查点。`_active-state.md` 只记录 pending Step、文档状态和未确认项，不授权源码/SQL/配置/测试写入，也不能替代当前对话里的 `确认 Step N`。Claude Code 可选启用 `.claude/hooks/impact-write-gate.*`，把 Step 确认补强成工具执行前检查。
 
