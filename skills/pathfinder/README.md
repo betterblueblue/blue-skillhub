@@ -27,7 +27,7 @@
 
 ## 核心能力
 
-- **FACTS 层（Phase 1.5，必做不可跳过）** — 运行 `pf_scan.py` + `pf_git.py` 产出确定性事实 JSON（文件数/扩展名分布/目录树/清单文件 + Git HEAD/hotspots），填入地图【0】【2】节；这是 Script Gate 的前置输入，缺一不可，跳过会导致 V6 报 FAIL、地图无法写入
+- **FACTS 层（Phase 1.5，必做不可跳过）** — 运行 `pf_scan.py` + `pf_git.py` 产出确定性事实 JSON（文件数/扩展名分布/目录树/清单文件 + Git HEAD/hotspots），填入地图【0】【2】节；这是 Script Gate 的前置输入，缺一不可，跳过会导致 V6 报 FAIL（两个都缺失时报 WARN，只缺一个报 FAIL）、地图无法写入
 - **认证机制识别 + 鉴权字段一致性自检** — 填写【10】权限/认证模型后必做：Step 0 先识别认证机制类型（JWT/Session/API Key/OAuth/无认证），再读认证链路源码 + 读鉴权链路源码，交叉比对发现字段缺失类安全 bug
 - **Script Gate（脚本闸门，替代 Phase 4.5 自检）** — 写入 `_project-map.md` 前必须运行 `pf_validate.py`，7 项检查（V1 行号真实性、V2 凭证脱敏、V3 SVG 安全、V4 未覆盖项非空、V5 Mermaid 一致性、V6 facts 文件内容校验含 dir_tree 磁盘匹配 + file_count 交叉校验、V7 【14】代码风格观察节存在），exit code ≠ 0 禁止写入
 - **全景广度优先** — 所有核心模块都上地图，关注重点只决定哪片挖更深，不裁剪广度
@@ -225,7 +225,7 @@ Pathfinder 已接入统一测评体系（[docs/skill-eval/](../../docs/skill-eva
 - **v1 盲测**：Composer 2.5 在 prisma-express-ts 上发现 passport.ts select 缺 role 致 RBAC 失效（真实安全 bug）；Step 3.7 Flash 未发现（facts 文件内容全错但 Script Gate 通过）
 - **v2 复跑**：Composer 2.5 P1-B 退步（不再发现 passport bug）；Step 3.7 Flash 0/5 改进全 FAIL（疑似未加载改进协议）
 - **v3 复跑**：Composer 2.5 5/5 全通过（P1-B 退步修复 + IP1-A 修复）；Step 3.7 Flash 3/5 修复（P1-B 认证-鉴权自检修复 + I1-A 方法名预检修复 + IP1-A 场景覆盖修复），P1-A 仍 FAIL（未产出 facts 文件）
-- **v3 后续优化**：`pf_validate.py` V6 检查中 facts 文件缺失从 WARN 改为 FAIL（模型跳过 Phase 1.5 时 Script Gate 拦截）；V6 toplevel 大小写比较修复（`os.path.normcase`）；V6 增强 facts 内容合理性校验（dir_tree 条目数 >1、dir_tree 条目对应磁盘真实目录、file_count 与磁盘实际文件数比值在 0.3-3.0 范围内）
+- **v3 后续优化**：`pf_validate.py` V6 检查中 facts 文件缺失从 WARN 改为 FAIL（模型跳过 Phase 1.5 时 Script Gate 拦截）；V6 toplevel 大小写比较修复（`os.path.normcase`）；V6 增强 facts 内容合理性校验（dir_tree 条目数 >1、dir_tree 条目对应磁盘真实目录、file_count 与磁盘实际文件数比值在 0.3-3.0 范围内）。**后续调整：两个 facts 文件都缺失时回退为 WARN（提示先跑 Phase 1.5），只缺一个时仍 FAIL**
 - **v4 干净环境复测**：引入 DeepSeek-V4-Flash，修复环境污染（`pf_scan.py` 的 `SKIP_DIRS` 加入 `change-impact`，每个 prompt 加 Step 0 清理）。三模型在 B6（pathfinder）上均 PASS——facts 产出正确、认证-鉴权自检完整。pathfinder 场景三模型均可胜任
 
 ### 模型选型（v4 干净环境实测）

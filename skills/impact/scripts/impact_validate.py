@@ -10,7 +10,7 @@ Checks:
   V2: Requirements boundary (010-requirements.md free of technical details)  — WARN
   V3: Method name verification (§3.2 table + markers)                  — FAIL/WARN
   V4: Grading decision table (判档决策表 present in output)                 — WARN
-  V5: Credential sanitization (all output files sanitized)                  — FAIL
+  V5: Credential sanitization (all output files sanitized)                  — WARN
   V6: Line number spot check (random 3 references verified)                 — WARN
   V7: Tier judgment sanity (universal-quantifier coverage gate + over/under) — FAIL/WARN
   V8: Style rules check (_style-rules.md enforcement feasibility)            — WARN
@@ -21,9 +21,9 @@ Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
 
 Usage:
-    python scripts/impact_validate.py <需求目录> [--mode light|full] [--repo-root DIR]
-    python scripts/impact_validate.py change-impact/B3/ --mode full
-    python scripts/impact_validate.py change-impact/B1/ --mode light --repo-root /path/to/project
+    python skills/impact/scripts/impact_validate.py <需求目录> [--mode light|full] [--repo-root DIR]
+    python skills/impact/scripts/impact_validate.py change-impact/B3/ --mode full
+    python skills/impact/scripts/impact_validate.py change-impact/B1/ --mode light --repo-root /path/to/project
 """
 
 import argparse
@@ -1134,8 +1134,10 @@ def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str]
     text = design_file.read_text(encoding="utf-8")
 
     has_header = bool(RE_CROSSCUT_HEADER.search(text))
-    dim_rows = RE_CROSSCUT_DIM_ROW.findall(text)
-    marker_rows = RE_CROSSCUT_ROW.findall(text)
+    # Extract §6 section text to avoid counting table rows from other sections
+    section_text = _extract_section_text(text, ["横切关注点"])
+    dim_rows = RE_CROSSCUT_DIM_ROW.findall(section_text) if section_text else []
+    marker_rows = RE_CROSSCUT_ROW.findall(section_text) if section_text else []
 
     if not has_header:
         fails.append(

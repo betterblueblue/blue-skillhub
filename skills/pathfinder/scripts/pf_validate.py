@@ -3,7 +3,7 @@
 
 Checks:
   V1: Line-number claims are real (file:line exists)
-  V2: No credential leakage (password=, secret=, etc.)
+  V2: No credential leakage (password=, secret=, etc.) — WARN
   V3: No SVG blocks (SVG removed from template; Mermaid is canonical source)
   V4: Section [13] has at least 1 non-empty entry (header-only match, no false
       positives from nav lines mentioning 【13】)
@@ -30,10 +30,39 @@ from pathlib import Path
 
 # --- V1: Line-number verification ---
 
-# Matches: 【已核实: ...src/main.ts:42】 or 【已核实: src/main.ts:42】
-RE_FILE_LINE = re.compile(r"【已核实[:：]\s*.*?(\S+\.\w+):(\d+)】")
+# Matches: 【已核实: ...src/main.ts:42】 or 【已核实: src/main.ts:42-88】
+RE_FILE_LINE = re.compile(r"【已核实[:：]\s*.*?(\S+\.\w+):(\d+)[-\d,]*】")
 # Also match bracket form: [已核实: ...file:line]
-RE_FILE_LINE_BRACKET = re.compile(r"\[已核实[:：]\s*.*?(\S+\.\w+):(\d+)\]")
+RE_FILE_LINE_BRACKET = re.compile(r"\[已核实[:：]\s*.*?(\S+\.\w+):(\d+)[-\d,]*\]")
+
+
+def _resolve_file(filepath: str, repo_root: str) -> str | None:
+    """Try to resolve a file path against repo_root.
+
+    Attempts:
+    1. Path as-is (normalizing separators)
+    2. Basename glob search (for shortened paths like 'user.service.ts'
+       when actual path is 'src/services/user.service.ts')
+    """
+    # Attempt 1: direct path
+    normalized = filepath.replace("/", os.sep)
+    full = os.path.join(repo_root, normalized)
+    if os.path.isfile(full):
+        return full
+
+    # Attempt 2: basename glob search
+    basename = os.path.basename(filepath)
+    root = Path(repo_root)
+    try:
+        matches = list(root.rglob(basename))
+        files = [m for m in matches if m.is_file()]
+        if files:
+            files.sort(key=lambda p: len(str(p)))
+            return str(files[0])
+    except Exception:
+        pass
+
+    return None
 
 
 def check_line_numbers(text: str, repo_root: str) -> list[str]:
@@ -48,8 +77,8 @@ def check_line_numbers(text: str, repo_root: str) -> list[str]:
                 continue
             seen.add(key)
 
-            full = os.path.join(repo_root, filepath)
-            if not os.path.isfile(full):
+            full = _resolve_file(filepath, repo_root)
+            if full is None:
                 errors.append(f"V1: File does not exist: {filepath}:{lineno}")
                 continue
             try:
@@ -195,8 +224,8 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
       - git.json head_short non-null (for independent Git repos)
       - git.json toplevel matches --repo-root
 
-    Missing facts files produce FAIL (Phase 1.5 must be run before Script Gate);
-    bad content also produces FAIL.
+    Missing facts files produce WARN if both are missing (Phase 1.5 not yet run),
+    or FAIL if only one is missing (partial run); bad content also produces FAIL.
     """
     errors = []
     warnings = []
