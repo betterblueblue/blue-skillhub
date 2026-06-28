@@ -10,7 +10,7 @@
 
 ## 核心价值：给模型带来什么增益
 
-经过 V1-V9 共 9 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为以下五点：
+经过 V1-V10 共 10 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为以下五点：
 
 ### 1. 把模糊需求变成显式假设
 
@@ -182,6 +182,9 @@ v4.1 两项核心改进全面生效：agent 在第 1 轮 3 题后自检链路追
 - **链路追踪发现回流 Phase 3**（v4.1 新增）— 模糊点覆盖率自检新增扫描 000-context-pack.md §5 关键链路追踪表的"发现的二级影响"列，确保副作用风险点回流到澄清环节
 - **判档合理性脚本闸门**（v4.2 新增）— `impact_validate.py` V7 检查：全量词覆盖门禁（FAIL）、过度判档检测（WARN）、判档不足检测（WARN）。协议无法纠正的判档错误由脚本硬拦截兜底，专为弱模型设计
 - **判档表事实一致性脚本闸门**（v4.3 新增）— `impact_validate.py` V9 检查：判档决策表中的事实声明与 `000-context-pack.md` §7 已确认事实交叉比对，发现矛盾报 WARN，判档表引用了 §7 中没有的实体也报 WARN。把检查 3 从 agent 自觉执行升级为脚本硬拦截
+- **横切关注点表脚本门禁**（v4.4 新增）— `impact_validate.py` V10 检查：full 模式下扫描 `020-design.md` §6 横切关注点标题，缺失则 FAIL 拦截（防止模型改名绕过）；行数 < 10 或 ☑/☐ 标记 < 5 报 WARN。配合模板 §6 注释的 ⚠️ 强制要求提示，三重保障横切表不被遗漏
+- **`_active-state.md` 存在性检查**（v4.4 新增）— `impact_validate.py` V1 增强：full/light 模式下检查 `_active-state.md` 是否存在，缺失报 WARN（不阻断提交，但提醒 agent 补充跨会话恢复检查点）
+- **Prisma ORM 异常行为模式参考**（v4.4 新增）— `references/phase-4-output.md` 新增 Prisma ORM 方法异常行为参考表（findUnique 返回 null 不抛异常、create 抛 P2002、update/delete 抛 P2025 等），纠正弱模型对 ORM 异常码的常见误判
 
 ## 什么时候该用这个 Skill
 
@@ -555,7 +558,18 @@ V9→V10 总分 92→96（+4），无维度回退。评审报告见 `eval/runs/b
 - **未确认事实检测（WARN）**：判档表引用了 §7 中没有对应条目的实体时报 WARN，提示补充到 §7 或标注「待核实」
 - 实现要点：camelCase 实体提取 + 实体上下文窗口比对 + 子串去重（解决「含」是「不含」子串的误判问题）
 
-新增 7 个单元测试覆盖：无判档表/无 §7/一致/矛盾/未确认/无共享实体/段标题定位。`impact_validate.py` 现有 V1-V9 共 9 项检查。
+新增 7 个单元测试覆盖：无判档表/无 §7/一致/矛盾/未确认/无共享实体/段标题定位。
+
+**v4.4（2026-06-28：e2e 优化验证 — 横切表门禁 + Prisma 异常参考 + _active-state 检查）**
+
+三轮 e2e 优化验证（Composer 2.5 + Step 3.7 Flash，以 GLM-5.2 R1 为标杆）后发现三个模型方差问题：C25 改名绕过横切表、两模型遗漏 `_active-state.md`、S37 对 Prisma ORM 异常码误判。针对这三个问题落地改进：
+
+- **V10 横切表 FAIL 门禁**：`impact_validate.py` 新增 V10 检查——full 模式下扫描 `020-design.md` `## 6. 横切关注点` 标题，缺失则 FAIL 拦截；行数 < 10 或 ☑/☐ 标记 < 5 报 WARN。解决 C25 在 R2 中通过改名绕过横切表的问题
+- **V1 `_active-state.md` WARN 检查**：V1 文件完整性检查新增 `_active-state.md` 存在性检查，缺失报 WARN。解决两模型在 R2 中遗漏跨会话恢复检查点的问题
+- **Prisma ORM 异常行为模式参考**：`references/phase-4-output.md` 新增 Prisma ORM 方法异常行为参考表（`findUnique`/`findFirst` 返回 null 不抛异常、`create` 抛 P2002 唯一约束冲突、`update`/`delete` 抛 P2025 记录不存在）。解决 S37 将 `create` 误标为 P2025、将 `hashPassword` 误标为抛异常等 3 处错误
+- **§6 标题防改名**：`templates/020-design.md` §6 注释增加 ⚠️ 强制要求 + 脚本检查提示，防止模型通过改名绕过 V10 检查
+
+三轮优化验证结果：C25 总分 86→86→**92**（Q2 从 7→9，G8 从 4→8），S37 总分 90→87→**92**（Q5 从 8→9，G8 从 4→8）。与标杆 G52（96）的质量差距从 R1 的 -10/-6 缩小到 R3 的 **-4/-4**。评审报告见 `eval/runs/e2e-skill-optimization-2026-06-28/REVIEW-r3.md`。`impact_validate.py` 现有 V1-V10 共 10 项检查。
 
 ### 模型选型（v4 干净环境实测）
 
