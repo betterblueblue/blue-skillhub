@@ -121,7 +121,7 @@
 1. 按技术栈规则的 `context_discovery` 顺序查找入口、模型、依赖路径、测试、配置和排除项。
 2. 对目标功能/字段/接口先做现状核查：已存在→零改动确认；部分存在→只补缺口；不存在→记录搜索证据。
 3. 扫描 `discovery_globs` 匹配的文件。
-4. 按技术栈规则中的 `style_axes` 提取风格特征（只描述，不下结论）。
+4. 按技术栈规则中的 `style_axes` 提取风格特征（只描述，不下结论）。基础层从最近 20 条 git commits diff 采样（`git log --no-merges --invert-grep --grep='^revert' --grep='^cherry-pick' -20 --format=%H`，排除 merge/revert/cherry-pick），深入层按变更维度取目标模块 2-3 个代表性文件。
 5. 按数据库适配器的 `schema_queries` 发现数据库 schema。
 6. **只读纪律（强制规则）**：schema 发现阶段无论当前连接是否具有写能力，只允许 SELECT / SHOW / DESCRIBE / INFORMATION_SCHEMA 查询。探测到任何可执行任意 SQL 的工具时，按「有写能力」对待：发现阶段照常套用只读纪律，DDL/DML 只能在 Phase 5 经 `确认 Step N` 后按下述执行方式进行。
 7. 构建上下文地图（影响文件、API 端点、依赖关系）。
