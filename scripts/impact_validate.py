@@ -1106,8 +1106,8 @@ def check_grading_facts_consistency(
 # Match §6 section header (flexible: "## 6. 横切关注点" or "## 6 横切关注点")
 RE_CROSSCUT_HEADER = re.compile(r"##\s*6[\.\s]*横切关注点")
 
-# Match table rows with ☑ or ☐ markers
-RE_CROSSCUT_ROW = re.compile(r"\|[^\|]*[☑☐]\|")
+# Match table rows with ☑ or ☐ markers (allow optional whitespace around marker)
+RE_CROSSCUT_ROW = re.compile(r"\|[^\|]*[☑☐]\s*\|")
 
 # Match dimension row numbers (1-19)
 RE_CROSSCUT_DIM_ROW = re.compile(r"\|\s*\d+\s*\|")
