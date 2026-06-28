@@ -173,7 +173,8 @@ pathfinder/
 │   ├── phase-3-depth-fill.md     # 各节深挖方法 + 主流程 trace + 扩展 + 认证-鉴权自检
 │   ├── stack-detection.md        # 通用栈探测:清单文件 → 栈/构建/测试映射
 │   ├── handoff-contract.md       # 与 impact 协作约定 + L1 接口
-│   └── cross-platform-notes.md   # 跨平台差异(时间戳/HEAD/体量命令/路径)
+│   ├── cross-platform-notes.md   # 跨平台差异(时间戳/HEAD/体量命令/路径)
+│   └── review-checklist.md       # 地图质量 review checklist(人类/Agent/机械门禁)
 ├── scripts/                      # 脚本（Phase 1.5 facts 产出 + Phase 4 Script Gate）
 │   ├── pf_scan.py                # 项目体量扫描(文件数/扩展名/目录树/清单)
 │   ├── pf_git.py                 # Git 元数据提取(HEAD/hotspots/modules)
