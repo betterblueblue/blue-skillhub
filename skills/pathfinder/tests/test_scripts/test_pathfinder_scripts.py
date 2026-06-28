@@ -355,6 +355,55 @@ class TestPfValidate(unittest.TestCase):
             self.assertEqual(code, 1, f"Missing [14] should fail:\n{out}")
             self.assertIn("V7:", out)
 
+    def test_v7_empty_shell_section_14_fails(self):
+        """V7: A map with [14] title but no content should FAIL."""
+        with tempfile.TemporaryDirectory() as td:
+            map_content = """# Test Map
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+
+(无)
+"""
+            path = self._make_map(map_content, td)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 1, f"Empty [14] should fail:\n{out}")
+            self.assertIn("V7:", out)
+            self.assertIn("empty", out)
+
+    def test_v4_nav_line_no_false_positive(self):
+        """V4: Executive Summary nav line mentioning 【13】 should not trigger false positive."""
+        with tempfile.TemporaryDirectory() as td:
+            map_content = """# Test Map
+
+## Executive Summary
+
+**导航**：→ 【3】架构分层 / 【6】数据模型 / 【8】构建运行 / 【11】主流程 / 【13】未覆盖项
+
+---
+
+## 【0】基本信息
+
+some content
+
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
+"""
+            path = self._make_map(map_content, td)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 0, f"Nav line should not cause V4 false positive:\n{out}")
+            self.assertIn("V4: uncovered section has entries", out)
+
 
 if __name__ == "__main__":
     unittest.main()

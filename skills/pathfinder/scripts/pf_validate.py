@@ -5,11 +5,13 @@ Checks:
   V1: Line-number claims are real (file:line exists)
   V2: No credential leakage (password=, secret=, etc.)
   V3: No SVG blocks (SVG removed from template; Mermaid is canonical source)
-  V4: Section [13] has at least 1 non-empty entry
+  V4: Section [13] has at least 1 non-empty entry (header-only match, no false
+      positives from nav lines mentioning 【13】)
   V5: Mermaid solid-arrow source nodes are mentioned in body text
   V6: Facts JSON files (scan.json/git.json) content is non-empty, consistent,
       and matches actual project structure on disk
-  V7: Section [14] code style observation exists (default output, not optional)
+  V7: Section [14] code style observation exists and has substantive content
+      (not just a title; default output, not optional)
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass, 1 = fail (any FAIL item).
@@ -113,27 +115,28 @@ def check_svg_safety(text: str) -> list[str]:
 
 # --- V4: Uncovered section non-empty ---
 
-RE_SECTION_13 = re.compile(r"【13】|没挖深|未覆盖", re.I)
+# Only match section headers (## ...), not nav lines or body text mentioning 【13】
+RE_SECTION_13_HEADER = re.compile(r"^##\s.*(?:【13】|没挖深|未覆盖)", re.I)
 
 
 def check_uncovered(text: str) -> list[str]:
     """V4: Section 13 must have at least 1 non-empty entry."""
-    # Find section 13 area
+    # Find section 13 area by scanning for its header line
     lines = text.splitlines()
     in_section = False
     section_lines = []
     for line in lines:
-        if RE_SECTION_13.search(line):
-            in_section = True
+        if not in_section:
+            if RE_SECTION_13_HEADER.search(line):
+                in_section = True
             continue
         # Detect next section header
-        if in_section and re.match(r"^##\s", line):
+        if re.match(r"^##\s", line):
             break
-        if in_section:
-            stripped = line.strip()
-            # Skip template placeholders, empty lines, table borders
-            if stripped and stripped not in ("|---|", "---", "|", "| ... | ... |"):
-                section_lines.append(stripped)
+        stripped = line.strip()
+        # Skip template placeholders, empty lines, table borders
+        if stripped and stripped not in ("|---|", "---", "|", "| ... | ... |"):
+            section_lines.append(stripped)
 
     # Check for at least 1 substantive entry (not just headers/boilerplate)
     substantive = [l for l in section_lines if len(l) > 3 and not l.startswith("#")]
@@ -330,22 +333,51 @@ def _count_files_quick(root: str, max_depth: int = 3) -> int:
     return count
 
 
-# --- V7: Section [14] existence ---
+# --- V7: Section [14] existence + content ---
 
-RE_SECTION_14 = re.compile(r"【14】|代码风格观察")
+# Only match section headers (## ...), not body text mentioning 【14】
+RE_SECTION_14_HEADER = re.compile(r"^##\s.*(?:【14】|代码风格观察)", re.I)
 
 
 def check_section_14(text: str) -> list[str]:
-    """V7: Section [14] must exist (default output, not optional).
+    """V7: Section [14] must exist and have substantive content.
 
-    Only super-large repos or budget exhaustion may skip this section,
-    and must note the reason in [13].
+    - Missing entirely → FAIL (default output, not optional)
+    - Exists but empty shell (title only, no observations) → FAIL
+    - Only super-large repos or budget exhaustion may skip,
+      and must note the reason in [13].
     """
-    if not RE_SECTION_14.search(text):
+    lines = text.splitlines()
+    in_section = False
+    section_lines = []
+    for line in lines:
+        if not in_section:
+            if RE_SECTION_14_HEADER.search(line):
+                in_section = True
+            continue
+        if re.match(r"^##\s", line):
+            break
+        stripped = line.strip()
+        if stripped and stripped not in ("|---|", "---", "|"):
+            section_lines.append(stripped)
+
+    if not in_section:
         return [
             "V7: Section 【14】代码风格观察 not found — this section is now default output. "
             "Only super-large repos or budget exhaustion may skip it, "
             "and must note the reason in 【13】."
+        ]
+
+    # Check for substantive content: at least 2 non-header/non-boilerplate lines
+    # (table data rows, observation entries, sampling source declarations)
+    substantive = [
+        l for l in section_lines
+        if len(l) > 3 and not l.startswith("#") and not l.startswith("<!--")
+    ]
+    if len(substantive) < 2:
+        return [
+            "V7: Section 【14】代码风格观察 exists but appears empty — "
+            "need observation entries with evidence, not just a title."
         ]
     return []
 
