@@ -126,7 +126,7 @@
 >
 > **_active-state.md 的「最近验证」节必须填入实际运行的脚本命令和结果，不得写 N/A 或「未执行」。** 只读分析阶段也必须运行验证脚本——脚本只读检查文件内容，不修改项目代码。
 
-运行 `python scripts/impact_validate.py <需求目录> --mode <light|full> --repo-root <项目根目录>` 完成输出验证。
+运行 `python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|full> --repo-root <项目根目录>` 完成输出验证。
 
 | 检查项 | 编号 | 失败动作 |
 |--------|------|---------|

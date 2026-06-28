@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parent.parent.parent.parent.parent / "scripts" / "impact_validate.py"
+SCRIPT = Path(__file__).resolve().parent.parent.parent / "scripts" / "impact_validate.py"
 
 
 def _run_validator(repo_root: str, req_dir: str) -> tuple[int, str]:
