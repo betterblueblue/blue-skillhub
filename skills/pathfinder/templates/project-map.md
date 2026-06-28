@@ -209,6 +209,12 @@ flowchart LR
 > 观察项使用默认观察轴列表（naming、layering、orm、transaction、exception、logging、api_response、dependency_injection）；若 impact profiles 可读，可补充栈专属轴。按实际代码现采填写。
 > 找不到写"未发现"，不编造。只记录"代码里是什么样的"，不写"应该怎样"。
 
+**采样来源声明**（impact 消费时据此判断观察覆盖范围）：
+
+> 本节观察基于以下样本：`[填写采样来源，如：Phase 2 扫描的 Service/Controller/Entity 各 2 个代表性文件 + 最近 20 条 git commit diff]`
+> 覆盖模块：`[填写已覆盖的模块/包]`
+> 未覆盖模块：`[填写未采样的模块，如：auth/ 模块未采样]`
+
 ---
 
 ## 可选集（仅关注重点命中或扩展时输出）
