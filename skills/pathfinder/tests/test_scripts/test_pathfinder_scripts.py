@@ -161,6 +161,11 @@ class TestPfValidate(unittest.TestCase):
 | 未深入模块 | 为什么 | 扩展入口 |
 |-----------|--------|---------|
 | test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
 """
             path = self._make_map(map_content, td)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
@@ -179,6 +184,11 @@ class TestPfValidate(unittest.TestCase):
 | 未深入模块 | 为什么 | 扩展入口 |
 |-----------|--------|---------|
 | test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
 """
             path = self._make_map(map_content, td)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
@@ -194,6 +204,11 @@ class TestPfValidate(unittest.TestCase):
 | 未深入模块 | 为什么 | 扩展入口 |
 |-----------|--------|---------|
 | test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
 """
             path = self._make_map(map_content, td)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
@@ -207,6 +222,11 @@ class TestPfValidate(unittest.TestCase):
 ## 【13】没挖深的部分
 
 (无)
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
 """
             path = self._make_map(map_content, td)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
@@ -221,6 +241,11 @@ class TestPfValidate(unittest.TestCase):
 | 未深入模块 | 为什么 | 扩展入口 |
 |-----------|--------|---------|
 | test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
 """
             code, out, _ = _run_script(PF_VALIDATE, ["--stdin", "--repo-root", td],
                                        stdin_data=map_content)
@@ -234,6 +259,11 @@ class TestPfValidate(unittest.TestCase):
 | 未深入模块 | 为什么 | 扩展入口 |
 |-----------|--------|---------|
 | test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
 """
             path = self._make_map(map_content, td)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
@@ -259,6 +289,11 @@ class TestPfValidate(unittest.TestCase):
 | 未深入模块 | 为什么 | 扩展入口 |
 |-----------|--------|---------|
 | test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
 """
             path = self._make_map(map_content, td)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
@@ -295,11 +330,30 @@ class TestPfValidate(unittest.TestCase):
 | 未深入模块 | 为什么 | 扩展入口 |
 |-----------|--------|---------|
 | test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
 """
             path = self._make_map(map_content, td)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
             self.assertEqual(code, 0, f"Good facts should pass:\n{out}")
             self.assertIn("V6: facts file content validated", out)
+
+    def test_v7_missing_section_14_fails(self):
+        """V7: A map without section [14] should FAIL."""
+        with tempfile.TemporaryDirectory() as td:
+            map_content = """# Test Map
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+"""
+            path = self._make_map(map_content, td)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 1, f"Missing [14] should fail:\n{out}")
+            self.assertIn("V7:", out)
 
 
 if __name__ == "__main__":
