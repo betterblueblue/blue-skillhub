@@ -7,6 +7,7 @@
 > **R3 已完成。两模型均达 92 分，全部成功标准达成。**
 > **R4 已完成。换栈 + 弱引导下 C25=83/B、S37=85/B，跨栈泛化成功但弱引导暴露模板引导力不足。**
 > **R5 已完成。O10-O13 修复全面生效：C25=95/A（回到并超过 R3 水平），S37=87/A（§3.2 和 context-pack 修复，但设计解读偏差未解决）。**
+> **R6 已完成。O16 完全修复（S37 C1 判 light），O14 部分修复（S37 找不到脚本路径），O13 意外修复（S37 默认 DRAFT）。C25=95/A 不退步，S37=90/A。**
 
 ---
 
@@ -107,7 +108,11 @@ eval/runs/e2e-skill-optimization-2026-06-28/
 ├── REVIEW-r4.md                    ← R4 跨栈评审手册（含 Ground Truth）
 ├── REVIEW-r5.md                    ← R5 O10-O13 修复验证评审手册
 ├── PROMPT-composer-2.5-r5.md       ← R5 给 Composer 2.5 的执行指令（弱引导，指向新干净环境）
-└── PROMPT-step-3.7-flash-r5.md     ← R5 给 Step 3.7 Flash 的执行指令（弱引导，指向新干净环境）
+├── PROMPT-step-3.7-flash-r5.md     ← R5 给 Step 3.7 Flash 的执行指令（弱引导，指向新干净环境）
+├── PROMPT-composer-2.5-r6.md       ← R6 给 Composer 2.5 的执行指令（弱引导，O14+O16 验证）
+├── PROMPT-step-3.7-flash-r6.md     ← R6 给 Step 3.7 Flash 的执行指令（弱引导，O14+O16 验证）
+├── REVIEW-r5.md                    ← R5 O10-O13 修复验证评审手册
+└── REVIEW-r6.md                    ← R6 O14+O16 修复验证评审手册
 
 test-projects/
 ├── realworld-express-prisma/                           ← R1-R3 原始项目（Node/Express/Prisma）
@@ -375,3 +380,47 @@ R4 暴露的根本问题：**Skill 模板自身的引导力不足，之前靠 pr
 | S37 C2（缺 context-pack） | V1 | ✅ FAIL — "Missing required file: 000-context-pack.md" |
 | S37 C1（light 缺 context-pack） | V1 | ✅ WARN — "context-pack is required for both modes" |
 | 现有 17 个测试 | — | ✅ 全部通过 |
+
+---
+
+## 十、第六轮（R6）：O14+O16 修复验证
+
+### R6 设计动机
+
+R5 后实施了 O14（强制跑脚本门禁）和 O16（读路径 SQL 判 light 规则）。R6 在相同弱引导 prompt + 全新干净测试项目副本下验证修复效果。
+
+### R6 结果
+
+| 模型 | R5 | R6 | 变化 | 等级 |
+|------|-----|-----|------|------|
+| Composer 2.5 | 95 | **95** | 0 | A |
+| Step 3.7 Flash | 87 | **90** | +3 | A |
+| 差距 | +8（C25 领先） | +5（C25 领先） | | |
+
+### O14+O16+O13 修复效果
+
+| # | 优化项 | C25 | S37 | 结论 |
+|---|--------|-----|-----|------|
+| O14 | 跑验证脚本 | ✅→✅ | ❌→⚠️ | **部分修复**：S37 知道要跑了，但找不到脚本路径 |
+| O16 | C1 判 light | ✅→✅ | ❌→✅ | **完全修复**：R5 误判 full，R6 正确判 light |
+| O13 | 设计意图（DRAFT） | ✅→✅ | ❌→✅ | **意外修复**：可能是 LLM 非确定性 |
+
+### R6 核心发现
+
+1. **O16 完全修复**：S37 C1 正确判为 light，产出 040-light.md
+2. **O14 部分修复**：S37 尝试跑脚本但找不到——SKILL.md 里 `scripts/impact_validate.py` 路径有歧义，S37 从 skill 目录理解，实际在仓库根目录
+3. **O13 意外修复**：S37 R6 默认 DRAFT（R5 默认 PUBLISHED），但 R5→R6 间未修改 O13 相关文件，可能是非确定性
+4. **C25 零退步**：O14+O16 未引入任何退步
+5. **S37 剩余问题**：V7 覆盖分析缺失（C1 FAIL）、_active-state.md 不跟模板、GraphQL 仍排除
+
+### R6 成功标准达成情况
+
+| # | 标准 | 结果 |
+|---|------|------|
+| 1 | O16 S37 C1 判 light | ✅ 达成 |
+| 2 | O14 S37 跑脚本 | ⚠️ 部分达成（知道要跑，但找不到脚本） |
+| 3 | C25 不退步（≥95） | ✅ 达成（95） |
+| 4 | S37 不低于 R5（≥87） | ✅ 达成（90） |
+| 5 | 两模型差距缩小 | ✅ 达成（R5 差 8 分，R6 差 5 分） |
+
+> 详细评审见 `REVIEW-r6.md`。
