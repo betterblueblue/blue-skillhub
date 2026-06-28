@@ -6,14 +6,16 @@ Any FAIL item blocks submission; WARN items should be communicated to user.
 
 Checks:
   V1: File completeness (full: 000/010/020/030; light: 040-light.md)       — FAIL
+      _active-state.md presence (WARN if missing)
   V2: Requirements boundary (010-requirements.md free of technical details)  — WARN
-  V3: Method name verification markers (030-implementation.md)              — WARN
+  V3: Method name verification (§3.2 table + markers)                  — FAIL/WARN
   V4: Grading decision table (判档决策表 present in output)                 — WARN
   V5: Credential sanitization (all output files sanitized)                  — FAIL
   V6: Line number spot check (random 3 references verified)                 — WARN
   V7: Tier judgment sanity (universal-quantifier coverage gate + over/under) — FAIL/WARN
   V8: Style rules check (_style-rules.md enforcement feasibility)            — WARN
   V9: Grading table fact consistency (判档表 vs context-pack §7)              — WARN
+  V10: Cross-cutting concerns table (020-design.md §6 in full mode)         — FAIL/WARN
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -44,10 +46,14 @@ FULL_REQUIRED = [
 LIGHT_REQUIRED = ["040-light.md"]
 
 
-def check_file_completeness(req_dir: Path, mode: str) -> tuple[list[str], list[str]]:
-    """V1: Check that required files exist for the given mode."""
+def check_file_completeness(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
+    """V1: Check that required files exist for the given mode.
+
+    Also checks for _active-state.md (WARN if missing, not blocking).
+    """
     passes = []
     fails = []
+    warns = []
 
     if mode == "full":
         required = FULL_REQUIRED
@@ -65,7 +71,7 @@ def check_file_completeness(req_dir: Path, mode: str) -> tuple[list[str], list[s
             return [], [
                 "V1: Cannot determine mode — neither 040-light.md nor "
                 "010-requirements.md found in " + str(req_dir)
-            ]
+            ], []
 
     missing = []
     for f in required:
@@ -75,7 +81,17 @@ def check_file_completeness(req_dir: Path, mode: str) -> tuple[list[str], list[s
             missing.append(f)
             fails.append(f"V1: Missing required file: {f} ({mode} mode)")
 
-    return passes, fails
+    # Check _active-state.md (WARN, not blocking)
+    if (req_dir / "_active-state.md").exists():
+        passes.append("V1: _active-state.md exists")
+    else:
+        warns.append(
+            "V1: _active-state.md missing — should be created when first "
+            "document is written and updated on status changes (see template "
+            "_active-state.md)"
+        )
+
+    return passes, fails, warns
 
 
 # ===========================================================================
@@ -185,22 +201,34 @@ def check_requirements_boundary(req_dir: Path) -> tuple[list[str], list[str]]:
 
 # ===========================================================================
 # V3: Method name verification markers — 030-implementation.md should have
-#     evidence of grep verification for referenced method names
+#     evidence of grep verification for referenced method names.
+#     If §3.2 API 方法验证 table is missing and method calls exist → FAIL.
+#     If table exists but no verification markers → WARN.
 # ===========================================================================
 
 # Verification markers
 RE_VERIFIED = re.compile(r"已核实|已验证|grep\s*确认|grep\s*验证|已确认存在")
 RE_UNVERIFIED = re.compile(r"待确认|未确认.*存在|待核实")
 
+# §3.2 API 方法验证 section header
+RE_METHOD_TABLE_SECTION = re.compile(r"##\s*3\.2\s*API\s*方法验证")
 
-def check_method_verification(req_dir: Path) -> tuple[list[str], list[str]]:
-    """V3: Check 030-implementation.md for method name verification markers."""
+
+def check_method_verification(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V3: Check 030-implementation.md for method name verification.
+
+    Two-tier check:
+      1. If existing method calls found but no §3.2 API 方法验证 table → FAIL
+      2. If §3.2 table exists but no verification markers → WARN
+      3. If §3.2 table exists with markers → PASS
+    """
     passes = []
+    fails = []
     warns = []
 
     impl_file = req_dir / "030-implementation.md"
     if not impl_file.exists():
-        return [], []  # V1 handles missing file
+        return [], [], []  # V1 handles missing file
 
     text = impl_file.read_text(encoding="utf-8")
 
@@ -214,19 +242,26 @@ def check_method_verification(req_dir: Path) -> tuple[list[str], list[str]]:
 
     has_verified = bool(RE_VERIFIED.search(text))
     has_unverified = bool(RE_UNVERIFIED.search(text))
+    has_method_table = bool(RE_METHOD_TABLE_SECTION.search(text))
 
     if not real_calls:
         passes.append("V3: 030-implementation.md has no existing method calls to verify")
+    elif not has_method_table:
+        fails.append(
+            "V3: 030-implementation.md references existing methods but has no "
+            "§3.2 API 方法验证 table — must add the table and verify each method "
+            "with grep (see template §3.2)"
+        )
     elif has_verified or has_unverified:
         marker = "verified" if has_verified else "marked unverified"
-        passes.append(f"V3: 030-implementation.md has method verification markers ({marker})")
+        passes.append(f"V3: 030-implementation.md has §3.2 table with method verification markers ({marker})")
     else:
         warns.append(
-            "V3: 030-implementation.md references existing methods but has no "
-            "verification markers (已核实/grep确认/待确认) — run API method name pre-check"
+            "V3: 030-implementation.md has §3.2 table but no "
+            "verification markers (已核实/grep确认/待确认) — fill in the table"
         )
 
-    return passes, warns
+    return passes, fails, warns
 
 
 # ===========================================================================
@@ -1055,6 +1090,73 @@ def check_grading_facts_consistency(
 
 
 # ===========================================================================
+# V10: Cross-cutting concerns table — 020-design.md must have §6 table
+#      with 19 dimension rows in full mode
+# ===========================================================================
+
+# Match §6 section header (flexible: "## 6. 横切关注点" or "## 6 横切关注点")
+RE_CROSSCUT_HEADER = re.compile(r"##\s*6[\.\s]*横切关注点")
+
+# Match table rows with ☑ or ☐ markers
+RE_CROSSCUT_ROW = re.compile(r"\|[^\|]*[☑☐]\|")
+
+# Match dimension row numbers (1-19)
+RE_CROSSCUT_DIM_ROW = re.compile(r"\|\s*\d+\s*\|")
+
+
+def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
+    """V10: Check 020-design.md for cross-cutting concerns table in full mode.
+
+    - FAIL if §6 横切关注点 section is completely missing in full mode
+    - WARN if table exists but has fewer than 10 dimension rows
+    - PASS if table has 10+ rows with ☑/☐ markers
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    if mode != "full":
+        return passes, fails, warns  # Only check in full mode
+
+    design_file = req_dir / "020-design.md"
+    if not design_file.exists():
+        return passes, fails, warns  # V1 handles missing file
+
+    text = design_file.read_text(encoding="utf-8")
+
+    has_header = bool(RE_CROSSCUT_HEADER.search(text))
+    dim_rows = RE_CROSSCUT_DIM_ROW.findall(text)
+    marker_rows = RE_CROSSCUT_ROW.findall(text)
+
+    if not has_header:
+        fails.append(
+            "V10: 020-design.md missing §6 横切关注点 section in full mode — "
+            "must include the 19-dimension cross-cutting concerns table "
+            "(see template 020-design.md §6). Renaming or skipping this "
+            "section = incomplete submission."
+        )
+    elif len(dim_rows) < 10:
+        warns.append(
+            f"V10: 020-design.md §6 横切关注点 table has only {len(dim_rows)} "
+            f"dimension rows — should have all 19 rows (check template). "
+            f"Rows with ☑/☐ markers: {len(marker_rows)}"
+        )
+    elif len(marker_rows) < 5:
+        warns.append(
+            f"V10: 020-design.md §6 横切关注点 table has {len(dim_rows)} rows "
+            f"but only {len(marker_rows)} have ☑/☐ markers — each row must "
+            f"be explicitly marked as 涉及(☑) or 不涉及(☐)"
+        )
+    else:
+        passes.append(
+            f"V10: 020-design.md §6 横切关注点 table present with "
+            f"{len(dim_rows)} dimension rows, {len(marker_rows)} marked"
+        )
+
+    return passes, fails, warns
+
+
+# ===========================================================================
 # Main
 # ===========================================================================
 
@@ -1112,10 +1214,11 @@ def main():
     all_fails: list[str] = []
     all_warns: list[str] = []
 
-    # V1: File completeness
-    p, f = check_file_completeness(req_dir, mode)
+    # V1: File completeness (includes _active-state.md WARN)
+    p, f, w = check_file_completeness(req_dir, mode)
     all_passes.extend(p)
     all_fails.extend(f)
+    all_warns.extend(w)
 
     # V2: Requirements boundary
     p, w = check_requirements_boundary(req_dir)
@@ -1123,8 +1226,9 @@ def main():
     all_warns.extend(w)
 
     # V3: Method name verification
-    p, w = check_method_verification(req_dir)
+    p, f, w = check_method_verification(req_dir)
     all_passes.extend(p)
+    all_fails.extend(f)
     all_warns.extend(w)
 
     # V4: Grading decision table
@@ -1158,6 +1262,12 @@ def main():
 
     # V9: Grading table fact consistency
     p, f, w = check_grading_facts_consistency(req_dir)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V10: Cross-cutting concerns table (full mode only)
+    p, f, w = check_crosscut_table(req_dir, mode)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

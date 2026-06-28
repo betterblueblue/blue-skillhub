@@ -284,10 +284,10 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
                         "V6: git.json head_short is null/empty for an independent "
                         "Git repo (expected a commit hash)"
                     )
-            # Check toplevel matches repo_root
-            # os.path.normcase: Windows 上统一盘符大小写 + 分隔符，Unix 上 no-op
+            # Check toplevel matches repo_root (independent repos only)
+            # Non-independent repos live inside a parent git tree; toplevel is the parent root.
             toplevel = git.get("toplevel")
-            if toplevel:
+            if toplevel and is_independent:
                 norm_toplevel = os.path.normcase(os.path.abspath(toplevel))
                 norm_repo_root = os.path.normcase(os.path.abspath(repo_root))
                 if norm_toplevel != norm_repo_root:
@@ -317,15 +317,11 @@ _V6_SKIP_DIRS = {
 }
 
 
-def _count_files_quick(root: str, max_depth: int = 3) -> int:
-    """Quick file count with limited depth, matching pf_scan.py skip logic."""
+def _count_files_quick(root: str) -> int:
+    """Full file count using pf_scan.py skip logic (no depth limit)."""
     count = 0
     root_path = Path(root)
     for dirpath, dirnames, filenames in os.walk(root_path):
-        depth = len(Path(dirpath).relative_to(root_path).parts)
-        if depth >= max_depth:
-            dirnames.clear()
-            continue
         dirnames[:] = [
             d for d in dirnames if d not in _V6_SKIP_DIRS and not d.startswith(".")
         ]
