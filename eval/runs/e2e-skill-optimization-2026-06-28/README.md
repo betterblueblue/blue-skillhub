@@ -1,9 +1,12 @@
-# Skill 优化验证（第二轮 + 第三轮）：Composer 2.5 + Step 3.7 Flash
+# Skill 优化验证（R2 → R3 → R4）：Composer 2.5 + Step 3.7 Flash
 
 > 验证目标：确认 Skill 模板优化后，C25 和 S37 的产出质量是否提升。
-> 测试项目：`test-projects/realworld-express-prisma`（多份干净副本，源码完全一致）
+> R2-R3 测试项目：`test-projects/realworld-express-prisma`（Node/Express/Prisma）
+> R4 测试项目：`test-projects/realworld-springboot-java`（Java/Spring Boot/MyBatis）
 >
 > **R3 已完成。两模型均达 92 分，全部成功标准达成。**
+> **R4 已完成。换栈 + 弱引导下 C25=83/B、S37=85/B，跨栈泛化成功但弱引导暴露模板引导力不足。**
+> **R4 优化（O10-O13）已实施，待 R5 验证。**
 
 ---
 
@@ -97,18 +100,26 @@ eval/runs/e2e-skill-optimization-2026-06-28/
 ├── PROMPT-step-3.7-flash-r2.md     ← R2 给 Step 3.7 Flash 的执行指令
 ├── PROMPT-composer-2.5-r3.md       ← R3 给 Composer 2.5 的执行指令
 ├── PROMPT-step-3.7-flash-r3.md     ← R3 给 Step 3.7 Flash 的执行指令
+├── PROMPT-composer-2.5-r4.md       ← R4 给 Composer 2.5 的执行指令（Java/Spring，口语化弱引导）
+├── PROMPT-step-3.7-flash-r4.md     ← R4 给 Step 3.7 Flash 的执行指令（Java/Spring，口语化弱引导）
 ├── REVIEW.md                       ← R1 vs R2 对比评审手册
-└── REVIEW-r3.md                    ← R2 vs R3 对比评审手册（已完成）
+├── REVIEW-r3.md                    ← R2 vs R3 对比评审手册（已完成）
+└── REVIEW-r4.md                    ← R4 跨栈评审手册（含 Ground Truth）
 
 test-projects/
-├── realworld-express-prisma/                           ← 原始项目（保留不动）
+├── realworld-express-prisma/                           ← R1-R3 原始项目（Node/Express/Prisma）
 ├── realworld-express-prisma-composer-2.5/              ← R1 产出（保留）
 ├── realworld-express-prisma-composer-2.5-r2/           ← R2 隔离环境
 ├── realworld-express-prisma-composer-2.5-r3/           ← R3 隔离环境
 │   └── change-impact/                                  ← 产出目录（模型执行后生成）
 ├── realworld-express-prisma-step-3.7-flash/            ← R1 产出（保留）
 ├── realworld-express-prisma-step-3.7-flash-r2/         ← R2 隔离环境
-└── realworld-express-prisma-step-3.7-flash-r3/         ← R3 隔离环境
+├── realworld-express-prisma-step-3.7-flash-r3/         ← R3 隔离环境
+│   └── change-impact/                                  ← 产出目录（模型执行后生成）
+├── realworld-springboot-java/                          ← R4 原始项目（Java/Spring Boot/MyBatis）
+├── realworld-springboot-java-composer-2.5/             ← R4 隔离环境
+│   └── change-impact/                                  ← 产出目录（模型执行后生成）
+└── realworld-springboot-java-step-3.7-flash/           ← R4 隔离环境
     └── change-impact/                                  ← 产出目录（模型执行后生成）
 ```
 
@@ -190,3 +201,116 @@ test-projects/
 - **C25**：总分 ≥ 90（Q2 从 7→≥9，Q5 从 6→≥8）→ 优化有效
 - **S37**：总分 ≥ 92（Q5 从 7→≥9）→ 优化有效
 - **不退步**：G5-G9 合规分维持 40/40，G1-G4 全 PASS
+
+---
+
+## 七、第四轮（R4）：Java/Spring 跨栈 + 弱引导
+
+### R4 设计动机
+
+R1-R3 全部在 Node/Express/Prisma 栈上测试，存在两个未验证的问题：
+
+1. **跨栈泛化**：Skill 的 profile（`java-spring-mybatis.md`）、dimensions、模板能否在 Java/Spring/MyBatis 栈上同样有效？
+2. **弱引导下的自主性**：R3 的 prompt 给了大量提示（列 20+ skill 文件、提醒 §6/§3.2/_active-state.md、指出涉及哪些层）。去掉这些提示后，Skill 自身的流程能否引导模型完成全部产出？
+
+### R4 测试项目
+
+| 项 | 值 |
+|---|---|
+| 项目 | `gothinkster/spring-boot-realworld-example-app` |
+| 栈 | Spring Boot 2.6.3 + MyBatis 2.2.2 + SQLite + JWT + Flyway + GraphQL (DGS) |
+| 构建 | Gradle |
+| Java | 11 |
+| 架构 | DDD-lite（api → application → core → infrastructure） |
+| 与 R1-R3 对比 | 同为 RealWorld (Conduit) API 规范，但技术栈完全不同 |
+
+### R4 Prompt 设计
+
+| 维度 | R3（强引导） | R4（弱引导） |
+|---|---|---|
+| Skill 文件列表 | 列出 20+ 个文件路径 | 只给 SKILL.md 入口，按索引自行读取 |
+| 任务描述 | "涉及多层：Prisma schema 变更、注册流程改动…" | 纯用户口语，不提示涉及哪些层 |
+| §6 横切表 | "强制要求…标题不得改名…19 行全部检查" | 不提，靠 Skill 流程 + V10 门禁 |
+| §3.2 验证表 | "必须包含…标注【已核实: path:line】" | 不提，靠 Skill 流程 + V3 门禁 |
+| _active-state.md | "必做…每次文档状态变化都更新" | 不提，靠 Skill 流程 + V1 门禁 |
+| Light/Full 判断 | 明确标注"light"/"full" | 不标，让 Skill Phase 2.5 自行判断 |
+
+### R4 测试场景
+
+| 任务 | 需求原话 | 预期类型 | 涉及层 |
+|---|---|---|---|
+| Task 2 | "文章列表接口每次都返回完整正文，列表页加载特别慢，能不能列表不返回 body" | Light | MyBatis mapper SQL 片段 + DTO |
+| Task 3 | "现在文章一创建就公开了，能不能加个草稿功能，让用户先存草稿，想好了再发布" | Full | Schema(Flyway) → Domain → Mapper(写/读) → DTO → Service → API(新端点) → 权限 → 向后兼容 |
+
+### R4 执行环境
+
+| 模型 | 测试项目路径 | 状态 |
+|---|---|---|
+| Composer 2.5 | `test-projects/realworld-springboot-java-composer-2.5` | ✅ 就绪 |
+| Step 3.7 Flash | `test-projects/realworld-springboot-java-step-3.7-flash` | ✅ 就绪 |
+
+### R4 成功标准
+
+1. **跨栈不崩**：两模型 G1-G4 门禁全 PASS（Skill 能在新栈上运行）
+2. **弱引导下自主完成**：§6 横切表、§3.2 验证表、_active-state.md 在无提示情况下被产出
+3. **MyBatis 正确性**：识别 XML mapper 模式（非 JPA/注解），mapper 变更点准确
+4. **质量不显著退步**：综合得分 ≥ 80（R3 为 92，允许换栈带来一定下降）
+5. **两模型差距 ≤ 10 分**（R3 差距为 0，换栈后可能拉大但不应失控）
+
+### R4 结果
+
+| 模型 | R3（强引导） | R4（弱引导） | 降幅 | 等级 |
+|------|------------|------------|------|------|
+| Composer 2.5 | 92 | 83 | -9 | B |
+| Step 3.7 Flash | 92 | 85 | -7 | B |
+| 差距 | 0 | -2（S37 领先） | | |
+
+### R4 成功标准达成情况
+
+| # | 标准 | 结果 |
+|---|------|------|
+| 1 | 跨栈不崩（G1-G4 全 PASS） | ✅ 达成 |
+| 2 | 弱引导下自主完成（§6/§3.2/_active-state） | ⚠️ 部分达成（_active-state 改善，§6 仅 S37 通过，§3.2 两模型都遗漏） |
+| 3 | MyBatis 正确性（XML mapper 模式） | ✅ 达成 |
+| 4 | 质量不显著退步（≥80） | ✅ 达成（C25=83, S37=85） |
+| 5 | 两模型差距 ≤ 10 分 | ✅ 达成（差距 2 分） |
+
+> 详细评审见 `REVIEW-r4.md`。
+
+---
+
+## 八、第四轮优化（O10-O13）：修复弱引导下的模板引导力
+
+### R4 核心发现
+
+R4 暴露的根本问题：**Skill 模板自身的引导力不足，之前靠 prompt 提示兜底。** 去掉 prompt 提示后：
+
+1. **两模型都没跑 `impact_validate.py`** — SKILL.md 没把"跑脚本"做成强制门禁，只在 references 里提了一句
+2. **C25 完全自创章节结构** — 没按模板的 `##` 级别节产出，§3.2 和 §6 都丢了
+3. **S37 跟了模板但跳过 §3.2** — §3.2 在模板中位于 §3 和 §4 之间，看起来像可跳过的子节
+4. **S37 跳过 000-context-pack.md** — 认为 Pathfinder 地图可以替代，phase-4-output.md 没说清 context-pack 是两模式必产出
+5. **S37 设计解读偏差** — 用户说"先存草稿，想好了再发布"，S37 默认 PUBLISHED 而非 DRAFT
+
+### 优化措施
+
+| # | 问题 | 修改文件 | 修改内容 |
+|---|------|---------|---------|
+| O10 | §3.2 验证表弱引导下两模型都遗漏 | `SKILL.md` | 强制规则加第 8 条：Phase 4 输出后必须跑 `impact_validate.py`，有 FAIL 不得提交 |
+| O10+ | 同上 | `templates/030-implementation.md` | §3.2 标题改为 `⚠️ 强制必做 — 缺此节 V3 FAIL 阻止提交`，§3 末尾加提醒 |
+| O11 | C25 弱引导下遗漏 §6 横切表 | `SKILL.md` | 强制规则 8 + Phase 4 必产出清单明确列出 `## 6. 横切关注点` 为必含节 |
+| O11+ | 同上 | `SKILL.md` | Phase 4 加"写每份文档前必须先 Read 对应模板，按模板章节结构产出，不得自创章节编号" |
+| O12 | S37 跳过 000-context-pack.md | `references/phase-4-output.md` | context-pack 说明改为"light 和 full 模式均必产出" |
+| O12+ | 同上 | `scripts/impact_validate.py` | V1 检查在 light 模式下对缺 context-pack 报 WARN |
+| O13 | S37 设计解读偏差（默认 PUBLISHED） | `references/phase-1-intent.md` | 新增"用户意图→设计假设映射"节，列出常见口语化模式及正确推断 |
+
+### 验证
+
+用 R4 产出测试 `impact_validate.py`，确认门禁能捕获 R4 暴露的所有问题：
+
+| 产出 | 门禁 | 结果 |
+|------|------|------|
+| C25 C2（缺 §6） | V10 | ✅ FAIL — "missing §6 横切关注点 section" |
+| S37 C2（缺 §3.2） | V3 | ✅ FAIL — "no §3.2 API 方法验证 table" |
+| S37 C2（缺 context-pack） | V1 | ✅ FAIL — "Missing required file: 000-context-pack.md" |
+| S37 C1（light 缺 context-pack） | V1 | ✅ WARN — "context-pack is required for both modes" |
+| 现有 17 个测试 | — | ✅ 全部通过 |
