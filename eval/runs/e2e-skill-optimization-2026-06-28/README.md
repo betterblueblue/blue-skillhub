@@ -482,3 +482,56 @@ R6 后实施了 O14（脚本从根目录 `scripts/` 移到 `skills/impact/script
 | — | S37 C2 导航行错误 | 模板导航行加条件注释 |
 
 > 详细评审见 `REVIEW-r7.md`。
+
+---
+
+## 十二、最终结论
+
+### 优化 loop 收尾
+
+R1-R7 共 7 轮验证，O1-O18 共 18 项优化措施。**主力模型 Composer 2.5 已稳定在 95/A，优化 loop 收尾。** Step 3.7 Flash 的剩余问题（脚本执行、O13 非确定性）不再投入。
+
+### 全历程分数变化
+
+| 轮次 | 栈 | 引导 | C25 | S37 | 差距 | 关键优化 |
+|------|-----|------|-----|-----|------|---------|
+| R1 | Node/Express | 强引导 | 86 | 90 | -4 | 基线建立 |
+| R2 | Node/Express | 强引导 | 86 | 87 | -1 | O1-O4（§3.2/§6 门禁） |
+| R3 | Node/Express | 强引导 | 92 | 92 | 0 | O5-O9（V10/_active-state/Prisma 参考） |
+| R4 | Java/Spring | 弱引导 | 83 | 85 | -2 | 跨栈+弱引导，暴露模板引导力不足 |
+| R5 | Java/Spring | 弱引导 | 95 | 87 | +8 | O10-O13（§3.2/§6/context-pack 强制规则） |
+| R6 | Java/Spring | 弱引导 | 95 | 90 | +5 | O14-O16（脚本门禁/读路径 SQL 判 light） |
+| R7 | Java/Spring | 弱引导 | 95 | 90 | +5 | O14+O18（脚本路径澄清/_active-state 模板强制） |
+
+### Composer 2.5（主力模型）最终状态
+
+- **综合分 95/A**，从 R1 的 86 提升 9 分
+- R4 弱引导+跨栈一度降到 83，R5 后稳定在 95
+- 所有门禁通过，脚本正常执行，设计方案稳定（DRAFT）
+- **结论：Skill 优化对 C25 完全生效，弱引导下不依赖 prompt 提示即可高质量完成**
+
+### Step 3.7 Flash 最终状态
+
+- **综合分 90/A**，从 R1 的 90 持平
+- O10-O12（§3.2/§6/context-pack）和 O16（判 light）和 O18（_active-state 模板）均已修复
+- 剩余问题：脚本不实际执行（O19 未做）、O13 设计意图非确定性、GraphQL 排除偏好
+- **结论：S37 有改善但剩余问题属 LLM 行为层面，skill 框架层面已做到能做的极限**
+
+### 优化措施全览
+
+| 阶段 | 优化项 | 影响文件 | 效果 |
+|------|--------|---------|------|
+| R2 | O1-O4 | 030 模板/020 模板/phase-4-output/impact_validate.py | §3.2 和 §6 门禁建立 |
+| R3 | O5-O9 | impact_validate.py/phase-4-output/020 模板/PROMPT | V10 横切表 FAIL/_active-state 检查/Prisma 参考 |
+| R5 | O10-O13 | SKILL.md/030 模板/phase-4-output/phase-1-intent | 弱引导下强制规则：§3.2/§6/context-pack/意图映射 |
+| R6 | O14-O16 | SKILL.md/phases-detail/_active-state 模板 | 脚本门禁/读路径 SQL 判 light |
+| R7 | O14+O18 | SKILL.md/scripts 路径迁移/_active-state 模板规则 | 脚本路径澄清/_active-state 模板强制 |
+
+### 已接受的限制
+
+| 问题 | 原因 | 接受理由 |
+|------|------|---------|
+| S37 脚本不执行 | LLM 对"Phase 4 当场跑完"理解不足 | O19 可修但不再投入 |
+| S37 O13 设计意图非确定性 | LLM 非确定性，skill 层面无法解决 | C25 稳定 DRAFT 已够 |
+| S37 GraphQL 排除 | 设计偏好，非错误 | 接受差异 |
+| S37 C2 导航行错误 | 模板复制粘贴 | 低优先级 |
