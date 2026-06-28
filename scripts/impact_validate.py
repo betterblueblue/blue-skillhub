@@ -13,6 +13,7 @@ Checks:
   V6: Line number spot check (random 3 references verified)                 — WARN
   V7: Tier judgment sanity (universal-quantifier coverage gate + over/under) — FAIL/WARN
   V8: Style rules check (_style-rules.md enforcement feasibility)            — WARN
+  V9: Grading table fact consistency (判档表 vs context-pack §7)              — WARN
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -788,6 +789,272 @@ def check_style_rules(
 
 
 # ===========================================================================
+# V9: Grading table fact consistency — check that factual claims in the
+#     grading decision table are consistent with context-pack §7
+# ===========================================================================
+
+# CamelCase identifiers (method/function names) — at least 5 chars
+RE_CAMEL_ENTITY = re.compile(r'\b([a-z]\w*?[A-Z]\w*)\b')
+
+# Contradiction descriptor pairs (positive, negative)
+CONTRADICTION_PAIRS = [
+    ("含", "不含"),
+    ("包含", "不包含"),
+    ("存在", "不存在"),
+    ("已存在", "不存在"),
+    ("已实现", "未实现"),
+    ("已实现", "不存在"),
+]
+
+# Keywords indicating a factual claim
+FACT_CLAIM_KEYWORDS = ["含", "不含", "存在", "不存在", "默认", "已实现", "未实现"]
+
+
+def _split_table_row(row: str) -> list[str]:
+    """Split a markdown table row into cells."""
+    inner = row.strip()
+    if inner.startswith("|"):
+        inner = inner[1:]
+    if inner.endswith("|"):
+        inner = inner[:-1]
+    return [c.strip() for c in inner.split("|")]
+
+
+def _extract_section_text(text: str, keywords: list[str]) -> str:
+    """Extract a markdown section whose header contains any of the keywords."""
+    for kw in keywords:
+        pattern = rf'(#{{2,3}}\s*[^\n]*{kw}[^\n]*\n.*?)(?=\n#{{2,3}}\s|\Z)'
+        m = re.search(pattern, text, re.S)
+        if m:
+            return m.group(0)
+    return ""
+
+
+def _extract_confirmed_facts(ctx_text: str) -> list[str]:
+    """Extract confirmed facts from context-pack §7 or equivalent section."""
+    section = _extract_section_text(ctx_text, ["已确认事实"])
+    if not section:
+        return []
+    facts: list[str] = []
+    for line in section.splitlines():
+        line = line.strip()
+        if not line.startswith("-"):
+            continue
+        fact = line.lstrip("-").strip()
+        # Skip template placeholders
+        if "[事实]" in fact or "[路径" in fact or fact.startswith("`["):
+            continue
+        if fact:
+            facts.append(fact)
+    return facts
+
+
+def _parse_table_facts(lines: list[str], header_idx: int) -> list[str]:
+    """Parse a markdown table starting at header_idx, extract fact columns.
+
+    Fact columns are those whose header contains keywords like 现有/覆盖/缺口/现状.
+    """
+    header = lines[header_idx].strip()
+    header_cols = _split_table_row(header)
+    fact_col_indices = [
+        idx
+        for idx, col in enumerate(header_cols)
+        if any(kw in col for kw in ["现有", "覆盖", "缺口", "现状", "已有"])
+    ]
+    if not fact_col_indices:
+        return []
+    entries: list[str] = []
+    for i in range(header_idx + 1, len(lines)):
+        stripped = lines[i].strip()
+        if not stripped.startswith("|"):
+            break
+        if re.match(r"^\|[-:\s|]+$", stripped):
+            continue
+        cols = _split_table_row(stripped)
+        for idx in fact_col_indices:
+            if idx < len(cols):
+                cell = cols[idx].strip()
+                if cell and not cell.startswith("[") and cell not in ("—", "-"):
+                    entries.append(cell)
+    return entries
+
+
+def _extract_grading_entries(impl_text: str) -> list[str]:
+    """Extract factual claims from grading decision table in implementation docs."""
+    lines = impl_text.splitlines()
+
+    # Strategy 1: find table with "判档" in header row
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("|") and "判档" in stripped:
+            entries = _parse_table_facts(lines, i)
+            if entries:
+                return entries
+
+    # Strategy 2: find section header with "判档" keyword, then next table
+    for i, line in enumerate(lines):
+        if any(kw in line for kw in ["判档决策表", "定级决策表", "判档表"]):
+            for j in range(i + 1, min(i + 20, len(lines))):
+                if lines[j].strip().startswith("|"):
+                    entries = _parse_table_facts(lines, j)
+                    if entries:
+                        return entries
+                    break
+    return []
+
+
+def _extract_entities(text: str) -> set[str]:
+    """Extract camelCase identifiers (method/function names) from text.
+
+    Only identifiers >= 5 chars are kept to reduce false positives.
+    """
+    entities: set[str] = set()
+    for m in RE_CAMEL_ENTITY.finditer(text):
+        entity = m.group(1)
+        if len(entity) >= 5:
+            entities.add(entity)
+    return entities
+
+
+def _entity_context(text: str, entity: str, window: int = 40) -> str:
+    """Extract a context window around the first occurrence of entity in text."""
+    idx = text.find(entity)
+    if idx == -1:
+        return text
+    start = max(0, idx - window)
+    end = min(len(text), idx + len(entity) + window)
+    return text[start:end]
+
+
+def _has_term(text: str, term: str, exclude: str = "") -> bool:
+    """Check if text contains term, excluding occurrences that are part of exclude.
+
+    When term is a substring of exclude (e.g. '含' in '不含'), we first
+    remove all occurrences of exclude before checking for term.
+    """
+    if not exclude or exclude == term:
+        return term in text
+    return term in text.replace(exclude, "")
+
+
+def _check_contradiction(text1: str, text2: str) -> bool:
+    """Check if two texts contain contradictory descriptors.
+
+    For each (positive, negative) pair, checks if one text has the positive
+    form while the other has the negative form. Handles the case where the
+    positive term is a substring of the negative term (e.g. '含' in '不含')
+    by stripping negative occurrences before checking for positive.
+    """
+    for pos, neg in CONTRADICTION_PAIRS:
+        t1_has_pos = _has_term(text1, pos, neg)
+        t1_has_neg = neg in text1
+        t2_has_pos = _has_term(text2, pos, neg)
+        t2_has_neg = neg in text2
+        if (t1_has_pos and t2_has_neg) or (t1_has_neg and t2_has_pos):
+            return True
+    return False
+
+
+def check_grading_facts_consistency(
+    req_dir: Path,
+) -> tuple[list[str], list[str], list[str]]:
+    """V9: Check grading decision table facts against context-pack §7.
+
+    Extracts factual claims from the grading decision table in
+    implementation docs and cross-checks them against confirmed facts
+    in 000-context-pack.md §7. Reports WARN for:
+      - Contradictions: same entity described differently in two places
+      - Unconfirmed facts: grading table references entity not in §7
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    ctx_file = req_dir / "000-context-pack.md"
+    if not ctx_file.exists():
+        return [], [], []  # V1 handles missing file
+
+    ctx_text = ctx_file.read_text(encoding="utf-8")
+    facts = _extract_confirmed_facts(ctx_text)
+
+    # Extract grading table from all .md files (030, 040, etc.)
+    table_entries: list[str] = []
+    for f in sorted(req_dir.glob("*.md")):
+        try:
+            text = f.read_text(encoding="utf-8")
+            table_entries.extend(_extract_grading_entries(text))
+        except Exception:
+            pass
+
+    if not table_entries:
+        passes.append(
+            "V9: No grading decision table found — skip fact consistency check"
+        )
+        return passes, fails, warns
+
+    if not facts:
+        warns.append(
+            "V9: 000-context-pack.md has no confirmed facts (§7) — "
+            "cannot verify grading table consistency"
+        )
+        return passes, fails, warns
+
+    # Build entity → facts mapping from §7
+    entity_to_facts: dict[str, list[str]] = {}
+    for fact in facts:
+        for entity in _extract_entities(fact):
+            entity_to_facts.setdefault(entity, []).append(fact)
+
+    # Check each grading table entry
+    contradictions: list[str] = []
+    unconfirmed: list[str] = []
+    consistent_count = 0
+
+    for entry in table_entries:
+        entry_entities = _extract_entities(entry)
+        if not entry_entities:
+            continue
+
+        entry_has_match = False
+        for entity in entry_entities:
+            if entity in entity_to_facts:
+                entry_has_match = True
+                for ctx_fact in entity_to_facts[entity]:
+                    entry_ctx = _entity_context(entry, entity)
+                    ctx_ctx = _entity_context(ctx_fact, entity)
+                    if _check_contradiction(entry_ctx, ctx_ctx):
+                        contradictions.append(
+                            f"V9: Contradiction for '{entity}' — "
+                            f"grading table: '{entry[:80]}' vs "
+                            f"§7: '{ctx_fact[:80]}'"
+                        )
+                    else:
+                        consistent_count += 1
+
+        if not entry_has_match:
+            if any(kw in entry for kw in FACT_CLAIM_KEYWORDS):
+                unconfirmed.append(entry)
+
+    if contradictions:
+        warns.extend(contradictions)
+    elif consistent_count > 0:
+        passes.append(
+            f"V9: Grading table facts consistent with context-pack §7 "
+            f"({consistent_count} entities verified)"
+        )
+    else:
+        passes.append("V9: No shared entities between grading table and §7")
+
+    if unconfirmed:
+        for entry in unconfirmed[:3]:
+            warns.append(
+                f"V9: Grading table fact not in §7 — '{entry[:80]}'"
+            )
+
+    return passes, fails, warns
+
+
+# ===========================================================================
 # Main
 # ===========================================================================
 
@@ -885,6 +1152,12 @@ def main():
 
     # V8: Style rules check
     p, f, w = check_style_rules(req_dir, repo_root)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V9: Grading table fact consistency
+    p, f, w = check_grading_facts_consistency(req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)
