@@ -201,7 +201,7 @@
 | `人工确认` | 需语义判断，grep 做不到 | WARN，列入"需人工复核"清单 |
 | `code-graph + 人工` | 有 code-graph MCP 时缩小候选 | WARN，列入"需人工复核"清单 |
 
-> **铁律**：只有校验手段能真正落地拦截时才标"强制"。grep 做不到语义判断（如"返回类型是不是 Result<T>""某个值是不是硬编码"），这类规则必须标"人工确认"，不用 grep 的 token 出现冒充语义成立。
+> **铁律**：只有校验手段能真正落地拦截时才标"强制"。grep 做不到语义判断（如"返回类型是不是 Result<T>""某个值是不是硬编码"），这类规则必须标"人工确认"，不能因为 grep 命中某个词就当作语义判断已成立。
 
 栈专属风格项（Go 的 `err` 处理与 `errors.Is/As`、Python 的 type hint、Next.js 的 Server Action `'use server'` 边界等）由 profile 追加。
 

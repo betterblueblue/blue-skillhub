@@ -31,7 +31,7 @@ context_discovery:    # Context Pack 构建顺序；旧 profile 未填写时从 
   configs: []         # 配置/权限：env/config/feature flag/permission
   exclude_patterns: [] # 排除项：dist/build/vendor/generated/cache 等
   high_frequency_pattern_check: string # 引用计数异常大时的验证策略提示
-style_axes:           # 风格观察轴（结论需运行时现采）
+style_axes:           # 风格观察轴（结论需运行时从代码确认）
   naming: string      # 命名规范提示
   layering: string    # 分层模式提示
   orm: string         # ORM 方式提示
@@ -64,7 +64,7 @@ notes:
 - 新 profile 应填写 `context_discovery`。
 - 老 profile 若未填写，按 `discovery_globs` 推导：`api → entrypoints`，`entity/dto/migration/data_access → data_models`，`service/data_access → dependency_paths`，`test → tests`，`config → configs`。
 - 每个候选文件或对象都必须标注相关性：3 直接修改候选，2 影响判断候选，1 背景参考，0 暂不纳入范围。
-- Context Pack 必须记录排除项，避免把看过但无关的文件继续带入后续分析。
+- Context Pack 必须记录排除项，避免把无关文件带入后续分析。
 - 未完成 Context Pack 前，不得正式 light/full 定级。
 
 ## Level 定义
@@ -105,7 +105,7 @@ notes:
 
 ## 写入规范
 
-- 每个轴的值是「通常长什么样」的**提示**，明确标注「结论需运行时现采」
+- 每个轴的值是「通常长什么样」的**提示**，明确标注「结论需运行时从代码确认」
 - 不写未验证的 glob/command，验证前写进 `notes.limitations`
 - 迁移文件（migration）glob 必须覆盖：SQL 脚本、Flyway、Liquibase、迁移工具配置
 - 新增或升级 profile 时必须补充 `context_discovery`；暂时无法验证的条目写入 `notes.limitations`

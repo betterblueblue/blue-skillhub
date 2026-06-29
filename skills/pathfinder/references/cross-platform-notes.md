@@ -1,7 +1,7 @@
 <!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
 # 跨平台执行说明(Pathfinder)
 
-> 适用:bash / Git-Bash / PowerShell / Windows cmd。Pathfinder 全程只读,跨平台问题主要在「量体量」和「取时间戳/HEAD」两类命令。
+> 适用:bash / Git-Bash / PowerShell / Windows cmd。Pathfinder 全程只读,跨平台问题主要在「统计项目大小」和「取时间戳/HEAD」两类命令。
 
 ## 时间戳 + git HEAD(概览头部用)
 
@@ -37,7 +37,7 @@
 | `cat` | `Get-Content` |
 | `2>/dev/null` | `2>$null` |
 
-> Pathfinder 优先用 Read/Grep/Glob 工具而非 shell 文本命令,以上仅供必须用 Bash 量体量/查 git 时参考。
+> Pathfinder 优先用 Read/Grep/Glob 工具而非 shell 文本命令,以上仅供必须用 Bash 统计项目大小/查 git 时参考。
 
 ## Git Bash (msys2) 路径格式陷阱
 

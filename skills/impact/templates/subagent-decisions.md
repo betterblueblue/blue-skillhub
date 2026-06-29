@@ -1,7 +1,7 @@
 # Subagent 决策矩阵 — [变更名称]
 
 > 模板用途：subagent 在 Phase 5 自治模式下，每 Step 必须填写本表。
-> 本表是 subagent 的**预决策建议**，不替代人类 `确认 Step N`。subagent 只能建议 execute / pause-and-wait / flag-high-risk，**任何写操作（Edit/Write/DDL/DML/配置变更/测试修复）的执行必须由人类在当前对话中显式 `确认 Step N` 后**方可执行。flag-high-risk 仅限 eval 沙盒（subagent-as-user 协议）中继续只读分析；**生产会话中 flag-high-risk 后必须暂停等待人类**。
+> 本表是 subagent 的决策建议，不替代人类 `确认 Step N`。subagent 只能建议 execute / pause-and-wait / flag-high-risk，**任何写操作（Edit/Write/DDL/DML/配置变更/测试修复）的执行必须由人类在当前对话中显式 `确认 Step N` 后**方可执行。flag-high-risk 仅在评测沙盒中可继续只读分析；**正式使用时 flag-high-risk 后必须暂停等人工确认**。
 > 参考 SKILL.md "高风险 Step 识别清单"。
 
 ---
@@ -31,12 +31,12 @@
 
 ### RESTATE
 - **目标**：[文件 / 表 / 函数 / 行号]
-- **影响范围**：[哪些文件 / API consumer / DB row 受影响]
+- **影响范围**：[哪些文件 / API 调用方 / 数据库行 受影响]
 - **回滚方式**：[精确反向命令]
 - **验证方式**：[命令 + 期望结果]
 
 ### DECIDE
-- **结论**：[request-human-confirm / pause-and-wait / flag-high-risk（仅 eval 沙盒可继续只读分析，生产会话必须暂停）]
+- **结论**：[request-human-confirm / pause-and-wait / flag-high-risk（仅评测沙盒可继续只读分析，正式使用必须暂停）]
 - **依据**：
   - 高风险清单检查：
     - DROP TABLE / DROP COLUMN：PASS（不涉及）
