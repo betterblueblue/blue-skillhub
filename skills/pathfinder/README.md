@@ -218,15 +218,11 @@ Pathfinder 已接入统一测评体系（[docs/skill-eval/](../../docs/skill-eva
 
 验证记录见 [validation-runs/INDEX.md](validation-runs/INDEX.md)：T01/T02 首轮与二轮验证，**T03 V3 端到端交接实跑 PASS（pathfinder→impact，5/5 契约检查，handoff_value=high）**——关闭了「V3 未实跑」缺口。
 
-### 盲测验证（2026-06-24）
+### 盲测验证
 
-6 个真实开发场景盲测 + 协议改进后复跑，验证 FACTS 层强制性、认证-鉴权自检等改进项：
+6 个真实开发场景盲测经 v1-v3 三轮复跑（逐步验证 FACTS 层强制性、认证-鉴权自检等改进项），最终在 v4 干净环境复测中稳定：引入 DeepSeek-V4-Flash、修复环境污染（`pf_scan.py` 的 `SKIP_DIRS` 加入 `change-impact`）后，Composer 2.5、Step 3.7 Flash、DeepSeek-V4-Flash 三模型在 pathfinder 场景均 PASS——facts 产出正确、认证-鉴权自检完整。期间还补强了 `pf_validate.py` V6（facts 文件缺失的 FAIL/WARN 判定、toplevel 大小写比较、facts 内容合理性校验）。
 
-- **v1 盲测**：Composer 2.5 在 prisma-express-ts 上发现 passport.ts select 缺 role 致 RBAC 失效（真实安全 bug）；Step 3.7 Flash 未发现（facts 文件内容全错但 Script Gate 通过）
-- **v2 复跑**：Composer 2.5 P1-B 退步（不再发现 passport bug）；Step 3.7 Flash 0/5 改进全 FAIL（疑似未加载改进协议）
-- **v3 复跑**：Composer 2.5 5/5 全通过（P1-B 退步修复 + IP1-A 修复）；Step 3.7 Flash 3/5 修复（P1-B 认证-鉴权自检修复 + I1-A 方法名预检修复 + IP1-A 场景覆盖修复），P1-A 仍 FAIL（未产出 facts 文件）
-- **v3 后续优化**：`pf_validate.py` V6 检查中 facts 文件缺失从 WARN 改为 FAIL（模型跳过 Phase 1.5 时 Script Gate 拦截）；V6 toplevel 大小写比较修复（`os.path.normcase`）；V6 增强 facts 内容合理性校验（dir_tree 条目数 >1、dir_tree 条目对应磁盘真实目录、file_count 与磁盘实际文件数比值在 0.3-3.0 范围内）。**后续调整：两个 facts 文件都缺失时回退为 WARN（提示先跑 Phase 1.5），只缺一个时仍 FAIL**
-- **v4 干净环境复测**：引入 DeepSeek-V4-Flash，修复环境污染（`pf_scan.py` 的 `SKIP_DIRS` 加入 `change-impact`，每个 prompt 加 Step 0 清理）。三模型在 B6（pathfinder）上均 PASS——facts 产出正确、认证-鉴权自检完整。pathfinder 场景三模型均可胜任
+v1-v3 逐步复跑细节见 `eval/runs/blind-2026-06-24-v3-{composer25,step37flash}/` 和 [docs/skill-improvement-2026-06-24.md](../../docs/archive/2026-06/skill-improvement-2026-06-24.md)。
 
 ### 模型选型（v4 干净环境实测）
 
