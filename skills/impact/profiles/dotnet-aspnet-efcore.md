@@ -133,7 +133,7 @@ context_discovery:
 
 ## style_axes
 
-> 下列是观察方向，结论必须运行时从项目文件现采。
+> 下列是观察方向，结论必须运行时从项目文件确认。
 
 | 轴 | 观察方向 |
 |----|----------|
@@ -198,7 +198,7 @@ validation_strategy:
 notes:
   limitations:
     - 仅在 eShopOnWeb 的 Clean Architecture 样本验证，极简 Web API 项目需继续验证
-    - Minimal API、Razor Pages、Controller、Endpoint class 可能并存，需按项目现采
+    - Minimal API、Razor Pages、Controller、Endpoint class 可能并存，需按项目确认
     - 无数据库连接时不能确认真实索引、约束和迁移应用状态
   edge_cases:
     - 多 DbContext 项目：必须确认目标 context，如 CatalogContext/AppIdentityDbContext

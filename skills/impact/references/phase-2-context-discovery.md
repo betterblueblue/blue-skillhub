@@ -7,7 +7,7 @@
 
 ## Pathfinder 项目地图预读（若存在）
 
-进入 Step 2.1 技术栈检测前，先检查目标项目根目录是否有 `change-impact/_project-map.md`（由 `pathfinder` skill 产出的项目级认知地图）：
+进入 Step 2.1 技术栈检测前，先检查目标项目根目录是否有 `change-impact/_project-map.md`（由 `pathfinder` skill 产出的项目级结构总览）：
 
 - **不存在** → 按下述原流程执行，无任何行为变化（地图是可选辅助工具，非前置必跑项）。
 - **存在** → 读它做 L1 预读：地图【2】技术栈可作为技术栈检测的起点（仍按 Step 2.1 打分确认，不盲信），地图【3】架构分层 +【8】构建运行测试可直接填 `L1 项目地图`。但必须遵守：
@@ -30,7 +30,7 @@
 
 进入 Step 2.1 技术栈检测前，检查目标项目根目录是否有 `change-impact/_style-rules.md`（项目级风格规范，由用户维护或渐进积累）：
 
-- **不存在** → 按现有流程执行，风格分析退回 profile `style_axes` + 运行时现采。无任何行为变化。
+- **不存在** → 按现有流程执行，风格分析退回 profile `style_axes` + 运行时从代码确认。无任何行为变化。
 - **存在** → 读它作为最高优先级风格来源：
   1. "强制规则"作为 Phase 5 风格合规检查的必查项（V8 校验）。
   2. "建议规则"作为 Phase 3 风格分歧检测的参照。
@@ -42,7 +42,7 @@
 2. `_style-rules.md` 建议规则（用户参考）
 3. `_project-map.md` 【14】代码风格观察（机器观察，Pathfinder 产出）
 4. profile `style_axes`（栈级通用提示）
-5. 运行时从 git diff 现采（最后补充）
+5. 运行时从 git diff 读取（最后补充）
 
 > **渐进积累**：如果 `_style-rules.md` 不存在或规则不全，impact 在 Phase 3 发现风格分歧时可经用户确认后追加规则到 `_style-rules.md`（作为 Phase 5 的一个 Step，需 `确认 Step N`）。详见 `references/phases-detail.md` 的"风格分歧检测"节。
 

@@ -1,5 +1,5 @@
 <!--
-  Pathfinder 项目认知地图模板。Phase 4 按本模板写入 change-impact/_project-map.md。
+  Pathfinder 项目结构总览模板。Phase 4 按本模板写入 change-impact/_project-map.md。
   规则:
   - 每个条目带可信度【已核实: 证据】或【推断: 待验证】。
   - 找不到写"未发现",不编造。凭证脱敏 ***。
@@ -8,10 +8,10 @@
   - Mermaid 是图的唯一 canonical source。
 -->
 
-# [项目名] 认知地图
+# [项目名] 项目结构总览
 
 > 本地图由 Pathfinder(领航)生成,供 impact 当 L1 导航上下文。
-> 地图是**导航图不是权威源**:`【推断】`项动手前必须重新取证。
+> 地图只是**导航参考，不是权威依据**:`【推断】`项动手前必须重新取证。
 
 ## Executive Summary（30 秒读懂）
 
@@ -82,7 +82,7 @@
 
 > monorepo / 多栈:按子项目分小节列出,标目录边界。
 
-## 【3】架构分层 / 模块地图  ← 喂 impact L1
+## 【3】架构分层 / 模块地图  ← 供 impact 作 L1 上下文
 
 | 模块 / 目录 | 推断职责 | 相关性 | 可信度 |
 |-------------|----------|--------|------|
@@ -135,7 +135,7 @@ erDiagram
 - 三方服务 / MQ / 缓存 / 外部 API:
 - 关键 env / 配置键(**密码脱敏 ***,只记键名+路径**):
 
-## 【8】构建·运行·测试  ← 喂 impact L1
+## 【8】构建·运行·测试  ← 供 impact 作 L1 上下文
 
 | 项 | 命令 / 现状 | 可信度 |
 |----|-------------|------|
@@ -146,7 +146,7 @@ erDiagram
 
 > 命令只**记录**,Pathfinder 不执行。找不到真实入口写"未发现",不写占位命令。
 
-## 【9】风险区域(只记录,不开药方)
+## 【9】风险区域(只记录,不给修复建议)
 
 - 无测试核心模块:
 - 巨型文件 / 循环依赖:
@@ -159,7 +159,7 @@ erDiagram
 - authn 方式:
 - authz 方式:
 - 在哪强制:
-- 标签:`【已核实: 证据】`或`【推断: 待验证】`（不合并，两条独立；喂 impact 权限变更风险定级）
+- 标签:`【已核实: 证据】`或`【推断: 待验证】`（不合并，两条独立；供 impact 权限变更风险定级参考）
 
 ## 【11】典型主流程(只 trace 一条)
 
@@ -206,7 +206,7 @@ flowchart LR
 | 异常处理 | `[如: 自定义 BizException + ControllerAdvice]` | `[file:line]` | |
 | DI 方式 | `[如: @Autowired 字段注入]` | `[file:line]` | |
 
-> 观察项使用默认观察轴列表（naming、layering、orm、transaction、exception、logging、api_response、dependency_injection）；若 impact profiles 可读，可补充栈专属轴。按实际代码现采填写。
+> 观察项使用默认观察轴列表（naming、layering、orm、transaction、exception、logging、api_response、dependency_injection）；若 impact profiles 可读，可补充栈专属轴。按实际代码确认填写。
 > 找不到写"未发现"，不编造。只记录"代码里是什么样的"，不写"应该怎样"。
 
 **采样来源声明**（impact 消费时据此判断观察覆盖范围）：

@@ -4,7 +4,7 @@
 >
 > 导航：[000-context-pack.md](000-context-pack.md) → **005-change-summary.md** → [010-requirements.md](010-requirements.md) → [020-design.md](020-design.md) → [030-implementation.md](030-implementation.md) → [060-preflight.md](060-preflight.md) → [090-execution-record.md](090-execution-record.md) | [040-light.md](040-light.md) (light 模式) | [_active-state.md](_active-state.md)
 
-> 本文件是变更的"一分钟读完"入口。面向人类 reviewers，只写结论和决策，不写过程。
+> 本文件是变更的"一分钟读完"入口。面向人工评审，只写结论和决策，不写过程。
 > 详细分析见后续文档；本文件在变更完成后最终定稿，执行过程中保持最新。
 
 ## 一句话概述

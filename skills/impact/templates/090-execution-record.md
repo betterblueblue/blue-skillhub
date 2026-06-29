@@ -46,7 +46,7 @@
 - 验证结果：[通过 / 失败 / 未执行；附关键输出]
 - 工具调用约定：
   - 构建验证优先用项目自带的构建工具（如 `mvn test` / `npm test` / `go test` / `pytest`），命令必须来自项目证据（发现 `pom.xml`/`package.json`/`go.mod` 等），不得套用占位命令
-  - DDL/DML 验证优先用迁移工具的 dry-run 模式（如 `alembic upgrade head --sql` / `flyway info` / `prisma migrate diff`），离线渲染，环境无关；比直接连 DB online 更可移植
+  - DDL/DML 验证优先用迁移工具的 dry-run 模式（如 `alembic upgrade head --sql` / `flyway info` / `prisma migrate diff`），离线渲染，不依赖环境；比直接连库更可移植
 - 未运行验证及原因：[环境缺失 / 无权限 / 服务不可用 / 未提供命令 / 不适用]
 - 运行时未验证项：[描述]
 - V1-only 计数：[连续仅 V1 的写入 Step 数；不适用则写 0]

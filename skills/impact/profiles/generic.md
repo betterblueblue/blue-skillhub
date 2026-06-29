@@ -198,7 +198,7 @@ discovery_globs:
 
 ## context_discovery
 
-> generic 只负责备用收敛，不把命中结果描述成专属技术栈已验证。
+> generic 只负责兜底分析，不把命中结果描述成专属技术栈已验证。
 
 ```yaml
 context_discovery:
@@ -323,17 +323,17 @@ context_discovery:
 
 ```yaml
 style_axes:
-  naming: ""        # 结论需运行时现采：扫描目标文件识别命名规范
-  layering: ""      # 结论需运行时现采：识别典型分层目录
-  orm: ""          # 结论需运行时现采：检查是否有 ORM 目录/配置
-  transaction: ""  # 结论需运行时现采：检查是否有事务相关关键字
-  exception: ""     # 结论需运行时现采：检查异常处理模式
-  logging: ""       # 结论需运行时现采：检查日志框架引用
-  api_response: ""  # 结论需运行时现采：检查 API 响应包装模式
-  dependency_injection: "" # 结论需运行时现采：检查 DI 关键字
+  naming: ""        # 结论需运行时从代码确认：扫描目标文件识别命名规范
+  layering: ""      # 结论需运行时从代码确认：识别典型分层目录
+  orm: ""          # 结论需运行时从代码确认：检查是否有 ORM 目录/配置
+  transaction: ""  # 结论需运行时从代码确认：检查是否有事务相关关键字
+  exception: ""     # 结论需运行时从代码确认：检查异常处理模式
+  logging: ""       # 结论需运行时从代码确认：检查日志框架引用
+  api_response: ""  # 结论需运行时从代码确认：检查 API 响应包装模式
+  dependency_injection: "" # 结论需运行时从代码确认：检查 DI 关键字
 ```
 
-### 风格现采步骤
+### 风格确认步骤
 
 1. 从 Phase 2 发现的目标文件中取 ≤ 6 个代表性文件
 2. 扫描每个文件提取风格特征
@@ -378,11 +378,11 @@ db_introspection:
 ```yaml
 validation_strategy:
   grep_patterns:
-    - pattern: ""  # 待按项目现采
-      files: ""    # 待按项目现采
-      desc: ""     # 待按项目现采
+    - pattern: ""  # 待按项目确认
+      files: ""    # 待按项目确认
+      desc: ""     # 待按项目确认
   file_patterns:
-    - ""          # 待按项目现采
+    - ""          # 待按项目确认
 ```
 
 ## notes
@@ -390,7 +390,7 @@ validation_strategy:
 ```yaml
 notes:
   limitations:
-    - 不预置任何栈的风格结论，结论需运行时从代码现采
+    - 不预置任何栈的风格结论，结论需运行时从代码确认
     - discovery_globs 候选可能不准确，依赖用户确认调整
     - commands 为猜测值，必须用户确认
     - 无 DB 直连时回退为代码扫描，schema 信息受限
@@ -398,5 +398,5 @@ notes:
   edge_cases:
     - 单文件项目：目录扫描可能无法推断项目结构
     - 混合栈项目（前后端同仓）：按变更维度选主 profile，辅助 profile 提供额外候选
-    - 新项目（无历史代码）：风格现采为空，需用户明确风格要求
+    - 新项目（无历史代码）：风格确认为空，需用户明确风格要求
 ```
