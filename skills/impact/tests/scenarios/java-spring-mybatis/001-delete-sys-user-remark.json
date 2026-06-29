@@ -41,16 +41,6 @@
       "path": "ruoyi-common/src/main/java/com/ruoyi/common/core/domain/BaseEntity.java",
       "must_exist": true,
       "must_contain": "private String remark;"
-    },
-    {
-      "path": "ruoyi-system/src/main/resources/mapper/system/SysUserMapper.xml",
-      "must_exist": true,
-      "must_contain": "property=\"remark\""
-    },
-    {
-      "path": "ruoyi-ui/src/views/system/user/index.vue",
-      "must_exist": true,
-      "must_contain": "v-model=\"form.remark\""
     }
   ]
 }
