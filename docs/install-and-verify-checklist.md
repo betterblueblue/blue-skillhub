@@ -221,7 +221,7 @@ python E:\agent\blue-skillhub\skills\vl-vision\vl_vision.py path\to\image.png
 
 | 问题 | 处理 |
 |------|------|
-| Codegraph MCP 已连接但没有工具 | 不要用全局裸 `serve --mcp`；改用项目级 wrapper + `--path`，见 [README FAQ](../README.md#codegraph-mcp-显示已连接但没有工具no-tools) 与 [§4](#4-安装-codegraph-mcp可选) |
+| Codegraph MCP 已连接但没有工具 | 不要用全局裸 `serve --mcp`；改用项目级 wrapper + `--path`，见 [下文排障](#codegraph-mcp-显示已连接但没有工具no-tools) 与 [§4](#4-安装-codegraph-mcp可选) |
 | MCP JSON 里还是旧路径 | 把 `args` 改成当前仓库的绝对路径 |
 | `/impact` 不生效 | 确认 skill 复制到了正确客户端目录，并重启客户端 |
 | `/pathfinder` 不生效 | 确认 skill 复制到了正确客户端目录，并重启客户端 |
@@ -229,6 +229,83 @@ python E:\agent\blue-skillhub\skills\vl-vision\vl_vision.py path\to\image.png
 | 运行 MCP 缺 Chromium | 执行 `npx playwright install chromium` |
 | agent 想直接写文件 | 必须要求它等待 `确认 Step N` |
 | 中断后说“继续”就想写 | 先读 `_active-state.md`、实施文档、preflight 和执行记录，复核磁盘状态后重新要求 `确认 Step N` |
+
+### Codegraph MCP 显示已连接，但没有工具（No tools）
+
+**现象**
+
+- Cursor 设置里 `codegraph` MCP 开关是绿的，状态像“已连接”
+- 展开后却是 **No tools**，或只有连接信息、看不到 `codegraph_search` / `codegraph_explore` 等
+- Agent 侧仍提示 workspace 未索引、结构索引不可用
+- 本地其实已有 `.codegraph/codegraph.db`，CLI 查询正常
+
+**原因**
+
+`codegraph serve --mcp` 需要知道**项目根目录**才能找到 `.codegraph/` 索引。若在全局 `~/.cursor/mcp.json`（Windows：`%USERPROFILE%\.cursor\mcp.json`）里只写：
+
+```json
+"codegraph": { "command": "codegraph", "args": ["serve", "--mcp"] }
+```
+
+Cursor 的 Shared MCP **不一定**会把当前 workspace 的工作目录传给子进程。codegraph 启动时找不到 `.codegraph/`，就会注册 **0 个工具**，界面仍可能显示“已连接”。
+
+**解决办法（推荐：项目级 wrapper）**
+
+1. **先建索引**（目标仓库根目录，只需一次）：
+
+```powershell
+cd E:\agent\blue-skillhub
+codegraph init
+```
+
+2. **清空或移除全局 codegraph 配置**，避免和项目配置冲突。全局文件里 `mcpServers` 留空即可：
+
+```json
+{ "mcpServers": {} }
+```
+
+3. **在项目根 `.cursor/mcp.json` 里指向 wrapper**（本仓库已带好，可直接参考）：
+
+```json
+{
+  "mcpServers": {
+    "codegraph": {
+      "command": "E:/agent/blue-skillhub/.cursor/codegraph-mcp.cmd",
+      "args": []
+    }
+  }
+}
+```
+
+4. **wrapper 负责解析项目根并传入 `--path`**（`.cursor/codegraph-mcp.cmd`）：
+
+```bat
+@echo off
+setlocal
+set "ROOT=%~dp0.."
+for %%I in ("%ROOT%") do set "ROOT=%%~fI"
+codegraph serve --mcp --path "%ROOT%"
+```
+
+路径请改成你本机仓库的绝对路径；Linux/macOS 可写等价的 `.sh` wrapper，核心仍是 `codegraph serve --mcp --path "<项目根>"`。
+
+5. **重载 MCP**（Cursor 设置里刷新 codegraph，或重启 Cursor）。
+
+**如何确认生效**
+
+- MCP 面板里 codegraph 应列出 4 个工具：`codegraph_search`、`codegraph_callers`、`codegraph_node`、`codegraph_explore`
+- 新开 Agent 会话后，Pathfinder / Impact 的结构索引辅助应能标为 `used`，而不是长期 `degraded`
+
+**仍不行的排查顺序**
+
+| 检查项 | 说明 |
+|--------|------|
+| `.codegraph/` 是否在**打开的工作区根** | 用 File → Open Folder 打开的目录应与 `codegraph init` 一致 |
+| wrapper 里的 `--path` | 必须指向含 `.codegraph/` 的那一层，不是子目录 |
+| 全局 vs 项目 MCP 重复配置 | 只保留项目级 wrapper，全局不要再用裸 `serve --mcp` |
+| `codegraph` 是否在 PATH | 终端能执行 `codegraph --version` |
+
+Pathfinder / Impact 在 MCP 不可用时会退回到 Read/Grep，不影响基本流程；修好 MCP 后主要是结构发现和 blast radius 更快、更准。
 
 ## 7. 最小验收
 

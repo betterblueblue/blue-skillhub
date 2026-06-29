@@ -113,22 +113,20 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 
 ### Not ACE 上下文检索探索
 
-这部分记录 2026 年 6 月 8 日围绕 [Not ACE](https://not-ace.ame.rip/) 做的一轮上下文检索实验。它不是仓库里的可安装 skill，而是一次用来反推 RuleBlade、ImpactRadar 后续该怎么迭代的研究材料。
+2026 年 6 月围绕 [Not ACE](https://not-ace.ame.rip/) 做的一轮上下文检索实验，不是可安装 skill，而是用来反推 RuleBlade、ImpactRadar 后续怎么迭代的研究材料。完整记录在 [docs/not-ace-exploration/](docs/not-ace-exploration/)。
 
-可以先读这些：
+核心判断：Not ACE 不是 `rg` 的替代品，而是语义上下文入口。它对 MiniMax M3 更像在补稳定性，对 GLM-5.1 更像在省时间、省成本；但在 Kimi K2.6、GLM-5、DeepSeek V4 系列上这轮没跑出稳定收益。DeepSeek V4 Pro / Flash 经硅基流动平台接入，不代表 DeepSeek 官方模型真实能力。
 
-- [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)：安装和验证 checklist，说明复制到哪里、MCP JSON 用哪个绝对路径、Skill 怎么验证。
-- [docs/archive/2026-06/impact-real-case-study.md](docs/archive/2026-06/impact-real-case-study.md)：ImpactRadar 真实使用案例的匿名复盘，记录它暴露了哪些长会话和多 Step 边界。
-- [docs/archive/2026-06/impact-m3-next-regression-plan.md](docs/archive/2026-06/impact-m3-next-regression-plan.md)：下一轮 MiniMax M3 复测计划，限定后续要测的高价值场景。
-- [docs/archive/2026-06/impact-multisession-write-gate-test-plan.md](docs/archive/2026-06/impact-multisession-write-gate-test-plan.md)：多会话写授权一致性验收方案，覆盖旧授权、延迟确认、非 Git 降级、V1-only 暂停和写入目标边界。
-- [docs/skill-eval/regression.md](docs/skill-eval/regression.md)：ImpactRadar 优化后的回归复测协议，规定什么时候跑 RG0-RG3、什么时候必须真实 agent 复测。
-- [docs/archive/2026-06/release-positioning-check-2026-06-08.md](docs/archive/2026-06/release-positioning-check-2026-06-08.md)：阶段性 release 定位自查，确认 RuleBlade、ImpactRadar 的边界是否自洽。
-- [docs/archive/2026-06/not-ace-benchmark-research.md](docs/archive/2026-06/not-ace-benchmark-research.md)：研究性博客文章，解释 Not ACE 在 MiniMax M3、GLM-5.1、Kimi K2.6、GLM-5、DeepSeek V4 系列上的不同表现。
-- [docs/not-ace-exploration/](docs/not-ace-exploration/)：完整实验记录，包括 V1/V2 检索测试、V3 agent 任务测试、模型复跑、DeepSeek 调用链问题和下一轮计划。
-- [docs/archive/2026-06/agent-iteration-conclusions.md](docs/archive/2026-06/agent-iteration-conclusions.md)：给后续 agent 迭代看的结论，把测试事实映射到 RuleBlade、ImpactRadar 和 VL Vision 的优化方向。
-- [benchmarks/（已归档）](docs/archive/2026-06/benchmarks/)：写授权回归夹具（impact-write-gate）+ 模型 agent 能力评测体系（model-agent）。2026-06-09 后无活动，暂停保留历史；not-ace 研究见上。
+相关文档（均在 `docs/` 下）：
 
-这轮实验的核心判断是：Not ACE 不是 `rg` 的替代品，而是语义上下文入口。它对 MiniMax M3 更像是在补稳定性，对 GLM-5.1 更像是在省时间、省成本；但在 Kimi K2.6、GLM-5、DeepSeek V4 系列上，这轮没有跑出稳定收益。DeepSeek V4 Pro / Flash 通过硅基流动平台接入，不代表 DeepSeek 官方模型真实能力。
+- [archive/2026-06/impact-real-case-study.md](docs/archive/2026-06/impact-real-case-study.md) — ImpactRadar 真实使用案例复盘，暴露的长会话和多 Step 边界
+- [archive/2026-06/impact-m3-next-regression-plan.md](docs/archive/2026-06/impact-m3-next-regression-plan.md) — 下一轮 MiniMax M3 复测计划
+- [archive/2026-06/impact-multisession-write-gate-test-plan.md](docs/archive/2026-06/impact-multisession-write-gate-test-plan.md) — 多会话写授权一致性验收方案
+- [archive/2026-06/release-positioning-check-2026-06-08.md](docs/archive/2026-06/release-positioning-check-2026-06-08.md) — RuleBlade、ImpactRadar 边界自洽性自查
+- [archive/2026-06/not-ace-benchmark-research.md](docs/archive/2026-06/not-ace-benchmark-research.md) — Not ACE 在多个模型上的表现研究
+- [archive/2026-06/agent-iteration-conclusions.md](docs/archive/2026-06/agent-iteration-conclusions.md) — 测试事实映射到三个 skill 的优化方向
+- [skill-eval/regression.md](docs/skill-eval/regression.md) — ImpactRadar 优化后回归复测协议
+- [archive/2026-06/benchmarks/](docs/archive/2026-06/benchmarks/) — 写授权回归夹具 + 模型 agent 能力评测（2026-06-09 后无活动，保留历史）
 
 ## 致谢
 
@@ -203,27 +201,11 @@ python skills/vl-vision/vl_vision.py path/to/image.png
 
 ### 4. 安装 Pathfinder / Impact Skills
 
-把需要的 skill 目录复制到你的 AI 客户端 skills 目录。
-
-Codex：
-
-```powershell
-Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.codex\skills\pathfinder" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.codex\skills\impact" -Recurse -Force
-```
-
-Claude Code：
-
-```powershell
-Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
-```
-
-重启客户端后触发 `/pathfinder`(陌生项目摸底)、`/impact`(变更影响分析),能进入对应流程即可。完整安装和验证 checklist 见 [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)。
+安装命令见上文 [3 分钟 Quickstart](#3-分钟-quickstart)，这里只补充使用时的关键边界。
 
 几个边界要记住：
 
-- `pathfinder` 面向刚接手的陌生项目,产全项目认知地图,100% 只读、只描述不开药方。
+- `pathfinder` 面向刚接手的陌生项目,产全项目认知地图,100% 只读、只描述不给修复建议。
 - `impact` 面向多技术栈现有系统（Java/Spring/MyBatis、Node/Express/Prisma、Python/FastAPI、Go/Gin/GORM、前端框架等），Phase 2 自动探测技术栈并加载对应规则。
 - 写文件、改代码、DDL/DML、配置变更、删除、测试修复,都必须由用户明确回复 `确认 Step N`。
 - 不能用 `yes`、`继续`、`全部确认` 代替 Step 级确认。
@@ -246,84 +228,9 @@ Agent：现在执行 Step 2；执行后会更新 090-execution-record.md 和 _ac
 
 ## 常见问题（FAQ）
 
-### Codegraph MCP 显示已连接，但没有工具（No tools）
+- **Codegraph MCP 显示已连接但没有工具（No tools）**：原因是全局裸 `serve --mcp` 找不到项目根的 `.codegraph/` 索引。完整排查步骤（项目级 wrapper、`--path` 传参、确认 4 个工具）见 [docs/install-and-verify-checklist.md §Codegraph 排障](docs/install-and-verify-checklist.md#codegraph-mcp-显示已连接但没有工具no-tools)。
 
-**现象**
-
-- Cursor 设置里 `codegraph` MCP 开关是绿的，状态像“已连接”
-- 展开后却是 **No tools**，或只有连接信息、看不到 `codegraph_search` / `codegraph_explore` 等
-- Agent 侧仍提示 workspace 未索引、结构索引不可用
-- 本地其实已有 `.codegraph/codegraph.db`，CLI 查询正常
-
-**原因**
-
-`codegraph serve --mcp` 需要知道**项目根目录**才能找到 `.codegraph/` 索引。若在全局 `~/.cursor/mcp.json`（Windows：`%USERPROFILE%\.cursor\mcp.json`）里只写：
-
-```json
-"codegraph": { "command": "codegraph", "args": ["serve", "--mcp"] }
-```
-
-Cursor 的 Shared MCP **不一定**会把当前 workspace 的工作目录传给子进程。codegraph 启动时找不到 `.codegraph/`，就会注册 **0 个工具**，界面仍可能显示“已连接”。
-
-**解决办法（推荐：项目级 wrapper）**
-
-1. **先建索引**（目标仓库根目录，只需一次）：
-
-```powershell
-cd E:\agent\blue-skillhub
-codegraph init
-```
-
-2. **清空或移除全局 codegraph 配置**，避免和项目配置冲突。全局文件里 `mcpServers` 留空即可：
-
-```json
-{ "mcpServers": {} }
-```
-
-3. **在项目根 `.cursor/mcp.json` 里指向 wrapper**（本仓库已带好，可直接参考）：
-
-```json
-{
-  "mcpServers": {
-    "codegraph": {
-      "command": "E:/agent/blue-skillhub/.cursor/codegraph-mcp.cmd",
-      "args": []
-    }
-  }
-}
-```
-
-4. **wrapper 负责解析项目根并传入 `--path`**（`.cursor/codegraph-mcp.cmd`）：
-
-```bat
-@echo off
-setlocal
-set "ROOT=%~dp0.."
-for %%I in ("%ROOT%") do set "ROOT=%%~fI"
-codegraph serve --mcp --path "%ROOT%"
-```
-
-路径请改成你本机仓库的绝对路径；Linux/macOS 可写等价的 `.sh` wrapper，核心仍是 `codegraph serve --mcp --path "<项目根>"`。
-
-5. **重载 MCP**（Cursor 设置里刷新 codegraph，或重启 Cursor）。
-
-**如何确认生效**
-
-- MCP 面板里 codegraph 应列出 4 个工具：`codegraph_search`、`codegraph_callers`、`codegraph_node`、`codegraph_explore`
-- 新开 Agent 会话后，Pathfinder / Impact 的结构索引辅助应能标为 `used`，而不是长期 `degraded`
-
-**仍不行的排查顺序**
-
-| 检查项 | 说明 |
-|--------|------|
-| `.codegraph/` 是否在**打开的工作区根** | 用 File → Open Folder 打开的目录应与 `codegraph init` 一致 |
-| wrapper 里的 `--path` | 必须指向含 `.codegraph/` 的那一层，不是子目录 |
-| 全局 vs 项目 MCP 重复配置 | 只保留项目级 wrapper，全局不要再用裸 `serve --mcp` |
-| `codegraph` 是否在 PATH | 终端能执行 `codegraph --version` |
-
-Pathfinder / Impact 在 MCP 不可用时会退回到 Read/Grep，不影响基本流程；修好 MCP 后主要是结构发现和 blast radius 更快、更准。
-
-分步安装与验证见 [docs/install-and-verify-checklist.md §4](docs/install-and-verify-checklist.md#4-安装-codegraph-mcp可选)。
+  Pathfinder / Impact 在 MCP 不可用时会退回到 Read/Grep，不影响基本流程。
 
 ## 目录速览
 
