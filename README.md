@@ -63,15 +63,15 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路
 
 面向**刚接手、还不熟悉**的现有项目。它不做具体变更,而是先帮你通读一遍,产出一张全项目级的**认知地图**:技术栈、核心功能、架构分层、关键入口、数据模型概览、构建/运行/测试、雷区、权限模型、典型主链路、文档入口。
 
-它和 Impact 系列正好接力:Pathfinder 管**全景广度**(看懂这是个什么项目),Impact 的 Phase 2 管**变更切片深度**(看懂这次改动影响什么)。地图产出到 `change-impact/_project-map.md`,Impact 启动时会主动读它当 L1 导航上下文 —— 读不到就完全照旧,是可选加速器不是前置必跑项。
+它和 Impact 系列正好接力:Pathfinder 管**全景广度**(看懂这是个什么项目),Impact 的 Phase 2 管**变更切片深度**(看懂这次改动影响什么)。地图产出到 `change-impact/_project-map.md`,Impact 启动时会主动读它当 L1 导航上下文 —— 读不到就完全照旧,是可选的辅助工具,不是必须先跑的前置步骤。
 
 项目演进后地图会过期,Pathfinder 支持三种刷新入口:扩展深度(再挖某个模块)、刷新事实(项目变了,重新跑 facts 比对差异)、全量重跑。刷新时会比对已有地图的 git HEAD 与当前 HEAD,覆盖过期内容,保留仍有效的观察。
 
-地图每条结论都带信任标签(`【已核实】`/`【推断】`)、git HEAD(防过期)和覆盖度声明(显式列出没挖深的盲区)。Impact 接过去时,`【推断】`项一律按未确认处理、动手前重新取证 —— 地图是导航图不是权威源。Pathfinder 全程 100% 只读、只描述不开药方。
+地图每条结论都带信任标签(`【已核实】`/`【推断】`)、git HEAD(防过期)和覆盖度声明(显式列出没挖深的盲区)。Impact 接过去时,`【推断】`项一律按未确认处理、动手前重新取证 —— 地图只是导航参考,不是权威依据。Pathfinder 全程 100% 只读、只描述不开药方。
 
-如果客户端已有只读 code graph / repo-map MCP，Pathfinder 会先用结构索引找入口、依赖边和核心 hubs，再用 Read/Grep 核证；索引不可用、过期、截断或需要写项目缓存时，诚实降级普通扫描。
+如果客户端已有只读 code graph / repo-map MCP，Pathfinder 会先用结构索引找入口、依赖边和核心 hubs，再用 Read/Grep 核证；索引不可用、过期、截断或需要写项目缓存时，就退回到普通扫描。
 
-如果说律刃管 AI 的**脑子**、Impact 管 AI 的**手**,那 Pathfinder 管的是 AI 的**眼睛** —— 先看懂,才谈得上动手。设计复盘见 [docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md](docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md)。
+律刃管判断、Impact 管改动、Pathfinder 管看懂项目 —— 先摸清项目再动手。设计复盘见 [docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md](docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md)。
 
 ### ImpactRadar
 
@@ -97,7 +97,7 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 
 [docs/skill-eval/](docs/skill-eval/) + [eval/](eval/)
 
-两个 skill 共用的防漂移测评体系。核心思路：**不新建测评方法，而是把已有的强资产收敛成能定期复跑、自动检测负向漂移的活体系。**
+两个 skill 共用的防质量倒退测评体系。核心思路：**不新建测评方法，而是把已有的高质量测试用例整理成一套能定期复跑、自动检测质量倒退的体系。**
 
 三层金字塔：
 
@@ -107,7 +107,7 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 | L1 行为契约 | subagent 扮用户跑 case，客观维度自动判 + 安全闸 | `bash eval/run-l1.sh <skill>` | 便宜模型 |
 | L2 人审深度 | 主观维度（苏格拉底质量、文档/地图可读性）抽样 | 人工 + 可选多模型评委 | 贵 |
 
-防漂移的关键机制是**基线评分卡时间序列 + 红线 diff**：每次改 skill 后跑 L1，产出评分卡，和上一基线逐 case 对比；任何契约从 PASS→FAIL、维度掉档≥3 分、新增 P0/P1 = 红线阻断，不许发布。详细设计见 [docs/archive/2026-06/2026-06-13-skill-eval-system-design.md](docs/archive/2026-06/2026-06-13-skill-eval-system-design.md)，实施手册见 [docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md](docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md)。
+防止质量悄悄倒退的关键机制是**基线评分卡时间序列 + 红线 diff**：每次改 skill 后跑 L1，产出评分卡，和上一基线逐 case 对比；任何契约从 PASS→FAIL、维度掉档≥3 分、新增 P0/P1 = 红线阻断，不许发布。详细设计见 [docs/archive/2026-06/2026-06-13-skill-eval-system-design.md](docs/archive/2026-06/2026-06-13-skill-eval-system-design.md)，实施手册见 [docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md](docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md)。
 
 ## 研究与实验记录
 
@@ -321,7 +321,7 @@ codegraph serve --mcp --path "%ROOT%"
 | 全局 vs 项目 MCP 重复配置 | 只保留项目级 wrapper，全局不要再用裸 `serve --mcp` |
 | `codegraph` 是否在 PATH | 终端能执行 `codegraph --version` |
 
-Pathfinder / Impact 在 MCP 不可用时会诚实降级到 Read/Grep，不影响基本流程；修好 MCP 后主要是结构发现和 blast radius 更快、更准。
+Pathfinder / Impact 在 MCP 不可用时会退回到 Read/Grep，不影响基本流程；修好 MCP 后主要是结构发现和 blast radius 更快、更准。
 
 分步安装与验证见 [docs/install-and-verify-checklist.md §4](docs/install-and-verify-checklist.md#4-安装-codegraph-mcp可选)。
 
