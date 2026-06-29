@@ -37,8 +37,10 @@ MANIFEST_NAMES = {
     "package.json", "pom.xml", "build.gradle", "build.gradle.kts",
     "Cargo.toml", "go.mod", "requirements.txt", "Pipfile",
     "pyproject.toml", "Gemfile", "composer.json", "mix.exs",
-    "pubspec.yaml", "*.csproj", "*.sln",
+    "pubspec.yaml",
 }
+# .csproj / .sln 不在此集合里——它们靠下方 fname.endswith() 兜底匹配，
+# 集合只放能精确等于文件名的清单，不放通配符（"*.csproj" 永远 != 真实文件名）。
 
 
 def _should_skip_dir(name: str) -> bool:

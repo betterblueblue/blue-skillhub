@@ -43,7 +43,7 @@ python vl_vision.py ./images/ --batch
 python vl_vision.py photo.png --json
 
 # 指定模型
-python vl_vision.py photo.png --model Qwen/Qwen2.5-VL-72B-Instruct
+python vl_vision.py photo.png --model Qwen/Qwen3-VL-32B-Instruct
 
 # 查看可用模板
 python vl_vision.py --list-templates
@@ -157,7 +157,7 @@ python vl_vision.py chart.png --prompt "读取图表数据，用 CSV 格式输�
 ```
 SILICONFLOW_API_KEY=sk-your-key-here
 VL_PROVIDER=siliconflow
-VL_MODEL=Qwen/Qwen2.5-VL-72B-Instruct
+VL_MODEL=Qwen/Qwen3-VL-32B-Instruct
 ```
 
 ## 依赖

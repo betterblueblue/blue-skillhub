@@ -12,8 +12,6 @@ disable-model-invocation: true
 > **机制警示**：`allowed-tools` 是预批准不是白名单,也不构成安全边界。本技能的只读约束由「只读硬性规则」约束,不依赖工具列表。Write/Edit 仅用于产出 `change-impact/_project-map.md` 一个文件,绝不触碰项目源码。
 >
 > **结构索引辅助说明**：若运行时存在只读 code graph / repo-map MCP,Phase 2 可按 `code-graph-adapters/generic-mcp.md` 先查询项目概览、入口、依赖边和 hubs,再用 Read/Grep 核证。若索引不可用、过期、截断或需要在项目内写缓存,必须降级普通文件扫描并在地图中诚实记录。
->
-> **SVG 预览说明**：地图内的 Mermaid 图是 canonical source;内联 SVG 只作为 Markdown 阅读预览。SVG 必须直接写入 `_project-map.md`,不得引用外链资源或额外写 `.svg`/`.drawio` 文件,不得为了画图新增事实或改变可信度。
 
 # Pathfinder — 陌生项目认知地图
 
@@ -120,7 +118,7 @@ python skills/pathfinder/scripts/pf_git.py <project-root> --output change-impact
 
 ## Phase 3: 聚焦 + 预算深挖
 
-在广度骨架上,按关注重点 + 预算填充核心 15 节:核心功能反推、数据模型、权限模型、典型主流程(只 trace 一条代表性请求)、风险区域识别、代码风格观察等。不确定一律标【推断】。三张直观图也在此生成:**【3】架构/模块图、【6】数据模型 ER 图、【11】主流程图**(Mermaid 文本为 canonical source,可追加内联 SVG 预览图)。**各节填充方法、主流程 trace 步骤、图形输出规则见 `references/phase-3-depth-fill.md`。**
+在广度骨架上,按关注重点 + 预算填充核心 15 节:核心功能反推、数据模型、权限模型、典型主流程(只 trace 一条代表性请求)、风险区域识别、代码风格观察等。不确定一律标【推断】。三张直观图也在此生成:**【3】架构/模块图、【6】数据模型 ER 图、【11】主流程图**(Mermaid 文本为 canonical source,不内联 SVG 预览)。**各节填充方法、主流程 trace 步骤、图形输出规则见 `references/phase-3-depth-fill.md`。**
 
 地图产出时先填 Executive Summary(见 `templates/project-map.md` 顶部「Executive Summary」节),再填核心 15 节。Executive Summary 面向人类快速认知;impact 读取时从【0】开始。
 
@@ -171,9 +169,9 @@ python skills/pathfinder/scripts/pf_git.py <project-root> --output change-impact
 【推断: 待验证】     从命名/结构猜的     例:【推断: 目录名 payment/ → 推测含支付,待验证】
 ```
 
-**图同样守信任纪律**:三张 Mermaid 图里,**实线箭头 = 【已核实】关系,虚线箭头(`-.推断.->`)= 【推断】关系**;只画有证据的节点和边,靠命名猜的画虚线或留文字,绝不画实线冒充已核实。可选内联 SVG 预览图必须与 Mermaid 使用同一语义:实线=已核实,虚线=推断。图只描述现状结构,不画"建议的架构"。
+**图同样守信任纪律**:三张 Mermaid 图里,**实线箭头 = 【已核实】关系,虚线箭头(`-.推断.->`)= 【推断】关系**;只画有证据的节点和边,靠命名猜的画虚线或留文字,绝不画实线冒充已核实。图只描述现状结构,不画"建议的架构"。
 
-**SVG 预览图(可选)**:若图节点不超过 5-9 个,可在 Mermaid 后追加内联 `<svg>` 预览,只用基础 SVG 元素,不含 `script`/`foreignObject`/外链资源。图复杂、证据不足或渲染环境不确定时直接跳过 SVG,保留 Mermaid 即可。
+地图内的图只产出 Mermaid 一种形式,不内联 SVG 预览(SVG 已从模板移除,残留即被 Script Gate V3 拦截)。
 
 **Script Gate(替代 Phase 4.5 自检)**：写入 `_project-map.md` 前必须:
 

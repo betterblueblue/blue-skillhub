@@ -31,9 +31,11 @@ from pathlib import Path
 # --- V1: Line-number verification ---
 
 # Matches: 【已核实: ...src/main.ts:42】 or 【已核实: src/main.ts:42-88】
-RE_FILE_LINE = re.compile(r"【已核实[:：]\s*.*?(\S+\.\w+):(\d+)[-\d,]*】")
+# 尾部 [^】]* 允许行号后到】之间有其他文字(如"见 file:42 处的登录逻辑"),
+# 仍被【已核实...】括号框定,不会误匹配正文里的端口/版本号等裸数字。
+RE_FILE_LINE = re.compile(r"【已核实[:：]\s*.*?(\S+\.\w+):(\d+)[-\d,]*[^】]*】")
 # Also match bracket form: [已核实: ...file:line]
-RE_FILE_LINE_BRACKET = re.compile(r"\[已核实[:：]\s*.*?(\S+\.\w+):(\d+)[-\d,]*\]")
+RE_FILE_LINE_BRACKET = re.compile(r"\[已核实[:：]\s*.*?(\S+\.\w+):(\d+)[-\d,]*[^\]]*\]")
 
 
 def _resolve_file(filepath: str, repo_root: str) -> str | None:
