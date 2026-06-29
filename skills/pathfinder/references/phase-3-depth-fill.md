@@ -85,7 +85,7 @@
 
 ### 【11】典型主流程(只 trace 一条)
 
-选一条**代表性请求**(优先聚焦区的核心写操作,如"创建订单"),端到端串一遍。**地图里用 Mermaid `flowchart LR` 画**,并可追加内联 SVG 预览(模板见 `templates/project-map.md`【11】);下面的 ASCII 只是结构示意:
+选一条**代表性请求**(优先聚焦区的核心写操作,如"创建订单"),端到端串一遍。**地图里用 Mermaid `flowchart LR` 画**;下面的 ASCII 只是结构示意:
 
 ```
 入口(路由/Controller) → 校验/中间件 → Service/业务逻辑 → 数据访问(Repo/Mapper/ORM) → DB
@@ -128,7 +128,7 @@
 
 ## 图形输出规则(三张图通用)
 
-地图含三张 Mermaid 图:【3】架构/模块图(`flowchart TD`)、【6】数据模型 ER 图(`erDiagram`)、【11】主流程图(`flowchart LR`)。Mermaid 是地图内 canonical source。可选内联 SVG 预览图只用于 Markdown 阅读,不可替代 Mermaid 或证据。
+地图含三张 Mermaid 图:【3】架构/模块图(`flowchart TD`)、【6】数据模型 ER 图(`erDiagram`)、【11】主流程图(`flowchart LR`)。Mermaid 是地图内 canonical source,也是唯一的图形式输出。
 
 三张图守同一套纪律:
 
@@ -145,34 +145,7 @@
 
 4. **Mermaid 可渲染性**:节点文字含特殊字符(`()`、`[]`、`/` 等)时放进 `["..."]` 引号里;保持简单,渲染失败比漏画更糟。
 
-5. **SVG 预览可选**:若节点不超过 5-9 个且布局清晰,可在 Mermaid 后追加一段内联 `<svg>`。若图复杂、证据不足、或没有把握画得清楚,写:
-
-```
-SVG 预览图: 本档跳过,以上方 Mermaid 为准。
-```
-
-### SVG 预览图绘制规则
-
-SVG 是预览层,不是事实层。生成 SVG 时必须遵守:
-
-1. **同源**:SVG 节点和边必须来自同一张 Mermaid 图/同一批证据,不得新增 Mermaid 中没有的关系。
-2. **同义**:SVG 实线箭头 = 【已核实】关系;SVG 虚线箭头(`stroke-dasharray`) = 【推断】关系。
-3. **只用安全基础元素**:`svg`、`defs`、`marker`、`rect`、`ellipse`、`path`、`line`、`text`、`title`。禁止 `script`、`foreignObject`、外链图片、外链字体、`href`、远程资源。
-4. **不写额外文件**:SVG 直接内联在 `change-impact/_project-map.md`;不得生成 `.svg`、`.drawio`、`.png` 等旁路文件,除非用户另行明确要求。
-5. **控复杂度**:优先 5-9 个节点;大仓/超大仓只画顶层。节点文字短,完整说明放正文表格。
-6. **唯一 ID**:每张 SVG 的 marker/id 使用固定前缀,避免冲突:
-   - 【3】架构图:`pf-arch-*`
-   - 【6】ER 图:`pf-er-*`
-   - 【11】主流程图:`pf-flow-*`
-7. **凭证安全**:节点和边标签不得包含密码、token、连接串、密钥值;只允许键名和已脱敏 `***`。
-8. **兼容降级**:Markdown 渲染器可能过滤 SVG。SVG 前必须写明"若不渲染以上方 Mermaid 为准"。
-
-推荐视觉:
-
-- 节点填充 `#f8fafc`,边框 `#475569`
-- 已核实箭头 `#334155` 实线
-- 推断箭头 `#64748b` 虚线 + 同色箭头
-- 字体 `Arial, sans-serif`;不使用渐变、装饰背景或外部字体
+5. **凭证安全**:节点和边标签不得包含密码、token、连接串、密钥值;只允许键名和已脱敏 `***`。
 
 ## 可选集(仅关注重点命中或扩展时)
 

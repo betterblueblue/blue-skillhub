@@ -17,7 +17,7 @@ vl-vision - 通用 VL 识图工具
     python vl_vision.py ./images/ --batch
 
     # 指定模型
-    python vl_vision.py photo.png --model Qwen/Qwen2.5-VL-72B-Instruct
+    python vl_vision.py photo.png --model Qwen/Qwen3-VL-32B-Instruct
 
     # JSON 输出
     python vl_vision.py photo.png --json
@@ -132,7 +132,7 @@ def main():
   python vl_vision.py photo.png --template ocr
   python vl_vision.py photo.png --prompt "描述图中人物的穿着"
   python vl_vision.py ./images/ --batch
-  python vl_vision.py photo.png --model Qwen/Qwen2.5-VL-72B-Instruct --json
+  python vl_vision.py photo.png --model Qwen/Qwen3-VL-32B-Instruct --json
         """,
     )
     parser.add_argument("image", nargs="?", help="图片文件路径或目录路径")

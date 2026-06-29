@@ -1,11 +1,8 @@
 """
 SiliconFlow VL Provider - 硅基流动视觉语言模型适配器
 
-支持硅基流动平台上的所有 VL 模型，包括：
-- Qwen/Qwen2.5-VL-72B-Instruct
-- Qwen/Qwen2-VL-72B-Instruct
-- Pro/Qwen/Qwen2.5-VL-7B-Instruct
-- 等等
+支持硅基流动平台上的 VL 模型（可用列表见下方 AVAILABLE_MODELS），
+默认 Qwen/Qwen3-VL-32B-Instruct。
 
 API 文档: https://docs.siliconflow.cn/
 """
@@ -127,8 +124,16 @@ class SiliconFlowProvider(VLProvider):
                         "provider": self.NAME,
                     }
                 else:
-                    # API 返回了错误
-                    error_msg = result.get("error", {}).get("message", str(result))
+                    # API 返回了错误。error 字段可能是 dict、str 或 null，
+                    # 直接 .get("message") 会在非 dict 时抛 AttributeError，
+                    # 被外层 except 吞掉后报给用户的是 Python 内部异常文本而非真实错误。
+                    error = result.get("error")
+                    if isinstance(error, dict):
+                        error_msg = error.get("message", str(result))
+                    elif error:
+                        error_msg = str(error)
+                    else:
+                        error_msg = str(result)
                     return {
                         "success": False,
                         "error": f"API 错误: {error_msg}",
