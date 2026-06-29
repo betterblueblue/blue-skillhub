@@ -17,7 +17,7 @@
 | `060-preflight.md` | P0/P1 分档、Go/No-Go 阈值 |
 | `090-execution-record.md` | 时间戳格式、脱敏提示 |
 | `_active-state.md` | 恢复检查清单、并发锁 |
-| `subagent-decisions.md` | request-human-confirm、eval 沙盒 |
+| `subagent-decisions.md` | request-human-confirm、subagent 自治决策记录 |
 | `final-readiness-audit.md` | 最终就绪审计（full 模式） |
 | `scorecard.md` | 评分卡模板 |
 

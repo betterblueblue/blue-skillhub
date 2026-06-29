@@ -6,7 +6,7 @@
 
 ## 核心特性
 
-10 个预置 prompt 模板外加自定义 prompt，覆盖描述、OCR、布局分析、代码生成等场景。Provider 适配器模式目前支持硅基流动，可扩展到 OpenAI / Gemini / Qwen。CLI 手动调用与 Agent 自动调用都支持，目录批量扫描能并行处理。API 调用挂了会做 3 次线性退避重试，API Key 也支持自动查找。
+10 个预置 prompt 模板外加自定义 prompt，覆盖描述、OCR、布局分析、代码生成等场景。Provider 适配器模式目前支持硅基流动，可扩展到 OpenAI / Gemini / Qwen。CLI 手动调用与 Agent 自动调用都支持，目录批量扫描能并行处理。API 调用失败时会做 3 次线性退避重试，API Key 也支持自动查找。
 
 ## 快速开始
 
