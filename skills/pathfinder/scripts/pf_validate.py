@@ -28,6 +28,20 @@ import re
 import sys
 from pathlib import Path
 
+# SKIP_DIRS: imported from pf_scan.py to avoid duplicate maintenance.
+# pf_scan.py is the single source of truth for skip directories.
+try:
+    from pf_scan import SKIP_DIRS
+except ImportError:
+    SKIP_DIRS = {
+        "node_modules", ".git", "__pycache__", ".svn", ".hg",
+        "vendor", "dist", "build", ".next", ".nuxt", "target",
+        ".gradle", ".idea", ".vscode", ".claude", ".cache",
+        "venv", ".venv", "env", ".env", ".tox", "coverage",
+        ".m2", "bower_components", "Pods", ".dart_tool",
+        "change-impact",
+    }
+
 # --- V1: Line-number verification ---
 
 # Matches: 【已核实: ...src/main.ts:42】 or 【已核实: src/main.ts:42-88】
@@ -108,13 +122,37 @@ RE_CREDS = [
 RE_SANITIZED = re.compile(r'\b\w*(password|secret|token|api_key)\w*\s*=\s*["\']?\*{3}', re.I)
 
 
+def _strip_code_blocks(text: str) -> str:
+    """Remove fenced code block content (between ``` pairs).
+
+    Keeps non-code lines so credential patterns only scan prose/config text,
+    not example code where variable names like 'userWithoutPassword' cause
+    false positives. Mirrors impact_validate.py's _strip_code_blocks.
+    """
+    lines = text.splitlines()
+    in_code = False
+    result = []
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("```"):
+            in_code = not in_code
+            continue
+        if not in_code:
+            result.append(line)
+    return "\n".join(result)
+
+
 def check_credentials(text: str) -> tuple[list[str], list[str]]:
     """V2: Check for unsanitized credentials. Returns (errors, warnings)."""
     errors = []
     warnings = []
     sanitized_lines = set()
 
-    for i, line in enumerate(text.splitlines(), 1):
+    # Strip code blocks to avoid false positives from variable names
+    # like 'userWithoutPassword = exclude(...)' in code examples
+    prose_text = _strip_code_blocks(text)
+
+    for i, line in enumerate(prose_text.splitlines(), 1):
         # Skip lines that are clearly sanitized
         if RE_SANITIZED.search(line):
             continue
@@ -337,24 +375,13 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
-# Directories to skip when cross-checking file count (must match pf_scan.py)
-_V6_SKIP_DIRS = {
-    "node_modules", ".git", "__pycache__", ".svn", ".hg",
-    "vendor", "dist", "build", ".next", ".nuxt", "target",
-    ".gradle", ".idea", ".vscode", ".claude", ".cache",
-    "venv", ".venv", "env", ".env", ".tox", "coverage",
-    ".m2", "bower_components", "Pods", ".dart_tool",
-    "change-impact",
-}
-
-
 def _count_files_quick(root: str) -> int:
     """Full file count using pf_scan.py skip logic (no depth limit)."""
     count = 0
     root_path = Path(root)
     for dirpath, dirnames, filenames in os.walk(root_path):
         dirnames[:] = [
-            d for d in dirnames if d not in _V6_SKIP_DIRS and not d.startswith(".")
+            d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".")
         ]
         count += len(filenames)
     return count
