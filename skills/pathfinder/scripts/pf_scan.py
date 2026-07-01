@@ -5,7 +5,7 @@ Outputs a facts JSON to stdout with:
   - file_count, file_ext_counts (top 10)
   - dir_tree (top 3 levels, max 80 dirs)
   - manifest_files (package.json, pom.xml, etc.)
-  - budget_tier (tiny/small/medium/large)
+  - budget_tier (小仓/中仓/大仓/超大仓)
 
 Usage:
     python pf_scan.py [PROJECT_ROOT]
@@ -104,15 +104,21 @@ def find_manifests(root: Path) -> list[str]:
 
 
 def classify_budget(file_count: int) -> str:
-    """Classify project size for context budget allocation."""
-    if file_count < 30:
-        return "tiny"
-    elif file_count < 150:
-        return "small"
-    elif file_count < 600:
-        return "medium"
+    """Classify project size for context budget allocation.
+
+    Returns Chinese tier names matching phase-1-sizing.md's 4-tier system
+    (小仓/中仓/大仓/超大仓). Thresholds differ from phase-1-sizing.md because
+    pf_scan counts all physical files via os.walk (including untracked files),
+    while phase-1-sizing.md uses git ls-files (tracked files only).
+    """
+    if file_count < 200:
+        return "小仓"
+    elif file_count < 2000:
+        return "中仓"
+    elif file_count < 8000:
+        return "大仓"
     else:
-        return "large"
+        return "超大仓"
 
 
 def main():
