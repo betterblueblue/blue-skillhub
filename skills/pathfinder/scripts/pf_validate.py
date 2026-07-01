@@ -216,7 +216,10 @@ def check_uncovered(text: str) -> list[str]:
 
 # --- V5: Mermaid solid-arrow consistency ---
 
+# flowchart solid arrow: A --> B
 RE_MERMAID_SOLID = re.compile(r"(\w[\w/.\-]*)\s*-->\s*(\w[\w/.\-]*)")
+# erDiagram Crow's Foot notation: A ||--o{ B : label
+RE_MERMAID_ER_SOLID = re.compile(r"(\w[\w/.\-]*)\s*\|\|[\-|]+[\|o{}]+\s*(\w[\w/.\-]*)")
 
 
 def check_mermaid_consistency(text: str) -> list[str]:
@@ -236,6 +239,9 @@ def check_mermaid_consistency(text: str) -> list[str]:
             m = RE_MERMAID_SOLID.search(line)
             if m:
                 source_nodes.add(m.group(1))
+            m_er = RE_MERMAID_ER_SOLID.search(line)
+            if m_er:
+                source_nodes.add(m_er.group(1))
 
     if not source_nodes:
         return errors
