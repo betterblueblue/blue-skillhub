@@ -16,6 +16,7 @@ Checks:
   V8: Style rules check (_style-rules.md enforcement feasibility)            — WARN
   V9: Grading table fact consistency (判档表 vs context-pack §7)              — WARN
   V10: Cross-cutting concerns table (020-design.md §6 in full mode)         — FAIL/WARN
+  V11: Light mode key-path check (040-light.md 关键链路深度检查 section)     — WARN
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -1160,6 +1161,45 @@ def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str]
 
 
 # ===========================================================================
+# V11: Light mode key-path check — 040-light.md must have "关键链路深度检查"
+#      section (template requires it, phase-4-output.md enforces it)
+# ===========================================================================
+
+RE_KEYPATH_SECTION = re.compile(r"关键链路深度检查")
+
+
+def check_light_keypath(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
+    """V11: In light mode, 040-light.md must include '关键链路深度检查' section.
+
+    The template marks this section as 'light 模式强制', and phase-4-output.md
+    says 'light 模式必须完成关键链路深度检查'. This validator checks that
+    the section heading exists (content quality is not auto-checked).
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    if mode != "light":
+        return passes, fails, warns  # Only check in light mode
+
+    light_file = req_dir / "040-light.md"
+    if not light_file.exists():
+        return passes, fails, warns  # V1 handles missing file
+
+    text = light_file.read_text(encoding="utf-8")
+
+    if RE_KEYPATH_SECTION.search(text):
+        passes.append("V11: 040-light.md contains 关键链路深度检查 section")
+    else:
+        warns.append(
+            "V11: 040-light.md missing '关键链路深度检查' section — "
+            "light mode requires this check (see template 040-light.md)"
+        )
+
+    return passes, fails, warns
+
+
+# ===========================================================================
 # Main
 # ===========================================================================
 
@@ -1271,6 +1311,12 @@ def main():
 
     # V10: Cross-cutting concerns table (full mode only)
     p, f, w = check_crosscut_table(req_dir, mode)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V11: Light mode key-path check
+    p, f, w = check_light_keypath(req_dir, mode)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)
