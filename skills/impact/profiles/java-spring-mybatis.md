@@ -127,10 +127,10 @@ context_discovery:
 
 ```yaml
 commands:
-  build: mvn clean package -DskipTests
-  test: mvn test
-  dev: mvn spring-boot:run
-  lint: mvn checkstyle:check
+  build: ./mvnw clean package -DskipTests
+  test: ./mvnw test
+  dev: ./mvnw spring-boot:run
+  lint: ./mvnw checkstyle:check
 ```
 
 ## db_introspection

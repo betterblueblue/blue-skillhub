@@ -145,7 +145,6 @@ context_discovery:
 | logging | ILogger<T>、Serilog、LoggerAdapter |
 | api_response | Controller/Endpoint 返回类型、BaseResponse、Result pattern |
 | dependency_injection | Program.cs、ConfigureServices、constructor injection |
-```
 
 ## commands
 
