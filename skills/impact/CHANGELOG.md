@@ -303,7 +303,7 @@ V9→V10 总分 92→96（+4），无维度回退。评审报告见 `eval/runs/b
 
 针对 5 模型对比中 Composer 2.5 和 Step 3.7 Flash 暴露的失分点，做了三轮 Skill 模板优化（R1 基线 → R2 四项优化 → R3 五项优化）。R1 对比中发现三个模型方差问题：Composer 2.5 改名绕过横切表、两模型遗漏 `_active-state.md`、Step 3.7 Flash 对 Prisma ORM 异常码误判。针对这三个问题落地改进：
 
-- **V10 横切表 FAIL 门禁**：`impact_validate.py` 新增 V10 检查——full 模式下扫描 `020-design.md` `## 6. 横切关注点` 标题，缺失则 FAIL 拦截；行数 < 10 或 ☑/☐ 标记 < 5 报 WARN。解决 Composer 2.5 在 R2 中通过改名绕过横切表的问题
+- **V10 横切表 FAIL 门禁**：`impact_validate.py` 新增 V10 检查——full 模式下扫描 `020-design.md` `## 6. 横切关注点` 标题，缺失则 FAIL 拦截；行数 < 19 或 ☑/☐ 标记 < 19 均 FAIL。解决 Composer 2.5 在 R2 中通过改名绕过横切表的问题
 - **V1 `_active-state.md` WARN 检查**：V1 文件完整性检查新增 `_active-state.md` 存在性检查，缺失报 WARN。解决两模型在 R2 中遗漏跨会话恢复检查点的问题
 - **Prisma ORM 异常行为模式参考**：`references/phase-4-output.md` 新增 Prisma ORM 方法异常行为参考表（`findUnique`/`findFirst` 返回 null 不抛异常、`create` 抛 P2002 唯一约束冲突、`update`/`delete` 抛 P2025 记录不存在）。解决 Step 3.7 Flash 将 `create` 误标为 P2025、将 `hashPassword` 误标为抛异常等 3 处错误
 - **§6 标题防改名**：`templates/020-design.md` §6 注释增加 ⚠️ 强制要求 + 脚本检查提示，防止模型通过改名绕过 V10 检查

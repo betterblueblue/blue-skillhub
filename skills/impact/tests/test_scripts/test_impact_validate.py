@@ -25,27 +25,45 @@ def _run_validator(repo_root: str, req_dir: str) -> tuple[int, str]:
 
 
 def _make_repo(style_rules: str | None = None, context_pack: str | None = None) -> tuple[str, str]:
-    """Create a temp repo with optional _style-rules.md and context-pack.
+    """Create a temp repo with all required files for full-mode validation.
+
+    Creates 000/010/020/030/_active-state.md so V1/V10/V12 pass.
+    Tests that need specific 030 content can call _write_impl to overwrite.
 
     Returns (repo_root, req_dir).
     """
     td = tempfile.mkdtemp()
-
-    # Create a 010-requirements.md so V1 auto-detects full mode
     req_dir = os.path.join(td, "req")
     os.makedirs(req_dir)
+
+    # 010-requirements.md (triggers full-mode auto-detection)
     with open(os.path.join(req_dir, "010-requirements.md"), "w", encoding="utf-8") as f:
         f.write("# Test Requirements\n\n- 测试需求\n")
+
+    # 000-context-pack.md (use provided or default)
+    if context_pack is None:
+        context_pack = "# Context Pack\n\n## 1. 变更意图\n\n- 用户原话：test\n"
+    with open(os.path.join(req_dir, "000-context-pack.md"), "w", encoding="utf-8") as f:
+        f.write(context_pack)
+
+    # 020-design.md with §6 横切关注点 (19 rows, all ☐)
+    rows = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+    with open(os.path.join(req_dir, "020-design.md"), "w", encoding="utf-8") as f:
+        f.write(f"# Design\n\n## 6. 横切关注点\n\n| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |\n|---|------|----------|----------|-------------|\n{rows}\n")
+
+    # 030-implementation.md (minimal, no method calls)
+    with open(os.path.join(req_dir, "030-implementation.md"), "w", encoding="utf-8") as f:
+        f.write("# Implementation\n\nNo changes.\n")
+
+    # _active-state.md (Phase 3 fields for V12)
+    with open(os.path.join(req_dir, "_active-state.md"), "w", encoding="utf-8") as f:
+        f.write("# Active State\n\n## Phase 3 状态\n\n已完成\n\n## Phase 3.5 定级\n\nlight\n")
 
     if style_rules is not None:
         ci_dir = os.path.join(td, "change-impact")
         os.makedirs(ci_dir)
         with open(os.path.join(ci_dir, "_style-rules.md"), "w", encoding="utf-8") as f:
             f.write(style_rules)
-
-    if context_pack is not None:
-        with open(os.path.join(req_dir, "000-context-pack.md"), "w", encoding="utf-8") as f:
-            f.write(context_pack)
 
     return td, req_dir
 
@@ -61,6 +79,7 @@ class TestV8NoStyleRules(unittest.TestCase):
     def test_no_style_rules_passes(self):
         td, rd = _make_repo(style_rules=None)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v8 = _v8_lines(out)
         self.assertTrue(any("No _style-rules.md" in l for l in v8), f"Expected fallback, got: {v8}")
         self.assertTrue(all("FAIL" not in l for l in v8), f"V8 should not FAIL: {v8}")
@@ -78,6 +97,7 @@ class TestV8GrepRule(unittest.TestCase):
 """
         td, rd = _make_repo(style_rules=rules)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v8 = _v8_lines(out)
         self.assertTrue(any("grep enforceable" in l for l in v8), f"Expected grep enforceable, got: {v8}")
         self.assertTrue(any("1 mandatory rules are auto-enforceable" in l for l in v8), f"Got: {v8}")
@@ -95,6 +115,7 @@ class TestV8HumanConfirmRule(unittest.TestCase):
 """
         td, rd = _make_repo(style_rules=rules)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v8 = _v8_lines(out)
         self.assertTrue(any("无法自动 FAIL" in l for l in v8), f"Expected WARN about human review, got: {v8}")
         self.assertTrue(any("require human review" in l for l in v8), f"Got: {v8}")
@@ -112,6 +133,7 @@ class TestV8InvalidGrepPattern(unittest.TestCase):
 """
         td, rd = _make_repo(style_rules=rules)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v8 = _v8_lines(out)
         self.assertTrue(any("invalid grep pattern" in l for l in v8), f"Expected invalid pattern WARN, got: {v8}")
 
@@ -128,6 +150,7 @@ class TestV8GrepExcludeRule(unittest.TestCase):
 """
         td, rd = _make_repo(style_rules=rules)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v8 = _v8_lines(out)
         self.assertTrue(any("grep-exclude enforceable" in l for l in v8), f"Expected grep-exclude PASS, got: {v8}")
 
@@ -140,6 +163,7 @@ class TestV8GrepExcludeRule(unittest.TestCase):
 """
         td, rd = _make_repo(style_rules=rules)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v8 = _v8_lines(out)
         self.assertTrue(any("missing ':dir'" in l for l in v8), f"Expected missing dir WARN, got: {v8}")
 
@@ -163,6 +187,7 @@ class TestV8AdvisoryRulesCount(unittest.TestCase):
 """
         td, rd = _make_repo(style_rules=rules)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v8 = _v8_lines(out)
         self.assertTrue(any("1 mandatory, 2 advisory" in l for l in v8), f"Expected 1 mandatory + 2 advisory, got: {v8}")
 
@@ -180,6 +205,7 @@ class TestV8ContextPackCheck(unittest.TestCase):
         ctx = "# Context Pack\n\n## 1. 变更意图\n\n- 用户原话：test\n"
         td, rd = _make_repo(style_rules=rules, context_pack=ctx)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v8 = _v8_lines(out)
         self.assertTrue(any("missing '### 风格规范'" in l for l in v8), f"Expected missing section WARN, got: {v8}")
 
@@ -198,6 +224,7 @@ class TestV8ContextPackCheck(unittest.TestCase):
 """
         td, rd = _make_repo(style_rules=rules, context_pack=ctx)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v8 = _v8_lines(out)
         self.assertTrue(any("filled in" in l for l in v8), f"Expected filled-in PASS, got: {v8}")
 
@@ -216,6 +243,7 @@ class TestV8ContextPackCheck(unittest.TestCase):
 """
         td, rd = _make_repo(style_rules=rules, context_pack=ctx)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v8 = _v8_lines(out)
         self.assertTrue(any("not filled in" in l for l in v8), f"Expected not-filled WARN, got: {v8}")
 
@@ -244,6 +272,7 @@ class TestV9NoGradingTable(unittest.TestCase):
         td, rd = _make_repo(context_pack=ctx)
         _write_impl(rd, "# Implementation\n\nNo table here.\n")
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v9 = _v9_lines(out)
         self.assertTrue(any("No grading decision table" in l for l in v9), f"Expected skip PASS, got: {v9}")
 
@@ -257,6 +286,7 @@ class TestV9NoFacts(unittest.TestCase):
         impl = "# Implementation\n\n| 现有覆盖 | 缺口 | 判档 |\n|---|---|---|\n| test | test | full |\n"
         _write_impl(rd, impl)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v9 = _v9_lines(out)
         self.assertTrue(any("no confirmed facts" in l for l in v9), f"Expected no-facts WARN, got: {v9}")
 
@@ -279,6 +309,7 @@ class TestV9Consistent(unittest.TestCase):
         )
         _write_impl(rd, impl)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v9 = _v9_lines(out)
         self.assertTrue(
             any("consistent" in l.lower() for l in v9),
@@ -305,6 +336,7 @@ class TestV9Contradiction(unittest.TestCase):
         )
         _write_impl(rd, impl)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v9 = _v9_lines(out)
         self.assertTrue(
             any("Contradiction" in l and "updateUserById" in l for l in v9),
@@ -330,6 +362,7 @@ class TestV9Unconfirmed(unittest.TestCase):
         )
         _write_impl(rd, impl)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v9 = _v9_lines(out)
         self.assertTrue(
             any("not in §7" in l and "deleteUserById" in l for l in v9),
@@ -355,6 +388,7 @@ class TestV9NoSharedEntities(unittest.TestCase):
         )
         _write_impl(rd, impl)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v9 = _v9_lines(out)
         self.assertTrue(
             any("No shared entities" in l for l in v9),
@@ -381,6 +415,7 @@ class TestV9SectionHeaderTable(unittest.TestCase):
         )
         _write_impl(rd, impl)
         code, out = _run_validator(td, rd)
+        self.assertEqual(code, 0, f"Expected exit 0 (no FAIL), got {code}\n{out}")
         v9 = _v9_lines(out)
         self.assertTrue(
             any("consistent" in l.lower() for l in v9),

@@ -131,14 +131,17 @@ def main():
     cwd = str(root)
     head_short, head_full = get_head(cwd)
 
-    # Non-independent repo: don't leak parent repo HEAD
+    # Non-independent repo: don't leak parent repo git data
     if not is_independent:
         head_short = None
         head_full = None
-
-    branch = get_branch(cwd)
-    hotspots = get_hotspots(cwd)
-    modules = extract_modules(hotspots)
+        branch = None
+        hotspots = []
+        modules = []
+    else:
+        branch = get_branch(cwd)
+        hotspots = get_hotspots(cwd)
+        modules = extract_modules(hotspots)
 
     result = {
         "is_git_repo": True,
