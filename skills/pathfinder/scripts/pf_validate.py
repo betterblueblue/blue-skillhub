@@ -118,9 +118,6 @@ RE_CREDS = [
     (re.compile(r'mongodb://[^\s"\']+@'), "mongodb: connection string with credentials"),
 ]
 
-# Already-sanitized marker (*** in value position)
-RE_SANITIZED = re.compile(r'\b\w*(password|secret|token|api_key)\w*\s*=\s*["\']?\*{3}', re.I)
-
 
 def check_credentials(text: str) -> tuple[list[str], list[str]]:
     """V2: Check for unsanitized credentials. Returns (errors, warnings).
@@ -132,19 +129,15 @@ def check_credentials(text: str) -> tuple[list[str], list[str]]:
     """
     errors = []
     warnings = []
-    sanitized_lines = set()
 
     # Scan full text (including code blocks) — secrets in code blocks
-    # must also be sanitized
+    # must also be sanitized.
+    # Per-match sanitization check: the (?!\*{3}) negative lookahead in
+    # each RE_CREDS pattern skips individual sanitized values, so a mixed
+    # line like "password=*** token=plainsecret" still catches the token.
     for i, line in enumerate(text.splitlines(), 1):
-        # Skip lines that are clearly sanitized
-        if RE_SANITIZED.search(line):
-            continue
         for pattern, label in RE_CREDS:
             if pattern.search(line):
-                # Check if value looks like *** (already sanitized)
-                if "***" in line:
-                    continue
                 warnings.append(f"V2: line {i}: possible credential ({label}): ...{line.strip()[:80]}")
     return errors, warnings
 

@@ -206,8 +206,9 @@ class TestPfValidate(unittest.TestCase):
 |--------|------|------|--------|
 | 命名 | camelCase | test | 【推断: 待验证】 |
 """
-            path = self._make_map(map_content, td)
+            path = self._make_map(map_content, td, create_facts=True)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 0, f"Credential leak should WARN not FAIL:\n{out}")
             self.assertIn("WARN:", out)  # V2 produces warnings for credential patterns
 
     def test_svg_script_fails(self):
