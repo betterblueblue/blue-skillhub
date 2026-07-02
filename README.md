@@ -47,9 +47,9 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路
 
 8 条给 AI 编码助手看的核心行为规则，外加一条面向用户的中文表达要求。重点不是"让它更聪明"，而是让它少猜、少乱改、先拿对上下文、先验证，也把话说得像自然中文。适合放到已有项目的 `CLAUDE.md`，也可以按需复制成 Codex 项目的 `AGENT.md`。
 
-它是通用行为底座，不绑定具体开发流程：可以搭配 0→1 生成类 Skill、已有系统影响分析类 Skill，也可以单独用于修 bug、重构、补测试和普通编码任务。v3.2 的稳定性复测是在 GovShield 这种已有系统复杂链路变更里完成的，证明的是复杂链路门禁能力，不代表它只能用于已有系统。v3.3 的补强验证是在低成本弱模型（Step 3.7 Flash）上完成的，确认五处改动对弱模型也有效。
+它是通用行为底座，不绑定具体开发流程：可以搭配 0→1 生成类 Skill、已有系统影响分析类 Skill，也可以单独用于修 bug、重构、补测试和普通编码任务。v3.2 的稳定性复测是在 GovShield 这种已有系统复杂流程变更里完成的，证明的是复杂流程检查能力，不代表它只能用于已有系统。v3.3 的补强验证是在低成本弱模型（Step 3.7 Flash）上完成的，确认五处改动对弱模型也有效。
 
-最初版参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后续在中文任务、已有系统变更和 GovShield 复杂审查链路里持续实测迭代。v3.2 已通过 Claude Code + MiniMax M3 的 Task A 稳定性复测：R13 + R14 连续 2 轮无 P0/P1，最小测试通过。v3.3 的五处补强（停vs不停阈值、去概念泄漏、验证降级、测试粒度匹配、客观条件清单替代"自行判断"）已通过 Step 3.7 Flash 的 6 场景验证，6/6 全部生效。详见 [claudecode行为规范/ruleblade/README.md](claudecode行为规范/ruleblade/README.md)。
+最初版参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后续在中文任务、已有系统变更和 GovShield 复杂审查流程里持续实测迭代。v3.2 已通过 Claude Code + MiniMax M3 的 Task A 稳定性复测：R13 + R14 连续 2 轮无 P0/P1，最小测试通过。v3.3 的五处补强（停与不停阈值、去概念泄漏、验证等级调整、测试粒度匹配、客观条件清单替代"自行判断"）已通过 Step 3.7 Flash 的 6 场景验证，6/6 全部生效。详见 [claudecode行为规范/ruleblade/README.md](claudecode行为规范/ruleblade/README.md)。
 
 ### 网搜 MCP
 
@@ -61,15 +61,15 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路
 
 [skills/pathfinder/](skills/pathfinder/)
 
-面向**刚接手、还不熟悉**的现有项目。它不做具体变更,而是先帮你通读一遍,产出一张全项目级的**认知地图**:技术栈、核心功能、架构分层、关键入口、数据模型概览、构建/运行/测试、雷区、权限模型、典型主链路、文档入口。
+面向**刚接手、还不熟悉**的现有项目。它不做具体变更,而是先帮你通读一遍,产出一张全项目级的**认知地图**:技术栈、核心功能、架构分层、关键入口、数据模型概览、构建/运行/测试、风险区域、权限模型、典型主流程、文档入口。
 
-它和 Impact 系列正好接力:Pathfinder 管**全景广度**(看懂这是个什么项目),Impact 的 Phase 2 管**变更切片深度**(看懂这次改动影响什么)。地图产出到 `change-impact/_project-map.md`,Impact 启动时会主动读它当 L1 导航上下文 —— 读不到就完全照旧,是可选的辅助工具,不是必须先跑的前置步骤。
+它和 Impact 系列正好接力:Pathfinder 负责先看懂"这是个什么项目",Impact 的 Phase 2 负责深入分析"这次改动影响什么"。地图产出到 `change-impact/_project-map.md`,Impact 启动时会主动读它当 L1 导航上下文 —— 读不到就完全照旧,是可选的辅助工具,不是必须先跑的前置步骤。
 
-项目演进后地图会过期,Pathfinder 支持三种刷新入口:扩展深度(再挖某个模块)、刷新事实(项目变了,重新跑 facts 比对差异)、全量重跑。刷新时会比对已有地图的 git HEAD 与当前 HEAD,覆盖过期内容,保留仍有效的观察。
+项目演进后地图会过期,Pathfinder 支持三种刷新入口:继续深入某个模块、重新跑脚本比对项目变化、全量重跑。刷新时会比对已有地图的 git HEAD 与当前 HEAD,覆盖过期内容,保留仍有效的观察。
 
-地图每条结论都带信任标签(`【已核实】`/`【推断】`)、git HEAD(防过期)和覆盖度声明(显式列出没挖深的盲区)。Impact 接过去时,`【推断】`项一律按未确认处理、动手前重新取证 —— 地图只是导航参考,不是权威依据。Pathfinder 全程 100% 只读、只描述不开药方。
+地图每条结论都带可信度标签(`【已核实】`/`【推断】`)、git HEAD(防过期)和覆盖度声明(显式列出没深入看的部分)。Impact 读取后,`【推断】`项一律按未确认处理、动手前重新取证 —— 地图只是导航参考,不是权威依据。Pathfinder 全程 100% 只读、只描述不给修复建议。
 
-如果客户端已有只读 code graph / repo-map MCP，Pathfinder 会先用结构索引找入口、依赖边和核心 hubs，再用 Read/Grep 核证；索引不可用、过期、截断或需要写项目缓存时，就退回到普通扫描。
+如果客户端已有只读 code graph / repo-map MCP，Pathfinder 会先用结构索引找入口、依赖边和核心节点，再用 Read/Grep 核实；索引不可用、过期、截断或需要写项目缓存时，就退回到普通扫描。
 
 律刃管判断、Impact 管改动、Pathfinder 管看懂项目 —— 先摸清项目再动手。设计复盘见 [docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md](docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md)。
 
@@ -81,11 +81,11 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路
 
 它可以搭配律刃使用：律刃约束 agent 的通用编码行为，ImpactRadar 负责多技术栈现有系统的影响分析流程。
 
-v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目降级保护、阻塞恢复安全闸和多会话写授权一致性，适合迁移、对齐、重构等多 Step 变更。最新新增**风格契约**（`change-impact/_style-rules.md`）：用户把团队强制/建议规则写进去，Impact 在分析和校验时会读取并检查代码是否符合。优先级链为：契约文件 > 地图观察 > Profile 提示 > 运行时现采；规则在实际变更中发现并追加，不要求预先写全。Claude Code + MiniMax M3 真实 `/impact` 复测已经走完 S1-S7 回归，模糊确认、历史确认、延迟确认、非 Git + V1-only、Health/API 响应字段变化都不能绕过 `确认 Step N`。
+v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目保护、恢复后复核和多会话写授权一致性，适合迁移、对齐、重构等多 Step 变更。最新新增**风格规则文件**（`change-impact/_style-rules.md`）：用户把团队强制/建议规则写进去，Impact 在分析和校验时会读取并检查代码是否符合。优先级为：风格规则文件 > 地图观察 > Profile 提示 > 运行时采样；规则可以在实际变更中发现并追加，不要求预先写全。Claude Code + MiniMax M3 真实 `/impact` 复测已经走完 S1-S7 回归，模糊确认、历史确认、延迟确认、非 Git + V1-only、Health/API 响应字段变化都不能绕过 `确认 Step N`。
 
-经过 V1-V10 共 10 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为：把模糊需求变成显式假设（V7 验证）、苏格拉底式提问不替用户拍板但自主推断代码事实（代码可推断项不问用户，业务决策项才问）、结构化保障（回滚方案、验证步骤、方法名预检始终做到）、防御性检查（refreshToken TTL 同步等独有发现）、安全闸（逐步确认、写入边界、高风险拦截，弱模型也绕不过）。当前版本 v4.7。2026-06-28 先做了一轮 5 模型端到端对比（Composer 2.5、Kimi K2.6、GLM-5.1、Step 3.7 Flash、GLM-5.2），选定 Composer 2.5 和 Step 3.7 Flash 作为性价比优化目标后，又做了 R1-R7 共 7 轮 Skill 模板优化验证（O1-O18 共 18 项优化措施），涵盖横切关注点表 V10 脚本门禁、Prisma ORM 异常行为参考、`_active-state.md` 存在性检查、§6/§3.2 标题防改名、弱引导下强制规则（context-pack 必产出、Phase 4 必跑验证脚本）、读路径 SQL 判 light 规则、脚本路径澄清和 `_active-state.md` 模板结构强制。Composer 2.5 从 86 分提升到 95 分并稳定（弱引导+跨栈下不靠 prompt 提示即可高质量完成），Step 3.7 Flash 从 90 分到 90 分（框架层面已做到极限，剩余问题属 LLM 行为层面）。`impact_validate.py` 现有 V1-V10 共 10 项自动化检查。详细数据见 [skills/impact/README.md](skills/impact/README.md)。
+经过 V1-V10 共 10 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为：把模糊需求变成显式假设（V7 验证）、苏格拉底式提问不替用户拍板但自主推断代码事实（代码可推断项不问用户，业务决策项才问）、结构化保障（回滚方案、验证步骤、方法名预检始终做到）、防御性检查（refreshToken TTL 同步等独有发现）、安全检查（逐步确认、写入边界、高风险拦截，弱模型也绕不过）。当前版本 v5.0。2026-06-28 先做了一轮 5 模型端到端对比（Composer 2.5、Kimi K2.6、GLM-5.1、Step 3.7 Flash、GLM-5.2），选定 Composer 2.5 和 Step 3.7 Flash 作为性价比优化目标后，又做了 R1-R7 共 7 轮 Skill 模板优化验证（O1-O18 共 18 项优化措施），涵盖全局影响检查表 V10 脚本检查、Prisma ORM 异常行为参考、`_active-state.md` 存在性检查、§6/§3.2 标题防改名、弱引导下强制规则（context-pack 必产出、Phase 4 必跑验证脚本）、读路径 SQL 判 light 规则、脚本路径澄清和 `_active-state.md` 模板结构强制。Composer 2.5 从 86 分提升到 95 分并稳定（弱引导+跨栈下不靠 prompt 提示即可高质量完成），Step 3.7 Flash 从 90 分到 90 分（规则层面已做到极限，剩余问题属 LLM 行为层面）。`impact_validate.py` 现有 V1-V12 共 12 项自动化检查。详细数据见 [skills/impact/README.md](skills/impact/README.md)。
 
-当前还接入了可选 code graph MCP 作为结构化定义/引用候选入口，以及 `change-impact/{需求名称}/_active-state.md` 作为跨会话恢复检查点。`_active-state.md` 只记录 pending Step、文档状态和未确认项，不授权源码/SQL/配置/测试写入，也不能替代当前对话里的 `确认 Step N`。Claude Code 可选启用 `.claude/hooks/impact-write-gate.*`，把 Step 确认补强成工具执行前检查。
+当前还接入了可选 code graph MCP 作为结构化定义/引用候选入口，以及 `change-impact/{需求名称}/_active-state.md` 作为跨会话恢复状态文件。`_active-state.md` 只记录 pending Step、文档状态和未确认项，不授权源码/SQL/配置/测试写入，也不能替代当前对话里的 `确认 Step N`。Claude Code 可选启用 `.claude/hooks/impact-write-gate.*`，把 Step 确认补强成工具执行前检查。
 
 ### VL 识图
 
@@ -97,23 +97,23 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 
 [docs/skill-eval/](docs/skill-eval/) + [eval/](eval/)
 
-两个 skill 共用的防质量倒退测评体系。核心思路：**不新建测评方法，而是把已有的高质量测试用例整理成一套能定期复跑、自动检测质量倒退的体系。**
+两个 skill 共用的回归测评体系，用来防止质量退步。核心思路：**不新建测评方法，而是把已有的高质量测试用例整理成一套能定期复跑、自动发现质量下降的体系。**
 
 三层金字塔：
 
 | 层 | 测什么 | 怎么跑 | 成本 |
 |---|---|---|---|
 | L0 静态自洽 | 铁律存在、引用完整、共享契约、fixture 锁定、风格规则校验 | `bash skills/<skill>/tests/run.sh` | 免费 |
-| L1 行为契约 | subagent 扮用户跑 case，客观维度自动判 + 安全闸 | `bash eval/run-l1.sh <skill>` | 便宜模型 |
+| L1 行为契约 | subagent 扮用户跑 case，客观维度自动评分 + 安全检查 | `bash eval/run-l1.sh <skill>` | 便宜模型 |
 | L2 人审深度 | 主观维度（苏格拉底质量、文档/地图可读性）抽样 | 人工 + 可选多模型评委 | 贵 |
 
-防止质量悄悄倒退的关键机制是**基线评分卡时间序列 + 红线 diff**：每次改 skill 后跑 L1，产出评分卡，和上一基线逐 case 对比；任何契约从 PASS→FAIL、维度掉档≥3 分、新增 P0/P1 = 红线阻断，不许发布。详细设计见 [docs/archive/2026-06/2026-06-13-skill-eval-system-design.md](docs/archive/2026-06/2026-06-13-skill-eval-system-design.md)，实施手册见 [docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md](docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md)。
+防止质量悄悄退步的关键机制是**基线评分卡 + 红线对比**：每次改 skill 后跑 L1，产出评分卡，和上一基线逐 case 对比；只要出现契约从 PASS→FAIL、维度掉档≥3 分或新增 P0/P1，就算红线，不能发布。详细设计见 [docs/archive/2026-06/2026-06-13-skill-eval-system-design.md](docs/archive/2026-06/2026-06-13-skill-eval-system-design.md)，实施手册见 [docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md](docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md)。
 
 ## 研究与实验记录
 
 ### Not ACE 上下文检索探索
 
-2026 年 6 月围绕 [Not ACE](https://not-ace.ame.rip/) 做的一轮上下文检索实验，不是可安装 skill，而是用来反推 RuleBlade、ImpactRadar 后续怎么迭代的研究材料。完整记录在 [docs/not-ace-exploration/](docs/not-ace-exploration/)。
+2026 年 6 月围绕 [Not ACE](https://not-ace.ame.rip/) 做的一轮上下文检索实验，不是可安装 skill，而是用来判断 RuleBlade、ImpactRadar 后续怎么迭代的研究材料。完整记录在 [docs/not-ace-exploration/](docs/not-ace-exploration/)。
 
 核心判断：Not ACE 不是 `rg` 的替代品，而是语义上下文入口。它对 MiniMax M3 更像在补稳定性，对 GLM-5.1 更像在省时间、省成本；但在 Kimi K2.6、GLM-5、DeepSeek V4 系列上这轮没跑出稳定收益。DeepSeek V4 Pro / Flash 经硅基流动平台接入，不代表 DeepSeek 官方模型真实能力。
 
@@ -130,7 +130,7 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 
 ## 致谢
 
-律刃最初版参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后续是在真实中文编码任务和复杂链路测试里一轮轮收紧出来的。
+律刃最初版参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后续是在真实中文编码任务和复杂流程测试里一轮轮收紧出来的。
 
 “改代码前先反查调用方和引用方，查到后再分级处理”来自 [hxd-ggsddu](https://github.com/hxd-ggsddu) 提出的 issue。这个建议已经同步进 RuleBlade 和 ImpactRadar，用来减少只改当前文件却漏掉接口、生成物、测试或注册点的风险。
 
@@ -237,7 +237,7 @@ Agent：现在执行 Step 2；执行后会更新 090-execution-record.md 和 _ac
 ```text
 blue-skillhub/
 ├── .claude/
-│   └── hooks/                # 可选 Claude Code 写前门禁 hook
+│   └── hooks/                # 可选 Claude Code 写前检查 hook
 ├── claudecode行为规范/
 │   └── ruleblade/
 ├── docs/

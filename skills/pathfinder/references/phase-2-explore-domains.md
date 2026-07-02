@@ -44,18 +44,18 @@
 - 子 agent 不再重复 Glob 文件计数——直接读脚本产出
 - 子 agent 的核心工作是**解读和深挖**,不是搬运事实
 
-## Phase 2.5: Challenge 合并
+## Phase 2.5: 假说反证合并
 
-取消独立的 Phase 2.5。challenge 逻辑进每个子 agent 的输出(`hypotheses_challenged` 字段)。主 agent 在 Phase 3 synthesis 时汇总并写入地图。
+取消独立的 Phase 2.5。假说反证并入每个子 agent 的输出(`hypotheses_challenged` 字段)。主 agent 在 Phase 3 汇总后写入地图。
 
-理由:独立的 Phase 2.5 需要再多一轮 agent 调度;并入子 agent 不增加轮次,且 challenge 的上下文在专探时已经拿到了。
+理由:独立的 Phase 2.5 需要再多一轮 agent 调度;并入子 agent 不增加轮次,且反证所需的上下文在专探时已经拿到了。
 
 ## 降级策略
 
 降级触发条件(按优先级检查):
 
 1. **Task 工具不在可用工具列表** → 完全降级为串行(5 路 → 1 路,等同于 v1 Phase 2)
-2. **Task 可用但 spawn 子 agent 返回空/错误**(3 次重试后仍失败) → 该路结果丢弃,其余路正常合并
+2. **Task 可用但启动子 agent 返回空/错误**(3 次重试后仍失败) → 该路结果丢弃,其余路正常合并
 3. **任意子 agent 超过 5 分钟未返回** → 该路超时丢弃,其余路正常合并
 4. **3 路及以上超时/失败** → 完全降级为串行
 

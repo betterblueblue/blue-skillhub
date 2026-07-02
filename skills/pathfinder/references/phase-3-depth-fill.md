@@ -153,9 +153,9 @@
 - **部署 / 运行拓扑**:`Dockerfile`/`docker-compose`/`k8s` manifest → 服务拓扑、端口。
 - **可观测性**:日志框架、监控埋点、错误上报(Sentry 等)位置——对"排查 bug"关注重点特别有用。
 
-## Phase 4.5: Script Gate（已由脚本闸门替代）
+## Phase 4.5: 脚本检查（替代原模型自检）
 
-原 Phase 4.5 模型自检（5 项 Grep/Read 检查）已由 `scripts/pf_validate.py` 闸门替代。
+原 Phase 4.5 模型自检（5 项 Grep/Read 检查）已由 `scripts/pf_validate.py` 脚本检查替代。
 
 闸门规则见 SKILL.md 硬性规则 #8：Phase 4 写入前必须运行 `python skills/pathfinder/scripts/pf_validate.py change-impact/_project-map.md --repo-root <project-root>` 且 exit code = 0。
 
@@ -168,7 +168,7 @@
 - V6: facts 文件内容校验（scan.json file_count > 0、dir_tree 含根目录且条目 > 1、dir_tree 条目对应磁盘真实目录、file_count 与磁盘实际文件数比值在 0.3-3.0 范围内；git.json head_short 非 null、toplevel 与 --repo-root 一致）。facts 文件缺失时报 FAIL（两个都缺失或只缺一个都报 FAIL；两个都缺失时附「先跑 Phase 1.5」提示）；内容不合理时 FAIL。
 - V7: 【14】代码风格观察节存在且有实质性内容（≥2 条），缺失或空壳均 FAIL。
 
-> 设计理由：模型自查（Phase 4.5）是循环的——编造行号的模型可能在自检环节继续出错。脚本闸门是外部进程，exit code ≠ 0 时无法绕过，不受模型是否诚实的影响。
+> 设计理由：模型自查（Phase 4.5）是循环的——编造行号的模型可能在自检环节继续出错。脚本检查是外部进程，exit code ≠ 0 时无法绕过，不受模型是否诚实的影响。
 
 ## Phase 3 收尾
 

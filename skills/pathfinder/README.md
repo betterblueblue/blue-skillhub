@@ -29,13 +29,13 @@
 
 - **FACTS 层（Phase 1.5，必做不可跳过）** — 运行 `pf_scan.py` + `pf_git.py` 产出确定性事实 JSON（文件数/扩展名分布/目录树/清单文件 + Git HEAD/hotspots），填入地图【0】【2】节；这是 Script Gate 的前置输入，缺一不可，跳过会导致 V6 报 FAIL（两个都缺失或只缺一个都报 FAIL）、地图无法写入
 - **认证机制识别 + 鉴权字段一致性自检** — 填写【10】权限/认证模型后必做：Step 0 先识别认证机制类型（JWT/Session/API Key/OAuth/无认证），再读认证链路源码 + 读鉴权链路源码，交叉比对发现字段缺失类安全 bug
-- **Script Gate（脚本闸门，替代 Phase 4.5 自检）** — 写入 `_project-map.md` 前必须运行 `pf_validate.py`，7 项检查（V1 行号真实性、V2 凭证脱敏、V3 SVG 安全、V4 未覆盖项非空、V5 Mermaid 一致性、V6 facts 文件内容校验含 dir_tree 磁盘匹配 + file_count 交叉校验、V7 【14】代码风格观察节存在），exit code ≠ 0 禁止写入
+- **写入前脚本检查（Script Gate，替代 Phase 4.5 自检）** — 写入 `_project-map.md` 前必须运行 `pf_validate.py`，7 项检查（V1 行号真实性、V2 凭证脱敏、V3 SVG 安全、V4 未覆盖项非空、V5 Mermaid 一致性、V6 facts 文件内容校验含 dir_tree 磁盘匹配 + file_count 交叉校验、V7 【14】代码风格观察节存在），exit code ≠ 0 禁止写入
 - **全景广度优先** — 所有核心模块都上地图，关注重点只决定哪片挖更深，不裁剪广度
-- **自适应分档 + 可扩展** — 先统计项目大小定预算，大仓不硬扫；没挖深的显式进未覆盖项，用户可「再挖 X」续扫
+- **按项目大小调整扫描深度** — 先统计项目大小定预算，大仓不硬扫；没挖深的显式进未覆盖项，用户可「再挖 X」续扫
 - **可信度** — 每条结论标【已核实: 证据】或【推断: 待验证】，直接对接 impact 的「已确认/未确认」二分
 - **概览头部** — 记录 git HEAD（防过期）、关注重点（解释深浅）、覆盖范围（显式声明未覆盖项）
 - **典型主流程** — 只 trace 一条代表性请求，端到端串通，"读懂项目"最有用的一节
-- **可选结构索引辅助** — 如果 code graph / repo-map MCP 已可读，优先用它找入口、依赖边和核心 hubs，再用 Read/Grep 核证；索引过期/截断/需写项目缓存时退回到普通扫描
+- **可选结构索引辅助** — 如果 code graph / repo-map MCP 已可读，优先用它找入口、依赖边和核心节点，再用 Read/Grep 核实；索引过期/截断/需写项目缓存时退回到普通扫描
 - **架构可视化** — 三张 Mermaid 文本图（架构/模块图、数据模型 ER 图、主流程图），一眼掌握全局；实线=已核实关系、虚线=推断关系，图也按可信度规则标实线/虚线
 - **100% 只读 + 只描述不给修复建议** — 不改项目本体，不给"该怎么改"的建议
 - **代码风格观察（【14】默认产出节）** — 按默认观察轴列表逐轴观察项目实际写法（naming/layering/orm/exception/logging/api_response/DI），只记录"是什么"（如"Controller 统一返回 R<T>"），不写"该怎样"（如"必须返回 R<T>"）。产出供 impact 消费，与用户自写的 `_style-rules.md`（规范性）互补。超大仓或预算耗尽时可跳过，但必须在【13】说明原因
@@ -174,7 +174,7 @@ pathfinder/
 │   ├── stack-detection.md        # 通用栈探测:清单文件 → 栈/构建/测试映射
 │   ├── handoff-contract.md       # 与 impact 协作约定 + L1 接口
 │   ├── cross-platform-notes.md   # 跨平台差异(时间戳/HEAD/体量命令/路径)
-│   └── review-checklist.md       # 地图质量 review checklist(人类/Agent/机械门禁)
+│   └── review-checklist.md       # 地图质量检查清单(给人看的检查 / 给 Agent 用的检查 / 自动检查)
 ├── scripts/                      # 脚本（Phase 1.5 facts 产出 + Phase 4 Script Gate）
 │   ├── pf_scan.py                # 项目体量扫描(文件数/扩展名/目录树/清单)
 │   ├── pf_git.py                 # Git 元数据提取(HEAD/hotspots/modules)
