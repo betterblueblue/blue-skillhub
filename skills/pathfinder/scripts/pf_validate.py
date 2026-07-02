@@ -270,8 +270,8 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
       - git.json head_short non-null (for independent Git repos)
       - git.json toplevel matches --repo-root
 
-    Missing facts files produce WARN if both are missing (Phase 1.5 not yet run),
-    or FAIL if only one is missing (partial run); bad content also produces FAIL.
+    Missing facts files produce FAIL in all cases (both missing or either
+    one missing); bad content also produces FAIL.
     """
     errors = []
     warnings = []
@@ -284,7 +284,7 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
     git_exists = os.path.isfile(git_path)
 
     if not scan_exists and not git_exists:
-        warnings.append(
+        errors.append(
             "V6: facts directory not found at change-impact/_project-map/facts/ "
             "(Phase 1.5 not yet run — run pf_scan.py and pf_git.py to produce facts)"
         )

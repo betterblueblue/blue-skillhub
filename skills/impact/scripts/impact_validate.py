@@ -830,8 +830,10 @@ def check_style_rules(
 #     grading decision table are consistent with context-pack §7
 # ===========================================================================
 
-# CamelCase identifiers (method/function names) — at least 5 chars
+# Entity identifier patterns (camelCase, snake_case, PascalCase) — at least 5 chars
 RE_CAMEL_ENTITY = re.compile(r'\b([a-z]\w*?[A-Z]\w*)\b')
+RE_SNAKE_ENTITY = re.compile(r'\b([a-z][a-z]+_[a-z_]+)\b')
+RE_PASCAL_ENTITY = re.compile(r'\b([A-Z]\w*[a-z]\w*[A-Z]\w*)\b')
 
 # Contradiction descriptor pairs (positive, negative)
 CONTRADICTION_PAIRS = [
@@ -941,15 +943,18 @@ def _extract_grading_entries(impl_text: str) -> list[str]:
 
 
 def _extract_entities(text: str) -> set[str]:
-    """Extract camelCase identifiers (method/function names) from text.
+    """Extract identifiers (camelCase, snake_case, PascalCase) from text.
 
+    Supports multiple naming conventions to work across Java/JS (camelCase),
+    Python (snake_case), and Go (PascalCase) projects.
     Only identifiers >= 5 chars are kept to reduce false positives.
     """
     entities: set[str] = set()
-    for m in RE_CAMEL_ENTITY.finditer(text):
-        entity = m.group(1)
-        if len(entity) >= 5:
-            entities.add(entity)
+    for pattern in (RE_CAMEL_ENTITY, RE_SNAKE_ENTITY, RE_PASCAL_ENTITY):
+        for m in pattern.finditer(text):
+            entity = m.group(1)
+            if len(entity) >= 5:
+                entities.add(entity)
     return entities
 
 
