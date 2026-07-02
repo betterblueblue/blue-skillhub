@@ -40,7 +40,7 @@ class TestPfScan(unittest.TestCase):
         data = json.loads(out)
         self.assertEqual(data["file_count"], 3)
         self.assertIn(".py", data["file_ext_counts"])
-        self.assertEqual(data["budget_tier"], "tiny")
+        self.assertEqual(data["budget_tier"], "小仓")
 
     def test_scan_this_repo(self):
         """Scan the project root — should be at least small."""
@@ -49,7 +49,7 @@ class TestPfScan(unittest.TestCase):
         self.assertEqual(code, 0)
         data = json.loads(out)
         self.assertGreater(data["file_count"], 10)
-        self.assertIn(data["budget_tier"], ("tiny", "small", "medium", "large"))
+        self.assertIn(data["budget_tier"], ("小仓", "中仓", "大仓", "超大仓"))
 
     def test_scan_degradation_trap(self):
         """Scan the degradation-trap fixture."""
@@ -72,7 +72,7 @@ class TestPfScan(unittest.TestCase):
             self.assertEqual(code, 0)
             data = json.loads(out)
             self.assertEqual(data["file_count"], 0)
-            self.assertEqual(data["budget_tier"], "tiny")
+            self.assertEqual(data["budget_tier"], "小仓")
 
 
 # ─── pf_git.py tests ──────────────────────────────────────────────
@@ -127,8 +127,24 @@ class TestPfGit(unittest.TestCase):
 
 class TestPfValidate(unittest.TestCase):
 
-    def _make_map(self, content: str, repo_root: str) -> str:
-        """Write a temp map file, return its path."""
+    def _make_map(self, content: str, repo_root: str, create_facts: bool = False) -> str:
+        """Write a temp map file, return its path.
+
+        If create_facts=True, also create minimal facts files so V6 passes.
+        """
+        if create_facts:
+            os.makedirs(os.path.join(repo_root, "src"), exist_ok=True)
+            facts_dir = os.path.join(repo_root, "change-impact", "_project-map", "facts")
+            os.makedirs(facts_dir, exist_ok=True)
+            with open(os.path.join(facts_dir, "scan.json"), "w") as f:
+                json.dump({"file_count": 1, "dir_tree": ["/", "src/"]}, f)
+            with open(os.path.join(facts_dir, "git.json"), "w") as f:
+                json.dump({
+                    "is_git_repo": False,
+                    "is_independent_repo": False,
+                    "head_short": None,
+                    "toplevel": repo_root.replace("\\", "/"),
+                }, f)
         path = os.path.join(repo_root, "_project-map.md")
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
@@ -236,6 +252,19 @@ class TestPfValidate(unittest.TestCase):
     def test_stdin_mode(self):
         """Validate from stdin should work."""
         with tempfile.TemporaryDirectory() as td:
+            # Create facts files so V6 passes
+            os.makedirs(os.path.join(td, "src"))
+            facts_dir = os.path.join(td, "change-impact", "_project-map", "facts")
+            os.makedirs(facts_dir)
+            with open(os.path.join(facts_dir, "scan.json"), "w") as f:
+                json.dump({"file_count": 1, "dir_tree": ["/", "src/"]}, f)
+            with open(os.path.join(facts_dir, "git.json"), "w") as f:
+                json.dump({
+                    "is_git_repo": False,
+                    "is_independent_repo": False,
+                    "head_short": None,
+                    "toplevel": td.replace("\\", "/"),
+                }, f)
             map_content = """# Test Map
 ## 【13】没挖深的部分
 | 未深入模块 | 为什么 | 扩展入口 |
@@ -251,8 +280,8 @@ class TestPfValidate(unittest.TestCase):
                                        stdin_data=map_content)
             self.assertEqual(code, 0, f"Stdin mode failed:\n{out}")
 
-    def test_v6_facts_missing_warns(self):
-        """V6: missing facts directory should WARN, not FAIL (exit 0)."""
+    def test_v6_facts_missing_fails(self):
+        """V6: missing facts directory should FAIL (exit 1)."""
         with tempfile.TemporaryDirectory() as td:
             map_content = """# Test Map
 ## 【13】没挖深的部分
@@ -267,7 +296,7 @@ class TestPfValidate(unittest.TestCase):
 """
             path = self._make_map(map_content, td)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
-            self.assertEqual(code, 0, f"Missing facts should not fail:\n{out}")
+            self.assertEqual(code, 1, f"Missing facts should FAIL:\n{out}")
             self.assertIn("V6:", out)
 
     def test_v6_bad_facts_fails(self):
@@ -399,7 +428,7 @@ some content
 |--------|------|------|--------|
 | 命名 | camelCase | test | 【推断: 待验证】 |
 """
-            path = self._make_map(map_content, td)
+            path = self._make_map(map_content, td, create_facts=True)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
             self.assertEqual(code, 0, f"Nav line should not cause V4 false positive:\n{out}")
             self.assertIn("V4: uncovered section has entries", out)
