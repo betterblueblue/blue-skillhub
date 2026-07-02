@@ -46,10 +46,10 @@ def _make_repo(style_rules: str | None = None, context_pack: str | None = None) 
     with open(os.path.join(req_dir, "000-context-pack.md"), "w", encoding="utf-8") as f:
         f.write(context_pack)
 
-    # 020-design.md with §6 横切关注点 (19 rows, all ☐)
+    # 020-design.md with §6 全局影响检查 (19 rows, all ☐)
     rows = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
     with open(os.path.join(req_dir, "020-design.md"), "w", encoding="utf-8") as f:
-        f.write(f"# Design\n\n## 6. 横切关注点\n\n| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |\n|---|------|----------|----------|-------------|\n{rows}\n")
+        f.write(f"# Design\n\n## 6. 全局影响检查\n\n| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |\n|---|------|----------|----------|-------------|\n{rows}\n")
 
     # 030-implementation.md (minimal, no method calls)
     with open(os.path.join(req_dir, "030-implementation.md"), "w", encoding="utf-8") as f:

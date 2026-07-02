@@ -11,7 +11,7 @@
 |----------|------|
 | `000-context-pack.md` | 项目背景、分层格式、相关性分级、排除项 |
 | `010-requirements.md` | 章节骨架、NFR、Goals/Non-Goals |
-| `020-design.md` | 替代方案、横切关注点、接口契约 |
+| `020-design.md` | 替代方案、全局影响检查、接口契约 |
 | `030-implementation.md` | 组合回滚顺序、Step 确认格式 |
 | `040-light.md` | 定级证据、信息不全兜底 |
 | `060-preflight.md` | P0/P1 分档、Go/No-Go 阈值 |

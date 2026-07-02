@@ -15,7 +15,7 @@ Checks:
   V7: Tier judgment sanity (universal-quantifier coverage gate + over/under) — FAIL/WARN
   V8: Style rules check (_style-rules.md enforcement feasibility)            — WARN
   V9: Grading table fact consistency (判档表 vs context-pack §7)              — WARN
-  V10: Cross-cutting concerns table (020-design.md §6 in full mode)         — FAIL
+  V10: Global impact check table (020-design.md §6 in full mode)            — FAIL
   V11: Light mode key-path check (040-light.md 关键链路深度检查 section)     — FAIL
   V12: Phase 3 process check (_active-state.md Phase 3 状态 field)          — WARN
 
@@ -1075,12 +1075,12 @@ def check_grading_facts_consistency(
 
 
 # ===========================================================================
-# V10: Cross-cutting concerns table — 020-design.md must have §6 table
+# V10: Global impact check table — 020-design.md must have §6 table
 #      with 19 dimension rows in full mode
 # ===========================================================================
 
-# Match §6 section header (flexible: "## 6. 横切关注点" or "## 6 横切关注点")
-RE_CROSSCUT_HEADER = re.compile(r"##\s*6[\.\s]*横切关注点")
+# Match §6 section header (flexible: "## 6. 全局影响检查" or "## 6 全局影响检查")
+RE_CROSSCUT_HEADER = re.compile(r"##\s*6[\.\s]*全局影响检查")
 
 # Match table rows with ☑ or ☐ markers (allow optional whitespace around marker)
 RE_CROSSCUT_ROW = re.compile(r"\|[^\|]*[☑☐]\s*\|")
@@ -1090,9 +1090,9 @@ RE_CROSSCUT_DIM_ROW = re.compile(r"\|\s*\d+\s*\|")
 
 
 def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
-    """V10: Check 020-design.md for cross-cutting concerns table in full mode.
+    """V10: Check 020-design.md for global impact check table in full mode.
 
-    - FAIL if §6 横切关注点 section is completely missing in full mode
+    - FAIL if §6 全局影响检查 section is completely missing in full mode
     - FAIL if table exists but has fewer than 19 dimension rows
     - FAIL if table has 19 rows but not all have ☑/☐ markers
     - PASS if table has 19 rows, all with ☑/☐ markers
@@ -1112,32 +1112,32 @@ def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str]
 
     has_header = bool(RE_CROSSCUT_HEADER.search(text))
     # Extract §6 section text to avoid counting table rows from other sections
-    section_text = _extract_section_text(text, ["横切关注点"])
+    section_text = _extract_section_text(text, ["全局影响检查"])
     dim_rows = RE_CROSSCUT_DIM_ROW.findall(section_text) if section_text else []
     marker_rows = RE_CROSSCUT_ROW.findall(section_text) if section_text else []
 
     if not has_header:
         fails.append(
-            "V10: 020-design.md missing §6 横切关注点 section in full mode — "
-            "must include the 19-dimension cross-cutting concerns table "
+            "V10: 020-design.md missing §6 全局影响检查 section in full mode — "
+            "must include the 19-row global impact check table "
             "(see template 020-design.md §6). Renaming or skipping this "
             "section = incomplete submission."
         )
     elif len(dim_rows) < 19:
         fails.append(
-            f"V10: 020-design.md §6 横切关注点 table has only {len(dim_rows)} "
+            f"V10: 020-design.md §6 全局影响检查 table has only {len(dim_rows)} "
             f"dimension rows — must have all 19 rows (check template). "
             f"Rows with ☑/☐ markers: {len(marker_rows)}"
         )
     elif len(marker_rows) < 19:
         fails.append(
-            f"V10: 020-design.md §6 横切关注点 table has {len(dim_rows)} rows "
+            f"V10: 020-design.md §6 全局影响检查 table has {len(dim_rows)} rows "
             f"but only {len(marker_rows)} have ☑/☐ markers — all 19 rows "
             f"must be explicitly marked as 涉及(☑) or 不涉及(☐)"
         )
     else:
         passes.append(
-            f"V10: 020-design.md §6 横切关注点 table present with "
+            f"V10: 020-design.md §6 全局影响检查 table present with "
             f"{len(dim_rows)} dimension rows, {len(marker_rows)} marked"
         )
 
@@ -1340,7 +1340,7 @@ def main():
     all_fails.extend(f)
     all_warns.extend(w)
 
-    # V10: Cross-cutting concerns table (full mode only)
+    # V10: Global impact check table (full mode only)
     p, f, w = check_crosscut_table(req_dir, mode)
     all_passes.extend(p)
     all_fails.extend(f)
