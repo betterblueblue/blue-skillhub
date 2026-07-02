@@ -1116,8 +1116,8 @@ def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str]
     """V10: Check 020-design.md for cross-cutting concerns table in full mode.
 
     - FAIL if §6 横切关注点 section is completely missing in full mode
-    - FAIL if table exists but has fewer than 15 dimension rows
-    - PASS if table has 15+ rows with ☑/☐ markers
+    - FAIL if table exists but has fewer than 19 dimension rows
+    - PASS if table has 19+ rows with ☑/☐ markers
     """
     passes: list[str] = []
     fails: list[str] = []
