@@ -343,11 +343,6 @@ RE_CREDS = [
     (re.compile(r"-----BEGIN.*PRIVATE KEY-----", re.I), "private key block"),
 ]
 
-RE_SANITIZED = re.compile(
-    r"(?:^|[\s.;])(password|secret|token|api_?key)\s*=\s*[\"']?\*{3}",
-    re.I | re.M,
-)
-
 
 def check_credentials(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
     """V5: Check all output files for unsanitized credentials.
@@ -371,15 +366,13 @@ def check_credentials(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
             continue
 
         # Scan full text (including code blocks) — secrets in code blocks
-        # must also be sanitized per hard rule #7
+        # must also be sanitized per hard rule #7.
+        # Per-match sanitization check: the (?!\*{3}) negative lookahead in
+        # each RE_CREDS pattern skips individual sanitized values, so a mixed
+        # line like "password=*** token=plainsecret" still catches the token.
         for i, line in enumerate(text.splitlines(), 1):
             # Skip template instruction lines (blockquote)
             if line.strip().startswith(">"):
-                continue
-            # Skip lines that are already sanitized
-            if RE_SANITIZED.search(line):
-                continue
-            if "***" in line:
                 continue
 
             for pattern, label in RE_CREDS:
@@ -1295,7 +1288,7 @@ def main():
     all_fails: list[str] = []
     all_warns: list[str] = []
 
-    # V1: File completeness (includes _active-state.md WARN)
+    # V1: File completeness (includes _active-state.md FAIL)
     p, f, w = check_file_completeness(req_dir, mode)
     all_passes.extend(p)
     all_fails.extend(f)
