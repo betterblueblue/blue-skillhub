@@ -385,7 +385,7 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 
 **P2 修复**
 
-- Impact 横切关注点行数阈值：V10 从 < 10 行 WARN 升级为 < 15 行 FAIL。规则要求 19 行，10 行阈值太松会漏掉一半还通过门禁
+- Impact 横切关注点行数阈值：V10 从 < 10 行 WARN 升级为 < 19 行 FAIL。规则要求 19 行，此前 < 15 仍会漏掉 15-18 行的文档
 - Pathfinder Mermaid V5 一致性检查修复：原代码只删除 ` ```mermaid ` 标记行，mermaid 块内容仍留在 body_text 中，导致节点一定被找到、检查形同虚设。改为用正则删除整个 mermaid 代码块后再检查
 - Impact light 关键链路门禁升级：V11 从 WARN 升级为 FAIL。模板和 phase-4-output.md 都说"light 模式强制"，脚本须对齐
 - Pathfinder 测试同步：budget_tier 期望值从 `tiny/small/medium/large` 改为 `小仓/中仓/大仓/超大仓`；V6 facts 缺失期望从 WARN (exit 0) 改为 FAIL (exit 1)；受影响的 `test_stdin_mode` 和 `test_v4_nav_line_no_false_positive` 补充 facts 文件创建；degradation-trap fixture 补 facts 文件 + 修 Mermaid 节点 ID 使其在正文中出现
