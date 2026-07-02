@@ -6,7 +6,7 @@ Any FAIL item blocks submission; WARN items should be communicated to user.
 
 Checks:
   V1: File completeness (full: 000/010/020/030; light: 040-light.md)       — FAIL
-      _active-state.md presence (WARN if missing)
+      _active-state.md presence (FAIL if missing)
   V2: Requirements boundary (010-requirements.md free of technical details)  — WARN
   V3: Method name verification (§3.2 table + markers)                  — FAIL/WARN
   V4: Grading decision table (判档决策表 present in output)                 — WARN
@@ -51,7 +51,7 @@ LIGHT_REQUIRED = ["000-context-pack.md", "040-light.md"]
 def check_file_completeness(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
     """V1: Check that required files exist for the given mode.
 
-    Also checks for _active-state.md (WARN if missing, not blocking).
+    Also checks for _active-state.md (FAIL if missing — hard rule #10).
     """
     passes = []
     fails = []
@@ -1145,7 +1145,7 @@ def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str]
             "(see template 020-design.md §6). Renaming or skipping this "
             "section = incomplete submission."
         )
-    elif len(dim_rows) < 15:
+    elif len(dim_rows) < 19:
         fails.append(
             f"V10: 020-design.md §6 横切关注点 table has only {len(dim_rows)} "
             f"dimension rows — must have all 19 rows (check template). "
