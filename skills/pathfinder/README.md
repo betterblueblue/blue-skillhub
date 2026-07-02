@@ -27,7 +27,7 @@
 
 ## 核心能力
 
-- **FACTS 层（Phase 1.5，必做不可跳过）** — 运行 `pf_scan.py` + `pf_git.py` 产出确定性事实 JSON（文件数/扩展名分布/目录树/清单文件 + Git HEAD/hotspots），填入地图【0】【2】节；这是 Script Gate 的前置输入，缺一不可，跳过会导致 V6 报 FAIL（两个都缺失时报 WARN，只缺一个报 FAIL）、地图无法写入
+- **FACTS 层（Phase 1.5，必做不可跳过）** — 运行 `pf_scan.py` + `pf_git.py` 产出确定性事实 JSON（文件数/扩展名分布/目录树/清单文件 + Git HEAD/hotspots），填入地图【0】【2】节；这是 Script Gate 的前置输入，缺一不可，跳过会导致 V6 报 FAIL（两个都缺失或只缺一个都报 FAIL）、地图无法写入
 - **认证机制识别 + 鉴权字段一致性自检** — 填写【10】权限/认证模型后必做：Step 0 先识别认证机制类型（JWT/Session/API Key/OAuth/无认证），再读认证链路源码 + 读鉴权链路源码，交叉比对发现字段缺失类安全 bug
 - **Script Gate（脚本闸门，替代 Phase 4.5 自检）** — 写入 `_project-map.md` 前必须运行 `pf_validate.py`，7 项检查（V1 行号真实性、V2 凭证脱敏、V3 SVG 安全、V4 未覆盖项非空、V5 Mermaid 一致性、V6 facts 文件内容校验含 dir_tree 磁盘匹配 + file_count 交叉校验、V7 【14】代码风格观察节存在），exit code ≠ 0 禁止写入
 - **全景广度优先** — 所有核心模块都上地图，关注重点只决定哪片挖更深，不裁剪广度
