@@ -12,8 +12,10 @@
   - 判定方式：[git-rev-parse / user-specified / pom-dot-xml / build-dot-gradle / package-dot-json / inferred-from-cwd / other]
   - 验证时间：[真实系统时间 ISO 8601]
 - 需求目录：`change-impact/[需求名称]/`
-- 当前阶段：[Phase 4 / Phase 5 / 阻塞 / 完成]
-- 模式：[light / full]
+- 当前阶段：[Phase 2 / Phase 2.5 / Phase 3 / Phase 3.5 / Phase 4 / Phase 5 / 阻塞 / 完成]
+- 模式：[light / full / 未定级]
+- Phase 3 状态：[未执行 / 进行中 / 已完成 / 快速通道跳过]
+- Phase 3.5 定级：[未执行 / light / full / 快速通道跳过]
 - 执行方式：[auto / manual]  — 当前会话是 agent 自主执行还是人类逐步确认
 - 并发锁：[none / locked_by_[agent_id]]  — 多 agent 不能同时操作同一需求目录（纯声明字段,无强制互斥机制;依赖 agent 自觉遵守,脚本不校验此字段）
 - 当前 Git HEAD：[HEAD / 非 Git / Git 不可用]

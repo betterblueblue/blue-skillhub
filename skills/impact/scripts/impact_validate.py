@@ -17,6 +17,7 @@ Checks:
   V9: Grading table fact consistency (判档表 vs context-pack §7)              — WARN
   V10: Cross-cutting concerns table (020-design.md §6 in full mode)         — FAIL/WARN
   V11: Light mode key-path check (040-light.md 关键链路深度检查 section)     — WARN
+  V12: Phase 3 process check (_active-state.md Phase 3 状态 field)          — WARN
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -1205,6 +1206,53 @@ def check_light_keypath(req_dir: Path, mode: str) -> tuple[list[str], list[str],
 
 
 # ===========================================================================
+# V12: Phase 3 process check — _active-state.md must have Phase 3 状态 field
+#      to make Phase 3 skip visible (field presence check, not truthfulness)
+# ===========================================================================
+
+RE_PHASE3_STATUS = re.compile(r"Phase\s*3\s*状态")
+RE_PHASE3_GRADING = re.compile(r"Phase\s*3\.5\s*定级")
+
+
+def check_phase3_process(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V12: Check _active-state.md for Phase 3 process tracking fields.
+
+    Validates that the _active-state.md file includes the Phase 3 状态 and
+    Phase 3.5 定级 fields added to the template. This makes it visible when
+    Phase 3 was skipped — the validator cannot verify truthfulness (an agent
+    could write '已完成' without actually doing it), but field presence forces
+    the agent to explicitly declare the Phase 3 outcome.
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    state_file = req_dir / "_active-state.md"
+    if not state_file.exists():
+        return passes, fails, warns  # V1 handles missing _active-state.md
+
+    text = state_file.read_text(encoding="utf-8")
+
+    has_phase3_status = bool(RE_PHASE3_STATUS.search(text))
+    has_phase3_grading = bool(RE_PHASE3_GRADING.search(text))
+
+    if has_phase3_status and has_phase3_grading:
+        passes.append("V12: _active-state.md has Phase 3 状态 and Phase 3.5 定级 fields")
+    else:
+        missing = []
+        if not has_phase3_status:
+            missing.append("Phase 3 状态")
+        if not has_phase3_grading:
+            missing.append("Phase 3.5 定级")
+        warns.append(
+            f"V12: _active-state.md missing {', '.join(missing)} field(s) — "
+            f"must include Phase 3 process tracking (see template _active-state.md)"
+        )
+
+    return passes, fails, warns
+
+
+# ===========================================================================
 # Main
 # ===========================================================================
 
@@ -1322,6 +1370,12 @@ def main():
 
     # V11: Light mode key-path check
     p, f, w = check_light_keypath(req_dir, mode)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V12: Phase 3 process check
+    p, f, w = check_phase3_process(req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

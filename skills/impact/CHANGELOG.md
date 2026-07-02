@@ -347,6 +347,21 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 
 > **V11 补录**：`impact_validate.py` V11（light 模式关键链路深度检查门禁）在 v3.9 已作为行为要求写入 phase-4-output.md，但脚本实现和文档记录滞后。本次（v4.7 后）补齐脚本 V11 实现 + SKILL.md/README/phase-4-output.md 三处文档记录。V11 为 WARN 级，检查 040-light.md 是否包含「关键链路深度检查」节标题。
 
+### v4.8（Phase 3 跳过防护）
+
+真实运行发现：agent 在 SayClearContentManager 项目上执行 `/impact` 时，Phase 1 识别到狭义/中义/广义三种理解，却用"我倾向于中义"自行消解歧义后直接进入 Phase 2，跳过了 Phase 3 苏格拉底式探索、Phase 3.5 定级确认，并在无 `确认 Step N` 的情况下直接写了 3 个 Phase 4 文档。
+
+**根因**：skill 没有显式禁止"识别歧义后自行选择理解继续"，快速通道的"无未确认项"条件也没说明 agent 自行识别的歧义也算未确认项。
+
+**改了什么**
+
+- SKILL.md Phase 1 新增「禁止自行消解歧义」规则：识别到歧义后，"我倾向于X"不等于用户确认——必须停下来等用户选择或纠正
+- SKILL.md 快速通道条件显式补充：agent 在 Phase 1 识别的歧义也属于未确认项，不得通过"我倾向于X"自行消解后再走快速通道
+- SKILL.md 硬规则新增第 9 条「Phase 4 写入前置检查」：写文档前必须满足 ① 已完成 Phase 3 并获用户定级确认，或 ② 快速通道条件全部满足；"继续分析？"等假提问不构成确认
+- `phase-1-intent.md` 同步快速通道条件澄清 + 新增「歧义 ≠ 假设」说明：从用户口语推断隐含意图是合理代码推断，但需求存在多种理解属于歧义，必须问用户
+- `_active-state.md` 模板新增 `Phase 3 状态` 和 `Phase 3.5 定级` 两个字段，使 Phase 3 跳过在状态文件中可见
+- `impact_validate.py` 新增 V12 门禁（WARN）：检查 `_active-state.md` 是否包含 Phase 3 状态追踪字段，缺失报 WARN
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。
