@@ -122,37 +122,21 @@ RE_CREDS = [
 RE_SANITIZED = re.compile(r'\b\w*(password|secret|token|api_key)\w*\s*=\s*["\']?\*{3}', re.I)
 
 
-def _strip_code_blocks(text: str) -> str:
-    """Remove fenced code block content (between ``` pairs).
-
-    Keeps non-code lines so credential patterns only scan prose/config text,
-    not example code where variable names like 'userWithoutPassword' cause
-    false positives. Mirrors impact_validate.py's _strip_code_blocks.
-    """
-    lines = text.splitlines()
-    in_code = False
-    result = []
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("```"):
-            in_code = not in_code
-            continue
-        if not in_code:
-            result.append(line)
-    return "\n".join(result)
-
-
 def check_credentials(text: str) -> tuple[list[str], list[str]]:
-    """V2: Check for unsanitized credentials. Returns (errors, warnings)."""
+    """V2: Check for unsanitized credentials. Returns (errors, warnings).
+
+    Scans full text including fenced code blocks — secrets in code blocks
+    must also be sanitized. V2 is WARN by design (regex cannot distinguish
+    real credentials from variable names), so false positives are acceptable
+    and prompt human review.
+    """
     errors = []
     warnings = []
     sanitized_lines = set()
 
-    # Strip code blocks to avoid false positives from variable names
-    # like 'userWithoutPassword = exclude(...)' in code examples
-    prose_text = _strip_code_blocks(text)
-
-    for i, line in enumerate(prose_text.splitlines(), 1):
+    # Scan full text (including code blocks) — secrets in code blocks
+    # must also be sanitized
+    for i, line in enumerate(text.splitlines(), 1):
         # Skip lines that are clearly sanitized
         if RE_SANITIZED.search(line):
             continue

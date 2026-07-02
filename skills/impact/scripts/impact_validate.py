@@ -349,28 +349,14 @@ RE_SANITIZED = re.compile(
 )
 
 
-def _strip_code_blocks(text: str) -> str:
-    """Remove fenced code block content (between ``` pairs).
-
-    Keeps non-code lines so credential patterns only scan prose/config text,
-    not example code where variable names like 'userWithoutPassword' cause
-    false positives.
-    """
-    lines = text.splitlines()
-    in_code = False
-    result = []
-    for line in lines:
-        stripped = line.strip()
-        if stripped.startswith("```"):
-            in_code = not in_code
-            continue
-        if not in_code:
-            result.append(line)
-    return "\n".join(result)
-
-
 def check_credentials(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
-    """V5: Check all output files for unsanitized credentials."""
+    """V5: Check all output files for unsanitized credentials.
+
+    Scans full text including fenced code blocks — secrets in code blocks
+    must also be sanitized. V5 is WARN by design (regex cannot distinguish
+    real credentials from variable names), so false positives are acceptable
+    and prompt human review.
+    """
     passes = []
     fails = []
     warns = []
@@ -384,11 +370,9 @@ def check_credentials(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
         except Exception:
             continue
 
-        # Strip code blocks to avoid false positives from variable names
-        # like 'userWithoutPassword = exclude(...)' or 'tokens = await ...'
-        prose_text = _strip_code_blocks(text)
-
-        for i, line in enumerate(prose_text.splitlines(), 1):
+        # Scan full text (including code blocks) — secrets in code blocks
+        # must also be sanitized per hard rule #7
+        for i, line in enumerate(text.splitlines(), 1):
             # Skip template instruction lines (blockquote)
             if line.strip().startswith(">"):
                 continue
@@ -1117,7 +1101,8 @@ def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str]
 
     - FAIL if §6 横切关注点 section is completely missing in full mode
     - FAIL if table exists but has fewer than 19 dimension rows
-    - PASS if table has 19+ rows with ☑/☐ markers
+    - FAIL if table has 19 rows but not all have ☑/☐ markers
+    - PASS if table has 19 rows, all with ☑/☐ markers
     """
     passes: list[str] = []
     fails: list[str] = []
@@ -1151,11 +1136,11 @@ def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str]
             f"dimension rows — must have all 19 rows (check template). "
             f"Rows with ☑/☐ markers: {len(marker_rows)}"
         )
-    elif len(marker_rows) < 5:
-        warns.append(
+    elif len(marker_rows) < 19:
+        fails.append(
             f"V10: 020-design.md §6 横切关注点 table has {len(dim_rows)} rows "
-            f"but only {len(marker_rows)} have ☑/☐ markers — each row must "
-            f"be explicitly marked as 涉及(☑) or 不涉及(☐)"
+            f"but only {len(marker_rows)} have ☑/☐ markers — all 19 rows "
+            f"must be explicitly marked as 涉及(☑) or 不涉及(☐)"
         )
     else:
         passes.append(
