@@ -15,7 +15,7 @@
 - 当前阶段：[Phase 4 / Phase 5 / 阻塞 / 完成]
 - 模式：[light / full]
 - 执行方式：[auto / manual]  — 当前会话是 agent 自主执行还是人类逐步确认
-- 并发锁：[none / locked_by_[agent_id]]  — 多 agent 不能同时操作同一需求目录
+- 并发锁：[none / locked_by_[agent_id]]  — 多 agent 不能同时操作同一需求目录（纯声明字段,无强制互斥机制;依赖 agent 自觉遵守,脚本不校验此字段）
 - 当前 Git HEAD：[HEAD / 非 Git / Git 不可用]
 - Git 审计状态：[clean / dirty / non-git / unavailable]
 - 是否需要确认：[true / false]

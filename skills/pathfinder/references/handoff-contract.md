@@ -59,9 +59,9 @@ impact 读地图时按标签分流:
 
 ## 防过期
 
-地图概览头部记录 `基于 commit: <HEAD>`。impact 读取时:
+地图概览头部记录 `基于 commit: <短哈希>`（Pathfinder 使用 `git rev-parse --short HEAD`）。impact 读取时:
 
-- 当前 `git rev-parse HEAD` 与地图记录**一致** → 地图新鲜,正常用。
+- 当前 `git rev-parse --short HEAD` 与地图记录**一致** → 地图新鲜,正常用。
 - **不一致** → 标记「地图可能过期」,对涉及的文件/模块重新核实后再用。
 - 地图标"非 Git" → 无 commit 锚点,impact 对所有引用按可能过期处理。
 
