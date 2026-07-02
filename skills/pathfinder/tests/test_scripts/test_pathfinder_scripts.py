@@ -211,6 +211,30 @@ class TestPfValidate(unittest.TestCase):
             self.assertEqual(code, 0, f"Credential leak should WARN not FAIL:\n{out}")
             self.assertIn("WARN:", out)  # V2 produces warnings for credential patterns
 
+    def test_mixed_credential_line_warns_only_unsanitized(self):
+        """A line with both sanitized and unsanitized credentials should
+        only warn for the unsanitized one."""
+        with tempfile.TemporaryDirectory() as td:
+            map_content = """# Test Map
+## 【7】外部依赖
+- password=*** token=plainsecret
+
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
+"""
+            path = self._make_map(map_content, td, create_facts=True)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 0, f"Mixed credential should WARN not FAIL:\n{out}")
+            self.assertIn("token=", out)  # unsanitized token should be flagged
+            self.assertNotIn("possible credential (password=", out)  # sanitized password should not
+
     def test_svg_script_fails(self):
         """A map with <script> inside SVG should fail V3."""
         with tempfile.TemporaryDirectory() as td:

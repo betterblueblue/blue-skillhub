@@ -423,5 +423,39 @@ class TestV9SectionHeaderTable(unittest.TestCase):
         )
 
 
+# ===========================================================================
+# V5 Tests: Credential sanitization (per-match, not per-line)
+# ===========================================================================
+
+
+def _v5_lines(stdout: str) -> list[str]:
+    """Extract V5-related lines from stdout."""
+    return [l for l in stdout.splitlines() if "V5:" in l]
+
+
+class TestV5MixedCredentialLine(unittest.TestCase):
+    """V5: A line with both sanitized and unsanitized credentials should
+    only warn for the unsanitized one, not skip the entire line."""
+
+    def test_mixed_line_warns_only_unsanitized(self):
+        td, rd = _make_repo()
+        # Overwrite 030-implementation.md with a mixed credential line
+        with open(os.path.join(rd, "030-implementation.md"), "w", encoding="utf-8") as f:
+            f.write("# Implementation\n\npassword=*** token=plainsecret\n")
+        code, out = _run_validator(td, rd)
+        v5 = _v5_lines(out)
+        # Should warn about token= but NOT about password=
+        self.assertTrue(
+            any("possible credential (token=)" in l for l in v5),
+            f"Expected WARN for token=, got: {v5}"
+        )
+        self.assertFalse(
+            any("possible credential (password=)" in l for l in v5),
+            f"Should not WARN for sanitized password=, got: {v5}"
+        )
+        # Exit code 0 (V5 is WARN, not FAIL)
+        self.assertEqual(code, 0, f"V5 WARN should not cause FAIL exit, got {code}\n{out}")
+
+
 if __name__ == "__main__":
     unittest.main()
