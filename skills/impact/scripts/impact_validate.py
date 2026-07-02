@@ -1089,7 +1089,7 @@ RE_CROSSCUT_ROW = re.compile(r"\|[^\|]*[☑☐]\s*\|")
 RE_CROSSCUT_DIM_ROW = re.compile(r"\|\s*\d+\s*\|")
 
 
-def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
+def check_global_impact_table(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
     """V10: Check 020-design.md for global impact check table in full mode.
 
     - FAIL if §6 全局影响检查 section is completely missing in full mode
@@ -1341,7 +1341,7 @@ def main():
     all_warns.extend(w)
 
     # V10: Global impact check table (full mode only)
-    p, f, w = check_crosscut_table(req_dir, mode)
+    p, f, w = check_global_impact_table(req_dir, mode)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

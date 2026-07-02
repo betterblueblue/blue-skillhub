@@ -57,7 +57,7 @@ Phase 1 意图捕获 → Phase 2 上下文发现（确认影响范围）→ Phas
 - Phase 2 完整上下文发现（技术栈检测 + 文件扫描 + 现状核查）
 - Phase 4 light 文档输出（040-light.md）
 - Phase 5 执行前检查（060-preflight.md）+ Step 确认
-- 输出验证脚本闸门（impact_validate.py）
+- 输出验证脚本（impact_validate.py）
 
 ### 快速通道跳过
 
