@@ -15,8 +15,8 @@ Checks:
   V7: Tier judgment sanity (universal-quantifier coverage gate + over/under) — FAIL/WARN
   V8: Style rules check (_style-rules.md enforcement feasibility)            — WARN
   V9: Grading table fact consistency (判档表 vs context-pack §7)              — WARN
-  V10: Cross-cutting concerns table (020-design.md §6 in full mode)         — FAIL/WARN
-  V11: Light mode key-path check (040-light.md 关键链路深度检查 section)     — WARN
+  V10: Cross-cutting concerns table (020-design.md §6 in full mode)         — FAIL
+  V11: Light mode key-path check (040-light.md 关键链路深度检查 section)     — FAIL
   V12: Phase 3 process check (_active-state.md Phase 3 状态 field)          — WARN
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
@@ -83,14 +83,14 @@ def check_file_completeness(req_dir: Path, mode: str) -> tuple[list[str], list[s
             missing.append(f)
             fails.append(f"V1: Missing required file: {f} ({mode} mode)")
 
-    # Check _active-state.md (WARN, not blocking)
+    # Check _active-state.md (FAIL — hard rule #10 makes it non-skippable)
     if (req_dir / "_active-state.md").exists():
         passes.append("V1: _active-state.md exists")
     else:
-        warns.append(
-            "V1: _active-state.md missing — should be created when first "
-            "document is written and updated on status changes (see template "
-            "_active-state.md)"
+        fails.append(
+            "V1: _active-state.md missing — must be created when first "
+            "document is written and updated on status changes (see hard "
+            "rule #10 and template _active-state.md)"
         )
 
     # 000-context-pack.md is in LIGHT_REQUIRED, so its absence is already FAIL
@@ -1116,8 +1116,8 @@ def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str]
     """V10: Check 020-design.md for cross-cutting concerns table in full mode.
 
     - FAIL if §6 横切关注点 section is completely missing in full mode
-    - WARN if table exists but has fewer than 10 dimension rows
-    - PASS if table has 10+ rows with ☑/☐ markers
+    - FAIL if table exists but has fewer than 15 dimension rows
+    - PASS if table has 15+ rows with ☑/☐ markers
     """
     passes: list[str] = []
     fails: list[str] = []
@@ -1145,10 +1145,10 @@ def check_crosscut_table(req_dir: Path, mode: str) -> tuple[list[str], list[str]
             "(see template 020-design.md §6). Renaming or skipping this "
             "section = incomplete submission."
         )
-    elif len(dim_rows) < 10:
-        warns.append(
+    elif len(dim_rows) < 15:
+        fails.append(
             f"V10: 020-design.md §6 横切关注点 table has only {len(dim_rows)} "
-            f"dimension rows — should have all 19 rows (check template). "
+            f"dimension rows — must have all 19 rows (check template). "
             f"Rows with ☑/☐ markers: {len(marker_rows)}"
         )
     elif len(marker_rows) < 5:
@@ -1197,7 +1197,7 @@ def check_light_keypath(req_dir: Path, mode: str) -> tuple[list[str], list[str],
     if RE_KEYPATH_SECTION.search(text):
         passes.append("V11: 040-light.md contains 关键链路深度检查 section")
     else:
-        warns.append(
+        fails.append(
             "V11: 040-light.md missing '关键链路深度检查' section — "
             "light mode requires this check (see template 040-light.md)"
         )

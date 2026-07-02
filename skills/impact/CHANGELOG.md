@@ -374,6 +374,22 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 - SKILL.md Phase 3.5 退出条件同步更新：显式列出 5 项不可跳过项，引用硬规则 #10
 - `phases-detail.md` 升降档规则同步更新：简化输出不可跳过项从 4 项扩充为 5 项（新增 `_active-state.md`），引用硬规则 #10
 
+### v5.0（脚本门禁级别对齐——GPT 评审 6 项修复）
+
+外部 GPT 评审发现 6 处文档规则与脚本实现不一致：文档说强制，脚本只 WARN；脚本检查逻辑有漏洞导致永远通过；测试与当前代码不同步。
+
+**P1 修复**
+
+- Pathfinder Script Gate 鸡生蛋问题：SKILL.md 硬规则 #8 和 Phase 4 正文只写了文件路径模式验证，但首次生成时文件不存在。补 `--stdin` 模式说明，agent 先验证内容再写入
+- Impact `_active-state.md` 门禁升级：V1 从 WARN 升级为 FAIL。硬规则 #10 说不简化模式不可跳过，脚本必须对齐
+
+**P2 修复**
+
+- Impact 横切关注点行数阈值：V10 从 < 10 行 WARN 升级为 < 15 行 FAIL。规则要求 19 行，10 行阈值太松会漏掉一半还通过门禁
+- Pathfinder Mermaid V5 一致性检查修复：原代码只删除 ` ```mermaid ` 标记行，mermaid 块内容仍留在 body_text 中，导致节点一定被找到、检查形同虚设。改为用正则删除整个 mermaid 代码块后再检查
+- Impact light 关键链路门禁升级：V11 从 WARN 升级为 FAIL。模板和 phase-4-output.md 都说"light 模式强制"，脚本须对齐
+- Pathfinder 测试同步：budget_tier 期望值从 `tiny/small/medium/large` 改为 `小仓/中仓/大仓/超大仓`；V6 facts 缺失期望从 WARN (exit 0) 改为 FAIL (exit 1)；受影响的 `test_stdin_mode` 和 `test_v4_nav_line_no_false_positive` 补充 facts 文件创建；degradation-trap fixture 补 facts 文件 + 修 Mermaid 节点 ID 使其在正文中出现
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。

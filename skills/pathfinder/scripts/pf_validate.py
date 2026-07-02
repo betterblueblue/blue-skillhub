@@ -247,9 +247,10 @@ def check_mermaid_consistency(text: str) -> list[str]:
         return errors
 
     # Check each source node is mentioned somewhere in the body
-    body_text = text.lower()
+    # Strip entire mermaid code blocks from body text to avoid false positives
+    body_text = re.sub(r"```mermaid\n.*?\n```", "", text, flags=re.DOTALL).lower()
     for node in source_nodes:
-        if node.lower() not in body_text.replace("```mermaid", ""):
+        if node.lower() not in body_text:
             # Only flag if node looks like a module name (not A, B, C etc.)
             if len(node) > 1 and not re.match(r"^[A-Z]$", node):
                 errors.append(f"V5: Mermaid solid-arrow source '{node}' not mentioned in body text")

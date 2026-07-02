@@ -62,6 +62,7 @@ disable-model-invocation: true
    a. **确认 Phase 1.5 已执行**——`change-impact/_project-map/facts/scan.json` 和 `change-impact/_project-map/facts/git.json` 必须已产出。若缺失, Script Gate V6 会报 FAIL（无论两个都缺失还是只缺一个都报 FAIL；两个都缺失时附「先跑 Phase 1.5」提示）,必须先回退运行 `pf_scan.py` 和 `pf_git.py` 补齐,不得跳过。
    b. 确认【14】代码风格观察节已产出——Script Gate V7 会检查该节存在,缺失即 FAIL。
    c. 运行 `python skills/pathfinder/scripts/pf_validate.py change-impact/_project-map.md --repo-root <project-root>`
+      **首次生成时文件尚不存在**，用 `--stdin` 模式：`python skills/pathfinder/scripts/pf_validate.py --stdin --repo-root <project-root> < draft_map.md`（或通过管道传入待验证内容）。通过后再写入文件。
    d. 检查 exit code——不为 0 时,根据 stdout 报错逐条修正地图内容(含补齐缺失的 facts 文件)
    e. 修正后重新运行闸门脚本,重复直到 exit code = 0
    f. exit code ≠ 0 时禁止写入 `_project-map.md`,禁止进入 Phase 5
@@ -180,6 +181,7 @@ python skills/pathfinder/scripts/pf_git.py <project-root> --output change-impact
 1. **确认 facts 文件已产出**(Phase 1.5): `change-impact/_project-map/facts/scan.json` 和 `change-impact/_project-map/facts/git.json` 必须存在。缺失时 Script Gate V6 会报 FAIL（无论两个都缺失还是只缺一个都报 FAIL；两个都缺失时附「先跑 Phase 1.5」提示）,必须先回退运行 `pf_scan.py` 和 `pf_git.py`。
 2. **确认【14】代码风格观察节已产出**: Script Gate V7 会检查该节存在,缺失即 FAIL。
 3. 运行:`python skills/pathfinder/scripts/pf_validate.py change-impact/_project-map.md --repo-root <project-root>`
+   **首次生成时文件尚不存在**，用 `--stdin` 模式：`python skills/pathfinder/scripts/pf_validate.py --stdin --repo-root <project-root> < draft_map.md`
 4. 检查 exit code
 5. 若 exit code ≠ 0:逐条修正报错项(含补齐缺失的 facts 文件) → 重新运行 → 重复直到 exit code = 0
 6. 若 exit code = 0:闸门通过,写入地图
