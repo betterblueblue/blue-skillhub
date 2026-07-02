@@ -362,6 +362,18 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 - `_active-state.md` 模板新增 `Phase 3 状态` 和 `Phase 3.5 定级` 两个字段，使 Phase 3 跳过在状态文件中可见
 - `impact_validate.py` 新增 V12 门禁（WARN）：检查 `_active-state.md` 是否包含 Phase 3 状态追踪字段，缺失报 WARN
 
+### v4.9（简化模式安全底线）
+
+真实运行发现：用户要求简化文档或直接执行时，agent 跳过了 `_active-state.md` 创建和执行前检查。Phase 3.5 退出条件虽然写了"不能跳过执行前检查和验证方案"，但没提 `_active-state.md`，且这段规则在 Phase 3.5 body 中而非硬规则区——上下文压缩后 agent 只保留硬规则。
+
+**根因**：简化模式的安全底线散落在 Phase 3.5 body 和 phases-detail.md 中，不在硬规则区；且未显式将 `_active-state.md` 列为不可跳过项。
+
+**改了什么**
+
+- SKILL.md 硬规则新增第 10 条「简化模式安全底线」：用户要求简化文档或直接执行时，可以跳过分析文档，但不得跳过 ① `_active-state.md` 创建 ② 执行前检查 ③ 写操作确认 ④ 破坏性变更影响发现 ⑤ 验证方案。简化的是文档形式，不是安全边界
+- SKILL.md Phase 3.5 退出条件同步更新：显式列出 5 项不可跳过项，引用硬规则 #10
+- `phases-detail.md` 升降档规则同步更新：简化输出不可跳过项从 4 项扩充为 5 项（新增 `_active-state.md`），引用硬规则 #10
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。
