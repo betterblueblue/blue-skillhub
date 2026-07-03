@@ -535,7 +535,7 @@ class TestV13Phase4Phase5Split(unittest.TestCase):
 ## [2026-07-03 18:43:45] Step 3: 源码/测试修改
 
 - 确认类型：改代码 / 测试修复
-- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`
+- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`; `090-execution-record.md`; `_active-state.md`
 - 操作内容：修改登录失败提示并同步测试断言
 - 用户确认：确认 Step 3
 
@@ -566,7 +566,7 @@ class TestV13Phase4Phase5Split(unittest.TestCase):
 ## [2026-07-03 17:50:00] Step 1: 修改登录失败提示及对应测试
 
 - 前置条件：Phase 4 已完成，impact_validate.py 已通过。
-- 操作对象：`src/services/auth.service.ts`、`tests/services/auth.service.test.ts`
+- 操作对象：`src/services/auth.service.ts`、`tests/services/auth.service.test.ts`、`090-execution-record.md`、`_active-state.md`
 - 用户确认：确认 Step 1
 """,
         )
@@ -596,7 +596,7 @@ class TestV14Phase5Preflight(unittest.TestCase):
 ## [2026-07-03 18:43:45] Step 3: 源码/测试修改
 
 - 确认类型：改代码 / 测试修复
-- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`
+- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`; `090-execution-record.md`; `_active-state.md`
 - 操作内容：修改登录失败提示并同步测试断言
 - 用户确认：确认 Step 3
 """,
@@ -619,7 +619,7 @@ class TestV14Phase5Preflight(unittest.TestCase):
 ## [2026-07-03 18:43:45] Step 3: 源码/测试修改
 
 - 确认类型：改代码 / 测试修复
-- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`
+- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`; `090-execution-record.md`; `_active-state.md`
 - 操作内容：修改登录失败提示并同步测试断言
 - 用户确认：确认 Step 3
 """,
@@ -630,6 +630,61 @@ class TestV14Phase5Preflight(unittest.TestCase):
         self.assertTrue(
             any("060-preflight.md exists" in l for l in v14),
             f"Expected V14 preflight PASS, got: {v14}"
+        )
+
+
+def _v15_lines(stdout: str) -> list[str]:
+    """Extract V15-related lines from stdout."""
+    return [l for l in stdout.splitlines() if "V15:" in l]
+
+
+class TestV15Phase5RecordState(unittest.TestCase):
+    """V15: Source/test/config writes must include execution record and active state."""
+
+    def test_source_step_missing_record_state_fails(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 3: 源码/测试修改
+
+- 确认类型：改代码 / 测试修复
+- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`
+- 操作内容：修改登录失败提示并同步测试断言
+- 用户确认：确认 Step 3
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v15 = _v15_lines(out)
+        self.assertEqual(code, 1, f"Source Step missing record/state should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("must include execution record" in l for l in v15),
+            f"Expected V15 record/state FAIL, got: {v15}"
+        )
+
+    def test_source_step_with_record_state_passes(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 3: 源码/测试修改
+
+- 确认类型：改代码 / 测试修复
+- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改登录失败提示并同步测试断言，追加执行记录并更新状态文件
+- 用户确认：确认 Step 3
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v15 = _v15_lines(out)
+        self.assertEqual(code, 0, f"Source Step with record/state should pass, got {code}\n{out}")
+        self.assertTrue(
+            any("include execution record and active-state" in l for l in v15),
+            f"Expected V15 record/state PASS, got: {v15}"
         )
 
 
