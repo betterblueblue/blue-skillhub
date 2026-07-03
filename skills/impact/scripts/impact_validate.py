@@ -20,6 +20,7 @@ Checks:
   V12: Phase 3 process check (_active-state.md Phase 3 状态 field)          — WARN
   V13: Phase 4/5 split gate (docs and source writes not same Step)           — FAIL
   V14: Phase 5 preflight gate (source writes require 060-preflight.md)        — FAIL
+  V15: Phase 5 record/state gate (source Steps record execution + state)      — FAIL
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -1377,6 +1378,47 @@ def check_phase5_preflight(req_dir: Path) -> tuple[list[str], list[str], list[st
     return passes, fails, warns
 
 
+RE_EXECUTION_RECORD_REF = re.compile(r"090-execution-record\.md", re.I)
+RE_ACTIVE_STATE_REF = re.compile(r"_active-state\.md", re.I)
+
+
+def check_phase5_record_state(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V15: Source/test/config write Steps must record execution and state."""
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    record_file = req_dir / "090-execution-record.md"
+    if not record_file.exists():
+        passes.append("V15: No execution record yet — no Phase 5 record/state check needed")
+        return passes, fails, warns
+
+    text = record_file.read_text(encoding="utf-8")
+    missing_steps: list[str] = []
+    for section in _execution_step_sections(text):
+        if not _has_source_write_in_step(section):
+            continue
+        missing = []
+        if not RE_EXECUTION_RECORD_REF.search(section):
+            missing.append("090-execution-record.md")
+        if not RE_ACTIVE_STATE_REF.search(section):
+            missing.append("_active-state.md")
+        if missing:
+            title = section.splitlines()[0].strip()
+            missing_steps.append(f"{title} missing {', '.join(missing)}")
+
+    if missing_steps:
+        fails.append(
+            "V15: Source/test/config write Step must include execution record "
+            "and active-state updates in the same Step. "
+            f"Offending Step(s): {'; '.join(missing_steps[:3])}"
+        )
+    else:
+        passes.append("V15: Source/test/config write Steps include execution record and active-state updates")
+
+    return passes, fails, warns
+
+
 # ===========================================================================
 # Main
 # ===========================================================================
@@ -1513,6 +1555,12 @@ def main():
 
     # V14: Phase 5 preflight gate
     p, f, w = check_phase5_preflight(req_dir)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V15: Phase 5 record/state gate
+    p, f, w = check_phase5_record_state(req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

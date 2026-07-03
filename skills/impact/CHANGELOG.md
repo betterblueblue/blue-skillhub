@@ -425,6 +425,21 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 - `python skills\impact\tests\test_scripts\test_impact_validate.py`：24 项通过
 - 弱模型验收产物复跑 `impact_validate.py`：15 passed, 0 failed, 0 warnings
 
+### v5.3（源码 Step 记录完整性门禁）
+
+弱模型验收还暴露了另一个执行质量问题：模型在请求源码/测试修改 Step 时，可能只列出源码和测试文件，漏掉 `090-execution-record.md` 和 `_active-state.md`。这会让执行记录和恢复状态变成“事后补”，而不是当前 Step 的明确授权范围。
+
+**改了什么**
+
+- `impact_validate.py` 新增 V15（FAIL）：源码/测试/配置写入 Step 必须在同一个 Step 文本中列出 `090-execution-record.md` 和 `_active-state.md`
+- `test_impact_validate.py` 新增回归测试：源码 Step 漏执行记录/状态文件必须 FAIL；补齐后 PASS
+- 合法源码 Step fixture 同步补齐执行记录和状态文件对象，确保 V13/V14/V15 同时成立
+
+**验证**
+
+- `python skills\impact\tests\test_scripts\test_impact_validate.py`：26 项通过
+- 弱模型验收产物复跑 `impact_validate.py`：16 passed, 0 failed, 0 warnings
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。
