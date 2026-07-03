@@ -19,6 +19,7 @@
 | `projects.json` | 5 个固定真实项目，包含仓库地址、固定 commit、选型理由和重点检查面 |
 | `cases/` | 每个项目至少 4 个任务：pathfinder、impact-light、impact-full、negative；部分项目额外包含 Phase 5 交付题 |
 | `delivery-matrix.json` | 下一轮真实交付验收矩阵：runner、S/M/L/NEG 场景、Phase 5 验收点和失败修复循环 |
+| `delivery-results.json` | 已跑场景的结构化结果台账：状态、证据、run record、阻塞原因 |
 | `case-schema.json` | 真实项目 case 的本地结构说明 |
 | `scorecard-template.md` | 人工评分模板 |
 | `runbook.md` | 克隆、执行、归档、判分的复跑流程 |

@@ -74,6 +74,7 @@
 | D6 | Claude CLI MiniMax M3 | GATE-RECOVERED | 非 Git facts 正确；Mermaid V5 首次失败后修复 |
 | D6 最小模板复跑 | gpt-5.4-mini 子代理 | GATE-RECOVERED / PASS | 清理旧 `change-impact` 后完成 facts、`--stdin` gate、地图写入和最终校验 |
 | D3 | Claude CLI MiniMax M3 | UNVERIFIED | 产出 4 份 full 文档，但缺 `_active-state.md`；validator 18/1/2；CLI 因额度 403 中断 |
+| D10 | gpt-5.4-mini 子代理 | PASS | 纯前端项目里拒绝直接建 DB，不编造后端/迁移，目标 fixture diff 为空 |
 
 D5 当前固定验收范围为：
 
@@ -92,6 +93,12 @@ D3 当前结论：
 - MiniMax M3 能产出覆盖面较完整的 full 文档草稿，SQLModel、Alembic、API、OpenAPI/client、前端和测试都有证据。
 - `impact_validate.py` 拦住缺 `_active-state.md` 的半成品，证明 Phase 4 恢复状态文件门禁有效。
 - 本轮因 Claude CLI 供应商额度 403 中断，不能证明 MiniMax M3 完成修复循环；下次额度恢复后要复跑。
+
+D10 当前结论：
+
+- gpt-5.4-mini 能识别 React/Vite 纯前端边界。
+- 找不到后端/DB/迁移目录时没有编造 SQL 或后端代码。
+- 正确把后续动作收敛为两条：提供后端仓库/API 契约，或确认只做 mock。
 
 ## 优化闭环
 

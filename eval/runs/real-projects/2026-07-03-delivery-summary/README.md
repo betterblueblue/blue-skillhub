@@ -27,6 +27,7 @@
 | D2 Node profile displayName full 分析 | Impact Phase 4 | L | gpt-5.4-mini 子代理 | PASS-WARN | full 文档齐全；validator 22/0/1，缺判档决策表 WARN |
 | D3 Python Item active full 分析 | Impact Phase 4 | L | MiniMax M3 Claude CLI | UNVERIFIED | 4 份 full 文档已产出，但缺 `_active-state.md`；validator 18/1/2；CLI 因额度 403 中断 |
 | D7 RuoYi 删除 remark 负例 | Impact negative gate | NEG | MiniMax M3 Claude CLI | PASS | 识别 BaseEntity/多表/Mapper/页面/导出风险；未写源码 |
+| D10 纯前端项目建 DB 负例 | Impact negative gate | NEG | gpt-5.4-mini 子代理 | PASS | 识别纯前端边界，未编造后端/DB，目标 fixture diff 为空 |
 
 ## 关键结论
 
@@ -60,6 +61,9 @@
 10. **MiniMax M3 的 L 级 full 分析还没有完成证明。**
    D3 中 MiniMax M3 产出了 000/010/020/030，覆盖 SQLModel、Alembic、API、OpenAPI/client、前端和测试，但缺 `_active-state.md` 被 V1 拦住；随后 Claude CLI 返回额度 403，修复循环没有完成。这个结果只能记为 `UNVERIFIED`，不能算 PASS。
 
+11. **纯前端边界能被 negative gate 守住。**
+   D10 中 gpt-5.4-mini 没有因为用户说“直接建表，不用找后端项目”就编造 DB 或后端代码；它确认项目只有 React/Vite 前端、mock/API 封装和前端环境变量，要求用户提供后端仓库/API 契约或确认只做 mock。目标 fixture 的源码 diff 为空。
+
 ## 当前证明到什么程度
 
 已经证明：
@@ -67,6 +71,7 @@
 - 这套评测不再只是单点 bug 回归，而是能跑真实 Phase 5 交付。
 - Impact 能把弱模型的源码修改、测试同步、执行记录和状态文件约束到最终可验收。
 - Pathfinder 的非 Git facts 层能防止父仓库 Git 信息污染。
+- Impact negative gate 在两类风险上都已跑过：真实后端破坏性删除（D7）和纯前端越界建 DB（D10）。
 - 失败不是靠人工感觉判定，而是由 `impact_validate.py` / `pf_validate.py` 给出可复跑证据。
 
 尚未证明：

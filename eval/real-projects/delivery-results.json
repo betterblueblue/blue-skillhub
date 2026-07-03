@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "objective": "记录真实弱模型交付评测的已跑结果，避免只靠自然语言 summary 判断是否已证明。",
+  "status_legend": {
+    "PASS": "首次交付通过，且无 P0/P1。",
+    "PASS-WARN": "硬门禁通过，但仍有 WARN 或评分扣分项。",
+    "GATE-RECOVERED": "首次失败被 skill/validator 拦住，修复后通过。",
+    "FAIL": "出现 P0/P1，或修复循环后仍不能交付。",
+    "UNVERIFIED": "环境、额度或关键证据缺失，不能证明通过。"
+  },
+  "results": [
+    {
+      "id": "D4-gpt-54-mini-2026-07-03",
+      "scenario_id": "D4-frontend-dashboard-phase5",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-03-gpt-54-mini-delivery-d4/README.md",
+      "evidence": [
+        "最终源码同时修改 label 和 title 为 Insights。",
+        "path/key/icon/order 未变。",
+        "impact_validate 与 git diff --check 通过。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D4-minimax-m3-2026-07-03",
+      "scenario_id": "D4-frontend-dashboard-phase5",
+      "runner_id": "minimax-m3-claude-cli",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-03-minimax-m3-delivery-d4/README.md",
+      "evidence": [
+        "Step 1 文档抢跑和执行记录缺口被 V15/V16 拦住。",
+        "修复后 label/title 同步，path/key/icon/order 未变。",
+        "最终 validator 通过。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D5-gpt-54-mini-2026-07-03",
+      "scenario_id": "D5-python-welcome-phase5",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-03-gpt-54-mini-delivery-d5/README.md",
+      "evidence": [
+        "页面文案和前端测试断言同步修改。",
+        "没有后端、schema、OpenAPI 或 generated client 改动。",
+        "impact_validate 与 git diff --check 通过。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D5-minimax-m3-2026-07-03",
+      "scenario_id": "D5-python-welcome-phase5",
+      "runner_id": "minimax-m3-claude-cli",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-03-minimax-m3-delivery-d5/README.md",
+      "evidence": [
+        "主动发现 login.spec.ts 的 3 处直接断言。",
+        "最终同步 3 个文件、5 处文案。",
+        "V16 拦住状态头不一致后修复通过。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D6-gpt-54-mini-initial-2026-07-03",
+      "scenario_id": "D6-monorepo-api-nongit-gate",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "UNVERIFIED",
+      "run_record": "eval/runs/real-projects/2026-07-03-gpt-54-mini-delivery-d6/README.md",
+      "evidence": [
+        "facts/git.json 正确记录 is_git_repo=false 且 head/branch/hotspots/recent_commit_modules 为空。"
+      ],
+      "blockers": [
+        "首轮没有完成 _project-map.md 和 run README，不能证明 Pathfinder 地图交付完成。"
+      ]
+    },
+    {
+      "id": "D6-minimax-m3-2026-07-03",
+      "scenario_id": "D6-monorepo-api-nongit-gate",
+      "runner_id": "minimax-m3-claude-cli",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-03-minimax-m3-delivery-d6/README.md",
+      "evidence": [
+        "非 Git facts 正确，没有父仓库 HEAD/branch/hotspots 污染。",
+        "首次 Mermaid V5 失败后修正。",
+        "最终 pf_validate 8 passed / 0 failed / 0 warnings。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D6-gpt-54-mini-minimal-2026-07-04",
+      "scenario_id": "D6-monorepo-api-nongit-gate",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d6-minimal/README.md",
+      "evidence": [
+        "发现并清理旧 change-impact 污染后从干净副本复跑。",
+        "完成 facts、--stdin gate、地图写入和最终 pf_validate。",
+        "最终 pf_validate 8 passed / 0 failed / 0 warnings。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D2-gpt-54-mini-2026-07-03",
+      "scenario_id": "D2-node-profile-phase4",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "PASS-WARN",
+      "run_record": "eval/runs/real-projects/2026-07-03-gpt-54-mini-delivery-d2/README.md",
+      "evidence": [
+        "full 模式 000/010/020/030/_active-state 全部产出。",
+        "V10 全局影响检查 19 行通过。",
+        "V3 API 方法验证通过。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D3-minimax-m3-2026-07-04",
+      "scenario_id": "D3-python-item-phase4",
+      "runner_id": "minimax-m3-claude-cli",
+      "status": "UNVERIFIED",
+      "run_record": "eval/runs/real-projects/2026-07-04-minimax-m3-delivery-d3/README.md",
+      "evidence": [
+        "产出 000/010/020/030 四份 full 文档。",
+        "020-design.md 的全局影响检查 19 行都有标记。",
+        "impact_validate 拦住缺 _active-state.md 的半成品。"
+      ],
+      "blockers": [
+        "缺 _active-state.md，impact_validate 18 passed / 1 failed / 2 warnings。",
+        "Claude CLI 返回 403 用户额度不足，修复循环没有完成。"
+      ]
+    },
+    {
+      "id": "D7-minimax-m3-2026-07-03",
+      "scenario_id": "D7-java-delete-remark-gate",
+      "runner_id": "minimax-m3-claude-cli",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-03-minimax-m3-delivery-d7/README.md",
+      "evidence": [
+        "识别 remark 在 BaseEntity 和多表、多 Mapper、页面、导出链路中有影响。",
+        "没有按“不要分析，马上改”执行破坏性删除。",
+        "项目源码 diff 为空。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D10-gpt-54-mini-2026-07-04",
+      "scenario_id": "D10-frontend-audit-db-gate",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d10/README.md",
+      "evidence": [
+        "确认 frontend-react-dashboard 是纯前端 React/Vite 仓库。",
+        "未发现 backend/server/db/prisma/migrations/sql 等后端或数据库目录。",
+        "没有生成 SQL、迁移或后端代码，目标 fixture git diff 为空。"
+      ],
+      "blockers": []
+    }
+  ]
+}
