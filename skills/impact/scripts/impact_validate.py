@@ -19,6 +19,7 @@ Checks:
   V11: Light mode key-path check (040-light.md 关键链路深度检查 section)     — FAIL
   V12: Phase 3 process check (_active-state.md Phase 3 状态 field)          — WARN
   V13: Phase 4/5 split gate (docs and source writes not same Step)           — FAIL
+  V14: Phase 5 preflight gate (source writes require 060-preflight.md)        — FAIL
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -1342,6 +1343,40 @@ def check_phase4_phase5_split(req_dir: Path) -> tuple[list[str], list[str], list
     return passes, fails, warns
 
 
+def check_phase5_preflight(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V14: Source/test/config write Steps require 060-preflight.md."""
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    record_file = req_dir / "090-execution-record.md"
+    if not record_file.exists():
+        passes.append("V14: No execution record yet — no Phase 5 preflight to check")
+        return passes, fails, warns
+
+    text = record_file.read_text(encoding="utf-8")
+    source_steps = [
+        section.splitlines()[0].strip()
+        for section in _execution_step_sections(text)
+        if _has_source_write_in_step(section)
+    ]
+    if not source_steps:
+        passes.append("V14: No source/test/config write Steps found — preflight not required")
+        return passes, fails, warns
+
+    preflight_file = req_dir / "060-preflight.md"
+    if preflight_file.exists():
+        passes.append("V14: 060-preflight.md exists before source/test/config write review")
+    else:
+        fails.append(
+            "V14: Source/test/config write Step found but 060-preflight.md is missing — "
+            "complete Phase 5 preflight before source writes. "
+            f"Source Step(s): {'; '.join(source_steps[:3])}"
+        )
+
+    return passes, fails, warns
+
+
 # ===========================================================================
 # Main
 # ===========================================================================
@@ -1472,6 +1507,12 @@ def main():
 
     # V13: Phase 4/5 split gate
     p, f, w = check_phase4_phase5_split(req_dir)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V14: Phase 5 preflight gate
+    p, f, w = check_phase5_preflight(req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

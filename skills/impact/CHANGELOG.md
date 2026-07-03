@@ -410,6 +410,21 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 - 用高保真模拟产物复跑 `impact_validate.py`：V13 正确 FAIL，命中「写入 light 文档、修改登录失败提示及对应测试」
 - V13 修复后再次高保真模拟：Phase 4 文档、preflight、源码/测试修改拆成 3 个 Step，最终 `impact_validate.py` 14 passed, 0 failed, 0 warnings
 
+### v5.2（源码写入前置检查门禁）
+
+弱模型验收发现：模型能遵守 V13，不把 Phase 4 文档和源码修改合并，但可能跳过 `060-preflight.md`，直接请求源码/测试写入 Step。这个问题不属于 Step 合并，却会绕过写入目标边界、回滚方式、验证命令和 V1-only 计数检查。
+
+**改了什么**
+
+- `impact_validate.py` 新增 V14（FAIL）：扫描 `090-execution-record.md`，只要发现源码/测试/配置写入 Step，就要求同目录存在 `060-preflight.md`
+- V13 Step 扫描收窄：Step 段落只扫描到下一个 `##` 标题，避免把后续「验证等级汇总」误算进当前 Step；同时避免把 `preflight 文档` 误判成 `light 文档`
+- `test_impact_validate.py` 新增回归测试：缺 preflight 的源码 Step 必须 FAIL；有 preflight 的源码 Step 必须 PASS；验证汇总里的 `preflight 文档` 不再触发 V13 误报
+
+**验证**
+
+- `python skills\impact\tests\test_scripts\test_impact_validate.py`：24 项通过
+- 弱模型验收产物复跑 `impact_validate.py`：15 passed, 0 failed, 0 warnings
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。
