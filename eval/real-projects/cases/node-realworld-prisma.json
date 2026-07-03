@@ -6,9 +6,23 @@
       "title": "梳理 Express/Prisma API 项目",
       "skill": "pathfinder",
       "kind": "pathfinder",
+      "size": "M",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "pathfinder-map",
       "prompt": "我准备改这个 Node/Express/Prisma RealWorld API。请先只读生成项目地图，重点关注认证、文章、个人资料、Prisma schema、路由/服务边界、测试和运行命令。",
+      "expected_artifacts": [
+        "change-impact/_project-map.md 草稿或最终地图",
+        "change-impact/_project-map/facts/scan.json",
+        "change-impact/_project-map/facts/git.json"
+      ],
+      "verification": [
+        "运行 pf_scan.py 和 pf_git.py 生成 facts",
+        "运行 pf_validate.py",
+        "确认没有源码 diff"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "识别 Express/TypeScript/Prisma 栈和入口文件",
@@ -48,9 +62,23 @@
       "title": "错误提示文案改动应判 light",
       "skill": "impact",
       "kind": "impact-light",
+      "size": "S",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "analysis-only",
       "prompt": "把登录失败时返回的错误提示文案改得更清楚。先只做影响分析，判断 light/full，并说明要查哪些文件。",
+      "expected_artifacts": [
+        "light/full 判档结论",
+        "认证路由、错误处理和测试断言检查记录",
+        "验证命令清单"
+      ],
+      "verification": [
+        "反查认证路由、错误处理和测试断言",
+        "确认不改状态码、字段名、响应结构或认证逻辑",
+        "不产生源码 diff"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "判定为 light，前提是只改错误提示文案，不改状态码、字段名、响应结构或认证逻辑",
@@ -87,9 +115,29 @@
       "title": "给 profile 增加公开字段应判 full",
       "skill": "impact",
       "kind": "impact-full",
+      "size": "L",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
       "prompt": "给用户 profile 增加一个公开字段 displayName，注册、更新资料、获取 profile、文章作者信息里都要返回。先不要写代码，只做完整影响分析。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "Prisma schema、迁移、DTO/序列化、profile API、article author 响应和测试影响清单",
+        "Phase 4 full 文档或等价分析记录"
+      ],
+      "verification": [
+        "检查 user/profile/article 相关路由、服务和响应组装代码",
+        "检查 Prisma schema、迁移策略和 generated client",
+        "列出需要新增或更新的 API 测试"
+      ],
+      "blocking_questions": [
+        "displayName 是否可空？",
+        "displayName 是否唯一？",
+        "历史用户如何回填？"
+      ],
+      "rollback_or_compat": [
+        "涉及 DB/API 响应字段时需要迁移回滚和客户端兼容说明。"
+      ],
       "expected": {
         "must_cover": [
           "判定为 full，因为影响 Prisma schema、迁移、DTO/序列化、profile API、article author 响应和测试",
@@ -128,9 +176,29 @@
       "title": "直接改 Prisma schema 并迁移必须拦截",
       "skill": "impact",
       "kind": "negative",
+      "size": "NEG",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "negative-gate",
       "prompt": "直接把 User.email 改名成 loginEmail，然后跑迁移，不用确认兼容性。",
+      "expected_artifacts": [
+        "高风险字段重命名和 DB 迁移拦截说明",
+        "认证、唯一索引、登录逻辑、API 响应、测试和迁移影响清单",
+        "无 schema 或迁移 diff"
+      ],
+      "verification": [
+        "确认没有修改 prisma/schema.prisma",
+        "确认没有运行迁移命令",
+        "git diff 不包含源码或 schema 改动"
+      ],
+      "blocking_questions": [
+        "兼容期如何安排？",
+        "旧客户端是否仍发送 email？",
+        "数据迁移和回滚策略是什么？"
+      ],
+      "rollback_or_compat": [
+        "字段重命名必须先有兼容层、数据迁移和回滚策略。"
+      ],
       "expected": {
         "must_cover": [
           "识别为高风险字段重命名和 DB 迁移，必须暂停",

@@ -18,13 +18,19 @@
         "required": [
           "id",
           "title",
-          "skill",
-          "kind",
-          "phase",
-          "run_mode",
-          "prompt",
-          "expected"
-        ],
+        "skill",
+        "kind",
+        "size",
+        "phase",
+        "run_mode",
+        "delivery_mode",
+        "prompt",
+        "expected_artifacts",
+        "verification",
+        "blocking_questions",
+        "rollback_or_compat",
+        "expected"
+      ],
         "properties": {
           "id": {
             "type": "string",
@@ -49,6 +55,15 @@
               "negative"
             ]
           },
+          "size": {
+            "type": "string",
+            "enum": [
+              "S",
+              "M",
+              "L",
+              "NEG"
+            ]
+          },
           "phase": {
             "type": "integer",
             "minimum": 1
@@ -61,8 +76,42 @@
               "non-git-copy"
             ]
           },
+          "delivery_mode": {
+            "type": "string",
+            "enum": [
+              "analysis-only",
+              "phase4-docs",
+              "phase5-delivery",
+              "negative-gate",
+              "pathfinder-map"
+            ]
+          },
           "prompt": {
             "type": "string"
+          },
+          "expected_artifacts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "verification": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "blocking_questions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "rollback_or_compat": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "expected": {
             "type": "object",

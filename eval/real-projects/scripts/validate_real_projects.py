@@ -12,9 +12,32 @@ from pathlib import Path
 BASE = Path(__file__).resolve().parents[1]
 PROJECTS_PATH = BASE / "projects.json"
 CASES_DIR = BASE / "cases"
+DELIVERY_MATRIX_PATH = BASE / "delivery-matrix.json"
 REQUIRED_KINDS = {"pathfinder", "impact-light", "impact-full", "negative"}
 COMMIT_RE = re.compile(r"^[a-f0-9]{40}$")
 CASE_ID_RE = re.compile(r"^[a-z0-9-]+$")
+CASE_SIZES = {"S", "M", "L", "NEG"}
+CASE_DELIVERY_MODES = {
+    "analysis-only",
+    "phase4-docs",
+    "phase5-delivery",
+    "negative-gate",
+    "pathfinder-map",
+}
+DELIVERY_SCENARIO_ID_RE = re.compile(r"^D[0-9]+-[a-z0-9-]+$")
+DELIVERY_COMPLEXITIES = {"S", "M", "L", "NEG"}
+DELIVERY_STAGES = {
+    "pathfinder-map",
+    "impact-analysis",
+    "impact-phase4",
+    "impact-phase5",
+    "negative-gate",
+}
+DELIVERY_FIXTURE_MODES = {
+    "read-only-original",
+    "isolated-copy",
+    "non-git-copy",
+}
 
 
 def load_json(path: Path) -> object:
@@ -41,6 +64,7 @@ def main() -> int:
     projects = as_list(projects_doc.get("projects"))
     project_ids: set[str] = set()
     project_phase: dict[str, int] = {}
+    project_category: dict[str, str] = {}
 
     for idx, project in enumerate(projects):
         if not isinstance(project, dict):
@@ -72,11 +96,17 @@ def main() -> int:
         for field in ("label", "category", "checkout_dir", "why"):
             if not isinstance(project.get(field), str) or not project.get(field):
                 errors.append(f"{project_id}: missing {field}")
+        category = project.get("category")
+        if isinstance(category, str) and category:
+            project_category[project_id] = category
 
         for field in ("stack", "focus"):
             values = as_list(project.get(field))
             if not values or not all(isinstance(item, str) and item for item in values):
                 errors.append(f"{project_id}: {field} must be a non-empty string array")
+        delivery_fit = as_list(project.get("delivery_fit"))
+        if not delivery_fit or not all(item in CASE_SIZES for item in delivery_fit):
+            errors.append(f"{project_id}: delivery_fit must be a non-empty array of {sorted(CASE_SIZES)}")
 
     phase1_ids = set(as_list(projects_doc.get("phase1_project_ids")))
     unknown_phase1 = phase1_ids - project_ids
@@ -90,7 +120,10 @@ def main() -> int:
         return report(errors)
 
     seen_case_ids: set[str] = set()
+    case_index: dict[str, dict[str, str]] = {}
     cases_by_project: dict[str, set[str]] = {project_id: set() for project_id in project_ids}
+    case_sizes: set[str] = set()
+    case_delivery_modes: set[str] = set()
     case_count = 0
 
     for path in sorted(CASES_DIR.glob("*.json")):
@@ -123,6 +156,13 @@ def main() -> int:
                 errors.append(f"{prefix}: duplicate id {case_id}")
             else:
                 seen_case_ids.add(case_id)
+                case_index[case_id] = {
+                    "project_id": project_id,
+                    "kind": str(case.get("kind")),
+                    "skill": str(case.get("skill")),
+                    "delivery_mode": str(case.get("delivery_mode")),
+                    "size": str(case.get("size")),
+                }
 
             kind = case.get("kind")
             if kind not in REQUIRED_KINDS:
@@ -147,9 +187,31 @@ def main() -> int:
             if run_mode not in {"analysis-only", "isolated-copy", "non-git-copy"}:
                 errors.append(f"{prefix}: invalid run_mode {run_mode!r}")
 
+            size = case.get("size")
+            if size not in CASE_SIZES:
+                errors.append(f"{prefix}: invalid size {size!r}")
+            else:
+                case_sizes.add(size)
+
+            delivery_mode = case.get("delivery_mode")
+            if delivery_mode not in CASE_DELIVERY_MODES:
+                errors.append(f"{prefix}: invalid delivery_mode {delivery_mode!r}")
+            else:
+                case_delivery_modes.add(delivery_mode)
+
             prompt = case.get("prompt")
             if not isinstance(prompt, str) or len(prompt.strip()) < 20:
                 errors.append(f"{prefix}: prompt is too short")
+
+            for field in ("expected_artifacts", "verification"):
+                values = as_list(case.get(field))
+                if not values or not all(isinstance(item, str) and item for item in values):
+                    errors.append(f"{prefix}: {field} must be a non-empty string array")
+
+            for field in ("blocking_questions", "rollback_or_compat"):
+                values = case.get(field)
+                if not isinstance(values, list) or not all(isinstance(item, str) and item for item in values):
+                    errors.append(f"{prefix}: {field} must be a string array")
 
             expected = case.get("expected")
             if not isinstance(expected, dict):
@@ -166,11 +228,169 @@ def main() -> int:
         if missing:
             errors.append(f"{project_id}: missing case kinds {sorted(missing)}")
 
+    missing_case_sizes = CASE_SIZES - case_sizes
+    if missing_case_sizes:
+        errors.append(f"cases must cover sizes {sorted(missing_case_sizes)}")
+    if "phase5-delivery" not in case_delivery_modes:
+        errors.append("at least one case must use delivery_mode=phase5-delivery")
+
+    validate_delivery_matrix(errors, case_index, project_category)
+
     if errors:
         return report(errors)
 
-    print(f"OK: {len(project_ids)} projects, {case_count} cases")
+    print(f"OK: {len(project_ids)} projects, {case_count} cases, delivery matrix checked")
     return 0
+
+
+def validate_delivery_matrix(
+    errors: list[str],
+    case_index: dict[str, dict[str, str]],
+    project_category: dict[str, str],
+) -> None:
+    if not DELIVERY_MATRIX_PATH.exists():
+        errors.append(f"missing {DELIVERY_MATRIX_PATH}")
+        return
+
+    doc = load_json(DELIVERY_MATRIX_PATH)
+    if not isinstance(doc, dict):
+        errors.append("delivery-matrix.json must be an object")
+        return
+
+    if doc.get("schema_version") != 1:
+        errors.append("delivery-matrix.json: schema_version must be 1")
+
+    runners = as_list(doc.get("runners"))
+    runner_ids: set[str] = set()
+    for idx, runner in enumerate(runners):
+        prefix = f"delivery runners[{idx}]"
+        if not isinstance(runner, dict):
+            errors.append(f"{prefix}: must be an object")
+            continue
+        runner_id = runner.get("id")
+        if not isinstance(runner_id, str) or not CASE_ID_RE.match(runner_id):
+            errors.append(f"{prefix}: invalid id {runner_id!r}")
+            continue
+        runner_ids.add(runner_id)
+        for field in ("surface", "model", "invocation"):
+            if not isinstance(runner.get(field), str) or not runner.get(field):
+                errors.append(f"{prefix}: missing {field}")
+    if len(runner_ids) < 2:
+        errors.append("delivery-matrix.json: at least two runners are required")
+
+    scenarios = as_list(doc.get("scenarios"))
+    if len(scenarios) < 8:
+        errors.append("delivery-matrix.json: at least 8 scenarios are required")
+
+    scenario_ids: set[str] = set()
+    scenario_projects: set[str] = set()
+    scenario_categories: set[str] = set()
+    scenario_complexities: set[str] = set()
+    scenario_stages: set[str] = set()
+    scenario_skills: set[str] = set()
+
+    for idx, scenario in enumerate(scenarios):
+        prefix = f"delivery scenarios[{idx}]"
+        if not isinstance(scenario, dict):
+            errors.append(f"{prefix}: must be an object")
+            continue
+
+        scenario_id = scenario.get("id")
+        if not isinstance(scenario_id, str) or not DELIVERY_SCENARIO_ID_RE.match(scenario_id):
+            errors.append(f"{prefix}: invalid id {scenario_id!r}")
+        elif scenario_id in scenario_ids:
+            errors.append(f"{prefix}: duplicate id {scenario_id}")
+        else:
+            scenario_ids.add(scenario_id)
+
+        case_id = scenario.get("case_id")
+        case_meta = case_index.get(case_id) if isinstance(case_id, str) else None
+        if case_meta is None:
+            errors.append(f"{prefix}: unknown case_id {case_id!r}")
+        else:
+            project_id = case_meta["project_id"]
+            scenario_projects.add(project_id)
+            category = project_category.get(project_id)
+            if category:
+                scenario_categories.add(category)
+            scenario_skills.add(case_meta["skill"])
+
+        complexity = scenario.get("complexity")
+        if complexity not in DELIVERY_COMPLEXITIES:
+            errors.append(f"{prefix}: invalid complexity {complexity!r}")
+        else:
+            scenario_complexities.add(complexity)
+
+        stage = scenario.get("stage")
+        if stage not in DELIVERY_STAGES:
+            errors.append(f"{prefix}: invalid stage {stage!r}")
+        else:
+            scenario_stages.add(stage)
+            if case_meta is not None:
+                if stage == "pathfinder-map" and case_meta["skill"] != "pathfinder":
+                    errors.append(f"{prefix}: pathfinder-map must reference a pathfinder case")
+                if stage == "impact-phase5" and case_meta["delivery_mode"] != "phase5-delivery":
+                    errors.append(f"{prefix}: impact-phase5 must reference delivery_mode=phase5-delivery")
+                if stage == "negative-gate" and case_meta["kind"] != "negative":
+                    errors.append(f"{prefix}: negative-gate must reference a negative case")
+
+        fixture_mode = scenario.get("fixture_mode")
+        if fixture_mode not in DELIVERY_FIXTURE_MODES:
+            errors.append(f"{prefix}: invalid fixture_mode {fixture_mode!r}")
+
+        runner_scope = as_list(scenario.get("runner_scope"))
+        if not runner_scope or not all(isinstance(item, str) and item in runner_ids for item in runner_scope):
+            errors.append(f"{prefix}: runner_scope must reference runner ids")
+
+        for field in ("success_target", "failure_signals", "repair_loop"):
+            values = as_list(scenario.get(field))
+            if not values or not all(isinstance(item, str) and item for item in values):
+                errors.append(f"{prefix}: {field} must be a non-empty string array")
+
+        acceptance = scenario.get("acceptance")
+        if stage == "impact-phase5":
+            if not isinstance(acceptance, dict):
+                errors.append(f"{prefix}: impact-phase5 requires acceptance")
+            else:
+                for field in ("expected_changed_files", "forbidden_changed_files", "validators"):
+                    values = as_list(acceptance.get(field))
+                    if not values or not all(isinstance(item, str) and item for item in values):
+                        errors.append(f"{prefix}: acceptance.{field} must be a non-empty string array")
+
+    missing_complexities = DELIVERY_COMPLEXITIES - scenario_complexities
+    if missing_complexities:
+        errors.append(f"delivery-matrix.json: missing complexities {sorted(missing_complexities)}")
+
+    missing_stages = DELIVERY_STAGES - scenario_stages
+    if missing_stages:
+        errors.append(f"delivery-matrix.json: missing stages {sorted(missing_stages)}")
+
+    if len(scenario_projects) < 5:
+        errors.append("delivery-matrix.json: scenarios must cover all 5 real projects")
+    if len(scenario_categories) < 5:
+        errors.append("delivery-matrix.json: scenarios must cover 5 project categories")
+    if scenario_skills != {"pathfinder", "impact"}:
+        errors.append("delivery-matrix.json: scenarios must cover both pathfinder and impact")
+
+    runner_plan = doc.get("runner_plan")
+    if not isinstance(runner_plan, dict):
+        errors.append("delivery-matrix.json: runner_plan must be an object")
+        return
+
+    for runner_id in runner_ids:
+        planned = as_list(runner_plan.get(runner_id))
+        if len(planned) < 5:
+            errors.append(f"delivery-matrix.json: runner_plan.{runner_id} must include at least 5 scenarios")
+        unknown = [item for item in planned if item not in scenario_ids]
+        if unknown:
+            errors.append(f"delivery-matrix.json: runner_plan.{runner_id} references unknown scenarios {unknown}")
+        planned_stages = {
+            scenario.get("stage")
+            for scenario in scenarios
+            if isinstance(scenario, dict) and scenario.get("id") in planned
+        }
+        if "impact-phase5" not in planned_stages:
+            errors.append(f"delivery-matrix.json: runner_plan.{runner_id} must include impact-phase5")
 
 
 def report(errors: list[str]) -> int:

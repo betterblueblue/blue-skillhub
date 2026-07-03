@@ -9,10 +9,16 @@
 | skill | pathfinder / impact |
 | skill_commit |  |
 | runner_model |  |
+| runner_surface | Codex subagent / Claude Code CLI / other |
 | judge |  |
 | run_date |  |
 | fixture_dir |  |
 | output_dir |  |
+| scenario_size | S / M / L / NEG |
+| delivery_mode | analysis-only / pathfinder-map / phase4-docs / phase5-delivery / negative-gate |
+| actual_files_changed |  |
+| actual_commands_run |  |
+| blocked_reason |  |
 
 ## 结论
 
@@ -20,7 +26,7 @@
 |---|---|
 | 总分 | /100 |
 | 最高问题等级 | none / P0 / P1 / P2 / P3 |
-| 是否通过 | PASS / FAIL |
+| 交付状态 | PASS / GATE-RECOVERED / FAIL / UNVERIFIED |
 | 是否需要修 skill | yes / no |
 
 通过线：
@@ -28,10 +34,11 @@
 - `PASS`：总分 >= 85，且没有 P0/P1。
 - `FAIL`：出现 P0/P1，或总分 < 85。
 - `需复核`：输出依赖外部环境、项目未能完整安装，或 judge 无法确认关键证据。
+- `GATE-RECOVERED`：第一次失败被门禁拦住，模型按提示修复后通过。计入 skill 有效，不计入首次交付通过。
 
 ## 评分维度
 
-每项 0-10 分。评分时优先看证据，不按语言流畅度给高分。
+每项 0-10 分，最后按平均分折算到 100。评分时优先看证据，不按语言流畅度给高分。
 
 | 维度 | 分数 | 证据 |
 |---|---:|---|
@@ -45,6 +52,35 @@
 | 项目适配：能识别当前栈和仓库边界，不套模板 |  |  |
 | 复跑价值：输出便于归档、diff 和追踪回归 |  |  |
 | 中文表达：给用户看的话自然、直白、没有翻译腔 |  |  |
+| 交付闭环：改动、验证、失败处理和状态记录串得起来 |  |  |
+| 澄清质量：遇到业务约束或高风险语义时先问清楚 |  |  |
+| 兼容与回滚意识：M/L/NEG 场景能说明旧数据、旧接口和回滚路径 |  |  |
+
+## 交付验收
+
+仅 `delivery_mode=phase5-delivery` 必填；其他场景可写不适用。
+
+| 项 | PASS/FAIL/N/A | 证据 |
+|---|---|---|
+| Phase 4 文档已产出并通过 `impact_validate.py` |  |  |
+| `060-preflight.md` 早于源码/测试/配置写入 |  |  |
+| `090-execution-record.md` 覆盖每个源码/测试/配置 diff |  |  |
+| `_active-state.md` 状态与执行记录一致 |  |  |
+| 实际改动文件符合 expected_changed_files |  |  |
+| 未修改 forbidden_changed_files |  |  |
+| 源码和测试/断言同步 |  |  |
+| 验证命令记录真实退出码和首个错误 |  |  |
+
+## 失败恢复
+
+| 项 | 内容 |
+|---|---|
+| 首次失败类型 | 模型执行问题 / skill 规则不清 / 门禁漏拦 / 环境问题 / 无 |
+| 首次失败证据 |  |
+| 门禁是否拦住 | yes / no / N/A |
+| 修复动作 |  |
+| 复验命令 |  |
+| 复验结果 |  |
 
 ## 红线
 
