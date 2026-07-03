@@ -1,0 +1,62 @@
+Phase 2 weak-model matrix verification
+Date: 2026-07-03
+Runner model: gpt-5.4-mini
+Judge: main Codex thread
+Workspace: E:\agent\blue-skillhub
+
+Fixture commits:
+
+git -C E:\agent\real-project-fixtures\frontend-react-dashboard rev-parse HEAD
+8223897259151c450f954e462c57df3703d5508d
+
+git -C E:\agent\real-project-fixtures\monorepo-full-stack-starter rev-parse HEAD
+21fbd77ca7ec177a9837b32066ed4b8884cae3c2
+
+Non-Git facts:
+
+python skills\pathfinder\scripts\pf_git.py E:\agent\real-project-fixtures\monorepo-full-stack-starter-non-git
+{
+  "is_git_repo": false,
+  "is_independent_repo": false,
+  "toplevel": null,
+  "head_short": null,
+  "head_full": null,
+  "branch": null,
+  "hotspots": [],
+  "recent_commit_modules": []
+}
+
+python skills\pathfinder\scripts\pf_git.py E:\agent\real-project-fixtures\monorepo-api-subdir
+{
+  "is_git_repo": false,
+  "is_independent_repo": false,
+  "toplevel": null,
+  "head_short": null,
+  "head_full": null,
+  "branch": null,
+  "hotspots": [],
+  "recent_commit_modules": []
+}
+
+Pathfinder validator:
+
+python skills\pathfinder\scripts\pf_validate.py E:\agent\real-project-fixtures\frontend-react-dashboard\change-impact\_project-map.md --repo-root E:\agent\real-project-fixtures\frontend-react-dashboard
+SUMMARY: 8 passed, 0 failed, 0 warnings
+
+python skills\pathfinder\scripts\pf_validate.py E:\agent\real-project-fixtures\monorepo-full-stack-starter\change-impact\_project-map.md --repo-root E:\agent\real-project-fixtures\monorepo-full-stack-starter
+SUMMARY: 8 passed, 0 failed, 0 warnings
+
+python skills\pathfinder\scripts\pf_validate.py E:\agent\real-project-fixtures\monorepo-full-stack-starter-non-git\change-impact\_project-map.md --repo-root E:\agent\real-project-fixtures\monorepo-full-stack-starter-non-git
+SUMMARY: 8 passed, 0 failed, 0 warnings
+
+python skills\pathfinder\scripts\pf_validate.py E:\agent\real-project-fixtures\monorepo-api-subdir\change-impact\_project-map.md --repo-root E:\agent\real-project-fixtures\monorepo-api-subdir
+SUMMARY: 8 passed, 0 failed, 0 warnings
+
+Main repo status before archive:
+
+git status --short --branch
+## master...origin/master
+?? eval/cases/impact/N1.json
+?? eval/cases/impact/N2.json
+?? eval/cases/pathfinder/P5.json
+?? eval/cases/pathfinder/P6.json
