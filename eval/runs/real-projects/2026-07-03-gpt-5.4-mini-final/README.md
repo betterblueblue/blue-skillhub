@@ -3,7 +3,7 @@
 Date: 2026-07-03
 Runner model: `gpt-5.4-mini`
 Judge: main Codex thread
-Final repo commit: `37b0959`
+Summary base commit before Phase 5 slash acceptance: `37b0959`
 
 ## What Was Covered
 
@@ -14,6 +14,7 @@ Final repo commit: `37b0959`
 | Phase 1 real-project matrix | `2026-07-03-gpt-5.4-mini-phase1`, commit `f228021` |
 | Pathfinder V8 fix from phase 1 finding | commit `498896f` |
 | Phase 2 real-project matrix | `2026-07-03-gpt-5.4-mini-phase2`, commit `37b0959` |
+| Real `/impact` Phase 5 slash acceptance | `2026-07-03-claude-step37-phase5-slash` |
 
 ## Matrix Result
 
@@ -90,11 +91,24 @@ Remaining caveat:
 
 - This matrix did not execute full Phase 4 document generation and Phase 5 source-code write steps for all 20 cases. It validated classification, impact coverage, and safety boundaries.
 
-## Slash Command Caveat
+## Slash Command Acceptance
 
 Claude Code real slash command loading was smoke-tested for `/impact` and `/pathfinder`.
 
-This run did not prove a full real slash command transcript for all 20 matrix cases, and it did not prove the Codex Desktop slash dispatcher because no direct UI slash-dispatch tool was exposed in this thread.
+An additional Step 3.7 Flash `/impact` acceptance run then reached Phase 5 on an isolated frontend fixture:
+
+- Phase 4 light docs were produced.
+- `060-preflight.md` was created before source write.
+- Source write happened only after explicit `确认 Step 4`.
+- `090-execution-record.md` was created.
+- Main judge validation passed: `SUMMARY: 16 passed, 0 failed, 0 warnings`.
+- The actual source diff was limited to `src/views/dashboard/dashboard.router.tsx`, changing `label/title` from `Dashboard` to `Overview`.
+
+Remaining caveats:
+
+- The runner needed follow-up prompts; it did not complete the whole flow with zero nudges.
+- `npm run build` could not complete because the isolated fixture had no installed dependencies (`tsc` missing), so the final source verification stayed at V1 static validation plus `impact_validate.py`.
+- This does not prove the Codex Desktop slash dispatcher because no direct UI slash-dispatch tool was exposed in this thread.
 
 ## Final Conclusion
 
@@ -105,4 +119,4 @@ For the current evidence level, `pathfinder` and `impact` are in good shape:
 - The five-project matrix covered Java backend, Node API, Python full stack, pure frontend, and monorepo/non-Git.
 - The weak-model failures that appeared were handled by scripts rather than by hoping the model behaves.
 
-Release confidence: high for read-only Pathfinder maps and Impact analysis/guardrails; medium for full slash-command Phase 5 implementation until a separate write-operation acceptance run is completed.
+Release confidence: high for read-only Pathfinder maps and Impact analysis/guardrails; medium-high for real Claude `/impact` Phase 5 write flow with the caveat that the runner still needed corrective prompts and the fixture build was not dependency-ready.
