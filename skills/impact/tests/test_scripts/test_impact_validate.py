@@ -510,6 +510,34 @@ def _write_active_state(req_dir: str, content: str):
         f.write(content)
 
 
+def _init_git_with_source(
+    repo_root: str,
+    relpath: str = "src/routes/sidebar.ts",
+    content: str = "export const label = 'Dashboard';\n",
+) -> str:
+    """Create a committed source file, then return its absolute path."""
+    source_path = os.path.join(repo_root, *relpath.split("/"))
+    os.makedirs(os.path.dirname(source_path), exist_ok=True)
+    with open(source_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    def run_git(*args: str):
+        subprocess.run(
+            ["git", *args],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+
+    run_git("init")
+    run_git("config", "user.email", "impact-test@example.com")
+    run_git("config", "user.name", "Impact Test")
+    run_git("add", relpath)
+    run_git("commit", "-m", "seed source")
+    return source_path
+
+
 class TestV13Phase4Phase5Split(unittest.TestCase):
     """V13: Phase 4 docs and source writes must not be merged in one Step."""
 
@@ -609,6 +637,32 @@ class TestV13Phase4Phase5Split(unittest.TestCase):
             f"Expected V13 separated PASS, got: {v13}"
         )
 
+    def test_source_step_with_associated_docs_passes(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## Step 1：修改 dashboard.router.tsx 展示文案
+
+### 执行信息
+
+- 确认类型：改代码
+- 操作对象：`src/views/dashboard/dashboard.router.tsx`; `090-execution-record.md`; `_active-state.md`
+- 关联文档：040-light.md、060-preflight.md
+- 操作内容：修改 `src/views/dashboard/dashboard.router.tsx` 第 17-18 行
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v13 = _v13_lines(out)
+        self.assertEqual(code, 0, f"Associated docs in a source Step should not trip V13, got {code}\n{out}")
+        self.assertTrue(
+            any("separated" in l for l in v13),
+            f"Expected V13 separated PASS, got: {v13}"
+        )
+
 
 def _v14_lines(stdout: str) -> list[str]:
     """Extract V14-related lines from stdout."""
@@ -672,6 +726,45 @@ def _v15_lines(stdout: str) -> list[str]:
 class TestV15Phase5RecordState(unittest.TestCase):
     """V15: Source/test/config writes must include execution record and active state."""
 
+    def test_source_diff_without_execution_record_fails(self):
+        td, rd = _make_repo()
+        source_path = _init_git_with_source(td)
+        with open(source_path, "w", encoding="utf-8") as f:
+            f.write("export const label = 'Insights';\n")
+
+        code, out = _run_validator(td, rd)
+        v15 = _v15_lines(out)
+        self.assertEqual(code, 1, f"Source diff without execution record should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("090-execution-record.md is missing" in l for l in v15),
+            f"Expected V15 missing execution-record FAIL, got: {v15}"
+        )
+
+    def test_source_diff_with_record_but_no_source_step_fails(self):
+        td, rd = _make_repo()
+        source_path = _init_git_with_source(td)
+        with open(source_path, "w", encoding="utf-8") as f:
+            f.write("export const label = 'Insights';\n")
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:40:00] Step 1: 写入 light 文档
+
+- 确认类型：写文件
+- 操作对象：`000-context-pack.md`; `040-light.md`; `_active-state.md`
+- 用户确认：确认 Step 1
+""",
+        )
+
+        code, out = _run_validator(td, rd)
+        v15 = _v15_lines(out)
+        self.assertEqual(code, 1, f"Source diff with docs-only record should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("has no source/test/config write Step" in l for l in v15),
+            f"Expected V15 no source Step FAIL, got: {v15}"
+        )
+
     def test_source_step_missing_record_state_fails(self):
         td, rd = _make_repo()
         _write_preflight(rd)
@@ -716,6 +809,110 @@ class TestV15Phase5RecordState(unittest.TestCase):
         self.assertTrue(
             any("include execution record and active-state" in l for l in v15),
             f"Expected V15 record/state PASS, got: {v15}"
+        )
+
+    def test_unrecorded_source_diff_fails_even_with_valid_source_step(self):
+        td, rd = _make_repo()
+        source_path = _init_git_with_source(td)
+        with open(source_path, "w", encoding="utf-8") as f:
+            f.write("export const label = 'Insights';\n")
+        with open(os.path.join(td, "debug_v13.py"), "w", encoding="utf-8") as f:
+            f.write("print('debug')\n")
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: 源码修改
+
+- 确认类型：改代码
+- 操作对象：`src/routes/sidebar.ts`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改侧边栏文案
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v15 = _v15_lines(out)
+        self.assertEqual(code, 1, f"Unrecorded debug_v13.py should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("debug_v13.py" in l and "Unrecorded path" in l for l in v15),
+            f"Expected V15 unrecorded path FAIL, got: {v15}"
+        )
+
+
+def _v17_lines(stdout: str) -> list[str]:
+    """Extract V17-related lines from stdout."""
+    return [l for l in stdout.splitlines() if "V17:" in l]
+
+
+ROUTER_BEFORE = """const dashboardRoutes = [
+  {
+    path: 'dashboard',
+    meta: {
+      label: 'Dashboard',
+      title: 'Dashboard',
+      key: '/dashboard',
+      icon: 'DashboardOutlined',
+      order: 1,
+    },
+  },
+];
+"""
+
+
+def _write_source_step_record(req_dir: str, relpath: str):
+    _write_preflight(req_dir)
+    _write_execution_record(
+        req_dir,
+        f"""# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: 修改展示文案
+
+- 确认类型：改代码
+- 操作对象：`{relpath}`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改路由展示文案
+- 用户确认：确认 Step 1
+""",
+    )
+
+
+class TestV17TaskAcceptanceSmoke(unittest.TestCase):
+    """V17: Catch obvious partial route display text updates."""
+
+    def test_route_label_changed_but_title_left_old_fails(self):
+        td, rd = _make_repo()
+        relpath = "src/views/dashboard/dashboard.router.tsx"
+        source_path = _init_git_with_source(td, relpath, ROUTER_BEFORE)
+        with open(source_path, "w", encoding="utf-8") as f:
+            f.write(ROUTER_BEFORE.replace("label: 'Dashboard'", "label: 'Insights'"))
+        _write_source_step_record(rd, relpath)
+
+        code, out = _run_validator(td, rd)
+        v17 = _v17_lines(out)
+        self.assertEqual(code, 1, f"label-only route text update should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("partially updated" in l and "title remains" in l for l in v17),
+            f"Expected V17 partial route text FAIL, got: {v17}"
+        )
+
+    def test_route_label_and_title_changed_together_passes(self):
+        td, rd = _make_repo()
+        relpath = "src/views/dashboard/dashboard.router.tsx"
+        source_path = _init_git_with_source(td, relpath, ROUTER_BEFORE)
+        with open(source_path, "w", encoding="utf-8") as f:
+            f.write(
+                ROUTER_BEFORE
+                .replace("label: 'Dashboard'", "label: 'Insights'")
+                .replace("title: 'Dashboard'", "title: 'Insights'")
+            )
+        _write_source_step_record(rd, relpath)
+
+        code, out = _run_validator(td, rd)
+        v17 = _v17_lines(out)
+        self.assertEqual(code, 0, f"paired route text update should pass, got {code}\n{out}")
+        self.assertTrue(
+            any("No obvious partial route" in l for l in v17),
+            f"Expected V17 PASS, got: {v17}"
         )
 
 

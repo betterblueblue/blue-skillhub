@@ -146,8 +146,9 @@
 | Phase 3 状态追踪 | V12 | WARN，字段缺失则提示补填 |
 | Phase 4/5 分步门禁 | V13 | FAIL，同一个 Step 同时写 Phase 4 文档和改源码/测试/配置则阻止提交 |
 | Phase 5 执行前检查 | V14 | FAIL，源码/测试/配置写入 Step 存在但缺 `060-preflight.md` 则阻止提交 |
-| Phase 5 记录完整性 | V15 | FAIL，源码/测试/配置写入 Step 未列出 `090-execution-record.md` 和 `_active-state.md` 则阻止提交 |
+| Phase 5 记录完整性 | V15 | FAIL，源码/测试/配置写入 Step 未列出 `090-execution-record.md` 和 `_active-state.md` 则阻止提交；Git 中已有源码/测试/配置 diff 但缺执行记录、缺源码写入 Step，或有源码类路径未被执行记录覆盖时也阻止提交 |
 | `_active-state.md` Step 状态一致性 | V16 | FAIL，状态头、Step 台账或恢复备注互相矛盾则阻止提交 |
+| 任务验收冒烟检查 | V17 | FAIL，发现明显半截实现时阻止提交；当前覆盖 route meta `label` 已改但同对象 `title` 仍停留旧展示文案的场景 |
 
 V7 判档合理性检查包含三个子检查：
 - **全量词覆盖检查（FAIL）**：用户原话出现全量词（每次/所有/全部/任何/一律/每个）时，产出必须包含覆盖范围分析（覆盖范围/缺口）。缺失则 FAIL，阻止提交。
