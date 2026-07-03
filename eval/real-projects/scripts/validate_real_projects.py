@@ -10,9 +10,11 @@ from pathlib import Path
 
 
 BASE = Path(__file__).resolve().parents[1]
+REPO_ROOT = BASE.parents[1]
 PROJECTS_PATH = BASE / "projects.json"
 CASES_DIR = BASE / "cases"
 DELIVERY_MATRIX_PATH = BASE / "delivery-matrix.json"
+DELIVERY_RESULTS_PATH = BASE / "delivery-results.json"
 REQUIRED_KINDS = {"pathfinder", "impact-light", "impact-full", "negative"}
 COMMIT_RE = re.compile(r"^[a-f0-9]{40}$")
 CASE_ID_RE = re.compile(r"^[a-z0-9-]+$")
@@ -38,6 +40,14 @@ DELIVERY_FIXTURE_MODES = {
     "isolated-copy",
     "non-git-copy",
 }
+DELIVERY_RESULT_STATUSES = {
+    "PASS",
+    "PASS-WARN",
+    "GATE-RECOVERED",
+    "FAIL",
+    "UNVERIFIED",
+}
+DELIVERY_COMPLETED_STATUSES = {"PASS", "PASS-WARN", "GATE-RECOVERED"}
 
 
 def load_json(path: Path) -> object:
@@ -235,6 +245,7 @@ def main() -> int:
         errors.append("at least one case must use delivery_mode=phase5-delivery")
 
     validate_delivery_matrix(errors, case_index, project_category)
+    validate_delivery_results(errors, case_index)
 
     if errors:
         return report(errors)
@@ -391,6 +402,128 @@ def validate_delivery_matrix(
         }
         if "impact-phase5" not in planned_stages:
             errors.append(f"delivery-matrix.json: runner_plan.{runner_id} must include impact-phase5")
+
+
+def validate_delivery_results(
+    errors: list[str],
+    case_index: dict[str, dict[str, str]],
+) -> None:
+    if not DELIVERY_RESULTS_PATH.exists():
+        errors.append(f"missing {DELIVERY_RESULTS_PATH}")
+        return
+    if not DELIVERY_MATRIX_PATH.exists():
+        return
+
+    matrix_doc = load_json(DELIVERY_MATRIX_PATH)
+    if not isinstance(matrix_doc, dict):
+        return
+
+    runner_ids = {
+        runner.get("id")
+        for runner in as_list(matrix_doc.get("runners"))
+        if isinstance(runner, dict) and isinstance(runner.get("id"), str)
+    }
+    scenario_index: dict[str, dict[str, object]] = {}
+    for scenario in as_list(matrix_doc.get("scenarios")):
+        if not isinstance(scenario, dict):
+            continue
+        scenario_id = scenario.get("id")
+        case_id = scenario.get("case_id")
+        if isinstance(scenario_id, str):
+            scenario_index[scenario_id] = {
+                "runner_scope": set(as_list(scenario.get("runner_scope"))),
+                "stage": scenario.get("stage"),
+                "case_id": case_id,
+                "skill": case_index.get(case_id, {}).get("skill") if isinstance(case_id, str) else None,
+            }
+
+    doc = load_json(DELIVERY_RESULTS_PATH)
+    if not isinstance(doc, dict):
+        errors.append("delivery-results.json must be an object")
+        return
+    if doc.get("schema_version") != 1:
+        errors.append("delivery-results.json: schema_version must be 1")
+
+    results = as_list(doc.get("results"))
+    if not results:
+        errors.append("delivery-results.json: results must be non-empty")
+        return
+
+    result_ids: set[str] = set()
+    completed_runners: set[str] = set()
+    completed_skills: set[str] = set()
+    completed_phase5_runners: set[str] = set()
+    completed_negative_runners: set[str] = set()
+
+    for idx, result in enumerate(results):
+        prefix = f"delivery-results results[{idx}]"
+        if not isinstance(result, dict):
+            errors.append(f"{prefix}: must be an object")
+            continue
+
+        result_id = result.get("id")
+        if not isinstance(result_id, str) or not result_id:
+            errors.append(f"{prefix}: missing id")
+        elif result_id in result_ids:
+            errors.append(f"{prefix}: duplicate id {result_id}")
+        else:
+            result_ids.add(result_id)
+
+        scenario_id = result.get("scenario_id")
+        scenario_meta = scenario_index.get(scenario_id) if isinstance(scenario_id, str) else None
+        if scenario_meta is None:
+            errors.append(f"{prefix}: unknown scenario_id {scenario_id!r}")
+
+        runner_id = result.get("runner_id")
+        if not isinstance(runner_id, str) or runner_id not in runner_ids:
+            errors.append(f"{prefix}: unknown runner_id {runner_id!r}")
+        elif scenario_meta is not None and runner_id not in scenario_meta["runner_scope"]:
+            errors.append(f"{prefix}: runner_id {runner_id!r} is not in scenario runner_scope")
+
+        status = result.get("status")
+        if status not in DELIVERY_RESULT_STATUSES:
+            errors.append(f"{prefix}: invalid status {status!r}")
+
+        run_record = result.get("run_record")
+        if not isinstance(run_record, str) or not run_record.startswith("eval/runs/real-projects/"):
+            errors.append(f"{prefix}: run_record must be under eval/runs/real-projects/")
+        elif not (REPO_ROOT / run_record).exists():
+            errors.append(f"{prefix}: run_record does not exist: {run_record}")
+
+        evidence = as_list(result.get("evidence"))
+        if not evidence or not all(isinstance(item, str) and item for item in evidence):
+            errors.append(f"{prefix}: evidence must be a non-empty string array")
+
+        blockers = result.get("blockers")
+        if not isinstance(blockers, list) or not all(isinstance(item, str) and item for item in blockers):
+            errors.append(f"{prefix}: blockers must be a string array")
+        elif status == "UNVERIFIED" and not blockers:
+            errors.append(f"{prefix}: UNVERIFIED results must explain blockers")
+
+        if status in DELIVERY_COMPLETED_STATUSES and isinstance(runner_id, str):
+            completed_runners.add(runner_id)
+            if scenario_meta is not None:
+                skill = scenario_meta.get("skill")
+                stage = scenario_meta.get("stage")
+                if isinstance(skill, str):
+                    completed_skills.add(skill)
+                if stage == "impact-phase5":
+                    completed_phase5_runners.add(runner_id)
+                if stage == "negative-gate":
+                    completed_negative_runners.add(runner_id)
+
+    if len(completed_runners) < 2:
+        errors.append("delivery-results.json: completed results must cover at least two runners")
+    if completed_skills != {"pathfinder", "impact"}:
+        errors.append("delivery-results.json: completed results must cover both pathfinder and impact")
+    if len(completed_negative_runners) < 2:
+        errors.append("delivery-results.json: completed negative-gate results must cover at least two runners")
+    missing_phase5 = runner_ids - completed_phase5_runners
+    if missing_phase5:
+        errors.append(
+            "delivery-results.json: completed impact-phase5 results missing for runners "
+            f"{sorted(missing_phase5)}"
+        )
 
 
 def report(errors: list[str]) -> int:
