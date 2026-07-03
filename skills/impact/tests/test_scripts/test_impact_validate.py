@@ -519,6 +519,36 @@ class TestV13Phase4Phase5Split(unittest.TestCase):
             f"Expected V13 separated PASS, got: {v13}"
         )
 
+    def test_source_step_with_later_summary_mentions_preflight_passes(self):
+        td, rd = _make_repo()
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 3: 源码/测试修改
+
+- 确认类型：改代码 / 测试修复
+- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`
+- 操作内容：修改登录失败提示并同步测试断言
+- 用户确认：确认 Step 3
+
+## 验证等级汇总
+
+| Step | 验证等级 | 未运行验证原因 |
+|------|----------|---------------|
+| Step 1 | V1 | Phase 4 文档校验通过 |
+| Step 2 | V1 | 仅写 preflight 文档，未进入源码验证 |
+| Step 3 | V1 | 本机依赖缺失，`jest` 无法正常启动 |
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v13 = _v13_lines(out)
+        self.assertEqual(code, 0, f"Source Step with later summary should pass, got {code}\n{out}")
+        self.assertTrue(
+            any("separated" in l for l in v13),
+            f"Expected V13 separated PASS, got: {v13}"
+        )
+
     def test_source_step_after_docs_passes(self):
         td, rd = _make_repo()
         _write_execution_record(

@@ -1237,9 +1237,11 @@ def check_phase3_process(req_dir: Path) -> tuple[list[str], list[str], list[str]
 # ===========================================================================
 
 RE_EXEC_STEP = re.compile(r"(?m)^##\s+.*?Step\s+\d+[^\n]*")
+RE_EXEC_HEADING = re.compile(r"(?m)^##\s+")
 RE_PHASE4_DOC_WRITE = re.compile(
     r"000-context-pack\.md|010-requirements\.md|020-design\.md|"
-    r"030-implementation\.md|040-light\.md|light\s*文档|full\s*文档|分析文档",
+    r"030-implementation\.md|040-light\.md|(?<!pre)light\s*文档|"
+    r"full\s*文档|分析文档",
     re.I,
 )
 RE_SOURCE_WRITE_ACTION = re.compile(
@@ -1270,9 +1272,10 @@ def _execution_step_sections(text: str) -> list[str]:
     """Split 090-execution-record.md into Step sections."""
     matches = list(RE_EXEC_STEP.finditer(text))
     sections: list[str] = []
-    for idx, match in enumerate(matches):
+    for match in matches:
         start = match.start()
-        end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+        next_heading = RE_EXEC_HEADING.search(text, match.end())
+        end = next_heading.start() if next_heading else len(text)
         sections.append(text[start:end])
     return sections
 
