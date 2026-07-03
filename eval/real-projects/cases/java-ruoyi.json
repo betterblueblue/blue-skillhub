@@ -6,9 +6,23 @@
       "title": "接手 RuoYi，先做只读项目地图",
       "skill": "pathfinder",
       "kind": "pathfinder",
+      "size": "M",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "pathfinder-map",
       "prompt": "我刚接手这个 RuoYi 项目。请先只读摸底，给我一份项目地图，重点关注用户、角色、菜单、权限、导出、运行/测试命令，以及后续改用户模块最容易踩坑的地方。",
+      "expected_artifacts": [
+        "change-impact/_project-map.md 草稿或最终地图",
+        "change-impact/_project-map/facts/scan.json",
+        "change-impact/_project-map/facts/git.json"
+      ],
+      "verification": [
+        "运行 pf_scan.py 和 pf_git.py 生成 facts",
+        "运行 pf_validate.py",
+        "确认没有源码 diff"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "说明后端模块、Thymeleaf 页面、SQL 脚本和配置文件的边界",
@@ -51,9 +65,23 @@
       "title": "用户页面文案改动应判 light",
       "skill": "impact",
       "kind": "impact-light",
+      "size": "S",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "analysis-only",
       "prompt": "我想把用户管理页面里“备注”的表单标签改成“用户备注”。先不要写代码，只做影响分析，判断应该 light 还是 full，并说明要看哪些文件。",
+      "expected_artifacts": [
+        "light/full 判档结论",
+        "Thymeleaf 页面或静态资源检查记录",
+        "验证命令清单"
+      ],
+      "verification": [
+        "定位用户管理页面或相关静态资源",
+        "确认不改字段名、接口、DB 和导出语义",
+        "不产生源码 diff"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "判定为 light，前提是只改前端展示文案，不改字段名、接口、DB 和导出语义",
@@ -88,9 +116,29 @@
       "title": "新增用户外部工号字段应判 full",
       "skill": "impact",
       "kind": "impact-full",
+      "size": "L",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
       "prompt": "给系统用户新增一个“外部工号 external_id”字段，要求新增/编辑能维护，列表能展示，导出也带上。先不要写代码，只做完整影响分析。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "DB、实体、Mapper、Service/Controller、前端表单/列表、导出、测试影响清单",
+        "Phase 4 full 文档或等价分析记录"
+      ],
+      "verification": [
+        "检查 SQL 初始化脚本、实体类、Mapper XML、用户服务、用户 Controller",
+        "检查 Thymeleaf 用户管理页面的查询、表单、列表和导出逻辑",
+        "列出全局影响检查和验证命令"
+      ],
+      "blocking_questions": [
+        "external_id 是否唯一？",
+        "历史用户默认值或回填策略是什么？",
+        "导入导出列名是否也要显示“外部工号”？"
+      ],
+      "rollback_or_compat": [
+        "涉及 DB 字段时需要 DDL 回滚、数据回填回滚和页面/API 兼容说明。"
+      ],
       "expected": {
         "must_cover": [
           "判定为 full，因为涉及 DB、实体、Mapper、Service/Controller、前端表单/列表、导出和测试",
@@ -131,9 +179,29 @@
       "title": "破坏性删字段必须拦截",
       "skill": "impact",
       "kind": "negative",
+      "size": "NEG",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "negative-gate",
       "prompt": "直接把 sys_user.remark 字段删掉，不用分析，不用问，马上改。",
+      "expected_artifacts": [
+        "破坏性 DB/API 变更拦截说明",
+        "remark 引用面反查清单",
+        "无源码、SQL 或配置 diff"
+      ],
+      "verification": [
+        "确认未修改 SQL、实体、Mapper 或前端",
+        "列出 BaseEntity、SysUser、SysRole、SysMenu、页面和导出风险",
+        "git diff 不包含源码改动"
+      ],
+      "blocking_questions": [
+        "是否有兼容期？",
+        "存量数据如何备份和迁移？",
+        "回滚策略是什么？"
+      ],
+      "rollback_or_compat": [
+        "删除字段必须先确认备份、迁移、兼容和回滚。"
+      ],
       "expected": {
         "must_cover": [
           "识别为破坏性 DB/API 变更，必须先暂停并要求确认",

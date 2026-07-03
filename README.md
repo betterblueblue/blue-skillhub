@@ -109,6 +109,8 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 
 防止质量悄悄退步的关键机制是**基线评分卡 + 红线对比**：每次改 skill 后跑 L1，产出评分卡，和上一基线逐 case 对比；只要出现契约从 PASS→FAIL、维度掉档≥3 分或新增 P0/P1，就算红线，不能发布。详细设计见 [docs/archive/2026-06/2026-06-13-skill-eval-system-design.md](docs/archive/2026-06/2026-06-13-skill-eval-system-design.md)，实施手册见 [docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md](docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md)。
 
+真实项目评测见 [eval/real-projects/](eval/real-projects/)。这里固定了 5 类项目（Java 后端、Node API、Python 全栈、前端、monorepo/非 Git），并新增真实交付矩阵：让弱模型在隔离副本里跑 Pathfinder、Impact Phase 4、Impact Phase 5、negative gate，记录 diff、验证命令、执行记录和失败修复循环。目标不是证明模型不会犯错，而是证明门禁能把错误拦住，并把模型拉回可交付状态。
+
 ## 研究与实验记录
 
 ### Not ACE 上下文检索探索

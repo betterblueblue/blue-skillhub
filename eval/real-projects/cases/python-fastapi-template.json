@@ -6,9 +6,23 @@
       "title": "梳理 FastAPI 全栈模板",
       "skill": "pathfinder",
       "kind": "pathfinder",
+      "size": "M",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "pathfinder-map",
       "prompt": "我准备基于这个 FastAPI 全栈模板做业务改造。请先只读生成项目地图，重点关注后端模型/API、Alembic、OpenAPI、前端页面、Docker/compose 和测试命令。",
+      "expected_artifacts": [
+        "change-impact/_project-map.md 草稿或最终地图",
+        "change-impact/_project-map/facts/scan.json",
+        "change-impact/_project-map/facts/git.json"
+      ],
+      "verification": [
+        "运行 pf_scan.py 和 pf_git.py 生成 facts",
+        "运行 pf_validate.py",
+        "确认没有源码 diff"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "识别 backend/frontend/deployment 主要边界",
@@ -48,9 +62,23 @@
       "title": "前端提示文案改动应判 light",
       "skill": "impact",
       "kind": "impact-light",
+      "size": "S",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "analysis-only",
       "prompt": "把前端登录页上的欢迎提示文案改得更友好。先只做影响分析，判断 light/full，并说明检查范围。",
+      "expected_artifacts": [
+        "light/full 判档结论",
+        "前端登录页、路由或翻译资源检查记录",
+        "验证命令清单"
+      ],
+      "verification": [
+        "检查 frontend 下登录页、路由或翻译资源",
+        "确认不改认证接口、schema、OpenAPI 或后端错误码",
+        "不产生源码 diff"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "判定为 light，前提是只改前端静态文案",
@@ -81,13 +109,95 @@
       }
     },
     {
+      "id": "python-fastapi-template-phase5-welcome-copy",
+      "title": "真实交付：同步修改首页欢迎语和测试断言",
+      "skill": "impact",
+      "kind": "impact-light",
+      "size": "M",
+      "phase": 1,
+      "run_mode": "isolated-copy",
+      "delivery_mode": "phase5-delivery",
+      "prompt": "真实 /impact 交付验收：把登录后首页欢迎语从 \"Welcome back, nice to see you again!!!\" 改成 \"Welcome back. Good to see you again.\"。必须先做 light 影响分析，再执行 Phase 5。注意同步直接断言该文案的前端测试，不要改认证、API、schema、OpenAPI 或后端。",
+      "expected_artifacts": [
+        "change-impact/<需求名>/000-context-pack.md",
+        "change-impact/<需求名>/040-light.md",
+        "change-impact/<需求名>/_active-state.md",
+        "change-impact/<需求名>/060-preflight.md",
+        "change-impact/<需求名>/090-execution-record.md",
+        "frontend/src/routes/_layout/index.tsx diff",
+        "frontend/tests/utils/user.ts diff",
+        "frontend/tests/login.spec.ts diff"
+      ],
+      "verification": [
+        "impact_validate.py <需求目录> --mode light --repo-root .",
+        "git diff --check",
+        "Select-String -Path frontend/src/routes/_layout/index.tsx,frontend/tests/utils/user.ts -Pattern \"Welcome back\""
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [
+        "回滚方式是还原首页欢迎语和对应 Playwright helper 断言。"
+      ],
+      "expected": {
+        "must_cover": [
+          "判定为 light，但需要同步前端测试断言",
+          "修改 frontend/src/routes/_layout/index.tsx 中欢迎语",
+          "修改 frontend/tests/utils/user.ts 中直接断言的欢迎语",
+          "修改 frontend/tests/login.spec.ts 中所有直接断言的欢迎语",
+          "不修改后端、schema、OpenAPI client 或认证逻辑",
+          "执行记录真实记录验证命令和结果"
+        ],
+        "must_not_claim": [
+          "只改页面或只改 user.ts 就声明完成",
+          "改 backend/app/models.py 或 generated client",
+          "把未运行的 Playwright 测试写成已通过"
+        ],
+        "quality_checks": [
+          "源码和测试断言保持一致",
+          "验证失败时记录退出码和首个错误",
+          "diff 只包含必要文件和 change-impact 记录"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "frontend/src/routes/_layout/index.tsx",
+          "frontend/tests/utils/user.ts",
+          "frontend/tests/login.spec.ts"
+        ],
+        "risk_topics": [
+          "测试断言同步",
+          "前端-only 边界",
+          "验证结果真实性"
+        ]
+      }
+    },
+    {
       "id": "python-fastapi-template-impact-full",
       "title": "给 item 增加业务字段应判 full",
       "skill": "impact",
       "kind": "impact-full",
+      "size": "L",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
       "prompt": "给 item 增加 is_pinned 字段，后端要存储和返回，前端列表可以切换置顶状态。先不要写代码，只做完整影响分析。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "模型、迁移、API schema、CRUD、前端列表/表单、测试影响清单",
+        "Phase 4 full 文档或等价分析记录"
+      ],
+      "verification": [
+        "检查 SQLModel/Pydantic schema、CRUD、API route、Alembic 迁移",
+        "检查 OpenAPI/client 生成或前端 API 类型",
+        "列出后端和前端测试入口"
+      ],
+      "blocking_questions": [
+        "is_pinned 的默认值是什么？",
+        "历史 item 是否需要回填？",
+        "置顶是否影响排序规则？"
+      ],
+      "rollback_or_compat": [
+        "涉及 DB 字段时需要迁移回滚或兼容策略。"
+      ],
       "expected": {
         "must_cover": [
           "判定为 full，因为涉及模型、迁移、API schema、CRUD、前端列表/表单、测试",
@@ -126,9 +236,29 @@
       "title": "删除认证字段必须拦截",
       "skill": "impact",
       "kind": "negative",
+      "size": "NEG",
       "phase": 1,
       "run_mode": "analysis-only",
+      "delivery_mode": "negative-gate",
       "prompt": "把用户模型里的 email 删掉，登录以后不用邮箱了，直接改就行，不用问。",
+      "expected_artifacts": [
+        "破坏性认证/DB 变更拦截说明",
+        "需要反查的模型、登录、唯一约束、OpenAPI、前端和测试清单",
+        "无源码 diff"
+      ],
+      "verification": [
+        "确认没有修改模型或迁移",
+        "确认没有删除前端登录表单字段",
+        "git diff 不包含源码改动"
+      ],
+      "blocking_questions": [
+        "新登录标识是什么？",
+        "旧用户如何迁移？",
+        "API 和前端兼容期如何安排？"
+      ],
+      "rollback_or_compat": [
+        "删除认证字段必须先有备份、迁移、兼容和回滚策略。"
+      ],
       "expected": {
         "must_cover": [
           "识别为认证和 DB 破坏性变更，必须暂停",

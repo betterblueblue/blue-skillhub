@@ -6,9 +6,23 @@
       "title": "梳理 monorepo，并验证非 Git 降级",
       "skill": "pathfinder",
       "kind": "pathfinder",
+      "size": "M",
       "phase": 2,
       "run_mode": "non-git-copy",
+      "delivery_mode": "pathfinder-map",
       "prompt": "我准备改这个 full-stack-starter-kit。请先在仓库根目录只读生成项目地图，然后在删除 .git 的副本里再跑一次，重点关注 workspace 边界、shared types、API、Prisma、前端，以及无 Git 时哪些信息必须降级。",
+      "expected_artifacts": [
+        "Git 根目录版 change-impact/_project-map.md 草稿或最终地图",
+        "非 Git 副本版 change-impact/_project-map.md 草稿或最终地图",
+        "两次 facts/scan.json 和 facts/git.json"
+      ],
+      "verification": [
+        "两次运行 pf_scan.py 和 pf_git.py",
+        "两次运行 pf_validate.py",
+        "确认非 Git 副本不输出父仓库 branch/head/hotspots"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "识别 monorepo/workspace 结构和各 app/package 的职责",
@@ -50,9 +64,23 @@
       "title": "前端按钮文案改动应判 light",
       "skill": "impact",
       "kind": "impact-light",
+      "size": "S",
       "phase": 2,
       "run_mode": "analysis-only",
+      "delivery_mode": "analysis-only",
       "prompt": "把前端登录按钮文案从 Sign in 改成 Log in。先只做影响分析，判断 light/full，并说明要查哪些 workspace 文件。",
+      "expected_artifacts": [
+        "light/full 判档结论",
+        "前端 app、共享 UI/i18n 配置和测试/快照检查记录",
+        "workspace 根目录验证命令清单"
+      ],
+      "verification": [
+        "检查前端 app、共享 UI/i18n 配置和测试/快照",
+        "确认不改认证 API、路由或 shared type",
+        "不产生源码 diff"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "判定为 light，前提是只改前端显示文案，不改认证 API、路由或 shared type",
@@ -89,9 +117,29 @@
       "title": "新增组织字段应判 full",
       "skill": "impact",
       "kind": "impact-full",
+      "size": "L",
       "phase": 2,
       "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
       "prompt": "给用户资料新增 organization 字段，后端存储和返回，前端注册/资料页可填写，shared type 也要同步。先不要写代码，只做完整影响分析。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "DB schema、迁移、API、shared types、前端表单/展示和测试影响清单",
+        "workspace 根目录验证顺序"
+      ],
+      "verification": [
+        "检查 Prisma schema、API handler/service、shared package、前端表单和展示",
+        "说明生成物、类型同步和构建顺序",
+        "列出 workspace 根目录验证命令"
+      ],
+      "blocking_questions": [
+        "organization 是否可空？",
+        "历史用户默认值或回填策略是什么？",
+        "公开响应里是否对所有消费者可见？"
+      ],
+      "rollback_or_compat": [
+        "跨 DB/API/shared/frontend 的字段新增需要迁移回滚和响应兼容说明。"
+      ],
       "expected": {
         "must_cover": [
           "判定为 full，因为涉及 DB schema、迁移、API、shared types、前端表单/展示和测试",
@@ -133,9 +181,23 @@
       "title": "子目录运行时不得污染 Git 证据",
       "skill": "pathfinder",
       "kind": "negative",
+      "size": "NEG",
       "phase": 2,
       "run_mode": "non-git-copy",
+      "delivery_mode": "negative-gate",
       "prompt": "我只把 apps/api 目录复制出来了，没有 .git。请给这个目录生成项目地图，不要管父仓库。",
+      "expected_artifacts": [
+        "非 Git 降级地图或拦截说明",
+        "当前目录 facts/scan.json 和 facts/git.json",
+        "父仓库 Git 信息不可用说明"
+      ],
+      "verification": [
+        "运行 pf_git.py 后确认 branch/head/hotspots/recent modules 为空或不可用",
+        "运行 pf_validate.py",
+        "确认没有读取父仓库 Git 信息"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "识别当前目录不是独立 Git 仓库，Git HEAD/branch/hotspots/recent modules 应为空或标注不可用",

@@ -6,9 +6,23 @@
       "title": "梳理纯前端管理台",
       "skill": "pathfinder",
       "kind": "pathfinder",
+      "size": "M",
       "phase": 2,
       "run_mode": "analysis-only",
+      "delivery_mode": "pathfinder-map",
       "prompt": "我刚接手这个 React Admin Dashboard。请先只读生成项目地图，重点关注路由、页面、状态管理、API/mock 边界、构建命令和后续改页面时的风险。",
+      "expected_artifacts": [
+        "change-impact/_project-map.md 草稿或最终地图",
+        "change-impact/_project-map/facts/scan.json",
+        "change-impact/_project-map/facts/git.json"
+      ],
+      "verification": [
+        "运行 pf_scan.py 和 pf_git.py 生成 facts",
+        "写入前或写入后运行 pf_validate.py",
+        "确认 git diff 不包含源码改动"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "识别 React/Vite/TypeScript 前端栈",
@@ -47,9 +61,23 @@
       "title": "菜单文案改动应判 light",
       "skill": "impact",
       "kind": "impact-light",
+      "size": "S",
       "phase": 2,
       "run_mode": "analysis-only",
+      "delivery_mode": "analysis-only",
       "prompt": "把侧边栏里 Dashboard 的显示文案改成 Overview。先只做影响分析，判断 light/full，并说明要查哪些文件。",
+      "expected_artifacts": [
+        "light/full 判档结论",
+        "受影响文件清单",
+        "验证命令清单"
+      ],
+      "verification": [
+        "检查路由/菜单配置引用",
+        "说明不改 path、key、权限或数据结构",
+        "不产生源码 diff"
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "判定为 light，前提是只改显示文案，不改路由 path、权限 key 或数据结构",
@@ -82,13 +110,88 @@
       }
     },
     {
+      "id": "frontend-react-dashboard-phase5-dashboard-insights",
+      "title": "真实交付：同步修改 Dashboard 显示文案",
+      "skill": "impact",
+      "kind": "impact-light",
+      "size": "S",
+      "phase": 2,
+      "run_mode": "isolated-copy",
+      "delivery_mode": "phase5-delivery",
+      "prompt": "真实 /impact 交付验收：把侧边栏 Dashboard 的显示文案改成 Insights。必须先做 light 影响分析并产出 Phase 4 文档，再完成 060-preflight、090-execution-record 和源码修改。只允许改显示文案，不改 path、key、icon、order。完成后运行 impact_validate.py、git diff --check，并展示 dashboard.router.tsx 的 diff。",
+      "expected_artifacts": [
+        "change-impact/<需求名>/000-context-pack.md",
+        "change-impact/<需求名>/040-light.md",
+        "change-impact/<需求名>/_active-state.md",
+        "change-impact/<需求名>/060-preflight.md",
+        "change-impact/<需求名>/090-execution-record.md",
+        "src/views/dashboard/dashboard.router.tsx diff"
+      ],
+      "verification": [
+        "impact_validate.py <需求目录> --mode light --repo-root .",
+        "git diff --check",
+        "Select-String -Path src/views/dashboard/dashboard.router.tsx -Pattern \"label:|title:|path:|key:|icon:|order:\""
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [
+        "回滚方式是还原 src/views/dashboard/dashboard.router.tsx 中 label/title 两处显示文案。"
+      ],
+      "expected": {
+        "must_cover": [
+          "判定为 light，前提是只改显示文案，不改路由 path、key、权限或数据结构",
+          "同时修改 route meta 中的 label 和 title",
+          "保持 path、key、icon、order 不变",
+          "Phase 5 前有 060-preflight，源码写入 Step 有 090-execution-record 和 _active-state.md 更新",
+          "impact_validate 通过，V17 不报半截改动"
+        ],
+        "must_not_claim": [
+          "只改 label 就声明完成",
+          "把 path 或 key 改成 insights",
+          "跳过执行记录或把未运行的验证写成通过"
+        ],
+        "quality_checks": [
+          "diff 只包含必要文案改动和 change-impact 记录",
+          "验证命令有真实输出或失败原因",
+          "失败后能按门禁提示补齐 title"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "src/views/dashboard/dashboard.router.tsx"
+        ],
+        "risk_topics": [
+          "label/title 同步",
+          "路由 path/key 不变",
+          "Phase 5 记录完整性"
+        ]
+      }
+    },
+    {
       "id": "frontend-react-dashboard-impact-full",
       "title": "新增审计页面应判 full",
       "skill": "impact",
       "kind": "impact-full",
+      "size": "L",
       "phase": 2,
       "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
       "prompt": "新增一个 Audit Logs 页面，侧边栏能进入，页面展示操作人、动作、时间，数据先从现有 mock/API 层读取。先不要写代码，只做完整影响分析。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "路由、菜单、页面、数据层、类型、测试影响清单",
+        "Phase 4 full 文档或等价分析记录"
+      ],
+      "verification": [
+        "检查路由注册、布局/菜单、页面目录、API/mock 层和类型定义",
+        "列出前端 lint/build/test 命令",
+        "不产生源码 diff"
+      ],
+      "blocking_questions": [
+        "Audit Logs 数据来自现有 mock、真实 API，还是需要用户提供后端契约？"
+      ],
+      "rollback_or_compat": [
+        "若进入执行阶段，回滚应覆盖路由、菜单、页面、mock/API 类型和测试。"
+      ],
       "expected": {
         "must_cover": [
           "判定为 full 或至少中高风险前端改动，因为涉及路由、菜单、页面、数据层、类型、测试和构建",
@@ -129,9 +232,26 @@
       "title": "纯前端项目里要求建表必须澄清",
       "skill": "impact",
       "kind": "negative",
+      "size": "NEG",
       "phase": 2,
       "run_mode": "analysis-only",
+      "delivery_mode": "negative-gate",
       "prompt": "给 Audit Logs 直接建一张数据库表，再接到这个 dashboard 上，不用找后端项目。",
+      "expected_artifacts": [
+        "越界请求拦截说明",
+        "当前前端项目边界证据",
+        "需要用户补充的后端/API 信息"
+      ],
+      "verification": [
+        "确认项目内未发现后端/DB 迁移目录",
+        "确认没有生成 SQL、迁移或后端代码",
+        "git diff 不包含源码或 DB 改动"
+      ],
+      "blocking_questions": [
+        "后端仓库在哪里？",
+        "如果没有后端，是否只做 mock 展示？"
+      ],
+      "rollback_or_compat": [],
       "expected": {
         "must_cover": [
           "识别当前项目是前端项目，找不到后端/DB 时必须写未找到",

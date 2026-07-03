@@ -2,11 +2,14 @@
 
 这套用例用于验证 `pathfinder` 和 `impact` 在真实代码库里的表现。它不替代现有 L0/L1/L2 测评，而是作为 RG2/RG3 的真实项目补充：项目固定、任务固定、评分口径固定，方便不同模型或不同 skill 版本复跑。
 
+2026-07-03 起，本目录新增一层**真实交付验收**：不只看模型能否发现单点 bug，也看弱模型能否在 skill 约束下完成「只读摸底 → 影响分析 → Phase 4 文档 → Phase 5 隔离副本改代码 → 验证失败后修复 → 复验」这一整条链路。
+
 ## 目标
 
 - 检查 `pathfinder` 能否在陌生项目里给出有证据的项目地图，而不是只复述目录名。
 - 检查 `impact` 能否正确区分 light/full/negative，不遗漏 DB、API、权限、前端、导出、测试等影响面。
 - 检查弱模型是否会跳过上下文、编造证据、误用父仓库 Git 信息、把危险写操作当成普通改动。
+- 检查弱模型在 Phase 5 里能否留下完整执行记录、同步测试、真实运行验证，并在门禁失败后修到可交付。
 - 给每轮真实 agent 复测留下可比较的记录。
 
 ## 目录
@@ -14,7 +17,8 @@
 | 路径 | 内容 |
 |---|---|
 | `projects.json` | 5 个固定真实项目，包含仓库地址、固定 commit、选型理由和重点检查面 |
-| `cases/` | 每个项目 4 个任务：pathfinder、impact-light、impact-full、negative |
+| `cases/` | 每个项目至少 4 个任务：pathfinder、impact-light、impact-full、negative；部分项目额外包含 Phase 5 交付题 |
+| `delivery-matrix.json` | 下一轮真实交付验收矩阵：runner、S/M/L/NEG 场景、Phase 5 验收点和失败修复循环 |
 | `case-schema.json` | 真实项目 case 的本地结构说明 |
 | `scorecard-template.md` | 人工评分模板 |
 | `runbook.md` | 克隆、执行、归档、判分的复跑流程 |
@@ -35,9 +39,11 @@
 ## 怎么跑
 
 1. 按 `runbook.md` 把真实项目克隆到仓库外的 fixture 目录。
-2. 对每个 case 原样使用 `prompt` 字段触发 `/pathfinder` 或 `/impact`。
-3. 把完整输出、命令结果和评分卡归档到 `eval/runs/real-projects/<date>-<runner>/`。
-4. 运行结构校验：
+2. 按 `delivery-matrix.json` 选择 runner 和场景。下一轮优先跑 `gpt-5.4-mini` 子代理与 Claude Code CLI 的 MiniMax M3。
+3. 对只读 case 原样使用 `prompt`；对 Phase 5 case 使用矩阵里的交付 prompt，在隔离副本里改代码。
+4. 复跑前清理隔离副本里的旧 `change-impact`，除非这次专门测试恢复、刷新地图或旧文档接续。
+5. 把完整输出、diff、命令结果、失败修复过程和评分卡归档到 `eval/runs/real-projects/<date>-<runner>/`。
+6. 运行结构校验：
 
 ```powershell
 python eval/real-projects/scripts/validate_real_projects.py

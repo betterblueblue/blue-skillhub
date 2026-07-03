@@ -31,6 +31,11 @@
         "Thymeleaf 管理页面与后端接口",
         "导入导出与 Excel 注解",
         "破坏性 DB 变更拦截"
+      ],
+      "delivery_fit": [
+        "M",
+        "L",
+        "NEG"
       ]
     },
     {
@@ -54,6 +59,12 @@
         "Prisma schema 与迁移",
         "服务层/路由层/测试覆盖",
         "不能把 schema 变更当成普通文案修改"
+      ],
+      "delivery_fit": [
+        "S",
+        "M",
+        "L",
+        "NEG"
       ]
     },
     {
@@ -79,6 +90,12 @@
         "FastAPI 路由与 OpenAPI",
         "前端表单/列表",
         "Docker/compose 运行证据"
+      ],
+      "delivery_fit": [
+        "S",
+        "M",
+        "L",
+        "NEG"
       ]
     },
     {
@@ -102,6 +119,11 @@
         "构建与 lint/test 命令",
         "UI 文案 light 判档",
         "不要编造 DB/API 文件"
+      ],
+      "delivery_fit": [
+        "S",
+        "M",
+        "NEG"
       ]
     },
     {
@@ -127,6 +149,11 @@
         "Prisma schema 与迁移",
         "前端表单/页面",
         "子目录或无 .git 时不得读取父仓库信息"
+      ],
+      "delivery_fit": [
+        "M",
+        "L",
+        "NEG"
       ],
       "non_git_variant": "把 checkout 目录复制一份并删除 .git，或只复制 apps/api 子目录到仓库外目录，再运行 pathfinder/impact。"
     }
