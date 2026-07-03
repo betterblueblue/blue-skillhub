@@ -455,6 +455,37 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 
 - `python skills\impact\tests\test_scripts\test_impact_validate.py`：28 项通过
 
+### v5.5（V15 Git diff 加固）
+
+真实 `/impact` Phase 5 GLM 5.1 验收发现：模型可能在源码已经写入后撞到预算上限，导致 `090-execution-record.md` 尚未生成。旧 V15 只扫描执行记录文本；当执行记录不存在时会跳过检查，无法发现“源码已变更但无执行记录”的中间状态。
+
+**改了什么**
+
+- `impact_validate.py` 的 V15 增加 Git diff 检查：Git 仓库中只要存在源码/测试/配置类变更，缺少 `090-execution-record.md` 就直接 FAIL
+- 如果 `090-execution-record.md` 存在，但里面没有源码/测试/配置写入 Step，而 Git 中已有相关 diff，也直接 FAIL
+- 非 Git 项目保持原来的文本检查逻辑，不强行要求 Git 状态
+- `test_impact_validate.py` 新增 2 条回归测试：源码 diff 无执行记录必须 FAIL；源码 diff + 只有文档 Step 的执行记录也必须 FAIL
+
+**验证**
+
+- `python skills\impact\tests\test_scripts\test_impact_validate.py`：30 项通过
+- `python skills\pathfinder\tests\test_scripts\test_pathfinder_scripts.py`：23 项通过
+
+### v5.6（Phase 5 真实验收补洞）
+
+真实 Phase 5 复测继续暴露 3 个问题：Composer 2.5 在 Grok CLI 和 Cursor GUI 中都能做到 `impact_validate.py` 全绿，但只改 `meta.label`、漏掉同对象 `meta.title`；Kimi K2.6 能把代码改对，但在修 V13 时越界写入 `debug_v13.py`；V13 会把源码 Step 中的“关联文档：040-light.md”误判为同 Step 写 Phase 4 文档。
+
+**改了什么**
+
+- V13 增加“真正写 Phase 4 文档”的判断：只在 Step 标题、操作对象或操作内容表达写入/生成/更新 Phase 4 文档时触发；“关联文档”“导航”“前置条件”中提到 `040-light.md` 不再误伤
+- V15 从“有源码 Step”升级为“每个源码类 Git diff 都必须被源码 Step 记录覆盖”：像 `debug_v13.py` 这种未记录的越界调试文件会直接 FAIL
+- 新增 V17（FAIL）：任务验收冒烟检查。当前先覆盖 route meta 文案场景，`label` 从旧文案改成新文案但 sibling `title` 仍是旧文案时阻止提交
+- `test_impact_validate.py` 新增 4 条回归测试：关联文档不触发 V13、未记录 `debug_v13.py` 触发 V15、label-only 触发 V17、label/title 同步修改通过
+
+**验证**
+
+- `python -m pytest skills/impact/tests/test_scripts/test_impact_validate.py -q`：34 项通过
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。

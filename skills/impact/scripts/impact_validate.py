@@ -20,8 +20,9 @@ Checks:
   V12: Phase 3 process check (_active-state.md Phase 3 状态 field)          — WARN
   V13: Phase 4/5 split gate (docs and source writes not same Step)           — FAIL
   V14: Phase 5 preflight gate (source writes require 060-preflight.md)        — FAIL
-  V15: Phase 5 record/state gate (source Steps record execution + state)      — FAIL
+  V15: Phase 5 record/state gate (source diffs/Steps record execution+state)  — FAIL
   V16: Active-state Step consistency (header/table/recovery notes)            — FAIL
+  V17: Task acceptance smoke check (obvious partial route text updates)        — FAIL
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -36,6 +37,7 @@ import argparse
 import os
 import random
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -1269,6 +1271,12 @@ RE_SOURCE_CONTENT_WRITE_ACTION = re.compile(
     r"改代码|测试修复|测试断言|配置变更|DDL|DML|外部系统写操作",
     re.I,
 )
+RE_PHASE4_DOC_WRITE_ACTION = re.compile(
+    r"写入|生成|更新|产出|创建|补写|输出|write|create|generate|update",
+    re.I,
+)
+RE_OPERATION_OBJECT_LINE = re.compile(r"^\s*[-*]?\s*(操作对象|写入对象|目标文件|修改对象)[:：]", re.I)
+RE_OPERATION_CONTENT_LINE = re.compile(r"^\s*[-*]?\s*(操作内容|操作|执行结果)[:：]", re.I)
 
 
 def _execution_step_sections(text: str) -> list[str]:
@@ -1303,6 +1311,26 @@ def _has_source_write_in_step(section: str) -> bool:
     return False
 
 
+def _has_phase4_doc_write_in_step(section: str) -> bool:
+    """Return true when a Step writes Phase 4 docs, not merely references them."""
+    lines = section.splitlines()
+    title = lines[0] if lines else ""
+    if RE_PHASE4_DOC_WRITE.search(title) and RE_PHASE4_DOC_WRITE_ACTION.search(title):
+        return True
+
+    for line in lines:
+        stripped = line.strip()
+        if RE_OPERATION_OBJECT_LINE.search(stripped) and RE_PHASE4_DOC_WRITE.search(stripped):
+            return True
+        if (
+            RE_OPERATION_CONTENT_LINE.search(stripped)
+            and RE_PHASE4_DOC_WRITE.search(stripped)
+            and RE_PHASE4_DOC_WRITE_ACTION.search(stripped)
+        ):
+            return True
+    return False
+
+
 def check_phase4_phase5_split(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
     """V13: Check execution record for merged Phase 4 docs + source writes.
 
@@ -1328,7 +1356,7 @@ def check_phase4_phase5_split(req_dir: Path) -> tuple[list[str], list[str], list
 
     merged_steps: list[str] = []
     for section in sections:
-        if RE_PHASE4_DOC_WRITE.search(section) and _has_source_write_in_step(section):
+        if _has_phase4_doc_write_in_step(section) and _has_source_write_in_step(section):
             title = section.splitlines()[0].strip()
             merged_steps.append(title)
 
@@ -1383,22 +1411,110 @@ RE_EXECUTION_RECORD_REF = re.compile(r"090-execution-record\.md", re.I)
 RE_ACTIVE_STATE_REF = re.compile(r"_active-state\.md", re.I)
 
 
-def check_phase5_record_state(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
-    """V15: Source/test/config write Steps must record execution and state."""
+def _changed_source_paths(repo_root: str) -> list[str]:
+    """Return changed source/test/config-like paths from git status.
+
+    This is intentionally best-effort: non-Git projects keep the old text-only
+    V15 behavior, while Git projects can catch a source diff that exists before
+    an execution record is written.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", repo_root, "status", "--porcelain", "--untracked-files=all"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return []
+
+    if result.returncode != 0:
+        return []
+
+    changed: list[str] = []
+    for raw_line in result.stdout.splitlines():
+        if len(raw_line) < 4:
+            continue
+        path = raw_line[3:].strip()
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1].strip()
+        path = path.strip('"').replace("\\", "/")
+        if path.startswith("change-impact/") or path.startswith(".git/"):
+            continue
+        if RE_SOURCE_WRITE_TARGET.search(path):
+            changed.append(path)
+    return changed
+
+
+def _normalized_text(text: str) -> str:
+    return text.replace("\\", "/")
+
+
+def _path_is_recorded(path: str, sections: list[str]) -> bool:
+    normalized_path = path.replace("\\", "/").strip("/")
+    variants = {normalized_path}
+    if normalized_path.startswith("src/"):
+        variants.add(normalized_path[4:])
+    if normalized_path.startswith("./"):
+        variants.add(normalized_path[2:])
+
+    for section in sections:
+        text = _normalized_text(section)
+        if any(variant and variant in text for variant in variants):
+            return True
+    return False
+
+
+def check_phase5_record_state(req_dir: Path, repo_root: str) -> tuple[list[str], list[str], list[str]]:
+    """V15: Source/test/config diffs and write Steps must record execution/state."""
     passes: list[str] = []
     fails: list[str] = []
     warns: list[str] = []
 
     record_file = req_dir / "090-execution-record.md"
+    changed_paths = _changed_source_paths(repo_root)
     if not record_file.exists():
+        if changed_paths:
+            fails.append(
+                "V15: Source/test/config files have git changes but "
+                "090-execution-record.md is missing — write the execution "
+                "record and update _active-state.md before claiming the Step "
+                f"is complete. Changed path(s): {'; '.join(changed_paths[:5])}"
+            )
+            return passes, fails, warns
         passes.append("V15: No execution record yet — no Phase 5 record/state check needed")
         return passes, fails, warns
 
     text = record_file.read_text(encoding="utf-8")
+    source_sections = [
+        section for section in _execution_step_sections(text)
+        if _has_source_write_in_step(section)
+    ]
+    if changed_paths and not source_sections:
+        fails.append(
+            "V15: Source/test/config files have git changes but "
+            "090-execution-record.md has no source/test/config write Step — "
+            "record the actual Step and update _active-state.md. "
+            f"Changed path(s): {'; '.join(changed_paths[:5])}"
+        )
+        return passes, fails, warns
+
+    unrecorded_paths = [
+        path for path in changed_paths
+        if not _path_is_recorded(path, source_sections)
+    ]
+    if unrecorded_paths:
+        fails.append(
+            "V15: Source/test/config files have git changes but are not "
+            "listed in any source/test/config execution Step — record every "
+            "changed source/test/config path or remove the unscoped change. "
+            f"Unrecorded path(s): {'; '.join(unrecorded_paths[:5])}"
+        )
+        return passes, fails, warns
+
     missing_steps: list[str] = []
-    for section in _execution_step_sections(text):
-        if not _has_source_write_in_step(section):
-            continue
+    for section in source_sections:
         missing = []
         if not RE_EXECUTION_RECORD_REF.search(section):
             missing.append("090-execution-record.md")
@@ -1416,6 +1532,112 @@ def check_phase5_record_state(req_dir: Path) -> tuple[list[str], list[str], list
         )
     else:
         passes.append("V15: Source/test/config write Steps include execution record and active-state updates")
+
+    return passes, fails, warns
+
+
+# ===========================================================================
+# V17: Task acceptance smoke check — catch obvious partial route text updates.
+# ===========================================================================
+
+RE_LABEL_LINE = re.compile(r"^\s*[+-]\s*label\s*:\s*(['\"])(?P<value>.*?)\1\s*,?\s*$", re.M)
+RE_TITLE_VALUE = re.compile(r"title\s*:\s*(['\"])(?P<value>.*?)\1")
+ROUTE_TEXT_EXTENSIONS = {".ts", ".tsx", ".js", ".jsx", ".vue"}
+
+
+def _git_diff_for_path(repo_root: str, path: str) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-C", repo_root, "diff", "--unified=0", "--", path],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return ""
+    if result.returncode != 0:
+        return ""
+    return result.stdout
+
+
+def _label_changes_from_diff(diff_text: str) -> list[tuple[str, str]]:
+    old_values: list[str] = []
+    changes: list[tuple[str, str]] = []
+    for match in RE_LABEL_LINE.finditer(diff_text):
+        line = match.group(0)
+        value = match.group("value")
+        if line.lstrip().startswith("-"):
+            old_values.append(value)
+        elif line.lstrip().startswith("+") and old_values:
+            old_value = old_values.pop(0)
+            if old_value != value:
+                changes.append((old_value, value))
+    return changes
+
+
+def _line_window(lines: list[str], index: int, radius: int = 12) -> str:
+    start = max(0, index - radius)
+    end = min(len(lines), index + radius + 1)
+    return "\n".join(lines[start:end])
+
+
+def _partial_route_text_updates(repo_root: str, changed_paths: list[str]) -> list[str]:
+    findings: list[str] = []
+    root = Path(repo_root)
+    for relpath in changed_paths:
+        path = Path(relpath)
+        if path.suffix.lower() not in ROUTE_TEXT_EXTENSIONS:
+            continue
+
+        diff_text = _git_diff_for_path(repo_root, relpath)
+        label_changes = _label_changes_from_diff(diff_text)
+        if not label_changes:
+            continue
+
+        abs_path = root / relpath
+        if not abs_path.exists():
+            continue
+        try:
+            lines = abs_path.read_text(encoding="utf-8").splitlines()
+        except UnicodeDecodeError:
+            continue
+
+        for old_value, new_value in label_changes:
+            for idx, line in enumerate(lines):
+                if "label" not in line or new_value not in line:
+                    continue
+                window = _line_window(lines, idx)
+                for title_match in RE_TITLE_VALUE.finditer(window):
+                    if title_match.group("value") == old_value:
+                        findings.append(f"{relpath}: label {old_value!r}->{new_value!r} but sibling title remains {old_value!r}")
+                        break
+                if findings and findings[-1].startswith(f"{relpath}: label {old_value!r}->{new_value!r}"):
+                    break
+    return findings
+
+
+def check_task_acceptance_smoke(repo_root: str) -> tuple[list[str], list[str], list[str]]:
+    """V17: Catch obvious partial implementation of route display text changes."""
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    changed_paths = _changed_source_paths(repo_root)
+    if not changed_paths:
+        passes.append("V17: No source/test/config git changes — no task-specific acceptance smoke needed")
+        return passes, fails, warns
+
+    partial_updates = _partial_route_text_updates(repo_root, changed_paths)
+    if partial_updates:
+        fails.append(
+            "V17: Route display text appears partially updated — "
+            "label changed while sibling title still uses the old display text. "
+            "Update the paired display field or explicitly split/clarify the "
+            f"acceptance boundary before completion. Finding(s): {'; '.join(partial_updates[:5])}"
+        )
+    else:
+        passes.append("V17: No obvious partial route display-text update detected")
 
     return passes, fails, warns
 
@@ -1719,13 +1941,19 @@ def main():
     all_warns.extend(w)
 
     # V15: Phase 5 record/state gate
-    p, f, w = check_phase5_record_state(req_dir)
+    p, f, w = check_phase5_record_state(req_dir, repo_root)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)
 
     # V16: Active-state Step consistency
     p, f, w = check_active_state_consistency(req_dir)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V17: Task acceptance smoke check
+    p, f, w = check_task_acceptance_smoke(repo_root)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)
