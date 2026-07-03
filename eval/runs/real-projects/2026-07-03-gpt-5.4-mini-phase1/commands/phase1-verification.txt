@@ -1,0 +1,65 @@
+Phase 1 weak-model matrix verification
+Date: 2026-07-03
+Runner model: gpt-5.4-mini
+Judge: main Codex thread
+Workspace: E:\agent\blue-skillhub
+
+Fixture commits:
+
+git -C E:\agent\real-project-fixtures\java-ruoyi rev-parse HEAD
+0d42679bc25576286bf34a156002716ed7de5739
+
+git -C E:\agent\real-project-fixtures\node-realworld-prisma rev-parse HEAD
+6ac99ea5aeadc4e001dd4d6933c2e269f878a969
+
+git -C E:\agent\real-project-fixtures\python-fastapi-template rev-parse HEAD
+3685fb66259fa12f8436ae7f88379fd64ca7cdbd
+
+Main repo status before archive:
+
+git status --short --branch
+## master...origin/master
+?? eval/cases/impact/N1.json
+?? eval/cases/impact/N2.json
+?? eval/cases/pathfinder/P5.json
+?? eval/cases/pathfinder/P6.json
+
+Pathfinder validator before V8 patch:
+
+python skills\pathfinder\scripts\pf_validate.py E:\agent\real-project-fixtures\java-ruoyi\change-impact\_project-map.md --repo-root E:\agent\real-project-fixtures\java-ruoyi
+SUMMARY: 7 passed, 0 failed, 0 warnings
+
+python skills\pathfinder\scripts\pf_validate.py E:\agent\real-project-fixtures\node-realworld-prisma\change-impact\_project-map.md --repo-root E:\agent\real-project-fixtures\node-realworld-prisma
+SUMMARY: 7 passed, 0 failed, 0 warnings
+
+python skills\pathfinder\scripts\pf_validate.py E:\agent\real-project-fixtures\python-fastapi-template\change-impact\_project-map.md --repo-root E:\agent\real-project-fixtures\python-fastapi-template
+SUMMARY: 7 passed, 0 failed, 0 warnings
+
+Judge-discovered malformed evidence path sample:
+
+rg -n "[A-Za-z0-9_.-]+/E:/|/[A-Za-z]:/|[A-Za-z]:\\" E:\agent\real-project-fixtures\java-ruoyi\change-impact\_project-map.md
+line 8: ruoyi-admin/E:/agent/real-project-fixtures/java-ruoyi/pom.xml:23-53
+line 15: ruoyi-admin/src/main/resources/E:/agent/real-project-fixtures/java-ruoyi/ruoyi-admin/src/main/resources/application.yml:19-20
+line 15: ruoyi-admin/E:/agent/real-project-fixtures/java-ruoyi/pom.xml:11-12
+line 59: ruoyi-admin/E:/agent/real-project-fixtures/java-ruoyi/pom.xml:23-53
+line 67: ruoyi-admin/E:/agent/real-project-fixtures/java-ruoyi/pom.xml:23-29
+line 69: ruoyi-admin/E:/agent/real-project-fixtures/java-ruoyi/pom.xml:35
+line 76: ruoyi-admin/E:/agent/real-project-fixtures/java-ruoyi/pom.xml:11-53
+
+Pathfinder validator after V8 patch:
+
+python skills\pathfinder\scripts\pf_validate.py E:\agent\real-project-fixtures\java-ruoyi\change-impact\_project-map.md --repo-root E:\agent\real-project-fixtures\java-ruoyi
+SUMMARY: 7 passed, 7 failed, 0 warnings
+First failure class: V8 malformed evidence path mixes a relative prefix with a Windows absolute path.
+
+python skills\pathfinder\scripts\pf_validate.py E:\agent\real-project-fixtures\node-realworld-prisma\change-impact\_project-map.md --repo-root E:\agent\real-project-fixtures\node-realworld-prisma
+SUMMARY: 8 passed, 0 failed, 0 warnings
+
+python skills\pathfinder\scripts\pf_validate.py E:\agent\real-project-fixtures\python-fastapi-template\change-impact\_project-map.md --repo-root E:\agent\real-project-fixtures\python-fastapi-template
+SUMMARY: 8 passed, 0 failed, 0 warnings
+
+Script regression test after V8 patch:
+
+python skills\pathfinder\tests\test_scripts\test_pathfinder_scripts.py
+Ran 23 tests
+OK
