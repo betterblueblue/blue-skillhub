@@ -440,6 +440,21 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 - `python skills\impact\tests\test_scripts\test_impact_validate.py`：26 项通过
 - 弱模型验收产物复跑 `impact_validate.py`：16 passed, 0 failed, 0 warnings
 
+### v5.4（真实 slash 执行流门禁补强）
+
+真实 `/impact` Phase 5 验收发现 3 个执行流问题：快速通道判定后模型可能停在分类结论；Phase 4 完成后可能在 `060-preflight.md` 缺失时直接提出源码 Step；源码 Step 完成后 `_active-state.md` 的状态头、Step 台账和恢复备注可能互相矛盾。
+
+**改了什么**
+
+- 快速通道规则明确：判定不是终点。满足快速通道后必须继续 Phase 4 light 文档输出、运行 `impact_validate.py`，再进入 Phase 5 执行前检查
+- Phase 4/5 规则明确：`060-preflight.md` 缺失时，下一步只能生成/更新执行前检查和 `_active-state.md`，不得提前提出源码、测试、配置、DDL/DML 或外部系统写入 Step
+- `impact_validate.py` 新增 V16（FAIL）：检查 `_active-state.md` 状态头、Step 台账和恢复备注的一致性。典型拦截：`待执行 Step: none` 但台账仍有 `待确认`；`上次完成 Step` 对应台账行不是终态；恢复备注仍要求确认过期 Step
+- `test_impact_validate.py` 新增回归测试：过期 active-state 必须 FAIL；完成态 active-state 必须 PASS
+
+**验证**
+
+- `python skills\impact\tests\test_scripts\test_impact_validate.py`：28 项通过
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。

@@ -21,6 +21,7 @@ Checks:
   V13: Phase 4/5 split gate (docs and source writes not same Step)           — FAIL
   V14: Phase 5 preflight gate (source writes require 060-preflight.md)        — FAIL
   V15: Phase 5 record/state gate (source Steps record execution + state)      — FAIL
+  V16: Active-state Step consistency (header/table/recovery notes)            — FAIL
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -1420,6 +1421,164 @@ def check_phase5_record_state(req_dir: Path) -> tuple[list[str], list[str], list
 
 
 # ===========================================================================
+# V16: Active-state Step consistency — _active-state.md status header, Step
+#      ledger and recovery notes must not contradict each other.
+# ===========================================================================
+
+RE_CONFIRMATION_REQUEST = re.compile(
+    r"(等待|待|需要|请|请求|下一步|继续|必须).*确认\s*Step\s*(\d+)",
+    re.I,
+)
+
+
+def _active_field(text: str, label: str) -> str | None:
+    """Read a '- label: value' or '- label：value' field from _active-state.md."""
+    m = re.search(rf"(?m)^\s*-\s*{re.escape(label)}\s*[:：]\s*(.+?)\s*$", text)
+    if not m:
+        return None
+    return m.group(1).strip().strip("`")
+
+
+def _normalize_step(value: str | None) -> str | None:
+    """Normalize 'Step 4' / 'none' values; return None for placeholders."""
+    if value is None:
+        return None
+    cleaned = value.strip().strip("[]` ")
+    m = re.search(r"\bStep\s*(\d+)\b", cleaned, re.I)
+    if m:
+        return f"Step {m.group(1)}"
+    if cleaned.lower() == "none" or cleaned in {"无", "无需", "不适用"}:
+        return "none"
+    return None
+
+
+def _normalize_bool(value: str | None) -> bool | None:
+    if value is None:
+        return None
+    cleaned = value.strip().strip("[]` ").lower()
+    if cleaned in {"true", "yes", "y", "1", "是", "需要"}:
+        return True
+    if cleaned in {"false", "no", "n", "0", "否", "无需", "不需要"}:
+        return False
+    return None
+
+
+def _active_step_rows(text: str) -> dict[str, str]:
+    """Return {Step N: status} from the Step ledger table."""
+    section = _extract_section_text(text, ["Step 台账"])
+    rows: dict[str, str] = {}
+    for line in section.splitlines():
+        cells = _split_table_row(line)
+        if len(cells) < 2:
+            continue
+        m = re.search(r"\bStep\s*(\d+)\b", cells[0], re.I)
+        if not m or cells[1] == "状态":
+            continue
+        rows[f"Step {m.group(1)}"] = cells[1]
+    return rows
+
+
+def _is_pending_status(status: str) -> bool:
+    return any(term in status for term in ("计划", "待确认", "已确认", "进行中"))
+
+
+def _is_terminal_status(status: str) -> bool:
+    return any(term in status for term in ("成功", "已完成", "完成", "失败", "跳过"))
+
+
+def _recovery_confirmation_requests(text: str) -> list[tuple[str, str]]:
+    """Find recovery-note lines that ask for a future Step confirmation."""
+    section = _extract_section_text(text, ["恢复备注"])
+    requests: list[tuple[str, str]] = []
+    for line in section.splitlines():
+        if any(term in line for term in ("不需要", "无需", "无待确认", "没有待确认")):
+            continue
+        m = RE_CONFIRMATION_REQUEST.search(line)
+        if m:
+            requests.append((f"Step {m.group(2)}", line.strip()))
+    return requests
+
+
+def check_active_state_consistency(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V16: Check _active-state.md for mechanical Step-state consistency."""
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    state_file = req_dir / "_active-state.md"
+    if not state_file.exists():
+        return passes, fails, warns  # V1 handles missing _active-state.md
+
+    text = state_file.read_text(encoding="utf-8")
+
+    confirmation_required = _normalize_bool(_active_field(text, "是否需要确认"))
+    pending_step = _normalize_step(_active_field(text, "待执行 Step"))
+    prompted_step = _normalize_step(_active_field(text, "上次提示 Step"))
+    completed_step = _normalize_step(_active_field(text, "上次完成 Step"))
+    step_rows = _active_step_rows(text)
+
+    issues: list[str] = []
+
+    if confirmation_required is False and pending_step not in (None, "none"):
+        issues.append(
+            f"是否需要确认=false but 待执行 Step is {pending_step}"
+        )
+    if confirmation_required is True and pending_step == "none":
+        issues.append("是否需要确认=true but 待执行 Step is none")
+
+    if pending_step == "none":
+        pending_rows = [
+            f"{step}={status}"
+            for step, status in step_rows.items()
+            if _is_pending_status(status)
+        ]
+        if pending_rows:
+            issues.append(
+                "待执行 Step is none but Step 台账 still has pending rows: "
+                + ", ".join(pending_rows[:3])
+            )
+    elif pending_step is not None:
+        row_status = step_rows.get(pending_step)
+        if row_status and _is_terminal_status(row_status):
+            issues.append(
+                f"待执行 Step is {pending_step} but Step 台账 marks it as {row_status}"
+            )
+        if prompted_step not in (None, "none", pending_step):
+            issues.append(
+                f"待执行 Step is {pending_step} but 上次提示 Step is {prompted_step}"
+            )
+
+    if completed_step not in (None, "none"):
+        row_status = step_rows.get(completed_step)
+        if row_status is None:
+            issues.append(f"上次完成 Step is {completed_step} but Step 台账 has no row")
+        elif not _is_terminal_status(row_status):
+            issues.append(
+                f"上次完成 Step is {completed_step} but Step 台账 marks it as {row_status}"
+            )
+
+    for note_step, line in _recovery_confirmation_requests(text):
+        if pending_step in (None, "none"):
+            issues.append(
+                f"恢复备注仍要求确认 {note_step}, but 待执行 Step is none: {line[:80]}"
+            )
+        elif note_step != pending_step:
+            issues.append(
+                f"恢复备注要求确认 {note_step}, but 待执行 Step is {pending_step}: {line[:80]}"
+            )
+
+    if issues:
+        fails.append(
+            "V16: _active-state.md Step state is inconsistent — "
+            + "; ".join(issues[:4])
+        )
+    else:
+        passes.append("V16: _active-state.md Step state is internally consistent")
+
+    return passes, fails, warns
+
+
+# ===========================================================================
 # Main
 # ===========================================================================
 
@@ -1561,6 +1720,12 @@ def main():
 
     # V15: Phase 5 record/state gate
     p, f, w = check_phase5_record_state(req_dir)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V16: Active-state Step consistency
+    p, f, w = check_active_state_consistency(req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

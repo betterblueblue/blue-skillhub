@@ -55,9 +55,34 @@ def _make_repo(style_rules: str | None = None, context_pack: str | None = None) 
     with open(os.path.join(req_dir, "030-implementation.md"), "w", encoding="utf-8") as f:
         f.write("# Implementation\n\nNo changes.\n")
 
-    # _active-state.md (Phase 3 fields for V12)
+    # _active-state.md (Phase 3 fields for V12, Step state for V16)
     with open(os.path.join(req_dir, "_active-state.md"), "w", encoding="utf-8") as f:
-        f.write("# Active State\n\n## Phase 3 状态\n\n已完成\n\n## Phase 3.5 定级\n\nlight\n")
+        f.write(
+            """# Active State
+
+## 状态头
+
+- 当前阶段：Phase 4
+- 模式：full
+- Phase 3 状态：已完成
+- Phase 3.5 定级：full
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：none
+- 上次确认 Step：none
+- 上次完成 Step：none
+- V1-only 计数：0
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+
+## 恢复备注
+
+- 无
+"""
+        )
 
     if style_rules is not None:
         ci_dir = os.path.join(td, "change-impact")
@@ -479,6 +504,12 @@ def _write_preflight(req_dir: str):
         f.write("# Preflight\n\n## Phase 4/5 分步\n\n已完成\n")
 
 
+def _write_active_state(req_dir: str, content: str):
+    """Write _active-state.md into req_dir."""
+    with open(os.path.join(req_dir, "_active-state.md"), "w", encoding="utf-8") as f:
+        f.write(content)
+
+
 class TestV13Phase4Phase5Split(unittest.TestCase):
     """V13: Phase 4 docs and source writes must not be merged in one Step."""
 
@@ -685,6 +716,117 @@ class TestV15Phase5RecordState(unittest.TestCase):
         self.assertTrue(
             any("include execution record and active-state" in l for l in v15),
             f"Expected V15 record/state PASS, got: {v15}"
+        )
+
+
+def _v16_lines(stdout: str) -> list[str]:
+    """Extract V16-related lines from stdout."""
+    return [l for l in stdout.splitlines() if "V16:" in l]
+
+
+class TestV16ActiveStateConsistency(unittest.TestCase):
+    """V16: _active-state.md header, Step ledger and notes must agree."""
+
+    def test_completed_step_with_pending_row_fails(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 4: 源码/测试修改
+
+- 确认类型：改代码 / 测试修复
+- 操作对象：`src/routes/sidebar.ts`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改侧边栏文案并同步执行记录
+- 用户确认：确认 Step 4
+""",
+        )
+        _write_active_state(
+            rd,
+            """# Active State
+
+## 状态头
+
+- 当前阶段：完成
+- 模式：light
+- Phase 3 状态：快速通道跳过
+- Phase 3.5 定级：快速通道跳过
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：Step 4
+- 上次确认 Step：Step 4
+- 上次完成 Step：Step 4
+- V1-only 计数：1
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+| Step 4 | 待确认 | `src/routes/sidebar.ts` | 需要 | V1 | |
+
+## 恢复备注
+
+- 下一步需要确认 Step 3 后继续源码写入
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v16 = _v16_lines(out)
+        self.assertEqual(code, 1, f"Stale active-state should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("Step state is inconsistent" in l for l in v16),
+            f"Expected V16 inconsistency FAIL, got: {v16}"
+        )
+
+    def test_completed_step_with_terminal_row_passes(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 4: 源码/测试修改
+
+- 确认类型：改代码 / 测试修复
+- 操作对象：`src/routes/sidebar.ts`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改侧边栏文案并同步执行记录
+- 用户确认：确认 Step 4
+""",
+        )
+        _write_active_state(
+            rd,
+            """# Active State
+
+## 状态头
+
+- 当前阶段：完成
+- 模式：light
+- Phase 3 状态：快速通道跳过
+- Phase 3.5 定级：快速通道跳过
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：Step 4
+- 上次确认 Step：Step 4
+- 上次完成 Step：Step 4
+- V1-only 计数：1
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+| Step 4 | 成功 | `src/routes/sidebar.ts` | 已确认 | V1 | 验证受限 |
+
+## 恢复备注
+
+- 任务已完成，无待确认 Step
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v16 = _v16_lines(out)
+        self.assertEqual(code, 0, f"Consistent active-state should pass, got {code}\n{out}")
+        self.assertTrue(
+            any("internally consistent" in l for l in v16),
+            f"Expected V16 consistency PASS, got: {v16}"
         )
 
 

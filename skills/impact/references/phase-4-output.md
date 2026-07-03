@@ -126,7 +126,7 @@
 >
 > **_active-state.md 的「最近验证」节必须填入实际运行的脚本命令和结果，不得写 N/A 或「未执行」。** 只读分析阶段也必须运行验证脚本——脚本只读检查文件内容，不修改项目代码。
 >
-> **Phase 4 文档写入和 Phase 5 源码写入必须拆成不同 Step。** Phase 4 的确认范围只能覆盖文档产出、`impact_validate.py` 校验和进入执行前检查；不得同时覆盖源码、测试、配置、DDL/DML 或外部系统写入。需要改代码时，先完成本文档校验，再生成 `060-preflight.md`，然后单独请求源码写入 Step 的 `确认 Step N`。
+> **Phase 4 文档写入和 Phase 5 源码写入必须拆成不同 Step。** Phase 4 的确认范围只能覆盖文档产出、`impact_validate.py` 校验和进入执行前检查；不得同时覆盖源码、测试、配置、DDL/DML 或外部系统写入。需要改代码时，先完成本文档校验，再生成 `060-preflight.md`，然后单独请求源码写入 Step 的 `确认 Step N`。如果 `060-preflight.md` 还不存在，下一步只能是生成/更新执行前检查和 `_active-state.md`，不得提前提出源码、测试、配置、DDL/DML 或外部系统写入 Step。
 
 运行 `python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|full> --repo-root <项目根目录>` 完成输出验证。
 
@@ -147,6 +147,7 @@
 | Phase 4/5 分步门禁 | V13 | FAIL，同一个 Step 同时写 Phase 4 文档和改源码/测试/配置则阻止提交 |
 | Phase 5 执行前检查 | V14 | FAIL，源码/测试/配置写入 Step 存在但缺 `060-preflight.md` 则阻止提交 |
 | Phase 5 记录完整性 | V15 | FAIL，源码/测试/配置写入 Step 未列出 `090-execution-record.md` 和 `_active-state.md` 则阻止提交 |
+| `_active-state.md` Step 状态一致性 | V16 | FAIL，状态头、Step 台账或恢复备注互相矛盾则阻止提交 |
 
 V7 判档合理性检查包含三个子检查：
 - **全量词覆盖检查（FAIL）**：用户原话出现全量词（每次/所有/全部/任何/一律/每个）时，产出必须包含覆盖范围分析（覆盖范围/缺口）。缺失则 FAIL，阻止提交。
