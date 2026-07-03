@@ -30,6 +30,7 @@
 - [Impact rubric](rubric-impact.md) — 指向 VALIDATION.md 的 9 维
 - [Pathfinder rubric](rubric-pathfinder.md) — Pathfinder 专属 9 维
 - [回归触发矩阵](regression.md) — 改了什么 → 跑哪些复测
+- [真实项目回归测试](../../eval/real-projects/) — Java/Node/Python/前端/monorepo 项目的可复跑 case、评分卡和 runbook
 - [基线与红线规则](../../eval/baselines/) — 防漂移硬机制
 
 ## 复验体系(单一权威入口)

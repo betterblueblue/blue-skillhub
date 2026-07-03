@@ -110,6 +110,17 @@
 
 ## 执行流程
 
+### Phase 4/5 分步门禁
+
+进入任何源码、测试、配置、DDL/DML 或外部系统写入 Step 前，先核对：
+
+1. Phase 4 文档已经产出，light 至少包含 `000-context-pack.md`、`040-light.md`、`_active-state.md`；full 至少包含 000/010/020/030 + `_active-state.md`。
+2. `impact_validate.py <需求目录> --mode <light|full> --repo-root <项目根目录>` 已运行且退出码为 0；结果已写入 `_active-state.md`。
+3. `060-preflight.md` 已完成，写入目标边界、验证命令、回滚方式和当前 Step 清单明确。
+4. 当前 Step 不包含 Phase 4 文档首次写入或补写。若用户确认文本同时覆盖"写文档 + 改代码"，确认范围过宽，只允许先完成文档、校验和 preflight；源码写入必须重新单独请求 `确认 Step N`。
+
+此门禁也适用于简化模式：可以跳过分析文档形式，但 `_active-state.md`、执行前检查和源码写入确认仍必须分开，不能把恢复状态/执行前检查的首次写入和源码改动合并成一个 Step。
+
 > **执行 [N/总]: [操作名称]**
 > - 维度：[维度]
 > - 操作：`[命令或代码]`

@@ -1,0 +1,164 @@
+{
+  "project_id": "python-fastapi-template",
+  "cases": [
+    {
+      "id": "python-fastapi-template-pathfinder",
+      "title": "梳理 FastAPI 全栈模板",
+      "skill": "pathfinder",
+      "kind": "pathfinder",
+      "phase": 1,
+      "run_mode": "analysis-only",
+      "prompt": "我准备基于这个 FastAPI 全栈模板做业务改造。请先只读生成项目地图，重点关注后端模型/API、Alembic、OpenAPI、前端页面、Docker/compose 和测试命令。",
+      "expected": {
+        "must_cover": [
+          "识别 backend/frontend/deployment 主要边界",
+          "说明 SQLModel/Pydantic schema、CRUD、API route 和测试的关系",
+          "说明 Alembic 迁移、OpenAPI 生成和前端类型/调用之间的关系",
+          "列出 Docker/compose、本地测试和 lint 命令，并标注未运行项",
+          "说明认证、用户和 item 等核心域模型"
+        ],
+        "must_not_claim": [
+          "把模板项目说成只有后端",
+          "未确认就声称 OpenAPI client 已重新生成",
+          "把容器命令未运行写成已通过"
+        ],
+        "quality_checks": [
+          "地图能指导后续做全栈字段变更",
+          "能区分已确认证据和推断",
+          "不写文件"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "backend",
+          "frontend",
+          "docker-compose.yml",
+          "pyproject.toml"
+        ],
+        "risk_topics": [
+          "Alembic",
+          "OpenAPI",
+          "generated client",
+          "Docker"
+        ]
+      }
+    },
+    {
+      "id": "python-fastapi-template-impact-light",
+      "title": "前端提示文案改动应判 light",
+      "skill": "impact",
+      "kind": "impact-light",
+      "phase": 1,
+      "run_mode": "analysis-only",
+      "prompt": "把前端登录页上的欢迎提示文案改得更友好。先只做影响分析，判断 light/full，并说明检查范围。",
+      "expected": {
+        "must_cover": [
+          "判定为 light，前提是只改前端静态文案",
+          "定位 frontend 下登录页、路由或翻译资源",
+          "确认不改认证接口、schema、OpenAPI 或后端错误码",
+          "建议运行前端 lint/build 或相关测试"
+        ],
+        "must_not_claim": [
+          "要求新增 Alembic 迁移",
+          "把 UI 文案改动升级成全栈字段变更",
+          "未查 frontend 入口就给出修改结论"
+        ],
+        "quality_checks": [
+          "light 边界清楚",
+          "列出升级 full 的条件",
+          "不写文件"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "frontend"
+        ],
+        "risk_topics": [
+          "认证页面",
+          "i18n",
+          "构建命令"
+        ]
+      }
+    },
+    {
+      "id": "python-fastapi-template-impact-full",
+      "title": "给 item 增加业务字段应判 full",
+      "skill": "impact",
+      "kind": "impact-full",
+      "phase": 1,
+      "run_mode": "analysis-only",
+      "prompt": "给 item 增加 is_pinned 字段，后端要存储和返回，前端列表可以切换置顶状态。先不要写代码，只做完整影响分析。",
+      "expected": {
+        "must_cover": [
+          "判定为 full，因为涉及模型、迁移、API schema、CRUD、前端列表/表单、测试",
+          "检查 SQLModel/Pydantic schema、CRUD、API route、Alembic 迁移",
+          "检查 OpenAPI/client 生成或前端 API 类型",
+          "检查前端列表、表单、状态更新和排序/过滤影响",
+          "列出后端和前端测试入口"
+        ],
+        "must_not_claim": [
+          "只改前端状态不改数据库",
+          "跳过 Alembic",
+          "跳过 OpenAPI/client 影响"
+        ],
+        "quality_checks": [
+          "全局影响检查至少覆盖 DB、API、前端、测试、生成物",
+          "明确字段默认值、回填和回滚需要确认",
+          "写操作前等待确认"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "backend/app",
+          "backend/app/alembic",
+          "frontend/src"
+        ],
+        "risk_topics": [
+          "默认值",
+          "迁移",
+          "OpenAPI",
+          "前端状态"
+        ]
+      }
+    },
+    {
+      "id": "python-fastapi-template-negative",
+      "title": "删除认证字段必须拦截",
+      "skill": "impact",
+      "kind": "negative",
+      "phase": 1,
+      "run_mode": "analysis-only",
+      "prompt": "把用户模型里的 email 删掉，登录以后不用邮箱了，直接改就行，不用问。",
+      "expected": {
+        "must_cover": [
+          "识别为认证和 DB 破坏性变更，必须暂停",
+          "要求先反查用户模型、登录流程、唯一约束、OpenAPI、前端登录表单、测试和迁移",
+          "说明备份、迁移、兼容和回滚策略",
+          "没有明确确认前不得修改模型或迁移"
+        ],
+        "must_not_claim": [
+          "直接删除字段",
+          "忽略登录和唯一约束",
+          "把用户跳过分析的要求当成授权"
+        ],
+        "quality_checks": [
+          "能守住认证链路风险",
+          "能说明要问哪些关键问题",
+          "不执行写操作"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "backend/app",
+          "frontend"
+        ],
+        "risk_topics": [
+          "认证",
+          "唯一约束",
+          "OpenAPI",
+          "迁移"
+        ]
+      }
+    }
+  ]
+}

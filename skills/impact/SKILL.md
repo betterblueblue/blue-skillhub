@@ -51,6 +51,8 @@ disable-model-invocation: true
 
 10. **简化模式安全底线**：用户要求简化文档或直接执行时，可以跳过 Phase 4 的分析文档（000/010/020/030/040），但以下各项不得跳过：① 创建 `_active-state.md`（恢复基础设施，不是分析文档）；② 执行前检查（Phase 5 入口）；③ 写操作确认（规则 #1）；④ 破坏性变更影响发现（规则 #2/#5）；⑤ 验证方案。简化的是文档形式，不是安全边界。
 
+11. **Phase 4/5 分步门禁**：Phase 4 文档写入不得和源码、测试、配置、DDL/DML 或外部系统写操作合并在同一个 Step。源码写入 Step 只能在 Phase 4 文档已产出、`impact_validate.py` 已通过、`060-preflight.md` 已完成后再单独请求确认。`确认 Step N` 若同时覆盖"写文档 + 改代码"，视为范围过宽，不能执行源码写入。
+
 ## 目录结构
 
 ```
@@ -232,10 +234,11 @@ python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|ful
 - 有 WARN 项 → 在提交确认时向用户说明
 - 脚本运行结果（PASS/FAIL/WARN 汇总）须记入 `_active-state.md`
 - **跳过脚本运行 = Phase 4 未完成**
+- Phase 4 文档写入完成后只能请求用户确认文档/进入执行前检查；不得在同一个 Step 里同时写 Phase 4 文档和改源码、测试、配置、DDL/DML 或外部系统。
 
 ## Phase 5: 执行与验证
 
-用户确认文档后进入。**所有「写类」操作逐项确认。** 进入写操作前先用 `templates/060-preflight.md` 完成执行前检查。必须维护 `_active-state.md`。
+用户确认文档后进入。**所有「写类」操作逐项确认。** 进入写操作前先用 `templates/060-preflight.md` 完成执行前检查。必须维护 `_active-state.md`。源码、测试、配置、DDL/DML 或外部系统写入 Step 必须和 Phase 4 文档写入 Step 分开；如果当前确认同时覆盖写文档和改代码，先只完成文档与验证，然后重新给出源码写入 Step 等待新的 `确认 Step N`。
 
 → **进入前必须读取 `references/phase-5-execution.md`**（含写入目标边界、V1-only 连续计数、非 Git 回退方案、阻塞恢复检查、DDL/DML 执行方式、高风险 Step 拦截清单详细处理流程、验证方案、测试失败处理、执行记录模板）
 

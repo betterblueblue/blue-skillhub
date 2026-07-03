@@ -29,6 +29,7 @@
 | 非 Git 备选方案 | 如果不是 Git 仓库，记录替代审计方式：before/after 摘要、文件 hash、备份路径或用户确认接受无 git 风险 |  |  |
 | Context Pack | `000-context-pack.md` 已确认，或对话中的 Context Pack 已被用户接受且仍有效 |  |  |
 | 文档确认 | light 摘要或 full 当前阶段文档已确认 |  |  |
+| Phase 4/5 分步 | `impact_validate.py` 已对 Phase 4 文档返回 exit 0；当前源码/测试/配置 Step 不包含 000/010/020/030/040 文档首次写入或补写 |  |  |
 | Step 级确认 | 每个写类操作都有用户显式 `确认 Step N` |  |  |
 | 阻塞恢复 | blocked/长时间等待/上下文压缩/线程恢复后，已读取 `_active-state.md`、复核 pending Step、目标文件当前状态和最新 `确认 Step N` |  |  |
 | 写入目标边界 | 声明目标项目根目录；每个文件写入对象已解析为绝对路径且位于目标项目根目录内；`change-impact/` 未写到其他仓库或 agent 当前工作目录 |  |  |

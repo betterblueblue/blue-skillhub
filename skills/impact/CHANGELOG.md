@@ -390,6 +390,26 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 - Impact light 关键链路门禁升级：V11 从 WARN 升级为 FAIL。模板和 phase-4-output.md 都说"light 模式强制"，脚本须对齐
 - Pathfinder 测试同步：budget_tier 期望值从 `tiny/small/medium/large` 改为 `小仓/中仓/大仓/超大仓`；V6 facts 缺失期望从 WARN (exit 0) 改为 FAIL (exit 1)；受影响的 `test_stdin_mode` 和 `test_v4_nav_line_no_false_positive` 补充 facts 文件创建；degradation-trap fixture 补 facts 文件 + 修 Mermaid 节点 ID 使其在正文中出现
 
+### v5.1（Phase 4/5 分步门禁）
+
+高保真 `/impact` 模拟发现：agent 能正确等待 `确认 Step 1`，也能写文档、改代码和跑验证，但把「写 light 文档」和「修改源码/测试」合并到同一个 Step 里。安全上没有越权，但确认范围过宽，不符合 Phase 4 文档先校验、Phase 5 源码写入再单独确认的设计。
+
+**改了什么**
+
+- SKILL.md 新增硬规则 #11「Phase 4/5 分步门禁」：Phase 4 文档写入不得和源码、测试、配置、DDL/DML 或外部系统写入合并在同一个 Step
+- `phase-4-output.md` 明确：Phase 4 的确认范围只能覆盖文档产出、`impact_validate.py` 校验和进入执行前检查；源码写入必须另起 Step
+- `phase-5-execution.md` 新增执行前核对：源码写入前必须确认 Phase 4 文档已产出、validator exit 0、`060-preflight.md` 已完成
+- `060-preflight.md` P0 门禁新增「Phase 4/5 分步」行
+- `impact_validate.py` 新增 V13（FAIL）：扫描 `090-execution-record.md`，同一个 Step 同时写 000/010/020/030/040 文档和改源码/测试/配置时阻止提交
+- V13 判定收窄到 Step 标题、确认类型、操作对象和操作内容，避免文档 Step 只是引用 `src/`、`tests/` 证据路径时被误判为源码写入
+- `test_impact_validate.py` 新增 V13 回归测试：合并 Step 必须 FAIL，拆分后的源码 Step 必须 PASS；文档 Step 引用源码证据必须 PASS
+
+**验证**
+
+- `python skills\impact\tests\test_scripts\test_impact_validate.py`：21 项通过
+- 用高保真模拟产物复跑 `impact_validate.py`：V13 正确 FAIL，命中「写入 light 文档、修改登录失败提示及对应测试」
+- V13 修复后再次高保真模拟：Phase 4 文档、preflight、源码/测试修改拆成 3 个 Step，最终 `impact_validate.py` 14 passed, 0 failed, 0 warnings
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。

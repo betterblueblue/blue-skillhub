@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "last_verified": "2026-07-03",
+  "fixture_root_suggestion": "E:\\agent\\real-project-fixtures",
+  "phase1_project_ids": [
+    "java-ruoyi",
+    "node-realworld-prisma",
+    "python-fastapi-template"
+  ],
+  "projects": [
+    {
+      "id": "java-ruoyi",
+      "label": "RuoYi",
+      "category": "java-backend",
+      "phase": 1,
+      "repo_url": "https://github.com/yangzongzhuan/RuoYi.git",
+      "commit": "0d42679bc25576286bf34a156002716ed7de5739",
+      "checkout_dir": "java-ruoyi",
+      "stack": [
+        "Java",
+        "Spring Boot",
+        "MyBatis",
+        "Apache Shiro",
+        "Thymeleaf",
+        "jQuery"
+      ],
+      "why": "经典 Java 管理后台，用户、角色、菜单、权限、SQL、Thymeleaf 页面、导出都在真实链路里，适合测 impact 的全局影响检查。",
+      "focus": [
+        "用户/角色/菜单权限链路",
+        "MyBatis XML 与 SQL 脚本",
+        "Thymeleaf 管理页面与后端接口",
+        "导入导出与 Excel 注解",
+        "破坏性 DB 变更拦截"
+      ]
+    },
+    {
+      "id": "node-realworld-prisma",
+      "label": "RealWorld Node Express Prisma",
+      "category": "node-api",
+      "phase": 1,
+      "repo_url": "https://github.com/gothinkster/node-express-prisma-v1-official-app.git",
+      "commit": "6ac99ea5aeadc4e001dd4d6933c2e269f878a969",
+      "checkout_dir": "node-realworld-prisma",
+      "stack": [
+        "Node.js",
+        "Express",
+        "TypeScript",
+        "Prisma"
+      ],
+      "why": "API 项目边界清楚，适合测响应契约、认证链路、Prisma schema 与迁移风险。",
+      "focus": [
+        "认证与当前用户上下文",
+        "articles/profile/user API 响应契约",
+        "Prisma schema 与迁移",
+        "服务层/路由层/测试覆盖",
+        "不能把 schema 变更当成普通文案修改"
+      ]
+    },
+    {
+      "id": "python-fastapi-template",
+      "label": "Full Stack FastAPI Template",
+      "category": "python-fullstack",
+      "phase": 1,
+      "repo_url": "https://github.com/fastapi/full-stack-fastapi-template.git",
+      "commit": "3685fb66259fa12f8436ae7f88379fd64ca7cdbd",
+      "checkout_dir": "python-fastapi-template",
+      "stack": [
+        "Python",
+        "FastAPI",
+        "SQLModel",
+        "Alembic",
+        "React",
+        "Docker"
+      ],
+      "why": "真实全栈模板，后端模型、OpenAPI、前端表单和容器化运行都可能受一个字段变更影响。",
+      "focus": [
+        "SQLModel/Pydantic schema",
+        "Alembic 迁移",
+        "FastAPI 路由与 OpenAPI",
+        "前端表单/列表",
+        "Docker/compose 运行证据"
+      ]
+    },
+    {
+      "id": "frontend-react-dashboard",
+      "label": "React Admin Dashboard",
+      "category": "frontend",
+      "phase": 2,
+      "repo_url": "https://github.com/larry-xue/react-admin-dashboard.git",
+      "commit": "8223897259151c450f954e462c57df3703d5508d",
+      "checkout_dir": "frontend-react-dashboard",
+      "stack": [
+        "React",
+        "Vite",
+        "TypeScript",
+        "Admin Dashboard"
+      ],
+      "why": "纯前端项目用于检查 agent 是否会凭空补后端、数据库或迁移步骤。",
+      "focus": [
+        "路由与页面组件",
+        "状态管理和数据 mock/API 边界",
+        "构建与 lint/test 命令",
+        "UI 文案 light 判档",
+        "不要编造 DB/API 文件"
+      ]
+    },
+    {
+      "id": "monorepo-full-stack-starter",
+      "label": "Full Stack Starter Kit",
+      "category": "monorepo-non-git",
+      "phase": 2,
+      "repo_url": "https://github.com/markryandelarmente/full-stack-starter-kit.git",
+      "commit": "21fbd77ca7ec177a9837b32066ed4b8884cae3c2",
+      "checkout_dir": "monorepo-full-stack-starter",
+      "stack": [
+        "pnpm",
+        "Turborepo",
+        "React",
+        "Express",
+        "Prisma",
+        "shared packages"
+      ],
+      "why": "混合栈和 workspace 边界明显，适合测 shared type、API、DB、前端联动，也能用复制副本模拟非 Git 项目。",
+      "focus": [
+        "workspace/package 边界",
+        "shared types 与 API 契约",
+        "Prisma schema 与迁移",
+        "前端表单/页面",
+        "子目录或无 .git 时不得读取父仓库信息"
+      ],
+      "non_git_variant": "把 checkout 目录复制一份并删除 .git，或只复制 apps/api 子目录到仓库外目录，再运行 pathfinder/impact。"
+    }
+  ]
+}
