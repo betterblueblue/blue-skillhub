@@ -458,6 +458,35 @@ some content
             self.assertEqual(code, 0, f"Nav line should not cause V4 false positive:\n{out}")
             self.assertIn("V4: uncovered section has entries", out)
 
+    def test_v8_embedded_windows_drive_path_fails(self):
+        """V8: malformed evidence paths like src/E:/repo/app.py should FAIL."""
+        with tempfile.TemporaryDirectory() as td:
+            src = os.path.join(td, "src")
+            os.makedirs(src)
+            with open(os.path.join(src, "app.py"), "w") as f:
+                f.write("print('ok')\n")
+
+            map_content = """# Test Map
+## 【5】关键入口
+| 类型 | 位置 | 可信度 |
+|------|------|--------|
+| 进程入口 | src/app.py | 【已核实: src/E:/agent/example/app.py:1】 |
+
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | snake_case | src/app.py | 【已核实: src/app.py:1】 |
+"""
+            path = self._make_map(map_content, td, create_facts=True)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 1, f"Malformed evidence path should FAIL:\n{out}")
+            self.assertIn("V8:", out)
+
 
 if __name__ == "__main__":
     unittest.main()

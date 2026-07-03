@@ -12,6 +12,8 @@ Checks:
       and matches actual project structure on disk
   V7: Section [14] code style observation exists and has substantive content
       (not just a title; default output, not optional)
+  V8: Evidence paths do not mix a relative prefix with a Windows absolute path
+      (for example: ruoyi-admin/E:/repo/file.java)
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass, 1 = fail (any FAIL item).
@@ -420,6 +422,34 @@ def check_section_14(text: str) -> list[str]:
     return []
 
 
+# --- V8: Evidence path sanity ---
+
+RE_EMBEDDED_WINDOWS_DRIVE = re.compile(
+    r"(?P<path>(?:[A-Za-z0-9_.-]+[\\/])+[A-Za-z]:[\\/][^\s`，】\])]+)"
+)
+
+
+def check_evidence_path_sanity(text: str) -> list[str]:
+    """V8: Reject malformed mixed relative/absolute Windows paths.
+
+    A weak model may produce paths like:
+
+        ruoyi-admin/E:/agent/project/pom.xml:23
+
+    V1 can accidentally pass those by falling back to a basename search, so this
+    check blocks the malformed evidence path itself.
+    """
+    errors = []
+    for lineno, line in enumerate(text.splitlines(), 1):
+        for m in RE_EMBEDDED_WINDOWS_DRIVE.finditer(line):
+            errors.append(
+                "V8: line "
+                f"{lineno}: malformed evidence path mixes a relative prefix "
+                f"with a Windows absolute path: {m.group('path')}"
+            )
+    return errors
+
+
 # --- Main ---
 
 def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]]:
@@ -476,6 +506,13 @@ def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]
         fails.extend(v7_errors)
     else:
         passes.append("V7: section [14] code style observation exists")
+
+    # V8
+    v8_errors = check_evidence_path_sanity(text)
+    if v8_errors:
+        fails.extend(v8_errors)
+    else:
+        passes.append("V8: evidence path format sane")
 
     return passes, fails, warnings
 

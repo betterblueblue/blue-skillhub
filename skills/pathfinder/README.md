@@ -29,7 +29,7 @@
 
 - **FACTS 层（Phase 1.5，必做不可跳过）** — 运行 `pf_scan.py` + `pf_git.py` 产出确定性事实 JSON（文件数/扩展名分布/目录树/清单文件 + Git HEAD/hotspots），填入地图【0】【2】节；这是 Script Gate 的前置输入，缺一不可，跳过会导致 V6 报 FAIL（两个都缺失或只缺一个都报 FAIL）、地图无法写入
 - **认证机制识别 + 鉴权字段一致性自检** — 填写【10】权限/认证模型后必做：Step 0 先识别认证机制类型（JWT/Session/API Key/OAuth/无认证），再读认证链路源码 + 读鉴权链路源码，交叉比对发现字段缺失类安全 bug
-- **写入前脚本检查（Script Gate，替代 Phase 4.5 自检）** — 写入 `_project-map.md` 前必须运行 `pf_validate.py`，7 项检查（V1 行号真实性、V2 凭证脱敏、V3 SVG 安全、V4 未覆盖项非空、V5 Mermaid 一致性、V6 facts 文件内容校验含 dir_tree 磁盘匹配 + file_count 交叉校验、V7 【14】代码风格观察节存在），exit code ≠ 0 禁止写入
+- **写入前脚本检查（Script Gate，替代 Phase 4.5 自检）** — 写入 `_project-map.md` 前必须运行 `pf_validate.py`，8 项检查（V1 行号真实性、V2 凭证脱敏、V3 SVG 安全、V4 未覆盖项非空、V5 Mermaid 一致性、V6 facts 文件内容校验含 dir_tree 磁盘匹配 + file_count 交叉校验、V7 【14】代码风格观察节存在、V8 证据路径格式），exit code ≠ 0 禁止写入
 - **全景广度优先** — 所有核心模块都上地图，关注重点只决定哪片挖更深，不裁剪广度
 - **按项目大小调整扫描深度** — 先统计项目大小定预算，大仓不硬扫；没挖深的显式进未覆盖项，用户可「再挖 X」续扫
 - **可信度** — 每条结论标【已核实: 证据】或【推断: 待验证】，直接对接 impact 的「已确认/未确认」二分
@@ -178,7 +178,7 @@ pathfinder/
 ├── scripts/                      # 脚本（Phase 1.5 facts 产出 + Phase 4 Script Gate）
 │   ├── pf_scan.py                # 项目体量扫描(文件数/扩展名/目录树/清单)
 │   ├── pf_git.py                 # Git 元数据提取(HEAD/hotspots/modules)
-│   └── pf_validate.py            # 闸门验证(V1-V7: 行号/凭证/SVG/未覆盖项/Mermaid/facts内容/【14】节存在)
+│   └── pf_validate.py            # 闸门验证(V1-V8: 行号/凭证/SVG/未覆盖项/Mermaid/facts内容/【14】节存在/证据路径格式)
 ├── code-graph-adapters/
 │   └── generic-mcp.md            # 可选只读结构索引 / code graph MCP 规则
 ├── templates/

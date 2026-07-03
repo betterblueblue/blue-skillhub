@@ -99,11 +99,12 @@
 | V5 Mermaid 一致性 | 实线箭头源节点须在正文出现 |
 | V6 facts 与磁盘一致 | 体量/目录造假 |
 | V7 【14】存在且有内容 | 风格链断裂（已增强：空壳标题也 FAIL） |
+| V8 证据路径格式正常 | 混合路径可能让 V1 basename 回退误判 |
 
 ```bash
 python skills/pathfinder/scripts/pf_validate.py \
   change-impact/_project-map.md --repo-root <project-root>
-# 期望：SUMMARY: 7 passed, 0 failed, 0 warnings
+# 期望：SUMMARY: 8 passed, 0 failed, 0 warnings
 ```
 
 > **注意**：V7 只查「节存在 + 非空壳」，不查【14】内容质量 → A8–A10 必须人工或 L2 评审。
@@ -129,7 +130,7 @@ python skills/pathfinder/scripts/pf_validate.py \
 | 人类 5min | 15% | 能否列出 3 个核心功能和主要风险？ |
 | Agent 导航 | 30% | impact 能否跳过全仓扫、直接切到变更模块？ |
 | Agent 风格 | 20% | 【14】+ 采样声明能否约束「新代码像旧代码」？ |
-| 自动检查 | 10% | 7/7 PASS？ |
+| 自动检查 | 10% | 8/8 PASS？ |
 
 | 总分 | 结论 |
 |------|------|
