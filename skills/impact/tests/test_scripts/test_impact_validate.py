@@ -473,6 +473,12 @@ def _write_execution_record(req_dir: str, content: str):
         f.write(content)
 
 
+def _write_preflight(req_dir: str):
+    """Write minimal 060-preflight.md into req_dir."""
+    with open(os.path.join(req_dir, "060-preflight.md"), "w", encoding="utf-8") as f:
+        f.write("# Preflight\n\n## Phase 4/5 分步\n\n已完成\n")
+
+
 class TestV13Phase4Phase5Split(unittest.TestCase):
     """V13: Phase 4 docs and source writes must not be merged in one Step."""
 
@@ -521,6 +527,7 @@ class TestV13Phase4Phase5Split(unittest.TestCase):
 
     def test_source_step_with_later_summary_mentions_preflight_passes(self):
         td, rd = _make_repo()
+        _write_preflight(rd)
         _write_execution_record(
             rd,
             """# Execution Record
@@ -551,6 +558,7 @@ class TestV13Phase4Phase5Split(unittest.TestCase):
 
     def test_source_step_after_docs_passes(self):
         td, rd = _make_repo()
+        _write_preflight(rd)
         _write_execution_record(
             rd,
             """# Execution Record
@@ -568,6 +576,60 @@ class TestV13Phase4Phase5Split(unittest.TestCase):
         self.assertTrue(
             any("separated" in l for l in v13),
             f"Expected V13 separated PASS, got: {v13}"
+        )
+
+
+def _v14_lines(stdout: str) -> list[str]:
+    """Extract V14-related lines from stdout."""
+    return [l for l in stdout.splitlines() if "V14:" in l]
+
+
+class TestV14Phase5Preflight(unittest.TestCase):
+    """V14: Source/test/config writes require 060-preflight.md."""
+
+    def test_source_step_without_preflight_fails(self):
+        td, rd = _make_repo()
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 3: 源码/测试修改
+
+- 确认类型：改代码 / 测试修复
+- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`
+- 操作内容：修改登录失败提示并同步测试断言
+- 用户确认：确认 Step 3
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v14 = _v14_lines(out)
+        self.assertEqual(code, 1, f"Source Step without preflight should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("060-preflight.md is missing" in l for l in v14),
+            f"Expected V14 missing-preflight FAIL, got: {v14}"
+        )
+
+    def test_source_step_with_preflight_passes(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 3: 源码/测试修改
+
+- 确认类型：改代码 / 测试修复
+- 操作对象：`src/services/auth.service.ts`; `tests/services/auth.service.test.ts`
+- 操作内容：修改登录失败提示并同步测试断言
+- 用户确认：确认 Step 3
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v14 = _v14_lines(out)
+        self.assertEqual(code, 0, f"Source Step with preflight should pass, got {code}\n{out}")
+        self.assertTrue(
+            any("060-preflight.md exists" in l for l in v14),
+            f"Expected V14 preflight PASS, got: {v14}"
         )
 
 
