@@ -1,0 +1,170 @@
+{
+  "project_id": "monorepo-full-stack-starter",
+  "cases": [
+    {
+      "id": "monorepo-full-stack-starter-pathfinder",
+      "title": "梳理 monorepo，并验证非 Git 降级",
+      "skill": "pathfinder",
+      "kind": "pathfinder",
+      "phase": 2,
+      "run_mode": "non-git-copy",
+      "prompt": "我准备改这个 full-stack-starter-kit。请先在仓库根目录只读生成项目地图，然后在删除 .git 的副本里再跑一次，重点关注 workspace 边界、shared types、API、Prisma、前端，以及无 Git 时哪些信息必须降级。",
+      "expected": {
+        "must_cover": [
+          "识别 monorepo/workspace 结构和各 app/package 的职责",
+          "说明 shared types、API、DB schema、前端调用之间的关系",
+          "在无 .git 副本中明确 Git 信息不可用，不读取父仓库 branch/hotspots/head",
+          "列出 package manager、构建、测试、lint 命令，并标注未运行项",
+          "说明跨包改动的风险和验证顺序"
+        ],
+        "must_not_claim": [
+          "无 .git 时仍输出父仓库 commit、branch 或热点模块",
+          "把单个子目录当成完整项目",
+          "未检查 workspace 配置就声称包关系"
+        ],
+        "quality_checks": [
+          "Git 根目录和非 Git 副本两次输出差异合理",
+          "降级说明具体",
+          "不写文件"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "apps",
+          "packages",
+          "prisma",
+          "package.json",
+          "pnpm-workspace.yaml",
+          "turbo.json"
+        ],
+        "risk_topics": [
+          "workspace 边界",
+          "shared types",
+          "父仓库 Git 污染",
+          "跨包构建"
+        ]
+      }
+    },
+    {
+      "id": "monorepo-full-stack-starter-impact-light",
+      "title": "前端按钮文案改动应判 light",
+      "skill": "impact",
+      "kind": "impact-light",
+      "phase": 2,
+      "run_mode": "analysis-only",
+      "prompt": "把前端登录按钮文案从 Sign in 改成 Log in。先只做影响分析，判断 light/full，并说明要查哪些 workspace 文件。",
+      "expected": {
+        "must_cover": [
+          "判定为 light，前提是只改前端显示文案，不改认证 API、路由或 shared type",
+          "检查前端 app、共享 UI/i18n 配置和测试/快照",
+          "说明 monorepo 下应从 workspace 根目录运行相关验证",
+          "列出前端 lint/build/test 命令"
+        ],
+        "must_not_claim": [
+          "要求修改 Prisma schema",
+          "跳过 workspace 根目录",
+          "把按钮文案和认证流程改动混为一谈"
+        ],
+        "quality_checks": [
+          "light 边界清楚",
+          "能识别 monorepo 验证入口",
+          "不写文件"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "apps",
+          "packages",
+          "package.json"
+        ],
+        "risk_topics": [
+          "workspace scripts",
+          "共享 UI",
+          "认证页面"
+        ]
+      }
+    },
+    {
+      "id": "monorepo-full-stack-starter-impact-full",
+      "title": "新增组织字段应判 full",
+      "skill": "impact",
+      "kind": "impact-full",
+      "phase": 2,
+      "run_mode": "analysis-only",
+      "prompt": "给用户资料新增 organization 字段，后端存储和返回，前端注册/资料页可填写，shared type 也要同步。先不要写代码，只做完整影响分析。",
+      "expected": {
+        "must_cover": [
+          "判定为 full，因为涉及 DB schema、迁移、API、shared types、前端表单/展示和测试",
+          "检查 Prisma schema、API handler/service、shared package、前端表单和展示",
+          "说明 workspace 内生成物、类型同步和构建顺序",
+          "列出全局影响检查，至少覆盖 DB、API、shared types、前端、测试、构建",
+          "要求确认字段默认值、可空性、回填和回滚"
+        ],
+        "must_not_claim": [
+          "只改前端类型不改 DB/API",
+          "跳过 shared package",
+          "未确认约束就直接迁移"
+        ],
+        "quality_checks": [
+          "跨包影响完整",
+          "验证命令从 workspace 根目录出发",
+          "写操作前等待确认"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "apps",
+          "packages",
+          "prisma",
+          "package.json",
+          "pnpm-workspace.yaml"
+        ],
+        "risk_topics": [
+          "Prisma migration",
+          "shared type",
+          "API response",
+          "前端表单",
+          "workspace build"
+        ]
+      }
+    },
+    {
+      "id": "monorepo-full-stack-starter-negative",
+      "title": "子目录运行时不得污染 Git 证据",
+      "skill": "pathfinder",
+      "kind": "negative",
+      "phase": 2,
+      "run_mode": "non-git-copy",
+      "prompt": "我只把 apps/api 目录复制出来了，没有 .git。请给这个目录生成项目地图，不要管父仓库。",
+      "expected": {
+        "must_cover": [
+          "识别当前目录不是独立 Git 仓库，Git HEAD/branch/hotspots/recent modules 应为空或标注不可用",
+          "只基于当前目录文件生成地图，不读取父仓库信息",
+          "明确 workspace 其他包缺失会限制判断",
+          "对缺失的 shared types、前端和根 scripts 写未找到或需补充"
+        ],
+        "must_not_claim": [
+          "输出父仓库 branch、commit 或热点文件",
+          "声称已经检查缺失的 packages/frontend",
+          "把非 Git 降级写成正常完整地图"
+        ],
+        "quality_checks": [
+          "能复现并防住父仓库 Git 污染问题",
+          "降级不编造",
+          "不写文件"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "apps/api"
+        ],
+        "risk_topics": [
+          "非 Git 降级",
+          "父仓库污染",
+          "缺失 workspace",
+          "证据边界"
+        ]
+      }
+    }
+  ]
+}

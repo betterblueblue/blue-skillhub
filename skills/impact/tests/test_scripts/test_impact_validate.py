@@ -457,5 +457,89 @@ class TestV5MixedCredentialLine(unittest.TestCase):
         self.assertEqual(code, 0, f"V5 WARN should not cause FAIL exit, got {code}\n{out}")
 
 
+# ===========================================================================
+# V13 Tests: Phase 4/5 split gate
+# ===========================================================================
+
+
+def _v13_lines(stdout: str) -> list[str]:
+    """Extract V13-related lines from stdout."""
+    return [l for l in stdout.splitlines() if "V13:" in l]
+
+
+def _write_execution_record(req_dir: str, content: str):
+    """Write 090-execution-record.md into req_dir."""
+    with open(os.path.join(req_dir, "090-execution-record.md"), "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+class TestV13Phase4Phase5Split(unittest.TestCase):
+    """V13: Phase 4 docs and source writes must not be merged in one Step."""
+
+    def test_merged_doc_and_source_step_fails(self):
+        td, rd = _make_repo()
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 17:52:23] Step 1: 写入 light 文档、修改登录失败提示及对应测试
+
+- 操作对象：`000-context-pack.md`、`040-light.md`、`src/services/auth.service.ts`、`tests/services/auth.service.test.ts`
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v13 = _v13_lines(out)
+        self.assertEqual(code, 1, f"Merged docs+source Step should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("merged in the same Step" in l for l in v13),
+            f"Expected V13 merged-step FAIL, got: {v13}"
+        )
+
+    def test_doc_step_with_source_evidence_passes(self):
+        td, rd = _make_repo()
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 17:49:00] Step 1: 写入 light 文档
+
+- 确认类型：写文件
+- 操作对象：`000-context-pack.md`、`040-light.md`、`_active-state.md`
+- 操作内容：基于 `src/services/auth.service.ts` 和 `tests/services/auth.service.test.ts` 生成 light 文档
+- 影响范围：`src/services/auth.service.ts`
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v13 = _v13_lines(out)
+        self.assertEqual(code, 0, f"Docs-only Step with source evidence should pass, got {code}\n{out}")
+        self.assertTrue(
+            any("separated" in l for l in v13),
+            f"Expected V13 separated PASS, got: {v13}"
+        )
+
+    def test_source_step_after_docs_passes(self):
+        td, rd = _make_repo()
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 17:50:00] Step 1: 修改登录失败提示及对应测试
+
+- 前置条件：Phase 4 已完成，impact_validate.py 已通过。
+- 操作对象：`src/services/auth.service.ts`、`tests/services/auth.service.test.ts`
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v13 = _v13_lines(out)
+        self.assertEqual(code, 0, f"Separate source Step should pass, got {code}\n{out}")
+        self.assertTrue(
+            any("separated" in l for l in v13),
+            f"Expected V13 separated PASS, got: {v13}"
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

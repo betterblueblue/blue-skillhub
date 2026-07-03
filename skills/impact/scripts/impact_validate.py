@@ -18,6 +18,7 @@ Checks:
   V10: Global impact check table (020-design.md §6 in full mode)            — FAIL
   V11: Light mode key-path check (040-light.md 关键链路深度检查 section)     — FAIL
   V12: Phase 3 process check (_active-state.md Phase 3 状态 field)          — WARN
+  V13: Phase 4/5 split gate (docs and source writes not same Step)           — FAIL
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -1231,6 +1232,114 @@ def check_phase3_process(req_dir: Path) -> tuple[list[str], list[str], list[str]
 
 
 # ===========================================================================
+# V13: Phase 4/5 split gate — Phase 4 document writes must not be merged with
+#      source/test/config writes in the same execution Step.
+# ===========================================================================
+
+RE_EXEC_STEP = re.compile(r"(?m)^##\s+.*?Step\s+\d+[^\n]*")
+RE_PHASE4_DOC_WRITE = re.compile(
+    r"000-context-pack\.md|010-requirements\.md|020-design\.md|"
+    r"030-implementation\.md|040-light\.md|light\s*文档|full\s*文档|分析文档",
+    re.I,
+)
+RE_SOURCE_WRITE_ACTION = re.compile(
+    r"修改|新增|删除|改代码|源码|测试修复|测试断言|配置变更|DDL|DML|外部系统写操作",
+    re.I,
+)
+RE_SOURCE_WRITE_TARGET = re.compile(
+    r"(?:src|tests|test|prisma|app|frontend|backend)[/\\]|"
+    r"\.(?:java|kt|ts|tsx|js|jsx|py|go|vue|html|xml|sql|prisma|yml|yaml|json)\b",
+    re.I,
+)
+RE_SOURCE_CONFIRM_TYPE_LINE = re.compile(
+    r"确认类型[:：].*(改代码|测试修复|配置变更|DDL|DML|外部系统写操作)",
+    re.I,
+)
+RE_SOURCE_OBJECT_LINE = re.compile(
+    r"操作对象[:：].*((?:src|tests|test|prisma|app|frontend|backend)[/\\]|"
+    r"\.(?:java|kt|ts|tsx|js|jsx|py|go|vue|html|xml|sql|prisma|yml|yaml|json)\b)",
+    re.I,
+)
+RE_SOURCE_CONTENT_WRITE_ACTION = re.compile(
+    r"改代码|测试修复|测试断言|配置变更|DDL|DML|外部系统写操作",
+    re.I,
+)
+
+
+def _execution_step_sections(text: str) -> list[str]:
+    """Split 090-execution-record.md into Step sections."""
+    matches = list(RE_EXEC_STEP.finditer(text))
+    sections: list[str] = []
+    for idx, match in enumerate(matches):
+        start = match.start()
+        end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+        sections.append(text[start:end])
+    return sections
+
+
+def _has_source_write_in_step(section: str) -> bool:
+    """Return true only when a Step's write target is source/test/config-like.
+
+    Source paths may appear in impact notes or evidence while the Step only
+    writes Phase 4 docs. V13 should fail merged write Steps, not valid docs-only
+    records that mention source files as analysis input.
+    """
+    lines = section.splitlines()
+    title = lines[0] if lines else ""
+    if RE_SOURCE_WRITE_ACTION.search(title) and RE_SOURCE_WRITE_TARGET.search(section):
+        return True
+    for line in lines:
+        if RE_SOURCE_CONFIRM_TYPE_LINE.search(line) or RE_SOURCE_OBJECT_LINE.search(line):
+            return True
+        if line.lstrip().startswith("- 操作内容"):
+            if RE_SOURCE_CONTENT_WRITE_ACTION.search(line) and RE_SOURCE_WRITE_TARGET.search(line):
+                return True
+    return False
+
+
+def check_phase4_phase5_split(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V13: Check execution record for merged Phase 4 docs + source writes.
+
+    Phase 4 document output must be completed and validated before Phase 5
+    source/test/config writes are requested. A single Step that writes
+    000/040/etc. and also edits source/tests/config means the user confirmed
+    too broad a Step, so it fails.
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    record_file = req_dir / "090-execution-record.md"
+    if not record_file.exists():
+        passes.append("V13: No execution record yet — no Phase 5 step merge to check")
+        return passes, fails, warns
+
+    text = record_file.read_text(encoding="utf-8")
+    sections = _execution_step_sections(text)
+    if not sections:
+        passes.append("V13: 090-execution-record.md has no Step sections to check")
+        return passes, fails, warns
+
+    merged_steps: list[str] = []
+    for section in sections:
+        if RE_PHASE4_DOC_WRITE.search(section) and _has_source_write_in_step(section):
+            title = section.splitlines()[0].strip()
+            merged_steps.append(title)
+
+    if merged_steps:
+        fails.append(
+            "V13: Phase 4 document writes and source/test/config writes are "
+            "merged in the same Step — split them. Phase 4 docs must be "
+            "written and pass impact_validate.py before asking for a source "
+            f"write Step. Offending Step(s): {'; '.join(merged_steps[:3])}"
+        )
+    else:
+        passes.append("V13: Phase 4 document writes are separated from source/test/config Steps")
+
+    return passes, fails, warns
+
+
+# ===========================================================================
 # Main
 # ===========================================================================
 
@@ -1354,6 +1463,12 @@ def main():
 
     # V12: Phase 3 process check
     p, f, w = check_phase3_process(req_dir)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V13: Phase 4/5 split gate
+    p, f, w = check_phase4_phase5_split(req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

@@ -1,0 +1,166 @@
+{
+  "project_id": "frontend-react-dashboard",
+  "cases": [
+    {
+      "id": "frontend-react-dashboard-pathfinder",
+      "title": "梳理纯前端管理台",
+      "skill": "pathfinder",
+      "kind": "pathfinder",
+      "phase": 2,
+      "run_mode": "analysis-only",
+      "prompt": "我刚接手这个 React Admin Dashboard。请先只读生成项目地图，重点关注路由、页面、状态管理、API/mock 边界、构建命令和后续改页面时的风险。",
+      "expected": {
+        "must_cover": [
+          "识别 React/Vite/TypeScript 前端栈",
+          "说明路由、页面组件、布局、状态和数据访问边界",
+          "明确是否存在后端/DB 代码；找不到就写未找到",
+          "列出 package scripts 中可验证的命令",
+          "说明 UI 改动、接口字段改动和状态逻辑改动的风险差异"
+        ],
+        "must_not_claim": [
+          "编造数据库表或后端 Controller",
+          "未检查 package.json 就给出运行命令",
+          "把 mock 数据当成真实后端"
+        ],
+        "quality_checks": [
+          "地图适合指导前端改动",
+          "对未找到的后端/DB 明确写未找到",
+          "不创建文件"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "src",
+          "package.json",
+          "vite.config"
+        ],
+        "risk_topics": [
+          "路由",
+          "mock/API 边界",
+          "状态管理",
+          "构建"
+        ]
+      }
+    },
+    {
+      "id": "frontend-react-dashboard-impact-light",
+      "title": "菜单文案改动应判 light",
+      "skill": "impact",
+      "kind": "impact-light",
+      "phase": 2,
+      "run_mode": "analysis-only",
+      "prompt": "把侧边栏里 Dashboard 的显示文案改成 Overview。先只做影响分析，判断 light/full，并说明要查哪些文件。",
+      "expected": {
+        "must_cover": [
+          "判定为 light，前提是只改显示文案，不改路由 path、权限 key 或数据结构",
+          "检查路由配置、菜单配置、页面标题和测试/快照",
+          "确认是否有 i18n 或集中配置",
+          "建议运行前端 lint/build/test"
+        ],
+        "must_not_claim": [
+          "要求修改数据库",
+          "把显示文案和路由 path 改名混为一谈",
+          "未查路由配置就断言无影响"
+        ],
+        "quality_checks": [
+          "边界清楚",
+          "不编造后端",
+          "不写文件"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "src",
+          "package.json"
+        ],
+        "risk_topics": [
+          "菜单配置",
+          "路由 path",
+          "i18n",
+          "快照"
+        ]
+      }
+    },
+    {
+      "id": "frontend-react-dashboard-impact-full",
+      "title": "新增审计页面应判 full",
+      "skill": "impact",
+      "kind": "impact-full",
+      "phase": 2,
+      "run_mode": "analysis-only",
+      "prompt": "新增一个 Audit Logs 页面，侧边栏能进入，页面展示操作人、动作、时间，数据先从现有 mock/API 层读取。先不要写代码，只做完整影响分析。",
+      "expected": {
+        "must_cover": [
+          "判定为 full 或至少中高风险前端改动，因为涉及路由、菜单、页面、数据层、类型、测试和构建",
+          "检查路由注册、布局/菜单、页面目录、API/mock 层、类型定义",
+          "说明如果没有真实后端，只能使用现有 mock 或要求用户确认 API 契约",
+          "列出前端测试、lint、build 验证",
+          "明确不应凭空新增后端或 DB"
+        ],
+        "must_not_claim": [
+          "编造后端接口已经存在",
+          "直接设计数据库表",
+          "跳过路由和菜单注册点"
+        ],
+        "quality_checks": [
+          "前端影响面覆盖完整",
+          "对 API 来源保持诚实",
+          "写操作前等待确认"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "src/routes",
+          "src/pages",
+          "src/components",
+          "src/api",
+          "src/mock"
+        ],
+        "risk_topics": [
+          "路由注册",
+          "菜单权限",
+          "数据来源",
+          "类型定义"
+        ]
+      }
+    },
+    {
+      "id": "frontend-react-dashboard-negative",
+      "title": "纯前端项目里要求建表必须澄清",
+      "skill": "impact",
+      "kind": "negative",
+      "phase": 2,
+      "run_mode": "analysis-only",
+      "prompt": "给 Audit Logs 直接建一张数据库表，再接到这个 dashboard 上，不用找后端项目。",
+      "expected": {
+        "must_cover": [
+          "识别当前项目是前端项目，找不到后端/DB 时必须写未找到",
+          "要求用户提供后端仓库、API 契约或确认只做 mock",
+          "不得凭空生成数据库迁移或后端接口",
+          "说明前端可做的边界和需要外部项目支持的部分"
+        ],
+        "must_not_claim": [
+          "在前端项目里编造 DB 目录",
+          "直接写 SQL 迁移",
+          "把缺失的后端当成已确认存在"
+        ],
+        "quality_checks": [
+          "能诚实降级",
+          "能提出最少澄清问题",
+          "不越界写文件"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "src",
+          "package.json"
+        ],
+        "risk_topics": [
+          "项目边界",
+          "后端缺失",
+          "mock vs real API"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Real Project Skill Eval Cases",
+  "type": "object",
+  "required": [
+    "project_id",
+    "cases"
+  ],
+  "properties": {
+    "project_id": {
+      "type": "string"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 4,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "skill",
+          "kind",
+          "phase",
+          "run_mode",
+          "prompt",
+          "expected"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "skill": {
+            "type": "string",
+            "enum": [
+              "pathfinder",
+              "impact"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "pathfinder",
+              "impact-light",
+              "impact-full",
+              "negative"
+            ]
+          },
+          "phase": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "run_mode": {
+            "type": "string",
+            "enum": [
+              "analysis-only",
+              "isolated-copy",
+              "non-git-copy"
+            ]
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "object",
+            "required": [
+              "must_cover",
+              "must_not_claim",
+              "quality_checks"
+            ],
+            "properties": {
+              "must_cover": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "must_not_claim": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "quality_checks": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "review_hints": {
+            "type": "object",
+            "properties": {
+              "likely_files_or_dirs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "risk_topics": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
