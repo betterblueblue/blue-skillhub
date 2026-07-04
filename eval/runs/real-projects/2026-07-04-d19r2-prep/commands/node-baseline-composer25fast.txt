@@ -1,0 +1,46 @@
+npm warn old lockfile
+npm warn old lockfile The package-lock.json file was created with an old version of npm,
+npm warn old lockfile so supplemental metadata must be fetched from the registry.
+npm warn old lockfile
+npm warn old lockfile This is a one-time fix-up, please be patient...
+npm warn old lockfile
+npm warn deprecated rimraf@2.7.1: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated w3c-hr-time@1.0.2: Use your platform's native performance.now() and performance.timeOrigin.
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated glob@7.1.7: Glob versions prior to v9 are no longer supported
+npm warn deprecated domexception@2.0.1: Use your platform's native DOMException instead
+npm warn deprecated abab@2.0.5: Use your platform's native atob() and btoa() methods instead
+npm warn deprecated @humanwhocodes/config-array@0.5.0: Use @eslint/config-array instead
+npm warn deprecated @humanwhocodes/object-schema@1.2.0: Use @eslint/object-schema instead
+npm warn deprecated eslint@7.32.0: This version is no longer supported. Please see https://eslint.org/version-support for other options.
+
+> express-prisma-realworld-official-app@1.0.0 postinstall
+> tsc
+
+
+> express-prisma-realworld-official-app@1.0.0 prepare
+> husky install
+
+husky - Git hooks installed
+
+added 677 packages in 17s
+
+82 packages are looking for funding
+  run `npm fund` for details
+
+> express-prisma-realworld-official-app@1.0.0 test
+> jest -i
+
+PASS tests/services/auth.service.test.ts
+PASS tests/services/profile.service.test.ts
+PASS tests/services/article.service.test.ts
+PASS tests/utils/profile.utils.test.ts
+PASS tests/services/tag.service.test.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       1 todo, 26 passed, 27 total
+Snapshots:   0 total
+Time:        2.093 s
+Ran all test suites.
