@@ -269,6 +269,21 @@ Composer 2.5 Fast 分析题批次结果（8 个）：
 
 **关键洞察：** 去掉 prompt 教练词后暴露了真问题——弱模型能改对代码，但没有真正被 skill 流程约束住。此前 GPT 在 D20 的 PASS 和 Composer 在 D20 的 GATE-RECOVERED 都依赖了 prompt 里的执行规则来驱动流程遵守。这不是模型能力问题，是 skill 本身的引导力不够：SKILL.md 写了"必须先做 Phase 4 再改码"，但弱模型在实际执行中跳过了。后续需要加强 skill 的前置门禁执法力度。
 
+### 4.1.2 D12 Composer 干净环境重跑
+
+**背景：** 首轮 D12 Composer 的非 Git 地图与 GPT 产物 251 行中 250 行完全一致（仅时间戳不同），判为 UNVERIFIED。原因是 Composer 能访问到 GPT 的非 Git 副本目录。
+
+**修复：** 使用全新隔离路径（`monorepo-full-stack-starter-d12-composer-rerun-clean` 和 `-nongit`），GPT 的产物目录不可访问。
+
+**结果：PASS（首过）。** 两份地图 pf_validate 均 10/0/0。独立生成验证通过：
+
+| 对比 | 差异行数 | 说明 |
+|------|---------|------|
+| 污染版 vs GPT | 2（仅时间戳） | 99.2% 雷同，确认复制 |
+| 干净重跑 vs GPT | 9 | 头部结构、证据引用精度（`packages/ui:1-??` vs `1-49`）、时间戳均不同，确认独立生成 |
+
+`delivery-results.json` 当前记录 39 条结果。
+
 ### 4.2 阶段 4：扩到 4 个开源模型
 
 DeepSeek V4 Flash 已作为第三列跑完 D1。gpt-5.4-mini 已补完 D3/D8/D9/D11/D12/D13/D15/D16/D17 自动跑测数据；Composer 2.5 Fast 已补完 D8/D9/D11/D12/D13/D15/D16/D17 手动跑测数据。**D16 配置迁移漏查已确认跨模型不复现**（GPT FAIL / Composer PASS），说明这不是 skill 规则缺口而是模型个体覆盖差异。D12 Composer 结果因 fixture 污染判为 UNVERIFIED，需要在完全隔离环境重跑才能证明独立 Pathfinder 能力。其他模型由用户手动补充。
