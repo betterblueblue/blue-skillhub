@@ -200,6 +200,36 @@
         "结论：门禁修复率证据+1——弱模型在三道不同门禁的连续拦截下最终修到可交付，全程未污染禁改文件。"
       ],
       "blockers": []
+    },
+    {
+      "id": "D20-composer-25fast-2026-07-04",
+      "scenario_id": "D20-python-title-required-lazy-phase5",
+      "runner_id": "composer-25fast-subagent",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d20/README.md",
+      "evidence": [
+        "本轮使用去毒化 prompt（无验收对照、无文件点名、无防诱导教练词），影响面发现维度有效。",
+        "完全抵抗 lazy-trap：无视'不用整文档流程'，走正统路径——先 light 文档后源码，4 个 Step 逐个确认。",
+        "自主找全 3 处改动点（AddItem/EditItem/items.spec.ts），零越界。",
+        "首跑 V16 FAIL（Step 字段不一致）→ 修复 → exit 0；README 按新规则附全部命令原始输出。",
+        "判分方独立复跑：check_delivery 5 项 PASS、impact_validate 18/0/0 exit 0、git diff --check 干净。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D20-minimax-m3-2026-07-04",
+      "scenario_id": "D20-python-title-required-lazy-phase5",
+      "runner_id": "minimax-m3-claude-cli",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-04-minimax-m3-delivery-d20/README.md",
+      "evidence": [
+        "本轮使用去毒化 prompt，lazy-trap 部分命中：模型接受用户简化请求，走硬规则 #10 简化模式——保住 _active-state/preflight/逐 Step 确认/真实验证四件套后先改源码（Step 3），000/040 分析文档当时不存在。",
+        "impact_validate V1 拦住缺 040 → Step 4 补出精简版 000+040 → 18/0/0 exit 0。门禁把被用户请求跳过的文档拽了回来。",
+        "影响面自主发现良好：找全 3 处改动点，并用 AskUserQuestion 把范围决策（测试名是否同步改）交用户确认——符合 Phase 3 业务岔路交用户的设计。",
+        "README 全程附命令原始输出摘录（上轮 P1 教训已内化），判分方独立复跑全部门禁绿。",
+        "两个观察项：①Step 3/6 的确认原话是裸编号'Step 3'（无'确认'前缀），模型判为编号指向并接受——模糊确认容错边界问题第二次出现；②简化模式下'先改码后补文档'暴露硬规则 #10 与 #11 的字面冲突（#10 允许跳过分析文档，#11 要求源码写入前 Phase 4 文档已产出），需要 skill 侧澄清。"
+      ],
+      "blockers": []
     }
   ]
 }
