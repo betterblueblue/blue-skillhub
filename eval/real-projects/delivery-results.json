@@ -235,7 +235,7 @@
       "id": "D19r2-composer-25fast-2026-07-04",
       "scenario_id": "D19-node-tags-removal-phase5",
       "runner_id": "composer-25fast-subagent",
-      "status": "PASS",
+      "status": "GATE-RECOVERED",
       "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d19r2/README.md",
       "evidence": [
         "第二轮无答案版：prompt 不含验收清单、文件点名、定级提示。影响面自主发现维度有效。",
