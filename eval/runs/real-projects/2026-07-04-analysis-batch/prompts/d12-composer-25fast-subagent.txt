@@ -1,0 +1,11 @@
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\monorepo-full-stack-starter-d12-composer
+Skill：E:\agent\blue-skillhub\skills\pathfinder\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d12\README.md
+
+注：此 fixture 是 monorepo-full-stack-starter 的副本，已删除 .git 目录。
+
+---
+
+[用户输入]
+我准备改这个 full-stack-starter-kit。请先在仓库根目录只读生成项目地图，然后在删除 .git 的副本里再跑一次，重点关注 workspace 边界、shared types、API、Prisma、前端，以及无 Git 时哪些信息必须降级。
