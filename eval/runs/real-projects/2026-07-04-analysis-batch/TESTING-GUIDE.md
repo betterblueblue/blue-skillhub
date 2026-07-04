@@ -8,20 +8,26 @@
 
 | fixture | run 清单 | 数量 |
 |---------|----------|------|
-| java-ruoyi | D1×3 (composer/m3/deepseek) + D11×1 + D13×3 + D14×1 | 8 |
+| java-ruoyi | D1×3 (composer/m3/deepseek) + D11×3 (gpt/m3/composer) + D13×3 | 9 |
+| java-ruoyi-d14-composer-20260704-223205 | D14 Composer 专用干净副本 | 1 |
+| java-ruoyi-d14-m3-20260704-223205 | D14 MiniMax M3 专用干净副本 | 1 |
 | node-realworld-prisma | D8×2 + D15×3 | 5 |
 | python-fastapi-template | D16×3 + D17×2 | 5 |
 | python-fastapi-template-d3-gpt54mini | D3 gpt-5.4-mini 专用隔离副本 | 1 |
-| monorepo-full-stack-starter | D12 gpt-5.4-mini Git 根目录版 + D18×1 | 2 |
+| monorepo-full-stack-starter | D12 gpt-5.4-mini Git 根目录版 | 1 |
+| monorepo-full-stack-starter-d18-composer-20260704-223205 | D18 Composer 专用干净副本 | 1 |
+| monorepo-full-stack-starter-d18-m3-20260704-223205 | D18 MiniMax M3 专用干净副本 | 1 |
 | monorepo-full-stack-starter-d9-gpt54mini | D9 gpt-5.4-mini 专用隔离副本 | 1 |
+| monorepo-full-stack-starter-d9-m3 | D9 MiniMax M3 专用隔离副本 | 1 |
 | monorepo-full-stack-starter-d12-gpt54mini-nongit | D12 gpt-5.4-mini 非 Git 副本 | 1 |
+| monorepo-full-stack-starter-d12-m3-nongit | D12 MiniMax M3 非 Git 副本 | 1 |
 
 ## 每次 run 的操作流程
 
 ### 第 1 步：清理 fixture
 
 ```powershell
-# read-only-original 场景（D1, D8, D13-D18）
+# 使用 prompt 里写的工作目录；D14/D18 必须用专用干净副本
 Remove-Item -Path "E:\agent\real-project-fixtures\<fixture>\change-impact" -Recurse -Force -ErrorAction SilentlyContinue
 
 # 验证干净
@@ -92,15 +98,33 @@ Copy-Item -Path "E:\agent\real-project-fixtures\python-fastapi-template" -Destin
 
 ## D9/D12 的特殊处理
 
-D9 的 fixture_mode 是 `isolated-copy`，gpt-5.4-mini 使用独立副本：
+D9 的 fixture_mode 是 `isolated-copy`，不同 runner 使用独立副本：
 
 ```powershell
 E:\agent\real-project-fixtures\monorepo-full-stack-starter-d9-gpt54mini
+E:\agent\real-project-fixtures\monorepo-full-stack-starter-d9-m3
 ```
 
 D12 需要同一 runner 做两次 Pathfinder：
 
 1. 在 Git 根目录 `E:\agent\real-project-fixtures\monorepo-full-stack-starter` 生成项目地图。
-2. 在删除 `.git` 的副本 `E:\agent\real-project-fixtures\monorepo-full-stack-starter-d12-gpt54mini-nongit` 再生成一次。
+2. 在删除 `.git` 的副本中再生成一次：
+   - `E:\agent\real-project-fixtures\monorepo-full-stack-starter-d12-gpt54mini-nongit`
+   - `E:\agent\real-project-fixtures\monorepo-full-stack-starter-d12-m3-nongit`
 
 判分时要重点看第二份 `facts/git.json` 是否为非 Git 状态，且没有父仓库 `head`、`branch`、`hotspots` 或 `recent_commit_modules` 污染。
+
+## D14/D18 的特殊处理
+
+D14/D18 必须使用专用干净副本，不能使用原始 `java-ruoyi` 或 `monorepo-full-stack-starter`。原始 fixture 可能已有其他评测留下的源码 diff 或 `change-impact/`，会污染 analysis gate。
+
+当前专用副本：
+
+```powershell
+E:\agent\real-project-fixtures\java-ruoyi-d14-composer-20260704-223205
+E:\agent\real-project-fixtures\java-ruoyi-d14-m3-20260704-223205
+E:\agent\real-project-fixtures\monorepo-full-stack-starter-d18-composer-20260704-223205
+E:\agent\real-project-fixtures\monorepo-full-stack-starter-d18-m3-20260704-223205
+```
+
+跑完后用 `check_delivery.py` 的 analysis gate 验分；若除 `change-impact/**` 外有源码或配置 diff，直接 FAIL。

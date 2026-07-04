@@ -1,0 +1,9 @@
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\node-realworld-prisma
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d2\README.md
+
+---
+
+[用户输入]
+给用户 profile 增加一个公开字段 displayName，注册、更新资料、获取 profile、文章作者信息里都要返回。先不要写代码，只做完整影响分析。

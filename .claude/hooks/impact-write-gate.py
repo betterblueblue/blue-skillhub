@@ -27,6 +27,45 @@ DISABLE_ENV = "IMPACT_WRITE_GATE_DISABLE"
 WRITE_TOOLS = {"Write", "Edit", "MultiEdit", "NotebookEdit"}
 CONFIRM_RE = re.compile(r"^\s*确认\s+Step\s+([0-9]+)\b", re.IGNORECASE)
 MULTI_STEP_RE = re.compile(r"(全部|所有|all\b|Step\s+[0-9]+.*Step\s+[0-9]+)", re.IGNORECASE)
+SOURCE_ROOTS = {"app", "backend", "docs", "frontend", "prisma", "src", "test", "tests"}
+SOURCE_FILE_NAMES = {
+    "package.json",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "tsconfig.json",
+    "vite.config.ts",
+    "next.config.js",
+    "pyproject.toml",
+    "requirements.txt",
+    "pom.xml",
+    "build.gradle",
+}
+SOURCE_SUFFIXES = {
+    ".go",
+    ".java",
+    ".js",
+    ".jsx",
+    ".json",
+    ".kt",
+    ".prisma",
+    ".py",
+    ".sql",
+    ".toml",
+    ".ts",
+    ".tsx",
+    ".vue",
+    ".xml",
+    ".yaml",
+    ".yml",
+}
+SOURCE_BASH_TARGET_RE = re.compile(
+    r"(^|[\\/\s'\"`])(?:app|backend|docs|frontend|prisma|src|test|tests)[\\/]"
+    r"|(^|[\\/\s'\"`])(?:package\.json|package-lock\.json|pnpm-lock\.yaml|"
+    r"yarn\.lock|tsconfig\.json|pyproject\.toml|requirements\.txt|pom\.xml)\b"
+    r"|\bgit\s+(apply|checkout|reset|clean|restore|merge|rebase|pull)\b",
+    re.IGNORECASE,
+)
 
 WRITE_LIKE_BASH = re.compile(
     r"""
@@ -112,6 +151,54 @@ def target_paths(event: dict[str, Any]) -> list[Path]:
     return []
 
 
+def is_under(path: Path, root: Path) -> bool:
+    try:
+        path.resolve(strict=False).relative_to(root.resolve(strict=False))
+        return True
+    except ValueError:
+        return False
+
+
+def relative_parts(path: Path, root: Path) -> tuple[str, ...]:
+    try:
+        return path.resolve(strict=False).relative_to(root.resolve(strict=False)).parts
+    except ValueError:
+        return ()
+
+
+def is_change_impact_path(path: Path, root: Path) -> bool:
+    parts = relative_parts(path, root)
+    return bool(parts and parts[0] == "change-impact")
+
+
+def is_source_like_path(path: Path, root: Path) -> bool:
+    parts = relative_parts(path, root)
+    if not parts or parts[0] == "change-impact":
+        return False
+    if parts[0] in SOURCE_ROOTS:
+        return True
+    name = path.name
+    return name in SOURCE_FILE_NAMES or path.suffix.lower() in SOURCE_SUFFIXES
+
+
+def bash_needs_phase_gate(command: str) -> bool:
+    if "change-impact" in command and not SOURCE_BASH_TARGET_RE.search(command):
+        return False
+    return bool(SOURCE_BASH_TARGET_RE.search(command))
+
+
+def needs_phase_gate(event: dict[str, Any], path: Path, root: Path) -> bool:
+    tool = str(event.get("tool_name") or event.get("toolName") or "")
+    tool_input = event.get("tool_input") or event.get("toolInput") or {}
+    if not isinstance(tool_input, dict):
+        tool_input = {}
+
+    if tool == "Bash":
+        return bash_needs_phase_gate(str(tool_input.get("command") or ""))
+
+    return is_source_like_path(path, root)
+
+
 def protected_root(path: Path) -> Path | None:
     start = path if path.exists() and path.is_dir() else path.parent
     current = start.resolve(strict=False)
@@ -121,6 +208,90 @@ def protected_root(path: Path) -> Path | None:
         if current.parent == current:
             return None
         current = current.parent
+
+
+def active_field(text: str, label: str) -> str | None:
+    match = re.search(rf"(?m)^\s*-\s*{re.escape(label)}\s*[:：]\s*(.+?)\s*$", text)
+    if not match:
+        return None
+    return match.group(1).strip().strip("`")
+
+
+def normalize_step(value: str | None) -> str | None:
+    if value is None:
+        return None
+    match = re.search(r"\bStep\s*([0-9]+)\b", value, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    cleaned = value.strip().strip("[]` ").lower()
+    if cleaned in {"none", "无", "无需", "不适用"}:
+        return "none"
+    return None
+
+
+def latest_validation_is_green(text: str) -> bool:
+    section_match = re.search(r"(?ms)^##\s+最近验证\s*(.*?)(?:^##\s+|\Z)", text)
+    if not section_match:
+        return False
+    section = section_match.group(1)
+    result_match = re.search(
+        r"(?m)^\s*[-*]?\s*结果\s*[:：]\s*\d+\s*passed.*?([0-9]+)\s*failed?",
+        section,
+        re.IGNORECASE,
+    )
+    return bool(result_match and int(result_match.group(1)) == 0)
+
+
+def mode_docs_exist(req_dir: Path, state_text: str) -> bool:
+    mode = (active_field(state_text, "模式") or "").lower()
+    grading = (active_field(state_text, "Phase 3.5 定级") or "").lower()
+    is_full = "full" in mode or "full" in grading
+    is_light = "light" in mode or "light" in grading or "快速通道" in grading
+
+    if is_full:
+        required = ["000-context-pack.md", "010-requirements.md", "020-design.md", "030-implementation.md"]
+    elif is_light:
+        required = ["000-context-pack.md", "040-light.md"]
+    else:
+        return False
+    return all((req_dir / name).exists() for name in required)
+
+
+def phase_ready_for_source_write(root: Path, step: str) -> tuple[bool, str]:
+    change_impact = root / "change-impact"
+    if not change_impact.exists():
+        return False, "change-impact directory is missing"
+
+    candidates = sorted(change_impact.glob("*/_active-state.md"))
+    if not candidates:
+        return False, "no change-impact/*/_active-state.md found"
+
+    reasons: list[str] = []
+    for state_path in candidates:
+        req_dir = state_path.parent
+        try:
+            state_text = state_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            reasons.append(f"{req_dir.name}: cannot read _active-state.md: {exc}")
+            continue
+
+        pending = normalize_step(active_field(state_text, "待执行 Step"))
+        prompted = normalize_step(active_field(state_text, "上次提示 Step"))
+        if step not in {pending, prompted}:
+            reasons.append(f"{req_dir.name}: active-state is not waiting for Step {step}")
+            continue
+        if not (req_dir / "060-preflight.md").exists():
+            reasons.append(f"{req_dir.name}: 060-preflight.md missing")
+            continue
+        if not mode_docs_exist(req_dir, state_text):
+            reasons.append(f"{req_dir.name}: Phase 4 documents incomplete for declared mode")
+            continue
+        if not latest_validation_is_green(state_text):
+            reasons.append(f"{req_dir.name}: 最近验证 is missing or not 0 failed")
+            continue
+        return True, f"{req_dir.name}: Phase 4 and preflight ready"
+
+    return False, "; ".join(reasons[:3]) or "no ready impact active-state found"
 
 
 def content_to_text(content: Any) -> str:
@@ -256,10 +427,13 @@ def main() -> int:
         return 0
 
     roots = []
+    protected_targets: list[tuple[Path, Path]] = []
     for target in targets:
         root = protected_root(target)
-        if root and root not in roots:
-            roots.append(root)
+        if root:
+            protected_targets.append((target, root))
+            if root not in roots:
+                roots.append(root)
 
     if not roots:
         return 0
@@ -269,6 +443,18 @@ def main() -> int:
     if confirmation is None:
         protected_list = ", ".join(str(root) for root in roots)
         return block(f"blocked write under protected project: {protected_list}")
+
+    gated_roots: list[Path] = []
+    for target, root in protected_targets:
+        if root in gated_roots or not needs_phase_gate(event, target, root):
+            continue
+        ready, reason = phase_ready_for_source_write(root, str(confirmation["step"]))
+        if not ready:
+            return block(
+                "blocked source/test/config write before impact Phase 4 + preflight are ready: "
+                f"{root} ({reason})"
+            )
+        gated_roots.append(root)
 
     try:
         path = state_file()

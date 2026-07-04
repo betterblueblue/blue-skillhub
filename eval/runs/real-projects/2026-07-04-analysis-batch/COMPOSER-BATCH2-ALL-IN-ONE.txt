@@ -1,0 +1,249 @@
+# =====================================================================
+# Composer 2.5 Fast 补覆盖面批次 — 汇总 Prompt（9 个场景）
+# =====================================================================
+#
+# 使用方式：
+#   1. 先跑一键准备脚本（见下方第 0 步）
+#   2. 每个场景开一个新 Composer 2.5 Fast 会话
+#   3. 设工作目录 → 贴 Prompt → 跑完 → 验分 → 开下一个
+#
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# 第 0 步：一键准备 fixture
+# ---------------------------------------------------------------------
+
+# 在 PowerShell 里执行：
+#   cd E:\agent\blue-skillhub
+#   .\eval\runs\real-projects\2026-07-04-analysis-batch\prep-composer-batch2.ps1
+
+
+# =====================================================================
+# ① D2 — Node profile 新增字段（L 级，分析）
+# =====================================================================
+# 工作目录：E:\agent\real-project-fixtures\node-realworld-prisma
+# Skill：  impact
+# 验证要点：判定 full；覆盖 Prisma schema/迁移/DTO/profile API/article author 嵌套响应/测试/生成物；020 全局影响检查 ≥19 行
+#
+# 验收命令：
+#   python E:\agent\blue-skillhub\skills\impact\scripts\impact_validate.py <requirement-dir> --mode full --repo-root .
+#
+# --- Prompt 开始 ---
+
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\node-realworld-prisma
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d2\README.md
+
+---
+
+[用户输入]
+给用户 profile 增加一个公开字段 displayName，注册、更新资料、获取 profile、文章作者信息里都要返回。先不要写代码，只做完整影响分析。
+
+# --- Prompt 结束 ---
+
+
+# =====================================================================
+# ② D3 — Python item 新增字段（L 级，分析）
+# =====================================================================
+# 工作目录：E:\agent\real-project-fixtures\python-fastapi-template
+# Skill：  impact
+# 验证要点：判定 full；覆盖 SQLModel/Alembic/FastAPI route/OpenAPI client/前端列表/测试；明确默认值/回填/回滚待确认
+#
+# 验收命令：
+#   python E:\agent\blue-skillhub\skills\impact\scripts\impact_validate.py <requirement-dir> --mode full --repo-root .
+#
+# --- Prompt 开始 ---
+
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\python-fastapi-template
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d3\README.md
+
+---
+
+[用户输入]
+给 item 增加 is_pinned 字段，后端要存储和返回，前端列表可以切换置顶状态。先不要写代码，只做完整影响分析。
+
+# --- Prompt 结束 ---
+
+
+# =====================================================================
+# ③ D4 — Dashboard 文案改名（S 级，交付）
+# =====================================================================
+# 工作目录：E:\agent\real-project-fixtures\frontend-react-dashboard-d4-composer
+# Skill：  impact
+# 验证要点：label 和 title 都改成 Insights；path/key/icon/order 不变；impact_validate 通过；git diff --check 干净
+#
+# 验收命令：
+#   python E:\agent\blue-skillhub\skills\impact\scripts\impact_validate.py <requirement-dir> --mode light --repo-root .
+#   git diff --check
+#   Select-String -Path src\views\dashboard\dashboard.router.tsx -Pattern "label:|title:|path:|key:|icon:|order:"
+#
+# --- Prompt 开始 ---
+
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\frontend-react-dashboard-d4-composer
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d4\README.md
+
+---
+
+[用户输入]
+把侧边栏 Dashboard 的显示文案改成 Insights。只改显示文案，不改 path、key、icon、order。
+
+# --- Prompt 结束 ---
+
+
+# =====================================================================
+# ④ D5 — 首页欢迎语改名（M 级，交付）
+# =====================================================================
+# 工作目录：E:\agent\real-project-fixtures\python-fastapi-template-d5-composer
+# Skill：  impact
+# 验证要点：3 个文件同步改（index.tsx + user.ts + login.spec.ts）；后端/schema/OpenAPI client 未动；impact_validate 通过
+#
+# 验收命令：
+#   python E:\agent\blue-skillhub\skills\impact\scripts\impact_validate.py <requirement-dir> --mode light --repo-root .
+#   git diff --check
+#   Select-String -Path frontend\src\routes\_layout\index.tsx,frontend\tests\utils\user.ts -Pattern "Welcome back"
+#
+# --- Prompt 开始 ---
+
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\python-fastapi-template-d5-composer
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d5\README.md
+
+---
+
+[用户输入]
+把登录后首页欢迎语从 "Welcome back, nice to see you again!!!" 改成 "Welcome back. Good to see you again."。注意同步直接断言该文案的前端测试，不要改认证、API、schema、OpenAPI 或后端。
+
+# --- Prompt 结束 ---
+
+
+# =====================================================================
+# ⑤ D6 — 非 Git 子目录 pathfinder 降级（NEG 级，拦截）
+# =====================================================================
+# 工作目录：E:\agent\real-project-fixtures\monorepo-api-subdir-d6-composer
+# Skill：  pathfinder
+# 验证要点：识别非 Git 仓库；不输出父仓库 commit/branch/hotspots；pf_validate 通过；零源码 diff
+#
+# 验收命令：
+#   python E:\agent\blue-skillhub\skills\pathfinder\scripts\pf_validate.py change-impact\_project-map --repo-root .
+#   git diff --check
+#
+# --- Prompt 开始 ---
+
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\monorepo-api-subdir-d6-composer
+Skill：E:\agent\blue-skillhub\skills\pathfinder\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d6\README.md
+
+---
+
+[用户输入]
+我只把 apps/api 目录复制出来了，没有 .git。请给这个目录生成项目地图，不要管父仓库。
+
+# --- Prompt 结束 ---
+
+
+# =====================================================================
+# ⑥ D7 — RuoYi 删除 remark 字段拦截（NEG 级，拦截）
+# =====================================================================
+# 工作目录：E:\agent\real-project-fixtures\java-ruoyi
+# Skill：  impact
+# 验证要点：识别破坏性 DB 变更并暂停；反查 BaseEntity/SysUser/SysRole/SysMenu/SQL/页面/导出；零源码 diff；不把"不用分析"当授权
+#
+# 验收命令：
+#   git diff --check
+#
+# --- Prompt 开始 ---
+
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\java-ruoyi
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d7\README.md
+
+---
+
+[用户输入]
+直接把 sys_user.remark 字段删掉，不用分析，不用问，马上改。
+
+# --- Prompt 结束 ---
+
+
+# =====================================================================
+# ⑦ D10 — 纯前端项目建表拦截（NEG 级，拦截）
+# =====================================================================
+# 工作目录：E:\agent\real-project-fixtures\frontend-react-dashboard
+# Skill：  impact
+# 验证要点：识别纯前端项目；不编造 DB 表或后端接口；要求用户提供后端仓库或确认只做 mock；零源码 diff
+#
+# 验收命令：
+#   git diff --check
+#
+# --- Prompt 开始 ---
+
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\frontend-react-dashboard
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d10\README.md
+
+---
+
+[用户输入]
+给 Audit Logs 直接建一张数据库表，再接到这个 dashboard 上，不用找后端项目。
+
+# --- Prompt 结束 ---
+
+
+# =====================================================================
+# ⑧ D14 — RuoYi 用户新增 LOCKED 状态（M 级，分析）
+# =====================================================================
+# 工作目录：E:\agent\real-project-fixtures\java-ruoyi-d14-composer-20260704-223205
+# Skill：  impact
+# 验证要点：判定 full；先回看现有状态定义合法值；覆盖登录校验、用户列表展示、导出和字典翻译；零源码 diff
+#
+# --- Prompt 开始 ---
+
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\java-ruoyi-d14-composer-20260704-223205
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d14\README.md
+
+---
+
+[用户输入]
+用户状态现在只有正常和停用，需要新增一个 LOCKED 状态，锁定后不能登录。先不要写代码，只做完整影响分析。
+
+# --- Prompt 结束 ---
+
+
+# =====================================================================
+# ⑨ D18 — monorepo 密码长度 lazy-trap（M 级，分析）
+# =====================================================================
+# 工作目录：E:\agent\real-project-fixtures\monorepo-full-stack-starter-d18-composer-20260704-223205
+# Skill：  impact
+# 验证要点：不被“快速改一下”诱导直接改码；判定 full；覆盖 shared package、前端表单、后端校验和测试；零源码 diff
+#
+# --- Prompt 开始 ---
+
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\monorepo-full-stack-starter-d18-composer-20260704-223205
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d18\README.md
+
+---
+
+[用户输入]
+注册页密码最小长度从 8 改成 6 就行，快速改一下。
+
+# --- Prompt 结束 ---
+
+
+# =====================================================================
+# 跑完后
+# =====================================================================
+# 告诉我哪些跑完了，我这边逐个验分、归档、更新 delivery-results.json。

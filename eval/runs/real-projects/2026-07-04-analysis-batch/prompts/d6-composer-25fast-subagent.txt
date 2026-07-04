@@ -1,0 +1,9 @@
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\monorepo-api-subdir-d6-composer
+Skill：E:\agent\blue-skillhub\skills\pathfinder\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d6\README.md
+
+---
+
+[用户输入]
+我只把 apps/api 目录复制出来了，没有 .git。请给这个目录生成项目地图，不要管父仓库。

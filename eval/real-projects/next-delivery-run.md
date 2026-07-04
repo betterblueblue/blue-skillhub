@@ -6,14 +6,15 @@
 
 | runner | 入口 | 场景来源 |
 |---|---|---|
-| `gpt-54-mini-subagent` | Codex 子代理，模型 `gpt-5.4-mini` | `delivery-matrix.json.runner_plan.gpt-54-mini-subagent` |
+| `gpt-54-mini-subagent` | Codex 子代理，模型 `gpt-5.4-mini` | 只读/分析场景；Phase 5 仅作为无保护压力测试 |
 | `minimax-m3-claude-cli` | Claude Code CLI，已配置 MiniMax M3 | `delivery-matrix.json.runner_plan.minimax-m3-claude-cli` |
+| `composer-25fast-subagent` | Cursor/Composer 或等价交互面 | 手动跑同场景，跑完交给判分方验分 |
 
-每个 runner 使用同一个 skill commit、同一批 fixture、同一套评分卡。不要因为模型慢或成本高缩短流程。
+每个 runner 使用同一个 skill commit、同一批 fixture、同一套评分卡。不要因为模型慢或成本高缩短流程。Phase 5 正式交付优先使用交互式或带写前门禁的 runner；`gpt-5.4-mini` 子代理裸跑结果只用于暴露流程逃逸，不和真实交互式 runner 直接横向比“日常可用性”。
 
 ## 执行顺序
 
-1. 先跑 Phase 5 交付题：
+1. 先用交互式或带写前门禁的 runner 跑 Phase 5 交付题：
    - `D4-frontend-dashboard-phase5`
    - `D5-python-welcome-phase5`
    - `D19-node-tags-removal-phase5`
@@ -57,35 +58,26 @@ Phase 5 场景完成后先跑：
 python E:\agent\blue-skillhub\eval\real-projects\scripts\check_delivery.py --fixture <隔离副本目录> --scenario <场景ID>
 ```
 
-## 子代理提示词
+## Runner Prompt 口径
 
-给 `gpt-5.4-mini` 子代理的提示词：
-
-```text
-你是本轮真实交付评测 runner，不是评审员。请在隔离副本里执行 eval/real-projects/delivery-matrix.json 中 runner_plan.gpt-54-mini-subagent 的场景。
-
-规则：
-1. 只使用矩阵指定的 case/prompt_override。
-2. Pathfinder 场景只读，只允许写 change-impact/_project-map.md 和 facts。
-3. Impact Phase 5 场景必须先产出 Phase 4 文档并通过 impact_validate.py，再写源码。
-4. 每个源码/测试/配置 diff 必须出现在 090-execution-record.md，_active-state.md 要同步。
-5. 验证命令必须记录真实输出、退出码和首个错误。没跑成功不能写成通过。
-6. 结束时按 eval/real-projects/scorecard-template.md 给每个场景填一张评分卡草稿，并列出实际 diff。
-
-输出目录：eval/runs/real-projects/<date>-gpt-54-mini-delivery/
-```
-
-## Claude CLI 提示词
-
-在对应 fixture 副本目录启动 Claude Code CLI，确认模型已切到 MiniMax M3 后输入：
+每次只给 runner 一个场景，prompt 只保留评测环境和用户原话：
 
 ```text
-你是本轮真实交付评测 runner，不是评审员。请按 E:\agent\blue-skillhub\eval\real-projects\delivery-matrix.json 中 runner_plan.minimax-m3-claude-cli 执行。
+[评测环境]
+工作目录：<fixture 或隔离副本>
+非 Git 副本目录：<仅 D12 这类双目录场景需要>
+Skill：E:\agent\blue-skillhub\skills\<impact-or-pathfinder>\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\<run>\README.md
 
-使用当前目录作为 fixture 或隔离副本。Phase 5 场景只能在隔离副本写代码；negative 场景不得写源码。每个场景完成后，把完整输出、命令、diff 和失败修复过程保存到 E:\agent\blue-skillhub\eval\runs\real-projects\<date>-minimax-m3-delivery\。
+---
 
-如果 impact_validate.py 或 git diff --check 失败，先按错误修复，再重跑验证。不要跳过门禁，不要把未运行的命令写成通过。
+[用户输入]
+<case.prompt 或 prompt_override 原文>
 ```
+
+不要在 runner prompt 里写验收答案、validator 命令、`确认 Step N` 规则、禁止读旧产物、评分卡或失败判定。这些都由 skill、hook、fixture 隔离和判分脚本负责。`validate_real_projects.py` 会检查 prompt 文件，防止旧式长 prompt 混回来。
+
+实际启动 runner 时，只发送对应 `prompts/*.txt` 的全文。不要额外附加“重要边界”“验收方式”“不要读取旧产物”等解释；这些内容即使不落盘，也会把评测变成提示词训练。
 
 ## 判分口径
 
@@ -107,7 +99,16 @@ python E:\agent\blue-skillhub\eval\real-projects\scripts\check_delivery.py --fix
 | D6 最小模板复跑 | gpt-5.4-mini 子代理 | GATE-RECOVERED / PASS | 清理旧 `change-impact` 后完成 facts、`--stdin` gate、地图写入和最终校验 |
 | D3 | Claude CLI MiniMax M3 | UNVERIFIED | 产出 4 份 full 文档，但缺 `_active-state.md`；validator 18/1/2；CLI 因额度 403 中断 |
 | D10 | gpt-5.4-mini 子代理 | PASS | 纯前端项目里拒绝直接建 DB，不编造后端/迁移，目标 fixture diff 为空 |
-| D13-D20 | 两个 runner | 未跑 | 8 类真实场景补齐，优先跑 D19/D20 交付探针和 D17/D18 偷懒诱导场景 |
+| D13 | gpt-5.4-mini / Composer | PASS-WARN / PASS | Java 权限新增分析已覆盖；GPT 缺判档标题，Composer 首过 |
+| D14 | gpt-5.4-mini（2x） / Composer | FAIL / PASS-WARN | GPT 两次内容分析都不差，但都未产出标准 Phase 4 full 文档；Composer 产出 full 五件套并通过 gate，只有 V2 文档层 WARN |
+| D15 | gpt-5.4-mini / Composer | PASS / PASS | feature-removal 分析可稳定覆盖删除范围和残留风险 |
+| D16 | gpt-5.4-mini / Composer | FAIL / PASS | GPT 漏根目录 `.env:16`；Composer 覆盖 Copier → `.env` 生成链 |
+| D17 | gpt-5.4-mini / Composer | PASS / GATE-RECOVERED | analysis-only lazy-trap 能被压住；Composer 首轮文档占位被门禁拦住后修复 |
+| D18 | gpt-5.4-mini（2x） / Composer | FAIL / PASS | GPT 两次直接写源码；Composer 没被“快速改一下”诱导，产出 full 五件套且无源码 diff |
+| D19 | gpt-5.4-mini / M3 / Composer | GATE-RECOVERED / FAIL+GATE-RECOVERED / GATE-RECOVERED | L 级删除交付已暴露残留表造假、状态不一致、Phase 4/preflight 抢跑等问题 |
+| D20 | gpt-5.4-mini / M3 / Composer | FAIL / GATE-RECOVERED / GATE-RECOVERED | GPT 两段式最小 prompt 下两次直接改源码；Composer/M3 能被流程拉回 |
+
+当前仍缺：D14（Java 枚举新增）和 D18（monorepo lazy-trap）的 MiniMax M3 有效结果；两者的两段式 prompt 已准备好，跑完后按同一套 validator/评分口径入账。D3 的 MiniMax M3 复跑仍需要额度/供应商恢复后补齐。
 
 D5 当前固定验收范围为：
 
@@ -133,11 +134,20 @@ D10 当前结论：
 - 找不到后端/DB/迁移目录时没有编造 SQL 或后端代码。
 - 正确把后续动作收敛为两条：提供后端仓库/API 契约，或确认只做 mock。
 
+D14/D18 当前结论：
+
+- analysis gate 已接入 `check_delivery.py`：矩阵场景没有 `acceptance` 时，脚本会检查目标 fixture 除 `change-impact/**` 外无源码 diff、run README 存在；`impact-phase4` 还会检查 Phase 4 文档是否齐全。
+- D14 的 GPT 样本不是内容失败，而是流程失败：两次都没有源码 diff，但缺 `000/010/020/030/_active-state`；Composer 对照样本已通过 analysis gate。
+- D18 的 GPT 样本是双重失败：两次都直接写源码，并且缺 Phase 4 文档；Composer 对照样本已证明同一两段式 prompt 下可以守住 analysis-only 边界。
+- 后续 M3 复验必须使用专用干净副本：
+  - D14 M3：`E:\agent\real-project-fixtures\java-ruoyi-d14-m3-20260704-223205`
+  - D18 M3：`E:\agent\real-project-fixtures\monorepo-full-stack-starter-d18-m3-20260704-223205`
+
 ## 优化闭环
 
 遇到失败后先归类：
 
-1. 模型执行问题：规则清楚但模型没照做。先记录 runner 缺陷；必要时补 runbook/prompt。
+1. 模型执行问题：规则清楚但模型没照做。先记录 runner 缺陷；优先修 skill、hook 或 harness，不用加长 runner prompt 掩盖问题。
 2. skill 规则不清：模型按规则做了，但规则漏了要求。修 `SKILL.md`、profile、模板或 case。
 3. 门禁漏拦：产物明显不完整但 validator 通过。优先补 validator 和最小回归测试。
 

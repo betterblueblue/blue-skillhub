@@ -1,0 +1,9 @@
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\python-fastapi-template-d5-composer
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d5\README.md
+
+---
+
+[用户输入]
+把登录后首页欢迎语从 "Welcome back, nice to see you again!!!" 改成 "Welcome back. Good to see you again."。注意同步直接断言该文案的前端测试，不要改认证、API、schema、OpenAPI 或后端。

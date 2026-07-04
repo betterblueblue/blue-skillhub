@@ -284,8 +284,12 @@ def check_method_verification(req_dir: Path) -> tuple[list[str], list[str], list
 RE_DECISION_TABLE = re.compile(r"判档决策表|定级决策表|覆盖范围.*缺口.*判档|决策表")
 
 
-def check_decision_table(req_dir: Path) -> tuple[list[str], list[str]]:
-    """V4: Check for grading decision table in output files."""
+def check_decision_table(req_dir: Path, mode: str = "full") -> tuple[list[str], list[str]]:
+    """V4: Check for grading decision table in output files.
+
+    In light mode, the grading decision table is not required, so a missing
+    table is downgraded from WARN to a no-op (neither pass nor warn).
+    """
     passes = []
     warns = []
 
@@ -299,6 +303,9 @@ def check_decision_table(req_dir: Path) -> tuple[list[str], list[str]]:
 
     if RE_DECISION_TABLE.search(all_text):
         passes.append("V4: Grading decision table found in output")
+    elif mode == "light":
+        # light 模式不要求判档决策表，不产生 WARN 噪音
+        pass
     else:
         warns.append(
             "V4: No grading decision table found — "
@@ -1225,7 +1232,15 @@ def check_phase3_process(req_dir: Path) -> tuple[list[str], list[str], list[str]
     has_phase3_grading = bool(RE_PHASE3_GRADING.search(text))
 
     if has_phase3_status and has_phase3_grading:
-        passes.append("V12: _active-state.md has Phase 3 状态 and Phase 3.5 定级 fields")
+        mode_val = (_active_field(text, "模式") or "").lower()
+        grading_val = (_active_field(text, "Phase 3.5 定级") or "").lower()
+        if "full" in mode_val and ("light" in grading_val or "快速通道" in grading_val):
+            fails.append(
+                "V12: _active-state.md Phase 3.5 定级 conflicts with 模式 — "
+                f"模式 is {mode_val!r} but Phase 3.5 定级 is {grading_val!r}"
+            )
+        else:
+            passes.append("V12: _active-state.md has Phase 3 状态 and Phase 3.5 定级 fields")
     else:
         missing = []
         if not has_phase3_status:
@@ -1481,10 +1496,13 @@ def check_phase5_record_state(req_dir: Path, repo_root: str) -> tuple[list[str],
     if not record_file.exists():
         if changed_paths:
             fails.append(
-                "V15: Source/test/config files have git changes but "
-                "090-execution-record.md is missing — write the execution "
-                "record and update _active-state.md before claiming the Step "
-                f"is complete. Changed path(s): {'; '.join(changed_paths[:5])}"
+                f"V15: Source/test/config files have git changes but "
+                f"090-execution-record.md is missing — "
+                f"Changed path(s): {'; '.join(changed_paths[:5])}.\n"
+                "  修复步骤:\n"
+                "  1. 创建 090-execution-record.md，为每个有源码改动的 Step 记录执行过程\n"
+                "  2. 在每个 Step 的执行记录中列出 changed path\n"
+                "  3. 更新 _active-state.md 的 Step 状态和最近验证结果"
             )
             return passes, fails, warns
         passes.append("V15: No execution record yet — no Phase 5 record/state check needed")
@@ -1497,10 +1515,13 @@ def check_phase5_record_state(req_dir: Path, repo_root: str) -> tuple[list[str],
     ]
     if changed_paths and not source_sections:
         fails.append(
-            "V15: Source/test/config files have git changes but "
-            "090-execution-record.md has no source/test/config write Step — "
-            "record the actual Step and update _active-state.md. "
-            f"Changed path(s): {'; '.join(changed_paths[:5])}"
+            f"V15: Source/test/config files have git changes but "
+            f"090-execution-record.md has no source/test/config write Step — "
+            f"Changed path(s): {'; '.join(changed_paths[:5])}.\n"
+            "  修复步骤:\n"
+            "  1. 在 090-execution-record.md 中添加执行 Step（标题含 'Step' 和步骤号）\n"
+            "  2. 在该 Step 中记录所有 changed path\n"
+            "  3. 在该 Step 中引用 090-execution-record.md 和 _active-state.md"
         )
         return passes, fails, warns
 
@@ -1510,10 +1531,12 @@ def check_phase5_record_state(req_dir: Path, repo_root: str) -> tuple[list[str],
     ]
     if unrecorded_paths:
         fails.append(
-            "V15: Source/test/config files have git changes but are not "
-            "listed in any source/test/config execution Step — record every "
-            "changed source/test/config path or remove the unscoped change. "
-            f"Unrecorded path(s): {'; '.join(unrecorded_paths[:5])}"
+            f"V15: Source/test/config files have git changes but are not "
+            f"listed in any source/test/config execution Step — "
+            f"Unrecorded path(s): {'; '.join(unrecorded_paths[:5])}.\n"
+            "  修复步骤:\n"
+            "  1. 在 090-execution-record.md 对应 Step 中补充缺少的 path\n"
+            "  2. 或如果该改动不在本需求范围内，用 git checkout 还原文件"
         )
         return passes, fails, warns
 
@@ -1530,9 +1553,13 @@ def check_phase5_record_state(req_dir: Path, repo_root: str) -> tuple[list[str],
 
     if missing_steps:
         fails.append(
-            "V15: Source/test/config write Step must include execution record "
-            "and active-state updates in the same Step. "
-            f"Offending Step(s): {'; '.join(missing_steps[:3])}"
+            f"V15: Source/test/config write Step must include execution record "
+            f"and active-state updates in the same Step — "
+            f"Offending Step(s): {'; '.join(missing_steps[:3])}.\n"
+            "  修复步骤:\n"
+            "  1. 在对应 Step 的执行记录中添加引用: 090-execution-record.md\n"
+            "  2. 在对应 Step 的执行记录中添加引用: _active-state.md\n"
+            "  3. 确认 _active-state.md 中该 Step 状态已更新"
         )
     else:
         passes.append("V15: Source/test/config write Steps include execution record and active-state updates")
@@ -1811,7 +1838,10 @@ def check_active_state_consistency(req_dir: Path) -> tuple[list[str], list[str],
 # ===========================================================================
 
 RE_RESULT_PLACEHOLDER = re.compile(r"\[.*passed.*\]|N/A|未执行|不适用|尚未", re.I)
-RE_ACTUAL_RESULT = re.compile(r"\d+\s*passed.*\d+\s*fail", re.I)
+RE_ACTUAL_RESULT = re.compile(
+    r"(?P<passed>\d+)\s*passed.*?(?P<failed>\d+)\s*failed?",
+    re.I,
+)
 
 
 def check_verification_evidence(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
@@ -1840,7 +1870,10 @@ def check_verification_evidence(req_dir: Path) -> tuple[list[str], list[str], li
     if not result_match:
         fails.append(
             "V18: _active-state.md 最近验证 section missing 结果 field — "
-            "must fill actual validator output"
+            "must fill actual validator output.\n"
+            "  修复步骤:\n"
+            "  1. 运行 impact_validate.py 获取实际结果\n"
+            "  2. 在 _active-state.md 最近验证 section 添加: 结果: <N> passed, <N> failed, <N> warnings"
         )
         return passes, fails, warns
 
@@ -1849,16 +1882,35 @@ def check_verification_evidence(req_dir: Path) -> tuple[list[str], list[str], li
     # Check for placeholder values
     if RE_RESULT_PLACEHOLDER.search(result_val) or result_val.startswith("["):
         fails.append(
-            "V18: _active-state.md 最近验证 结果 is a placeholder — "
-            "must fill actual validator output (e.g., '15 passed, 0 failed, 2 warnings')"
+            f"V18: _active-state.md 最近验证 结果 is a placeholder — "
+            f"must fill actual validator output, got: {result_val[:80]}.\n"
+            "  修复步骤:\n"
+            "  1. 运行 impact_validate.py 获取实际结果\n"
+            "  2. 将结果字段替换为实际 validator 输出，格式: N passed, N failed, N warnings"
         )
         return passes, fails, warns
 
     # Check for actual validator output format
-    if not RE_ACTUAL_RESULT.search(result_val):
+    result = RE_ACTUAL_RESULT.search(result_val)
+    if not result:
         fails.append(
             f"V18: _active-state.md 最近验证 结果 doesn't match validator output format — "
-            f"expected 'N passed, N failed, N warnings', got: {result_val[:80]}"
+            f"expected 'N passed, N failed, N warnings', got: {result_val[:80]}.\n"
+            "  修复步骤:\n"
+            "  1. 运行 impact_validate.py 获取实际结果\n"
+            "  2. 粘贴 SUMMARY 行的统计，格式: N passed, N failed, N warnings"
+        )
+        return passes, fails, warns
+
+    failed_count = int(result.group("failed"))
+    if failed_count != 0:
+        fails.append(
+            f"V18: _active-state.md 最近验证 contains failed validator result — "
+            f"expected 0 failed, got: {result_val[:80]}.\n"
+            "  修复步骤:\n"
+            "  1. 逐条修复 FAIL 项（看 FAIL 文案中的修复步骤）\n"
+            "  2. 重新运行 impact_validate.py 直到 0 failed\n"
+            "  3. 更新 _active-state.md 最近验证 结果 为最新的 0 failed 输出"
         )
         return passes, fails, warns
 
@@ -2125,7 +2177,7 @@ def main():
     all_warns.extend(w)
 
     # V4: Grading decision table
-    p, w = check_decision_table(req_dir)
+    p, w = check_decision_table(req_dir, mode)
     all_passes.extend(p)
     all_warns.extend(w)
 

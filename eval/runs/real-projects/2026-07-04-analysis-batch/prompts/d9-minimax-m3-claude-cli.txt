@@ -1,0 +1,9 @@
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\monorepo-full-stack-starter-d9-m3
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-minimax-m3-delivery-d9\README.md
+
+---
+
+[用户输入]
+给用户资料新增 organization 字段，后端存储和返回，前端注册/资料页可填写，shared type 也要同步。先不要写代码，只做完整影响分析。

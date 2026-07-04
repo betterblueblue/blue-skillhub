@@ -83,7 +83,7 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路
 
 v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等级、非 Git 项目保护、恢复后复核和多会话写授权一致性，适合迁移、对齐、重构等多 Step 变更。最新新增**风格规则文件**（`change-impact/_style-rules.md`）：用户把团队强制/建议规则写进去，Impact 在分析和校验时会读取并检查代码是否符合。优先级为：风格规则文件 > 地图观察 > Profile 提示 > 运行时采样；规则可以在实际变更中发现并追加，不要求预先写全。Claude Code + MiniMax M3 真实 `/impact` 复测已经走完 S1-S7 回归，模糊确认、历史确认、延迟确认、非 Git + V1-only、Health/API 响应字段变化都不能绕过 `确认 Step N`。
 
-经过 V1-V10 共 10 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为：把模糊需求变成显式假设（V7 验证）、苏格拉底式提问不替用户拍板但自主推断代码事实（代码可推断项不问用户，业务决策项才问）、结构化保障（回滚方案、验证步骤、方法名预检始终做到）、防御性检查（refreshToken TTL 同步等独有发现）、安全检查（逐步确认、写入边界、高风险拦截，弱模型也绕不过）。当前版本 v5.6。2026-06-28 先做了一轮 5 模型端到端对比（Composer 2.5、Kimi K2.6、GLM-5.1、Step 3.7 Flash、GLM-5.2），选定 Composer 2.5 和 Step 3.7 Flash 作为性价比优化目标后，又做了 R1-R7 共 7 轮 Skill 模板优化验证（O1-O18 共 18 项优化措施），涵盖全局影响检查表 V10 脚本检查、Prisma ORM 异常行为参考、`_active-state.md` 存在性检查、§6/§3.2 标题防改名、弱引导下强制规则（context-pack 必产出、Phase 4 必跑验证脚本）、读路径 SQL 判 light 规则、脚本路径澄清、`_active-state.md` 模板结构强制、Phase 4/5 分步门禁 V13、源码写入前置检查门禁 V14、源码 Step 执行记录/状态文件门禁 V15（v5.6 起还会检查每个源码类 Git diff 是否被执行记录覆盖）、`_active-state.md` 状态一致性门禁 V16，以及任务验收冒烟检查 V17。2026-07-03 真实 Phase 5 复测发现 Composer 2.5 会出现“validator 全绿但代码少改一半”的情况，v5.6 已把 route meta `label/title` 半截改动转成脚本级 FAIL。`impact_validate.py` 现有 V1-V17 共 17 项自动化检查。详细数据见 [skills/impact/README.md](skills/impact/README.md)。
+经过 V1-V10 共 10 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为：把模糊需求变成显式假设（V7 验证）、苏格拉底式提问不替用户拍板但自主推断代码事实（代码可推断项不问用户，业务决策项才问）、结构化保障（回滚方案、验证步骤、方法名预检始终做到）、防御性检查（refreshToken TTL 同步等独有发现）、安全检查（逐步确认、写入边界、高风险拦截，弱模型也绕不过）。当前版本 v5.7。2026-06-28 先做了一轮 5 模型端到端对比（Composer 2.5、Kimi K2.6、GLM-5.1、Step 3.7 Flash、GLM-5.2），选定 Composer 2.5 和 Step 3.7 Flash 作为性价比优化目标后，又做了 R1-R7 共 7 轮 Skill 模板优化验证（O1-O18 共 18 项优化措施），涵盖全局影响检查表 V10 脚本检查、Prisma ORM 异常行为参考、`_active-state.md` 存在性检查、§6/§3.2 标题防改名、弱引导下强制规则（context-pack 必产出、Phase 4 必跑验证脚本）、读路径 SQL 判 light 规则、脚本路径澄清、`_active-state.md` 模板结构强制、Phase 4/5 分步门禁 V13、源码写入前置检查门禁 V14、源码 Step 执行记录/状态文件门禁 V15（v5.6 起还会检查每个源码类 Git diff 是否被执行记录覆盖，v5.7 起 FAIL 文案包含具体修复步骤）、`_active-state.md` 状态一致性门禁 V16，以及任务验收冒烟检查 V17。2026-07-03 真实 Phase 5 复测发现 Composer 2.5 会出现“validator 全绿但代码少改一半”的情况，v5.6 已把 route meta `label/title` 半截改动转成脚本级 FAIL。v5.7 新增：V4 light 模式豁免（light 不再要求判档决策表）、V18 FAIL 文案加修复指引、check_delivery 对 impact-phase4 默认 no-source-diff gate（`allow_phase5` 覆盖）。`impact_validate.py` 现有 V1-V18 共 18 项自动化检查。详细数据见 [skills/impact/README.md](skills/impact/README.md)。
 
 当前还接入了可选 code graph MCP 作为结构化定义/引用候选入口，以及 `change-impact/{需求名称}/_active-state.md` 作为跨会话恢复状态文件。`_active-state.md` 只记录 pending Step、文档状态和未确认项，不授权源码/SQL/配置/测试写入，也不能替代当前对话里的 `确认 Step N`。Claude Code 可选启用 `.claude/hooks/impact-write-gate.*`，把 Step 确认补强成工具执行前检查。
 
@@ -110,6 +110,10 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 防止质量悄悄退步的关键机制是**基线评分卡 + 红线对比**：每次改 skill 后跑 L1，产出评分卡，和上一基线逐 case 对比；只要出现契约从 PASS→FAIL、维度掉档≥3 分或新增 P0/P1，就算红线，不能发布。详细设计见 [docs/archive/2026-06/2026-06-13-skill-eval-system-design.md](docs/archive/2026-06/2026-06-13-skill-eval-system-design.md)，实施手册见 [docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md](docs/archive/2026-06/2026-06-13-skill-eval-system-runbook.md)。
 
 真实项目评测见 [eval/real-projects/](eval/real-projects/)。这里固定了 5 类项目（Java 后端、Node API、Python 全栈、前端、monorepo/非 Git），并新增真实交付矩阵：让弱模型在隔离副本里跑 Pathfinder、Impact Phase 4、Impact Phase 5、negative gate，记录 diff、验证命令、执行记录和失败修复循环。目标不是证明模型不会犯错，而是证明门禁能把错误拦住，并把模型拉回可交付状态。
+
+已记录 10 种逃逸形态（E-001 到 E-010），全部有对应的 validator 检查或明确标注的边界。逃逸台账是"我们拦过什么"的证据清单，详见 [逃逸台账](eval/real-projects/escape-ledger.md)。评测手册见 [runbook.md](eval/real-projects/runbook.md)，其中明确：判分时以独立复跑 validator 的结果为准，不以 runner README 自报结果为准；每个 runner 每次运行使用物理隔离的 fixture 副本。
+
+基于 56 条已跑结果的跨模型对比，**Composer 2.5 Fast 是本套 skill 最推荐的主力弱模型**（22 条结果：9 PASS、7 GATE-RECOVERED、3 PASS-WARN、2 FAIL、1 UNVERIFIED）。GPT-5.4-mini（6 FAIL）和 MiniMax M3（2 FAIL）分别适合分析场景和简单分析，交付场景有风险。详细数据和结论见 [docs/handoff-summary-2026-07-04.md](docs/handoff-summary-2026-07-04.md)。
 
 ## 研究与实验记录
 

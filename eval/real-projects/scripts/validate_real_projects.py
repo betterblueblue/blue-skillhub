@@ -15,6 +15,7 @@ PROJECTS_PATH = BASE / "projects.json"
 CASES_DIR = BASE / "cases"
 DELIVERY_MATRIX_PATH = BASE / "delivery-matrix.json"
 DELIVERY_RESULTS_PATH = BASE / "delivery-results.json"
+RUNS_ROOT = REPO_ROOT / "eval" / "runs" / "real-projects"
 REQUIRED_KINDS = {"pathfinder", "impact-light", "impact-full", "negative"}
 COMMIT_RE = re.compile(r"^[a-f0-9]{40}$")
 CASE_ID_RE = re.compile(r"^[a-z0-9-]+$")
@@ -59,6 +60,35 @@ ACCEPTANCE_FIELDS = {
 }
 REQUIRED_ACCEPTANCE_FIELDS = {"expected_changed_files", "forbidden_changed_files", "validators"}
 ACCEPTANCE_CONTENT_SCOPES = {"expected", "repo"}
+PHASE5_POLICIES = {
+    "interactive-or-hooked",
+    "subagent-unattended-stress-only",
+}
+PROMPT_ENV_FIELDS = {"工作目录", "非 Git 副本目录", "Skill", "输出归档"}
+PROMPT_REQUIRED_ENV_FIELDS = {"工作目录", "Skill", "输出归档"}
+PROMPT_HARNESS_PATTERNS = [
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"impact_validate\.py",
+        r"check_delivery\.py",
+        r"delivery-results\.json",
+        r"expected_changed_files",
+        r"forbidden_changed_files",
+        r"--run-validators",
+        r"确认\s*Step\s*\d*",
+        r"只允许写",
+        r"不得写文件",
+        r"否则判",
+        r"判失败",
+        r"评分卡",
+        r"判分方",
+        r"监考",
+        r"不要读取.*(旧|GPT|Composer|delivery-results)",
+        r"旧\s*D\d+",
+        r"GPT\s*地图",
+        r"旧\s*Composer",
+    )
+]
 
 
 def load_json(path: Path) -> object:
@@ -68,6 +98,79 @@ def load_json(path: Path) -> object:
 
 def as_list(value: object) -> list[object]:
     return value if isinstance(value, list) else []
+
+
+def validate_user_prompt(errors: list[str], prefix: str, prompt: str) -> None:
+    for pattern in PROMPT_HARNESS_PATTERNS:
+        match = pattern.search(prompt)
+        if match:
+            errors.append(f"{prefix}: prompt contains harness/judge wording {match.group(0)!r}")
+
+
+def _prompt_field_name(line: str) -> str:
+    separator = "：" if "：" in line else ":"
+    return line.split(separator, 1)[0].strip()
+
+
+def parse_launch_prompt_file(errors: list[str], path: Path) -> tuple[dict[str, str], str] | None:
+    rel = path.relative_to(REPO_ROOT).as_posix()
+    text = path.read_text(encoding="utf-8-sig")
+    lines = text.splitlines()
+    non_empty = [line.strip() for line in lines if line.strip()]
+
+    if not non_empty:
+        errors.append(f"{rel}: prompt file is empty")
+        return None
+    if non_empty[0] != "[评测环境]":
+        errors.append(f"{rel}: prompt must start with [评测环境]")
+        return None
+
+    try:
+        env_idx = lines.index("[评测环境]")
+        separator_idx = lines.index("---")
+        user_idx = lines.index("[用户输入]")
+    except ValueError:
+        errors.append(f"{rel}: prompt must contain [评测环境], --- and [用户输入]")
+        return None
+
+    if not (env_idx == 0 and env_idx < separator_idx < user_idx):
+        errors.append(f"{rel}: prompt sections must be [评测环境] -> --- -> [用户输入]")
+        return None
+    between_separator_and_user = [
+        line.strip() for line in lines[separator_idx + 1 : user_idx] if line.strip()
+    ]
+    if between_separator_and_user:
+        errors.append(f"{rel}: prompt must not add text between --- and [用户输入]")
+
+    env_lines = [line.strip() for line in lines[env_idx + 1 : separator_idx] if line.strip()]
+    env: dict[str, str] = {}
+    seen_fields: set[str] = set()
+    for line in env_lines:
+        if "：" not in line and ":" not in line:
+            errors.append(f"{rel}: environment line must be a key/value pair: {line!r}")
+            continue
+        field = _prompt_field_name(line)
+        if field not in PROMPT_ENV_FIELDS:
+            errors.append(f"{rel}: environment field {field!r} is not allowed")
+        seen_fields.add(field)
+        separator = "：" if "：" in line else ":"
+        env[field] = line.split(separator, 1)[1].strip()
+
+    missing_fields = sorted(PROMPT_REQUIRED_ENV_FIELDS - seen_fields)
+    if missing_fields:
+        errors.append(f"{rel}: environment is missing fields {missing_fields}")
+
+    user_text = "\n".join(lines[user_idx + 1 :]).strip()
+    if len(user_text) < 20:
+        errors.append(f"{rel}: user input is too short")
+    if any(line.strip().startswith("[") and line.strip().endswith("]") for line in lines[user_idx + 1 :]):
+        errors.append(f"{rel}: prompt must not add sections after [用户输入]")
+    validate_user_prompt(errors, rel, user_text)
+    return env, user_text
+
+
+def validate_launch_prompt_file(errors: list[str], path: Path) -> None:
+    parse_launch_prompt_file(errors, path)
 
 
 def validate_acceptance(
@@ -217,6 +320,7 @@ def main() -> int:
                     "skill": str(case.get("skill")),
                     "delivery_mode": str(case.get("delivery_mode")),
                     "size": str(case.get("size")),
+                    "prompt": str(case.get("prompt")),
                 }
 
             kind = case.get("kind")
@@ -263,6 +367,8 @@ def main() -> int:
             prompt = case.get("prompt")
             if not isinstance(prompt, str) or len(prompt.strip()) < 20:
                 errors.append(f"{prefix}: prompt is too short")
+            else:
+                validate_user_prompt(errors, prefix, prompt)
 
             for field in ("expected_artifacts", "verification"):
                 values = as_list(case.get(field))
@@ -297,6 +403,8 @@ def main() -> int:
 
     validate_delivery_matrix(errors, case_index, project_category)
     validate_delivery_results(errors, warnings, case_index)
+    validate_launch_prompts(errors)
+    validate_pending_launch_prompt_inventory(errors, case_index)
 
     if errors:
         return report(errors)
@@ -327,6 +435,7 @@ def validate_delivery_matrix(
     runners = as_list(doc.get("runners"))
     runner_ids: set[str] = set()
     runner_plan_ids: set[str] = set()
+    runner_phase5_policy: dict[str, str] = {}
     for idx, runner in enumerate(runners):
         prefix = f"delivery runners[{idx}]"
         if not isinstance(runner, dict):
@@ -342,6 +451,11 @@ def validate_delivery_matrix(
             errors.append(f"{prefix}: scope must be 'planned' or 'results-only'")
         elif scope == "planned":
             runner_plan_ids.add(runner_id)
+        phase5_policy = runner.get("phase5_policy", "interactive-or-hooked")
+        if phase5_policy not in PHASE5_POLICIES:
+            errors.append(f"{prefix}: phase5_policy must be one of {sorted(PHASE5_POLICIES)}")
+        else:
+            runner_phase5_policy[runner_id] = phase5_policy
         for field in ("surface", "model", "invocation"):
             if not isinstance(runner.get(field), str) or not runner.get(field):
                 errors.append(f"{prefix}: missing {field}")
@@ -412,6 +526,13 @@ def validate_delivery_matrix(
         if not runner_scope or not all(isinstance(item, str) and item in runner_ids for item in runner_scope):
             errors.append(f"{prefix}: runner_scope must reference runner ids")
 
+        prompt_override = scenario.get("prompt_override")
+        if prompt_override is not None:
+            if not isinstance(prompt_override, str) or len(prompt_override.strip()) < 20:
+                errors.append(f"{prefix}: prompt_override must be a non-empty string")
+            else:
+                validate_user_prompt(errors, prefix, prompt_override)
+
         for field in ("success_target", "failure_signals", "repair_loop"):
             values = as_list(scenario.get(field))
             if not values or not all(isinstance(item, str) and item for item in values):
@@ -458,7 +579,13 @@ def validate_delivery_matrix(
             for scenario in scenarios
             if isinstance(scenario, dict) and scenario.get("id") in planned
         }
-        if "impact-phase5" not in planned_stages:
+        if runner_phase5_policy.get(runner_id) == "subagent-unattended-stress-only":
+            if "impact-phase5" in planned_stages:
+                errors.append(
+                    f"delivery-matrix.json: runner_plan.{runner_id} must not include impact-phase5 "
+                    "because phase5_policy=subagent-unattended-stress-only"
+                )
+        elif "impact-phase5" not in planned_stages:
             errors.append(f"delivery-matrix.json: runner_plan.{runner_id} must include impact-phase5")
 
 
@@ -593,6 +720,179 @@ def validate_delivery_results(
             f"impact-phase5 yet: {sorted(missing_phase5)} "
             "(zero-result runners are exempt; full phase5 coverage is a release-gate criterion)"
         )
+
+
+def validate_launch_prompts(errors: list[str]) -> None:
+    if not RUNS_ROOT.exists():
+        return
+    for path in sorted(RUNS_ROOT.glob("*/prompts/*.txt")):
+        validate_launch_prompt_file(errors, path)
+
+
+def _standard_prompt_name(scenario_id: str, runner_id: str) -> str | None:
+    match = re.match(r"^(D[0-9]+)-", scenario_id)
+    if not match:
+        return None
+    return f"{match.group(1).lower()}-{runner_id}.txt"
+
+
+def validate_pending_launch_prompt_inventory(
+    errors: list[str],
+    case_index: dict[str, dict[str, str]],
+) -> None:
+    """Ensure not-yet-run planned matrix entries have a runnable clean prompt."""
+    if not DELIVERY_MATRIX_PATH.exists() or not DELIVERY_RESULTS_PATH.exists():
+        return
+    if not RUNS_ROOT.exists():
+        return
+
+    matrix_doc = load_json(DELIVERY_MATRIX_PATH)
+    results_doc = load_json(DELIVERY_RESULTS_PATH)
+    if not isinstance(matrix_doc, dict) or not isinstance(results_doc, dict):
+        return
+
+    completed_or_attempted = {
+        (result.get("scenario_id"), result.get("runner_id"))
+        for result in as_list(results_doc.get("results"))
+        if isinstance(result, dict)
+        and isinstance(result.get("scenario_id"), str)
+        and isinstance(result.get("runner_id"), str)
+    }
+
+    prompt_paths_by_name: dict[str, list[Path]] = {}
+    for path in RUNS_ROOT.glob("*/prompts/*.txt"):
+        if path.is_file():
+            prompt_paths_by_name.setdefault(path.name, []).append(path)
+
+    runner_plan = matrix_doc.get("runner_plan")
+    if not isinstance(runner_plan, dict):
+        return
+
+    scenario_index: dict[str, dict[str, str]] = {}
+    for scenario in as_list(matrix_doc.get("scenarios")):
+        if not isinstance(scenario, dict):
+            continue
+        scenario_id = scenario.get("id")
+        case_id = scenario.get("case_id")
+        if not isinstance(scenario_id, str) or not isinstance(case_id, str):
+            continue
+        case_meta = case_index.get(case_id)
+        if case_meta is None:
+            continue
+        prompt_override = scenario.get("prompt_override")
+        scenario_index[scenario_id] = {
+            "skill": case_meta.get("skill", ""),
+            "stage": str(scenario.get("stage", "")),
+            "fixture_mode": str(scenario.get("fixture_mode", "")),
+            "prompt": (
+                prompt_override
+                if isinstance(prompt_override, str) and prompt_override.strip()
+                else case_meta.get("prompt", "")
+            ),
+        }
+
+    for runner_id, planned in sorted(runner_plan.items()):
+        if not isinstance(runner_id, str):
+            continue
+        for scenario_id in as_list(planned):
+            if not isinstance(scenario_id, str):
+                continue
+            if (scenario_id, runner_id) in completed_or_attempted:
+                continue
+            expected_name = _standard_prompt_name(scenario_id, runner_id)
+            if expected_name is None:
+                continue
+            prompt_paths = prompt_paths_by_name.get(expected_name, [])
+            if not prompt_paths:
+                errors.append(
+                    "pending launch prompt missing: "
+                    f"runner_plan.{runner_id} includes {scenario_id}, "
+                    f"but no prompts/{expected_name} exists"
+                )
+                continue
+
+            expected_meta = scenario_index.get(scenario_id)
+            if expected_meta is None:
+                continue
+
+            parsed_prompts: list[tuple[Path, dict[str, str], str]] = []
+            for path in prompt_paths:
+                local_errors: list[str] = []
+                parsed = parse_launch_prompt_file(local_errors, path)
+                if parsed is not None:
+                    env, user_text = parsed
+                    parsed_prompts.append((path, env, user_text))
+            if not parsed_prompts:
+                continue
+
+            expected_user_text = expected_meta["prompt"].strip()
+            if expected_user_text and not any(
+                user_text.strip() == expected_user_text for _, _, user_text in parsed_prompts
+            ):
+                rel_paths = [path.relative_to(REPO_ROOT).as_posix() for path, _, _ in parsed_prompts]
+                errors.append(
+                    "pending launch prompt user input mismatch: "
+                    f"{scenario_id}/{runner_id} expects case prompt text, "
+                    f"but {rel_paths} differ"
+                )
+
+            expected_skill = expected_meta["skill"]
+            if expected_skill and not any(
+                _prompt_skill_matches(env.get("Skill", ""), expected_skill)
+                for _, env, _ in parsed_prompts
+            ):
+                rel_paths = [path.relative_to(REPO_ROOT).as_posix() for path, _, _ in parsed_prompts]
+                errors.append(
+                    "pending launch prompt skill mismatch: "
+                    f"{scenario_id}/{runner_id} expects {expected_skill!r}, "
+                    f"but {rel_paths} point elsewhere"
+                )
+
+            for path, env, _ in parsed_prompts:
+                rel_path = path.relative_to(REPO_ROOT).as_posix()
+                validate_pending_prompt_environment(errors, rel_path, scenario_id, expected_meta, env)
+
+
+def _prompt_skill_matches(skill_path: str, expected_skill: str) -> bool:
+    normalized = skill_path.replace("\\", "/").rstrip("/")
+    return normalized.endswith(f"/skills/{expected_skill}/SKILL.md")
+
+
+def _normalize_prompt_path(value: str) -> str:
+    return value.replace("\\", "/").rstrip("/")
+
+
+def validate_pending_prompt_environment(
+    errors: list[str],
+    rel_path: str,
+    scenario_id: str,
+    scenario_meta: dict[str, str],
+    env: dict[str, str],
+) -> None:
+    workdir = _normalize_prompt_path(env.get("工作目录", ""))
+    output = _normalize_prompt_path(env.get("输出归档", ""))
+    non_git_copy = _normalize_prompt_path(env.get("非 Git 副本目录", ""))
+
+    repo_root = _normalize_prompt_path(str(REPO_ROOT))
+    if workdir and (workdir == repo_root or workdir.startswith(repo_root + "/")):
+        errors.append(f"{rel_path}: 工作目录 must point to an external fixture, not this repo")
+
+    if output:
+        if "/eval/runs/real-projects/" not in output:
+            errors.append(f"{rel_path}: 输出归档 must be under eval/runs/real-projects")
+        if not output.endswith("/README.md"):
+            errors.append(f"{rel_path}: 输出归档 must end with README.md")
+
+    needs_non_git_copy = (
+        scenario_meta.get("fixture_mode") == "non-git-copy"
+        and scenario_meta.get("stage") == "pathfinder-map"
+    )
+    if needs_non_git_copy and not non_git_copy:
+        errors.append(f"{rel_path}: {scenario_id} must include 非 Git 副本目录")
+    if non_git_copy and not needs_non_git_copy:
+        errors.append(f"{rel_path}: 非 Git 副本目录 is only allowed for non-git pathfinder scenarios")
+    if non_git_copy and workdir and non_git_copy == workdir:
+        errors.append(f"{rel_path}: 非 Git 副本目录 must differ from 工作目录")
 
 
 def report(errors: list[str]) -> int:

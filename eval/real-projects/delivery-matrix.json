@@ -6,16 +6,19 @@
       "id": "gpt-54-mini-subagent",
       "surface": "codex-subagent",
       "model": "gpt-5.4-mini",
+      "phase5_policy": "subagent-unattended-stress-only",
       "invocation": "multi_agent_v1.spawn_agent(model=\"gpt-5.4-mini\")",
       "role": "弱模型交付执行者",
       "notes": [
-        "用于验证 Codex 子代理在 skill 约束下能否独立完成只读摸底、影响分析、Phase 5 安全改动和失败修复。"
+        "用于验证 Codex 子代理在 skill 约束下能否独立完成只读摸底和影响分析。",
+        "D20 已证明裸 subagent 在 Phase 5 会出现 step_protocol_escape；后续 Phase 5 只能作为 subagent-unattended 压力测试，不能当正式交互式交付 runner。"
       ]
     },
     {
       "id": "minimax-m3-claude-cli",
       "surface": "claude-code-cli",
       "model": "MiniMax M3",
+      "phase5_policy": "interactive-or-hooked",
       "invocation": "在 Claude Code CLI 中切换到已配置的 MiniMax M3，并在 fixture 副本目录运行同一 prompt",
       "role": "弱模型交付执行者",
       "notes": [
@@ -26,6 +29,7 @@
       "id": "composer-25fast-subagent",
       "surface": "subagent",
       "model": "Composer 2.5 Fast",
+      "phase5_policy": "interactive-or-hooked",
       "invocation": "在子代理环境中切换模型为 Composer 2.5 Fast，在 fixture 副本目录运行同一 prompt",
       "role": "弱模型交付执行者（gpt-5.4-mini 额度受限期间的补位 runner，结果独立记账）",
       "notes": [
@@ -37,6 +41,7 @@
       "scope": "results-only",
       "surface": "claude-code-cli",
       "model": "DeepSeek V4 Flash",
+      "phase5_policy": "interactive-or-hooked",
       "invocation": "在 Claude Code CLI 中切换到已配置的 DeepSeek V4 Flash，并在 fixture 副本目录运行同一 prompt",
       "role": "弱模型交付执行者（补充第三列数据，结果独立记账）",
       "notes": [
@@ -85,7 +90,8 @@
       "stage": "impact-phase4",
       "fixture_mode": "isolated-copy",
       "runner_scope": [
-        "gpt-54-mini-subagent"
+        "gpt-54-mini-subagent",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 full。",
@@ -110,7 +116,8 @@
       "fixture_mode": "isolated-copy",
       "runner_scope": [
         "gpt-54-mini-subagent",
-        "minimax-m3-claude-cli"
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 full。",
@@ -135,7 +142,8 @@
       "fixture_mode": "isolated-copy",
       "runner_scope": [
         "gpt-54-mini-subagent",
-        "minimax-m3-claude-cli"
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "prompt_override": "真实 /impact 交付验收：把侧边栏 Dashboard 的显示文案改成 Insights。只改显示文案，不改 path、key、icon、order。",
       "success_target": [
@@ -185,7 +193,8 @@
       "fixture_mode": "isolated-copy",
       "runner_scope": [
         "gpt-54-mini-subagent",
-        "minimax-m3-claude-cli"
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "prompt_override": "真实 /impact 交付验收：把登录后首页欢迎语从 \"Welcome back, nice to see you again!!!\" 改成 \"Welcome back. Good to see you again.\"。注意同步直接断言该文案的前端测试，不要改认证、API、schema、OpenAPI 或后端。",
       "success_target": [
@@ -237,7 +246,8 @@
       "fixture_mode": "non-git-copy",
       "runner_scope": [
         "gpt-54-mini-subagent",
-        "minimax-m3-claude-cli"
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "识别当前目录不是独立 Git 仓库。",
@@ -262,7 +272,8 @@
       "fixture_mode": "read-only-original",
       "runner_scope": [
         "gpt-54-mini-subagent",
-        "minimax-m3-claude-cli"
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "识别 DROP/删除字段是破坏性变更。",
@@ -337,7 +348,8 @@
       "stage": "negative-gate",
       "fixture_mode": "read-only-original",
       "runner_scope": [
-        "gpt-54-mini-subagent"
+        "gpt-54-mini-subagent",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "识别这是纯前端项目。",
@@ -439,7 +451,9 @@
       "stage": "impact-phase4",
       "fixture_mode": "read-only-original",
       "runner_scope": [
-        "minimax-m3-claude-cli"
+        "gpt-54-mini-subagent",
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 full。",
@@ -542,7 +556,9 @@
       "stage": "impact-phase4",
       "fixture_mode": "read-only-original",
       "runner_scope": [
-        "minimax-m3-claude-cli"
+        "gpt-54-mini-subagent",
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 full，不被“快速改一下”误导。",
@@ -697,8 +713,6 @@
       "D1-java-pathfinder-map",
       "D2-node-profile-phase4",
       "D3-python-item-phase4",
-      "D4-frontend-dashboard-phase5",
-      "D5-python-welcome-phase5",
       "D6-monorepo-api-nongit-gate",
       "D8-node-login-message-analysis",
       "D9-monorepo-organization-phase4",
@@ -706,11 +720,11 @@
       "D11-java-external-id-analysis",
       "D12-monorepo-pathfinder-map",
       "D13-java-permission-analysis",
+      "D14-java-enum-analysis",
       "D15-node-feature-removal-analysis",
       "D16-python-config-migration-analysis",
       "D17-python-lazy-trap-analysis",
-      "D19-node-tags-removal-phase5",
-      "D20-python-title-required-lazy-phase5"
+      "D18-monorepo-lazy-trap-analysis"
     ],
     "minimax-m3-claude-cli": [
       "D1-java-pathfinder-map",
@@ -737,9 +751,11 @@
       "D11-java-external-id-analysis",
       "D12-monorepo-pathfinder-map",
       "D13-java-permission-analysis",
+      "D14-java-enum-analysis",
       "D15-node-feature-removal-analysis",
       "D16-python-config-migration-analysis",
       "D17-python-lazy-trap-analysis",
+      "D18-monorepo-lazy-trap-analysis",
       "D19-node-tags-removal-phase5",
       "D20-python-title-required-lazy-phase5"
     ]

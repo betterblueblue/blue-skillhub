@@ -1028,6 +1028,56 @@ class TestV16ActiveStateConsistency(unittest.TestCase):
 
 
 # ===========================================================================
+# V12 Tests: Phase 3 process state consistency
+# ===========================================================================
+
+
+def _v12_lines(stdout: str) -> list[str]:
+    return [l for l in stdout.splitlines() if "V12:" in l]
+
+
+class TestV12Phase3ProcessConsistency(unittest.TestCase):
+    """V12: full-mode active-state must not keep a light grading."""
+
+    def test_full_mode_with_light_grading_fails(self):
+        td, rd = _make_repo()
+        _write_active_state(
+            rd,
+            """# Active State
+
+## 状态头
+
+- 当前阶段：完成
+- 模式：full
+- Phase 3 状态：已完成
+- Phase 3.5 定级：light
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：none
+- 上次确认 Step：none
+- 上次完成 Step：none
+- V1-only 计数：0
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+
+## 恢复备注
+
+- 无
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v12 = _v12_lines(out)
+        self.assertEqual(code, 1, f"Conflicting active-state grading should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("conflicts with 模式" in l for l in v12),
+            f"Expected V12 conflict FAIL, got: {v12}"
+        )
+
+
+# ===========================================================================
 # V18 Tests: Verification evidence
 # ===========================================================================
 
@@ -1152,6 +1202,44 @@ class TestV18VerificationEvidence(unittest.TestCase):
         v18 = _v18_lines(out)
         self.assertEqual(code, 0, f"Actual result should pass, got {code}\n{out}")
         self.assertTrue(any("actual validator result" in l for l in v18), f"Expected V18 PASS, got: {v18}")
+
+    def test_nonzero_failed_result_fails(self):
+        td, rd = _make_repo()
+        _write_active_state(rd, """# Active State
+
+## 状态头
+
+- 当前阶段：Phase 4
+- 模式：full
+- Phase 3 状态：已完成
+- Phase 3.5 定级：full
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：none
+- 上次确认 Step：none
+- 上次完成 Step：none
+- V1-only 计数：0
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+
+## 最近验证
+
+- 命令：`python skills/impact/scripts/impact_validate.py`
+- 结果：29 passed, 1 failed, 0 warnings
+- 验证等级：V1
+- 跳过原因：不适用
+
+## 恢复备注
+
+- 无
+""")
+        code, out = _run_validator(td, rd)
+        v18 = _v18_lines(out)
+        self.assertEqual(code, 1, f"Nonzero failed result should FAIL, got {code}\n{out}")
+        self.assertTrue(any("0 failed" in l for l in v18), f"Expected nonzero failed FAIL, got: {v18}")
 
 
 # ===========================================================================
