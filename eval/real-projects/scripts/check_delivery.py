@@ -114,6 +114,33 @@ def git_ls_files(fixture: Path) -> list[str]:
     return sorted(set(paths))
 
 
+def git_diff_numstat(fixture: Path) -> dict[str, tuple[int, int]]:
+    """Return {path: (insertions, deletions)} for tracked file changes vs HEAD.
+
+    Excludes change-impact/ paths.  Untracked files are not included.
+    """
+    result = subprocess.run(
+        ["git", "-C", str(fixture), "diff", "HEAD", "--numstat", "--no-renames"],
+        capture_output=True,
+        timeout=30,
+    )
+    stats: dict[str, tuple[int, int]] = {}
+    for line in result.stdout.decode("utf-8", errors="replace").splitlines():
+        parts = line.split("\t")
+        if len(parts) != 3:
+            continue
+        ins_s, del_s, path = parts
+        try:
+            ins = int(ins_s)
+            dels = int(del_s)
+        except ValueError:
+            continue  # binary file marked as '-'
+        path = normalize_path(path)
+        if not is_change_impact(path):
+            stats[path] = (ins, dels)
+    return stats
+
+
 def read_text(path: Path) -> str | None:
     if not path.exists() or not path.is_file():
         return None
@@ -240,6 +267,41 @@ def check_acceptance(
                 add_check(checks, "PASS", "validator", f"Validator passed: {command}", evidence)
             else:
                 add_check(checks, "FAIL", "validator", f"Validator failed: {command}", evidence)
+
+    # E-005: diff overflow check (WARN only, never FAIL)
+    max_total = acceptance.get("max_total_diff_lines")
+    diff_stats = git_diff_numstat(fixture)
+    total_diff_lines = sum(ins + dels for ins, dels in diff_stats.values())
+    diff_evidence = {
+        "total_changed_lines": total_diff_lines,
+        "per_file": {p: {"insertions": i, "deletions": d} for p, (i, d) in sorted(diff_stats.items())},
+    }
+    if max_total is not None:
+        diff_evidence["max_total_diff_lines"] = max_total
+        if total_diff_lines > max_total:
+            add_check(
+                checks,
+                "WARN",
+                "diff-overflow",
+                f"Total diff lines ({total_diff_lines}) exceed max_total_diff_lines ({max_total})",
+                diff_evidence,
+            )
+        else:
+            add_check(
+                checks,
+                "PASS",
+                "diff-overflow",
+                f"Total diff lines ({total_diff_lines}) within limit ({max_total})",
+                diff_evidence,
+            )
+    else:
+        add_check(
+            checks,
+            "PASS",
+            "diff-stats",
+            f"Total diff lines: {total_diff_lines}",
+            diff_evidence,
+        )
 
     has_fail = any(check["level"] == "FAIL" for check in checks)
     has_warn = any(check["level"] == "WARN" for check in checks)
