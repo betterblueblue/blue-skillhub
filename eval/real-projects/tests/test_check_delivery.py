@@ -229,6 +229,42 @@ class TestCheckDelivery(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertTrue(any(check["code"] == "must-not-contain" for check in report["checks"]))
 
+    def test_diff_overflow_warns_when_exceeding_threshold(self) -> None:
+        repo = make_repo()
+        # Write valid content but with many extra lines to trigger overflow
+        extra_lines = "\n".join(f"// comment {i}" for i in range(60))
+        write(
+            repo / "src/views/dashboard/dashboard.router.tsx",
+            f"const route = {{\n  label: 'Insights',\n  title: 'Insights',\n  path: 'dashboard',\n  key: '/dashboard',\n}}\n{extra_lines}\n",
+        )
+        acceptance = dict(BASE_ACCEPTANCE)
+        acceptance["max_total_diff_lines"] = 10
+
+        code, report = run_check(repo, acceptance)
+
+        # WARN does not cause exit code 1
+        self.assertEqual(code, 0)
+        self.assertEqual(report["status"], "PASS-WARN")
+        overflow = [c for c in report["checks"] if c["code"] == "diff-overflow"]
+        self.assertEqual(len(overflow), 1)
+        self.assertEqual(overflow[0]["level"], "WARN")
+        self.assertIn("total_changed_lines", overflow[0]["evidence"])
+
+    def test_diff_stats_always_reported_without_threshold(self) -> None:
+        repo = make_repo()
+        write(
+            repo / "src/views/dashboard/dashboard.router.tsx",
+            "label: 'Insights'\ntitle: 'Insights'\npath: 'dashboard'\nkey: '/dashboard'\n",
+        )
+
+        code, report = run_check(repo, BASE_ACCEPTANCE)
+
+        self.assertEqual(code, 0)
+        stats = [c for c in report["checks"] if c["code"] == "diff-stats"]
+        self.assertEqual(len(stats), 1)
+        self.assertEqual(stats[0]["level"], "PASS")
+        self.assertIn("per_file", stats[0]["evidence"])
+
 
 if __name__ == "__main__":
     unittest.main()

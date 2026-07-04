@@ -1294,7 +1294,7 @@ def _v21_lines(stdout: str) -> list[str]:
 
 
 class TestV21ProvenanceTags(unittest.TestCase):
-    """V21: §7 facts must have provenance tags."""
+    """V21: §7 facts must have source tags."""
 
     def test_untagged_facts_fail(self):
         ctx = (
@@ -1306,7 +1306,7 @@ class TestV21ProvenanceTags(unittest.TestCase):
         code, out = _run_validator(td, rd)
         v21 = _v21_lines(out)
         self.assertEqual(code, 1, f"Untagged facts should FAIL, got {code}\n{out}")
-        self.assertTrue(any("missing provenance" in l for l in v21), f"Expected V21 FAIL, got: {v21}")
+        self.assertTrue(any("missing source" in l for l in v21), f"Expected V21 FAIL, got: {v21}")
 
     def test_tagged_facts_pass(self):
         ctx = (
@@ -1318,7 +1318,7 @@ class TestV21ProvenanceTags(unittest.TestCase):
         code, out = _run_validator(td, rd)
         v21 = _v21_lines(out)
         self.assertEqual(code, 0, f"Tagged facts should pass, got {code}\n{out}")
-        self.assertTrue(any("provenance tags" in l for l in v21), f"Expected V21 PASS, got: {v21}")
+        self.assertTrue(any("source tags" in l for l in v21), f"Expected V21 PASS, got: {v21}")
 
     def test_no_facts_passes(self):
         ctx = "# Context Pack\n\n## 1. 变更意图\n\n- 用户原话：test\n"
