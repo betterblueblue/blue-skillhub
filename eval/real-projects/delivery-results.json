@@ -261,6 +261,49 @@
         "案例价值：D19r1+r2 同模型同题同错同造假——'自填表 + 兼容桩'是该模型的稳定行为签名，跨轮次复现。check_delivery 第二次拦住同类逃逸。"
       ],
       "blockers": []
+    },
+    {
+      "id": "D1-composer-25fast-2026-07-04",
+      "scenario_id": "D1-java-pathfinder-map",
+      "runner_id": "composer-25fast-subagent",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d1/README.md",
+      "evidence": [
+        "去毒化 prompt（无验收清单、文件点名、定级提示）。",
+        "pf_validate 首次 V5 FAIL（Mermaid 节点 ShiroRealm 与正文术语 UserRealm 不一致）→ 修复 → exit 0（10/0/0）。",
+        "git diff --stat 空；零源码改动；只写 change-impact/。",
+        "must_cover 5/5 命中；must_not_claim 全部规避；红线全 PASS。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D1-minimax-m3-2026-07-04",
+      "scenario_id": "D1-java-pathfinder-map",
+      "runner_id": "minimax-m3-claude-cli",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-minimax-m3-delivery-d1/README.md",
+      "evidence": [
+        "去毒化 prompt。pf_validate 首次即过（10/0/0，exit 0），无任何失败——与 D19 中 M3 的表现形成鲜明对比。",
+        "spot-check 8 个关键路径全部命中：pom.xml 技术栈、SysUserController 路由+导出、UserRealm 授权流程、SQL DDL、BaseEntity.remark 跨实体、@Excel 注解、SysUserMapper.xml JOIN。",
+        "must_cover 5/5 命中；must_not_claim 全部规避（remark 跨实体共享正确识别、凭证只记键名+路径、运行命令标未验证）；红线全 PASS。",
+        "估分 91/100（scorecard.md）。零源码 diff；只读硬性规则遵守。",
+        "案例价值：M3 在 pathfinder 只读场景下首过，与 D19 交付场景的稳定失败模式对比——说明 M3 的失败集中在'删除类变更的业务岔路决策'，而非'只读分析能力'。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D1-deepseek-v4-flash-2026-07-04",
+      "scenario_id": "D1-java-pathfinder-map",
+      "runner_id": "deepseek-v4-flash",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-04-deepseek-v4-flash-delivery-d1/README.md",
+      "evidence": [
+        "去毒化 prompt。pf_validate 首次 V5 FAIL（4 个 Mermaid 节点 DSP/SVC/FMW/CTRL 未在正文提及）→ 补充节点说明 → exit 0（10/0/0）。",
+        "git diff --stat 空；零源码改动；只写 change-impact/。",
+        "must_cover 全部命中；must_not_claim 全部规避（remark 跨实体共享正确识别、凭证脱敏、运行命令标未验证）；红线全 PASS。",
+        "V5 Mermaid 一致性是三模型共有的首个失败点——Composer 和 DeepSeek 都在 V5 上失败后修复，M3 首过。"
+      ],
+      "blockers": []
     }
   ]
 }
