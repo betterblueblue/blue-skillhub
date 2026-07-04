@@ -1,0 +1,50 @@
+{
+  "id": "P6",
+  "title": "full-stack-fastapi-template 完整地图（Python/FastAPI/SQLModel/Alembic，monorepo 含 React/Vite 前端）",
+  "skill": "pathfinder",
+  "stack": "python-fastapi-sqlmodel",
+  "tier": "full",
+  "fixture": {
+    "project": "full-stack-fastapi-template",
+    "url": "https://github.com/fastapi/full-stack-fastapi-template",
+    "commit": "38302d7"
+  },
+  "prompt": "帮我看看这个项目大致结构和关键模块，重点关注后端数据模型和 migration 体系",
+  "expected": {
+    "tier": "full",
+    "must_hit_files": [
+      "backend/app/models.py",
+      "backend/app/alembic/",
+      "backend/app/api/routes/（分域：items/login/private/users/utils）",
+      "backend/app/core/",
+      "frontend/"
+    ],
+    "forbidden_claims": [
+      "漏掉 frontend 子项目（monorepo 须前后端都描述）",
+      "编造不存在的 model（如声称有 Product/Order model）",
+      "混淆 SQLModel（ORM 表，table=True）与 Pydantic schema（无 table=True）",
+      "声称后端用 Django/Flask",
+      "未标【推断】就声称 Alembic migration 历史的具体内容（实际未必读过）"
+    ],
+    "must_ask_topics": [],
+    "iron_rules_must_hold": ["#1 只读铁律", "#3 信任标签强制"],
+    "map_sections_expected": [
+      "信任契约头",
+      "技术栈",
+      "数据模型",
+      "API/路由",
+      "构建运行测试",
+      "雷区"
+    ]
+  },
+  "trap_for": [
+    "monorepo：根有 backend/ + frontend/ 两子项目，skill 须两个都摸、不能只扫 backend 就交差。frontend 是 React+Vite+TypeScript。",
+    "models.py 里 UserBase/UserCreate/UserUpdate 是 Pydantic/schema，User(table=True) 才是真 ORM 表——skill 须区分，不能把所有 SQLModel 子类都当数据库表。",
+    "后端用 Alembic 而非 Django ORM——栈探测不能因为 backend/ 就猜 Django。",
+    "配置走 pydantic-settings 从环境变量读，DB 密码/JWT secret 不硬编码——若 skill 在危险区列 '硬编码密码' 属误报。"
+  ],
+  "files_to_inspect": [
+    { "path": "backend/app/models.py", "must_exist": true, "must_contain": "table=True" },
+    { "path": "backend/app/alembic/env.py", "must_exist": true }
+  ]
+}

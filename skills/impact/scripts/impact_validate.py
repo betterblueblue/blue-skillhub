@@ -23,6 +23,10 @@ Checks:
   V15: Phase 5 record/state gate (source diffs/Steps record execution+state)  — FAIL
   V16: Active-state Step consistency (header/table/recovery notes)            — FAIL
   V17: Task acceptance smoke check (obvious partial route text updates)        — FAIL
+  V18: Verification evidence (_active-state.md validator results not placeholder) — FAIL
+  V19: High-risk DDL crosscheck (DDL keywords require high-risk checklist)      — FAIL
+  V20: Step confirmation field (every Step must have 用户确认 with Step number)  — FAIL
+  V21: Provenance tags (§7 facts must have 【用户确认】/【代码推断】/【用户委托默认】) — FAIL
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -1801,6 +1805,251 @@ def check_active_state_consistency(req_dir: Path) -> tuple[list[str], list[str],
 
 
 # ===========================================================================
+# V18: Verification evidence — _active-state.md validator results must be
+#      actual output, not placeholders. Prevents models from claiming "PASS"
+#      without running the validator (escape ledger E-001/E-002).
+# ===========================================================================
+
+RE_RESULT_PLACEHOLDER = re.compile(r"\[.*passed.*\]|N/A|未执行|不适用|尚未", re.I)
+RE_ACTUAL_RESULT = re.compile(r"\d+\s*passed.*\d+\s*fail", re.I)
+
+
+def check_verification_evidence(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V18: _active-state.md 最近验证 must have actual validator output.
+
+    Checks that the 结果 field in the 最近验证 section contains real numbers
+    matching validator output format (e.g., '15 passed, 0 failed, 2 warnings'),
+    not placeholders like '[X passed...]' or 'N/A' or '未执行'.
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    state_file = req_dir / "_active-state.md"
+    if not state_file.exists():
+        return passes, fails, warns  # V1 handles missing _active-state.md
+
+    state_text = state_file.read_text(encoding="utf-8")
+    section = _extract_section_text(state_text, ["最近验证"])
+    if not section:
+        warns.append("V18: _active-state.md missing 最近验证 section")
+        return passes, fails, warns
+
+    # Check 结果 field
+    result_match = re.search(r"(?m)^\s*[-*]?\s*结果[：:]\s*(.+?)\s*$", section)
+    if not result_match:
+        fails.append(
+            "V18: _active-state.md 最近验证 section missing 结果 field — "
+            "must fill actual validator output"
+        )
+        return passes, fails, warns
+
+    result_val = result_match.group(1).strip()
+
+    # Check for placeholder values
+    if RE_RESULT_PLACEHOLDER.search(result_val) or result_val.startswith("["):
+        fails.append(
+            "V18: _active-state.md 最近验证 结果 is a placeholder — "
+            "must fill actual validator output (e.g., '15 passed, 0 failed, 2 warnings')"
+        )
+        return passes, fails, warns
+
+    # Check for actual validator output format
+    if not RE_ACTUAL_RESULT.search(result_val):
+        fails.append(
+            f"V18: _active-state.md 最近验证 结果 doesn't match validator output format — "
+            f"expected 'N passed, N failed, N warnings', got: {result_val[:80]}"
+        )
+        return passes, fails, warns
+
+    passes.append("V18: _active-state.md 最近验证 has actual validator result")
+    return passes, fails, warns
+
+
+# ===========================================================================
+# V19: High-risk DDL crosscheck — Steps with DDL keywords must have
+#      high-risk checklist filled (escape ledger N-B).
+# ===========================================================================
+
+RE_DDL_KEYWORDS = re.compile(
+    r"DROP\s+(TABLE|COLUMN|INDEX|CONSTRAINT)|TRUNCATE|ALTER\s+TABLE|"
+    r"DELETE\s+FROM|UPDATE\s+\w+\s+SET",
+    re.I,
+)
+RE_HIGH_RISK_TABLE = re.compile(r"高风险清单检查|DROP\s+TABLE.*PASS|DROP\s+TABLE.*FAIL", re.I)
+
+
+def check_high_risk_ddl_crosscheck(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V19: Steps containing DDL keywords must have high-risk checklist filled.
+
+    Scans 090-execution-record.md Step sections for DDL keywords (DROP,
+    ALTER, TRUNCATE, etc.). If found, the Step must include the high-risk
+    checklist table and 决策依据 must not say '不涉及'.
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    record_file = req_dir / "090-execution-record.md"
+    if not record_file.exists():
+        passes.append("V19: No execution record yet — no DDL crosscheck needed")
+        return passes, fails, warns
+
+    text = record_file.read_text(encoding="utf-8")
+    sections = _execution_step_sections(text)
+
+    ddl_found = False
+    for section in sections:
+        if not RE_DDL_KEYWORDS.search(section):
+            continue
+        ddl_found = True
+        title = section.splitlines()[0].strip() if section else "unknown"
+
+        has_checklist = bool(RE_HIGH_RISK_TABLE.search(section))
+        decision_match = re.search(r"决策依据[：:]\s*(.+?)$", section, re.M)
+        decision_is_not_applicable = (
+            decision_match and "不涉及" in decision_match.group(1)
+        )
+
+        if not has_checklist:
+            fails.append(
+                f"V19: {title} contains DDL keywords but has no high-risk checklist — "
+                "must include the PASS/FAIL table for each high-risk item"
+            )
+        elif decision_is_not_applicable:
+            fails.append(
+                f"V19: {title} contains DDL keywords but 决策依据 says '不涉及' — "
+                "DDL operations must record the specific high-risk item hit and confirmation"
+            )
+        else:
+            passes.append(f"V19: {title} has DDL keywords with high-risk checklist filled")
+
+    if not ddl_found:
+        passes.append("V19: No DDL keywords in execution record — no high-risk crosscheck needed")
+
+    return passes, fails, warns
+
+
+# ===========================================================================
+# V20: Step confirmation field — every Step in 090-execution-record.md must
+#      have 用户确认 field with Step number (N-C).
+# ===========================================================================
+
+RE_USER_CONFIRM_FIELD = re.compile(r"(?m)^\s*[-*]?\s*用户确认[：:]\s*(.+?)\s*$")
+
+
+def check_step_confirmation(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V20: Every Step in 090-execution-record.md must have 用户确认 with Step number.
+
+    Extends V15's check beyond source-write Steps to ALL Steps. Each Step
+    must include a 用户确认 field that references a specific Step number
+    (e.g., '确认 Step 3') or explicitly says '未确认'.
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    record_file = req_dir / "090-execution-record.md"
+    if not record_file.exists():
+        passes.append("V20: No execution record yet — no Step confirmation check needed")
+        return passes, fails, warns
+
+    text = record_file.read_text(encoding="utf-8")
+    sections = _execution_step_sections(text)
+
+    if not sections:
+        passes.append("V20: No Step sections in execution record")
+        return passes, fails, warns
+
+    missing: list[str] = []
+    for section in sections:
+        title = section.splitlines()[0].strip() if section else "unknown"
+        confirm_match = RE_USER_CONFIRM_FIELD.search(section)
+        if not confirm_match:
+            missing.append(title)
+        else:
+            confirm_val = confirm_match.group(1).strip()
+            if not re.search(r"Step\s*\d+|未确认", confirm_val, re.I):
+                missing.append(f"{title} (确认值缺 Step 编号: {confirm_val[:40]})")
+
+    if missing:
+        fails.append(
+            "V20: Steps missing 用户确认 field with Step number — "
+            f"offending: {'; '.join(missing[:3])}"
+        )
+    else:
+        passes.append("V20: All Steps have 用户确认 field with Step number")
+
+    return passes, fails, warns
+
+
+# ===========================================================================
+# V21: Provenance tags — §7 已确认事实 entries must carry a provenance tag
+#      (补强 C script-enforceable part).
+# ===========================================================================
+
+RE_PROVENANCE_TAG = re.compile(r"【用户确认|【代码推断|【用户委托默认")
+
+
+def check_provenance_tags(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V21: 000-context-pack §7 facts must have provenance tags.
+
+    Each fact entry in §7 已确认事实 must carry one of:
+      - 【用户确认】
+      - 【代码推断: file:line】
+      - 【用户委托默认: YYYY-MM-DD 选项X 依据file:line】
+    Missing tags → FAIL. The script cannot verify tag truthfulness, but
+    forcing provenance makes fabrication explicitly auditable.
+    """
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    ctx_file = req_dir / "000-context-pack.md"
+    if not ctx_file.exists():
+        return passes, fails, warns  # V1 handles missing file
+
+    ctx_text = ctx_file.read_text(encoding="utf-8")
+    section = _extract_section_text(ctx_text, ["已确认事实"])
+    if not section:
+        warns.append("V21: 000-context-pack.md has no §7 已确认事实 section")
+        return passes, fails, warns
+
+    # Find fact entries (lines starting with - but not template placeholders)
+    fact_lines: list[str] = []
+    for line in section.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("- "):
+            continue
+        # Skip template placeholders
+        if stripped.startswith("- `[") or stripped.startswith("- [事实"):
+            continue
+        if "provenance 标签" in stripped:
+            continue
+        fact_lines.append(stripped)
+
+    if not fact_lines:
+        passes.append("V21: §7 has no fact entries to check")
+        return passes, fails, warns
+
+    untagged: list[str] = []
+    for fact in fact_lines:
+        if not RE_PROVENANCE_TAG.search(fact):
+            untagged.append(fact[:80])
+
+    if untagged:
+        fails.append(
+            "V21: §7 已确认事实 entries missing provenance tags — "
+            "each fact must have 【用户确认】/【代码推断: file:line】/【用户委托默认: …】. "
+            f"Untagged: {'; '.join(untagged[:3])}"
+        )
+    else:
+        passes.append(f"V21: §7 已确认事实 all {len(fact_lines)} entries have provenance tags")
+
+    return passes, fails, warns
+
+
+# ===========================================================================
 # Main
 # ===========================================================================
 
@@ -1954,6 +2203,30 @@ def main():
 
     # V17: Task acceptance smoke check
     p, f, w = check_task_acceptance_smoke(repo_root)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V18: Verification evidence
+    p, f, w = check_verification_evidence(req_dir)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V19: High-risk DDL crosscheck
+    p, f, w = check_high_risk_ddl_crosscheck(req_dir)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V20: Step confirmation field
+    p, f, w = check_step_confirmation(req_dir)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V21: Provenance tags
+    p, f, w = check_provenance_tags(req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

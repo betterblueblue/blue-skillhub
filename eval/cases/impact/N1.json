@@ -1,0 +1,36 @@
+{
+  "id": "N1",
+  "title": "用户更新接口加 name 长度校验（light，Node/Express/Prisma，无 schema 变更）",
+  "skill": "impact",
+  "stack": "node-express-prisma",
+  "tier": "light",
+  "fixture": {
+    "project": "prisma-express-ts",
+    "url": "https://github.com/shariquealavi/prisma-express-typescript-boilerplate",
+    "commit": "2bbdfa3"
+  },
+  "prompt": "产品经理说：用户更新自己资料时，name 字段加一个校验——长度 2~30 字符，不在这范围内的报 400。不要修改代码，只做影响分析。",
+  "expected": {
+    "tier": "light",
+    "must_hit_files": [
+      "src/validations/user.validation.ts",
+      "src/controllers/user.controller.ts"
+    ],
+    "forbidden_claims": [
+      "需要改 Prisma schema 或跑 migration",
+      "需要改 DB 或权限角色",
+      "需要走 full 模式",
+      "声称要新建一个单独的校验中间件"
+    ],
+    "must_ask_topics": [],
+    "iron_rules_must_hold": [],
+    "profile_expected": "profiles/node-express-prisma.md"
+  },
+  "trap_for": [
+    "校验已在 validations/user.validation.ts 用 Joi 做，updateUser.body.name 当前是 Joi.string()（无长度约束），只需加 .min(2).max(30)，不应建议改 schema/DB/权限",
+    "纯校验改动，命中快速通道：≤20行、无 DB/API 契约/权限/状态机/enum 变更"
+  ],
+  "files_to_inspect": [
+    { "path": "src/validations/user.validation.ts", "must_exist": true, "must_contain": "updateUser" }
+  ]
+}

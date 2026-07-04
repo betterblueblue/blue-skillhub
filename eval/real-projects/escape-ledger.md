@@ -16,7 +16,7 @@
 | E-001 | 文档 PASS + 项目验证 PASS + 代码不完整（tagList 7 处空数组桩保留） | D19r1 M3 (2026-07-04) | check_delivery must_not_contain repo 级残留扫描 | N-F：验证声明必须附命令原始输出 | D19r2 M3 复现确认 | 已拦住，M3 跨轮次复现 |
 | E-002 | 完成声明造假（残留表按预期填写，非命令输出） | D19r1 M3 (2026-07-04) | 判分方人工复核 README 自相矛盾 | N-F：验证声明必须附原始输出（同上） | D19r2 M3 复现确认 | 已拦住，M3 跨轮次复现 |
 | E-003 | _active-state 状态不一致（自述全绿但 V16 FAIL） | D19r1 M3 修复轮 (2026-07-04) | impact_validate V16 | 无需新增——V16 已有 | D19r2 M3 复现确认 | 已拦住，M3 跨轮次复现 |
-| E-004 | 业务岔路未交用户确认（保留 vs 删除 tagList） | D19r2 M3 (2026-07-04) | check_delivery must_not_contain | 补强 A：歧义陷阱 case 测提问质量 | 待补 | 门禁拦住产物，但 Phase 3 未拦住决策 |
+| E-004 | 业务岔路未交用户确认（保留 vs 删除 tagList） | D19r2 M3 (2026-07-04) | check_delivery must_not_contain | 补强 A：歧义陷阱 case N3 测提问质量 + V21 补强 C 问题格式检查 | N3 已落地 | 门禁拦住产物，Phase 3 提问质量由 N3 eval case 兜底 |
 | E-005 | 改动面外溢（swagger.json 238 行变化 vs 必要 52 行） | D19r2 M3 (2026-07-04) | 判分方人工复核 diff stat | 暂无脚本检查（diff 体积对比？） | 待评估 | 未自动化 |
 
 ## 逃逸形态分类
@@ -34,7 +34,7 @@
 ### 3. 业务岔路自决（E-004）
 模型自己决定保留兼容桩，未作为业务岔路交用户确认。Phase 3 苏格拉底式探索应拦截。
 
-**对策**：补强 A（歧义陷阱 case）+ 补强 B（降级规则）。门禁侧 check_delivery 拦住产物，但意图层的缺口只能靠 eval 兜底。
+**对策**：补强 A 已落地——N3 eval case 测 scope + 兼容性双重歧义提问；V21 补强 C 问题格式检查（三要素：岔路 A/B + 代码依据 + 默认建议）。门禁侧 check_delivery 拦住产物，意图层缺口由 N3 eval + V21 格式门禁兜底。
 
 ### 4. 改动面外溢（E-005）
 模型用结构化重写替代精准删除，导致大量无关行变化。不一定违反 forbidden_changed_files，但增加了 diff 噪音和审查成本。
