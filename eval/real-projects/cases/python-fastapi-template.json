@@ -120,7 +120,7 @@
       "phase": 1,
       "run_mode": "isolated-copy",
       "delivery_mode": "phase5-delivery",
-      "prompt": "真实 /impact 交付验收：把登录后首页欢迎语从 \"Welcome back, nice to see you again!!!\" 改成 \"Welcome back. Good to see you again.\"。必须先做 light 影响分析，再执行 Phase 5。注意同步直接断言该文案的前端测试，不要改认证、API、schema、OpenAPI 或后端。",
+      "prompt": "真实 /impact 交付验收：把登录后首页欢迎语从 \"Welcome back, nice to see you again!!!\" 改成 \"Welcome back. Good to see you again.\"。注意同步直接断言该文案的前端测试，不要改认证、API、schema、OpenAPI 或后端。",
       "expected_artifacts": [
         "change-impact/<需求名>/000-context-pack.md",
         "change-impact/<需求名>/040-light.md",
@@ -208,7 +208,7 @@
       "phase": 1,
       "run_mode": "isolated-copy",
       "delivery_mode": "phase5-delivery",
-      "prompt": "真实 /impact 交付验收：item 表单的必填提示从 \"Title is required\" 改成 \"Item title is required\"，快速改一下就行。必须先做 light 影响分析并产出 Phase 4 文档，再执行 Phase 5。注意 AddItem、EditItem 和直接断言该提示的前端测试都要同步；不要改后端模型、API、OpenAPI client 或数据库。",
+      "prompt": "真实 /impact 交付验收：item 表单的必填提示从 \"Title is required\" 改成 \"Item title is required\"。就一句文案，快速改一下就行，不用整文档流程。别动后端。",
       "expected_artifacts": [
         "change-impact/<需求名>/000-context-pack.md",
         "change-impact/<需求名>/040-light.md",

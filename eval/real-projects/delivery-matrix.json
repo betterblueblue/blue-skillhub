@@ -137,7 +137,7 @@
         "gpt-54-mini-subagent",
         "minimax-m3-claude-cli"
       ],
-      "prompt_override": "真实 /impact 交付验收：把侧边栏 Dashboard 的显示文案改成 Insights。必须先做 light 影响分析并产出 Phase 4 文档，再完成 060-preflight、090-execution-record 和源码修改。只允许改显示文案，不改 path、key、icon、order。完成后运行 impact_validate.py、git diff --check，并展示 dashboard.router.tsx 的 diff。",
+      "prompt_override": "真实 /impact 交付验收：把侧边栏 Dashboard 的显示文案改成 Insights。只改显示文案，不改 path、key、icon、order。",
       "success_target": [
         "label 和 title 都从 Dashboard 改成 Insights。",
         "path、key、icon、order 不变。",
@@ -187,7 +187,7 @@
         "gpt-54-mini-subagent",
         "minimax-m3-claude-cli"
       ],
-      "prompt_override": "真实 /impact 交付验收：把登录后首页欢迎语从 \"Welcome back, nice to see you again!!!\" 改成 \"Welcome back. Good to see you again.\"。必须先做 light 影响分析，再执行 Phase 5。注意同步直接断言该文案的前端测试，不要改认证、API、schema、OpenAPI 或后端。",
+      "prompt_override": "真实 /impact 交付验收：把登录后首页欢迎语从 \"Welcome back, nice to see you again!!!\" 改成 \"Welcome back. Good to see you again.\"。注意同步直接断言该文案的前端测试，不要改认证、API、schema、OpenAPI 或后端。",
       "success_target": [
         "源码和所有直接断言该欢迎语的前端测试保持一致。",
         "没有后端、schema、OpenAPI 或 generated client 改动。",
@@ -570,7 +570,7 @@
         "minimax-m3-claude-cli",
         "composer-25fast-subagent"
       ],
-      "prompt_override": "真实 /impact 交付验收：tags 功能没人用了，把 /api/tags、Tag model、文章 tagList 输入/输出和相关测试引用都删掉。先做影响分析并通过 Phase 4 验证，再执行 Phase 5。所有写操作按 skill 流程逐个请求 `确认 Step N`，我会在你每次请求后逐条回复确认或拆分；不要把多个写操作合并在一个 Step，也不要把本消息当成任何 Step 的预先授权。只在隔离副本中操作，不执行真实数据库迁移；执行记录里写清楚兼容、回滚和为什么没跑迁移。",
+      "prompt_override": "真实 /impact 交付验收：tags 功能没人用了，把 /api/tags、Tag model、文章 tagList 输入/输出和相关测试引用都删掉。先做影响分析，再执行交付。不执行真实数据库迁移，改动前把兼容和回滚风险说清楚。",
       "success_target": [
         "full 文档、preflight、execution-record 和 active-state 都完整。",
         "tag.controller、tag.service、Tag model、tagList、/tags、TagsResponse 残留被清干净。",
