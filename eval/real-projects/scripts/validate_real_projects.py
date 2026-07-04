@@ -326,6 +326,7 @@ def validate_delivery_matrix(
 
     runners = as_list(doc.get("runners"))
     runner_ids: set[str] = set()
+    runner_plan_ids: set[str] = set()
     for idx, runner in enumerate(runners):
         prefix = f"delivery runners[{idx}]"
         if not isinstance(runner, dict):
@@ -336,11 +337,16 @@ def validate_delivery_matrix(
             errors.append(f"{prefix}: invalid id {runner_id!r}")
             continue
         runner_ids.add(runner_id)
+        scope = runner.get("scope", "planned")
+        if scope not in {"planned", "results-only"}:
+            errors.append(f"{prefix}: scope must be 'planned' or 'results-only'")
+        elif scope == "planned":
+            runner_plan_ids.add(runner_id)
         for field in ("surface", "model", "invocation"):
             if not isinstance(runner.get(field), str) or not runner.get(field):
                 errors.append(f"{prefix}: missing {field}")
-    if len(runner_ids) < 2:
-        errors.append("delivery-matrix.json: at least two runners are required")
+    if len(runner_plan_ids) < 2:
+        errors.append("delivery-matrix.json: at least two planned runners are required")
 
     scenarios = as_list(doc.get("scenarios"))
     if len(scenarios) < 8:
@@ -440,7 +446,7 @@ def validate_delivery_matrix(
         errors.append("delivery-matrix.json: runner_plan must be an object")
         return
 
-    for runner_id in runner_ids:
+    for runner_id in runner_plan_ids:
         planned = as_list(runner_plan.get(runner_id))
         if len(planned) < 5:
             errors.append(f"delivery-matrix.json: runner_plan.{runner_id} must include at least 5 scenarios")
@@ -475,6 +481,15 @@ def validate_delivery_results(
         runner.get("id")
         for runner in as_list(matrix_doc.get("runners"))
         if isinstance(runner, dict) and isinstance(runner.get("id"), str)
+    }
+    planned_runner_ids = {
+        runner.get("id")
+        for runner in as_list(matrix_doc.get("runners"))
+        if (
+            isinstance(runner, dict)
+            and isinstance(runner.get("id"), str)
+            and runner.get("scope", "planned") == "planned"
+        )
     }
     scenario_index: dict[str, dict[str, object]] = {}
     for scenario in as_list(matrix_doc.get("scenarios")):
@@ -571,7 +586,7 @@ def validate_delivery_results(
         errors.append("delivery-results.json: completed results must cover both pathfinder and impact")
     if len(completed_negative_runners) < 2:
         errors.append("delivery-results.json: completed negative-gate results must cover at least two runners")
-    missing_phase5 = completed_runners - completed_phase5_runners
+    missing_phase5 = (completed_runners & planned_runner_ids) - completed_phase5_runners
     if missing_phase5:
         warnings.append(
             "delivery-results.json: runners with completed results but no completed "

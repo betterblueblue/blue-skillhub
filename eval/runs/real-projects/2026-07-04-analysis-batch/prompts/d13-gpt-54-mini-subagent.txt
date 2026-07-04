@@ -1,0 +1,9 @@
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\java-ruoyi
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-gpt-54-mini-delivery-d13\README.md
+
+---
+
+[用户输入]
+现在所有用户都能导出用户列表，需要改成只有管理员角色才能导出。先不要写代码，只做完整影响分析。

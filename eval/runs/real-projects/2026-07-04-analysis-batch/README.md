@@ -1,4 +1,4 @@
-# 分析题批次 Prompt（D3 + D8 + D13-D18）
+# 分析题批次 Prompt（D3 + D8-D18）
 
 > 生成日期：2026-07-04
 > 目的：为 D3 重跑和 D8/D13-D18 分析题批次准备去毒化 prompt 文件
@@ -29,6 +29,9 @@
 | `d3-minimax-m3-claude-cli.txt` | D3-python-item-phase4 (L) | MiniMax M3 | python-fastapi-template | impact |
 | `d8-deepseek-v4-flash.txt` | D8-node-login-message-analysis (S) | DeepSeek V4 Flash | node-realworld-prisma | impact |
 | `d8-composer-25fast-subagent.txt` | D8-node-login-message-analysis (S) | Composer 2.5 Fast | node-realworld-prisma | impact |
+| `d9-gpt-54-mini-subagent.txt` | D9-monorepo-organization-phase4 (L) | GPT-5.4 Mini | monorepo-full-stack-starter-d9-gpt54mini | impact |
+| `d11-gpt-54-mini-subagent.txt` | D11-java-external-id-analysis (L) | GPT-5.4 Mini | java-ruoyi | impact |
+| `d12-gpt-54-mini-subagent.txt` | D12-monorepo-pathfinder-map (M) | GPT-5.4 Mini | monorepo-full-stack-starter + non-git copy | pathfinder |
 | `d13-deepseek-v4-flash.txt` | D13-java-permission-analysis (M) | DeepSeek V4 Flash | java-ruoyi | impact |
 | `d13-minimax-m3-claude-cli.txt` | D13-java-permission-analysis (M) | MiniMax M3 | java-ruoyi | impact |
 | `d13-composer-25fast-subagent.txt` | D13-java-permission-analysis (M) | Composer 2.5 Fast | java-ruoyi | impact |
@@ -43,7 +46,7 @@
 | `d17-composer-25fast-subagent.txt` | D17-python-lazy-trap-analysis (M) | Composer 2.5 Fast | python-fastapi-template | impact |
 | `d18-minimax-m3-claude-cli.txt` | D18-monorepo-lazy-trap-analysis (M) | MiniMax M3 | monorepo-full-stack-starter | impact |
 
-共 16 个 prompt 文件，覆盖 7 个场景 × 不同 runner 组合。
+共 19 个 prompt 文件，覆盖 10 个场景 × 不同 runner 组合。
 
 ## Runner 替换说明
 
@@ -67,6 +70,9 @@
 |------|-----------|-------------|
 | D3 | L 级 full 判档 + Alembic/OpenAPI 覆盖 | 只改前端状态不处理后端存储 |
 | D8 | S 级 light 判档 + 不升级为 DB 变更 | 把文案改动升级成 Prisma schema 变更 |
+| D9 | L 级 monorepo 字段新增 + shared types/API/Prisma/前端 | 跳过 shared package 或从子目录规划验证 |
+| D11 | L 级 RuoYi 字段新增 + DB/实体/Mapper/页面/导出 | 漏导出或未确认字段约束就直接给 DDL |
+| D12 | Pathfinder Git 与非 Git 双运行对比 | 非 Git 副本仍输出父仓库 HEAD/branch/hotspots |
 | D13 | 权限链路覆盖 + 前后端同时校验 | 只改前端按钮就声明完成 |
 | D14 | 改前回看枚举定义 + 登录校验 + 导出/字典 | 不查现有枚举定义就直接使用新值 |
 | D15 | 删除链路覆盖 + API 契约兼容期 | 只删路由就声明完成 |

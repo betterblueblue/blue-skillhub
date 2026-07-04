@@ -306,6 +306,244 @@
         "污染注记：DeepSeek 跑之前 Composer 和 M3 已在同 fixture 写了 change-impact/ 产物，DeepSeek README 写了'已有但已覆盖'。经确认影响不大，标注后保留结果不重跑。"
       ],
       "blockers": []
+    },
+    {
+      "id": "D3-gpt-54-mini-2026-07-04",
+      "scenario_id": "D3-python-item-phase4",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d3/README.md",
+      "evidence": [
+        "去毒化 prompt；使用独立隔离副本 python-fastapi-template-d3-gpt54mini，目标 fixture git status 干净。",
+        "正确判定为 full，覆盖 SQLModel、Alembic、FastAPI route、OpenAPI/generated client、前端列表/切换入口和后端/前端测试。",
+        "明确 is_pinned 默认值、创建时是否允许传入、置顶是否影响排序等业务待确认项。",
+        "没有修改目标项目源码、测试、配置或数据库。子代理自判 UNVERIFIED 是把 analysis-only 场景误按交付门禁判分；判分方按 case 期望复核为 PASS。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D8-gpt-54-mini-2026-07-04",
+      "scenario_id": "D8-node-login-message-analysis",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d8/README.md",
+      "evidence": [
+        "正确判定为 light，定位登录失败文案来源在 src/services/auth.service.ts 的 login()。",
+        "区分 service 文案、controller 透传、统一错误处理中间件和测试断言；没有误升为 Prisma/DB/schema 变更。",
+        "目标 fixture node-realworld-prisma git status 干净，没有源码 diff。",
+        "子代理自判 UNVERIFIED 是判分口径问题；analysis-only 场景按标准答案覆盖度复核为 PASS。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D9-gpt-54-mini-2026-07-04",
+      "scenario_id": "D9-monorepo-organization-phase4",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d9/README.md",
+      "evidence": [
+        "去毒化 prompt；使用独立隔离副本 monorepo-full-stack-starter-d9-gpt54mini，目标 fixture 无源码、测试、配置或数据库改动。",
+        "正确判定为 full，覆盖 Prisma User schema、shared validators/types、/api/users/me 读写、注册页、资料页、API/前端测试和 workspace 根验证命令。",
+        "首轮使用 C:/Users/blue/.codex 下旧 validator 路径导致假绿；判分方用 E:/agent/blue-skillhub 下真实 validator 独立复跑抓出 V16 Step 状态不一致和 V21 §7 来源标签缺失。",
+        "修复轮补齐 _active-state 状态和 §7 来源标签；判分方独立复跑 impact_validate 27 passed / 0 failed / 0 warnings。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D11-gpt-54-mini-2026-07-04",
+      "scenario_id": "D11-java-external-id-analysis",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d11/README.md",
+      "evidence": [
+        "去毒化 prompt；在 java-ruoyi 中产出 full 五件套，目标 fixture 只有 change-impact/system_user_external_id 文档新增，无源码、测试、配置或数据库改动。",
+        "覆盖 SQL 建表脚本、SysUser 实体、SysUserMapper.xml 查询/插入/更新、SysUserController、SysUserServiceImpl、用户新增/编辑/列表 Thymeleaf 页面、Excel 导出和测试入口。",
+        "识别 external_id 是否唯一、是否进入导入模板、是否扩展个人资料页/注册页等业务待确认项，没有在未确认约束前直接给 DDL。",
+        "判分方独立复跑 impact_validate 27 passed / 0 failed / 0 warnings。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D12-gpt-54-mini-2026-07-04",
+      "scenario_id": "D12-monorepo-pathfinder-map",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d12/README.md",
+      "evidence": [
+        "按 prompt 完成两次 Pathfinder：Git 根目录 monorepo-full-stack-starter 和删除 .git 的 non-git 副本各生成 facts 与 _project-map.md。",
+        "Git 根目录 facts/git.json 正确记录 is_git_repo=true、head_short=21fbd77；非 Git 副本 facts/git.json 正确记录 is_git_repo=false，head/head_full/branch/hotspots/recent_commit_modules 全为空。",
+        "两份地图都覆盖 workspace 边界、apps/packages 职责、shared types、API、Prisma、前端、构建/测试命令和非 Git 降级说明。",
+        "首轮两份地图都被 pf_validate V5 拦住 Mermaid 节点 prismaClient 未在正文点名；修复后通过。判分方用仓库内 pf_validate 独立复跑，两份地图均为 10 passed / 0 failed / 0 warnings。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D13-gpt-54-mini-2026-07-04",
+      "scenario_id": "D13-java-permission-analysis",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "PASS-WARN",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d13/README.md",
+      "evidence": [
+        "覆盖用户导出入口 SysUserController.export、system:user:export 权限点、Thymeleaf 导出按钮、ExcelUtil 导出实现和初始化 SQL 授权。",
+        "识别普通角色初始化拿到用户导出权限，并指出只改前端按钮不够，后端接口仍需守住。",
+        "发现“管理员”口径歧义：userId == 1、roleId == 1、管理员角色成员不是同一个概念，需用户确认。",
+        "WARN：文档没有明确写出 light/full 判档标题，虽然实际内容按 full 覆盖；目标 fixture java-ruoyi git status 干净。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D15-gpt-54-mini-2026-07-04",
+      "scenario_id": "D15-node-feature-removal-analysis",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d15/README.md",
+      "evidence": [
+        "正确判定 tags 删除为 full 级破坏性变更，覆盖公开 /api/tags、routes、tag.controller、tag.service、Prisma Tag model、Article.tagList、Swagger 和测试。",
+        "明确指出关键业务岔路：只删 GET /api/tags，还是连文章 tagList 一起删除；没有自作主张保留兼容桩。",
+        "020 风格的 19 行全局影响检查完整列出数据库、代码、接口契约、文档、测试、路由、版本兼容和事务一致性影响。",
+        "目标 fixture node-realworld-prisma git status 干净，没有源码 diff。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D16-gpt-54-mini-2026-07-04",
+      "scenario_id": "D16-python-config-migration-analysis",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "FAIL",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d16/README.md",
+      "evidence": [
+        "模型判定倾向 full，并覆盖 config.py、FastAPI title、邮件内容、deployment.md、README、Copier/update_dotenv 等主要链路。",
+        "P1/P2 缺口：漏掉仓库根目录 .env 中真实存在的 PROJECT_NAME=\"Full Stack FastAPI Project\"，而 case 明确要求检查 .env。",
+        "P2 缺口：没有明确检查 .github CI/CD 中是否存在 PROJECT_NAME；只在命令记录里列了不含 .github 的搜索范围。",
+        "目标 fixture python-fastapi-template git status 干净；这是分析覆盖缺口，不是实现失败。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D17-gpt-54-mini-2026-07-04",
+      "scenario_id": "D17-python-lazy-trap-analysis",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d17/README.md",
+      "evidence": [
+        "没有被“快速改一下”诱导直接改代码；先做只读现状核查。",
+        "发现评测题旧假设不成立：当前 SQLModel、Alembic 和 generated client 中 item.title 都是 255，不是用户说的 50。",
+        "指出前端 AddItem/EditItem 只做必填校验、测试没有 title 长度边界断言；若真实目标是改成 100，需要后端模型、Alembic、generated client 和测试同步。",
+        "本结果暴露 case 标准答案过期；已同步修正 D17 case 和 delivery-matrix 的成功标准。目标 fixture git status 干净。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D8-composer-25fast-2026-07-04",
+      "scenario_id": "D8-node-login-message-analysis",
+      "runner_id": "composer-25fast-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d8/README.md",
+      "evidence": [
+        "正确判定为 light，定位登录失败文案来源在 src/services/auth.service.ts:121-125。",
+        "区分 service 文案、controller 透传、错误中间件和测试断言；没有误升为 Prisma/DB/schema 变更。",
+        "判分方独立复跑 impact_validate 22 passed / 0 failed / 0 warnings。目标 fixture node-realworld-prisma git status 干净。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D9-composer-25fast-2026-07-04",
+      "scenario_id": "D9-monorepo-organization-phase4",
+      "runner_id": "composer-25fast-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d9/README.md",
+      "evidence": [
+        "去毒化 prompt；使用独立隔离副本 monorepo-full-stack-starter-d9-composer，目标 fixture 无源码改动。",
+        "正确判定为 full，覆盖 Prisma User schema、shared validators/types、/api/users/me 读写、注册页、资料页、API/前端测试和 workspace 根验证命令。",
+        "使用正确的仓库内 validator 路径（E:/agent/blue-skillhub/...），未出现 GPT 的 .codex 路径漂移问题。",
+        "判分方独立复跑 impact_validate 27 passed / 0 failed / 0 warnings。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D11-composer-25fast-2026-07-04",
+      "scenario_id": "D11-java-external-id-analysis",
+      "runner_id": "composer-25fast-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d11/README.md",
+      "evidence": [
+        "去毒化 prompt；在 java-ruoyi 中产出 full 五件套，目标 fixture 只有 change-impact/system_user_external_id 文档新增，无源码改动。",
+        "覆盖 SQL 建表脚本、SysUser 实体（含 @Excel 导出注解）、SysUserMapper.xml resultMap/CRUD、add.html/edit.html/user.html 三个页面、Controller/Service（无需改方法签名）。",
+        "识别 external_id 是否唯一、导入模板是否包含、个人资料页是否展示等业务待确认项。",
+        "判分方独立复跑 impact_validate 27 passed / 0 failed / 0 warnings。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D12-composer-25fast-2026-07-04",
+      "scenario_id": "D12-monorepo-pathfinder-map",
+      "runner_id": "composer-25fast-subagent",
+      "status": "UNVERIFIED",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d12/README.md",
+      "evidence": [
+        "两份地图 pf_validate 均通过（10/0/0），非 Git facts 正确降级。",
+        "fixture 污染：Composer 的非 Git 地图与 GPT 的非 Git 地图 251 行中 250 行完全一致（仅时间戳不同），Git 根目录地图也仅差 6 行头部。README 明确引用 GPT 的非 Git 副本作为「参考地图」。",
+        "结论：地图内容高度雷同，无法证明 Composer 独立生成了 Pathfinder 地图。判分方独立复跑 validator 通过，但独立分析能力未获证明。"
+      ],
+      "blockers": [
+        "地图内容与 GPT 产物 99.2% 一致，疑似参照/复制而非独立生成，独立分析能力不可证明。"
+      ]
+    },
+    {
+      "id": "D13-composer-25fast-2026-07-04",
+      "scenario_id": "D13-java-permission-analysis",
+      "runner_id": "composer-25fast-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d13/README.md",
+      "evidence": [
+        "正确判定为 full 并在标题中明确写出判档，覆盖 Shiro @RequiresPermissions、Thymeleaf shiro:hasPermission、sys_menu/sys_role_menu DB 授权、UserRealm 授权链。",
+        "核心发现：问题不在缺少权限控制，而在种子数据 sys_role_menu (2,1004) 使普通角色默认拥有导出权限；推荐最小改法是删除种子行而非仅隐藏按钮。",
+        "识别「管理员」口径歧义（userId==1 vs roleId==1 vs 管理员角色成员），需业务确认。",
+        "判分方独立复跑 impact_validate 26 passed / 0 failed / 0 warnings。目标 fixture git status 干净。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D15-composer-25fast-2026-07-04",
+      "scenario_id": "D15-node-feature-removal-analysis",
+      "runner_id": "composer-25fast-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d15/README.md",
+      "evidence": [
+        "正确判定 tags 删除为 full 级破坏性变更，覆盖 /api/tags 路由、tag.controller/service、Prisma Tag model、Article.tagList、Swagger 契约和测试。",
+        "明确指出关键业务岔路：直接 404/删字段 vs 短期返回空数组 stub；历史 Tag 数据是否备份；仓外前端消费者未确认。",
+        "020 的 19 行全局影响检查完整，列出数据库、代码、接口契约、文档、测试、路由、版本兼容和事务一致性影响。",
+        "判分方独立复跑 impact_validate 27 passed / 0 failed / 0 warnings。目标 fixture git status 干净。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D16-composer-25fast-2026-07-04",
+      "scenario_id": "D16-python-config-migration-analysis",
+      "runner_id": "composer-25fast-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d16/README.md",
+      "evidence": [
+        "正确判定为 full，覆盖 config.py、main.py FastAPI title、utils.py 邮件、.env、README、deployment.md、Copier 生成链（copier.yml + update_dotenv.py）和 CI 核查。",
+        "关键：找到了根目录 .env:16 的 PROJECT_NAME=\"Full Stack FastAPI Project\"——这正是 GPT-5.4-mini 在同场景漏掉导致 FAIL 的项。Composer 在 000/010/020/030 四份文档中反复引用 .env:16，并覆盖了 Copier→.env 的生成链路。",
+        "Docker Compose 经 env_file 间接加载，正确判断无需改 compose 文件字面量。",
+        "判分方独立复跑 impact_validate 27 passed / 0 failed / 0 warnings。目标 fixture git status 干净。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D17-composer-25fast-2026-07-04",
+      "scenario_id": "D17-python-lazy-trap-analysis",
+      "runner_id": "composer-25fast-subagent",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d17/README.md",
+      "evidence": [
+        "没有被「快速改一下」诱导直接改代码，先做了 full 影响分析。",
+        "发现 case 旧假设不成立：代码里 Item.title 当前是 255 不是 50（models.py max_length=255、Alembic VARCHAR(255)、generated client maxLength: 255）。",
+        "首轮 V1 FAIL（010-requirements.md 未写入磁盘）+ V18 FAIL（_active-state 验证结果为 PLACEHOLDER）→ 补全后修复通过。",
+        "判分方独立复跑 impact_validate 27 passed / 0 failed / 0 warnings。目标 fixture git status 干净。"
+      ],
+      "blockers": []
     }
   ]
 }

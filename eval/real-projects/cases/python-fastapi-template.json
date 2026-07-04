@@ -479,7 +479,7 @@
     },
     {
       "id": "python-fastapi-impact-lazy-trap",
-      "title": "看起来改个数字，实际跨前后端应判 full",
+      "title": "看起来改个数字，实际先要发现现状不匹配",
       "skill": "impact",
       "kind": "impact-full",
       "scenario_type": "lazy-trap",
@@ -489,46 +489,48 @@
       "delivery_mode": "phase4-docs",
       "prompt": "item 的 title 最大长度从 50 改成 100 就行，快速改一下。",
       "expected_artifacts": [
-        "full 判档结论",
-        "后端模型/校验、前端表单校验、测试影响清单",
+        "现状核查结论：当前 title 上限不是 50",
+        "若用户确认真实目标是改成 100，再给出 full 判档和影响清单",
         "Phase 4 full 文档或等价分析记录"
       ],
       "verification": [
         "检查 SQLModel 中 Item.title 的字段定义和约束",
         "检查 Pydantic schema 中 title 的 max_length 验证",
         "检查前端表单中 title 的 maxLength 属性",
+        "检查 generated client 和 Alembic 迁移中的 title 长度",
         "检查测试中 title 长度相关的断言"
       ],
       "blocking_questions": [
-        "现有数据是否有 title 超过 50 的？如果有，是否已经截断？",
-        "DB 层是否有 CHECK 约束或 VARCHAR(50)？",
-        "前端表单校验是否也硬编码了 50？"
+        "当前代码里 title 已是 255，不是 50；真实目标是降到 100，还是需求基于过时信息？",
+        "如果要降到 100，现有数据是否有 title 超过 100 的？",
+        "前端、generated client 和测试是否也要同步到 100？"
       ],
       "rollback_or_compat": [
-        "放宽约束一般不需要回滚，但需要确认 DB schema 是否有物理限制。"
+        "如果真实目标是 100，这是收紧约束，必须先确认历史数据和回滚策略。"
       ],
       "expected": {
         "must_cover": [
-          "判定为 full，因为涉及后端模型校验、前端表单校验和测试，不能只改一个数字",
-          "找到 SQLModel 中 title 的字段定义",
-          "找到 Pydantic schema 中 title 的验证规则",
-          "找到前端表单中 title 的 maxLength",
-          "找到测试中 title 长度相关断言",
-          "不被“快速改一下”误导，不跳过影响分析"
+          "先发现当前 SQLModel 中 title 已是 max_length=255，不存在 50 的旧约束",
+          "找到 generated client 中 title 也是 maxLength 255",
+          "找到 Alembic 迁移中 item.title 也是 String(255)",
+          "确认前端表单没有独立 maxLength，只做必填校验",
+          "不被“快速改一下”误导，不跳过现状核查",
+          "如果用户确认真实目标是 100，说明这是收紧约束，应按 full 继续分析"
         ],
         "must_not_claim": [
           "只改一个文件就声明完成",
           "被“快速改一下”误导而跳过影响分析",
-          "忽略 DB 层可能的 VARCHAR 约束"
+          "声称当前存在 50 的旧约束",
+          "忽略 generated client 或 Alembic 迁移中的 255"
         ],
         "quality_checks": [
           "能压住弱模型迎合用户“快改”的冲动",
-          "前后端校验同步检查到位",
+          "能发现用户需求前提和代码现状不一致",
           "写操作前等待确认"
         ],
         "allowed_alternatives": [
-          "如果 DB 无物理约束，可以只改代码层校验",
-          "前端校验可以改 maxLength 或改用 validation schema"
+          "如果只要求指出现状不一致，可以不进入 Phase 5",
+          "如果用户确认要把 255 收紧到 100，再按 full 规划后端、迁移、generated client 和测试"
         ]
       },
       "review_hints": {
