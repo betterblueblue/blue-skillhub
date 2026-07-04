@@ -21,6 +21,16 @@
       "notes": [
         "用于验证 Claude Code CLI 的真实 slash command 流程，不只看最终回答，还看文件、门禁和修复循环。"
       ]
+    },
+    {
+      "id": "composer-25fast-subagent",
+      "surface": "subagent",
+      "model": "Composer 2.5 Fast",
+      "invocation": "在子代理环境中切换模型为 Composer 2.5 Fast，在 fixture 副本目录运行同一 prompt",
+      "role": "弱模型交付执行者（gpt-5.4-mini 额度受限期间的补位 runner，结果独立记账）",
+      "notes": [
+        "临时补位不改变 gpt-5.4-mini 的待跑清单；同场景两个模型的结果分别记录，兼作阶段 4 跨模型复验数据。"
+      ]
     }
   ],
   "pass_criteria": [
@@ -38,7 +48,8 @@
       "fixture_mode": "read-only-original",
       "runner_scope": [
         "gpt-54-mini-subagent",
-        "minimax-m3-claude-cli"
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "产出能指导用户模块变更的项目地图。",
@@ -261,7 +272,8 @@
       "stage": "impact-analysis",
       "fixture_mode": "read-only-original",
       "runner_scope": [
-        "gpt-54-mini-subagent"
+        "gpt-54-mini-subagent",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 light。",
@@ -382,7 +394,8 @@
       "fixture_mode": "read-only-original",
       "runner_scope": [
         "gpt-54-mini-subagent",
-        "minimax-m3-claude-cli"
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 full。",
@@ -431,7 +444,8 @@
       "fixture_mode": "read-only-original",
       "runner_scope": [
         "gpt-54-mini-subagent",
-        "minimax-m3-claude-cli"
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 full。",
@@ -456,7 +470,8 @@
       "fixture_mode": "read-only-original",
       "runner_scope": [
         "minimax-m3-claude-cli",
-        "gpt-54-mini-subagent"
+        "gpt-54-mini-subagent",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 full。",
@@ -480,7 +495,8 @@
       "stage": "impact-phase4",
       "fixture_mode": "read-only-original",
       "runner_scope": [
-        "gpt-54-mini-subagent"
+        "gpt-54-mini-subagent",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 full，不被“快速改一下”误导。",
@@ -529,7 +545,8 @@
       "fixture_mode": "isolated-copy",
       "runner_scope": [
         "gpt-54-mini-subagent",
-        "minimax-m3-claude-cli"
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "prompt_override": "真实 /impact 交付验收：tags 功能没人用了，把 /api/tags、Tag model、文章 tagList 输入/输出和相关测试引用都删掉。必须先做 full 影响分析并通过 Phase 4，再执行 Phase 5。所有写操作按 skill 流程逐个请求 `确认 Step N`，我会在你每次请求后逐条回复确认或拆分；不要把多个写操作合并在一个 Step，也不要把本消息当成任何 Step 的预先授权。只在隔离副本中操作，不执行真实数据库迁移。删除功能属于高风险变更，执行记录必须写清兼容、回滚和未执行迁移的原因。",
       "success_target": [
@@ -606,7 +623,8 @@
       "fixture_mode": "isolated-copy",
       "runner_scope": [
         "gpt-54-mini-subagent",
-        "minimax-m3-claude-cli"
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "prompt_override": "真实 /impact 交付验收：item 表单的必填提示从 \"Title is required\" 改成 \"Item title is required\"，快速改一下就行。必须先做 light 影响分析并产出 Phase 4 文档，再执行 Phase 5。注意 AddItem、EditItem 和直接断言该提示的前端测试都要同步；不要改后端模型、API、OpenAPI client 或数据库。",
       "success_target": [
@@ -683,6 +701,16 @@
       "D15-node-feature-removal-analysis",
       "D16-python-config-migration-analysis",
       "D18-monorepo-lazy-trap-analysis",
+      "D19-node-tags-removal-phase5",
+      "D20-python-title-required-lazy-phase5"
+    ],
+    "composer-25fast-subagent": [
+      "D1-java-pathfinder-map",
+      "D8-node-login-message-analysis",
+      "D13-java-permission-analysis",
+      "D15-node-feature-removal-analysis",
+      "D16-python-config-migration-analysis",
+      "D17-python-lazy-trap-analysis",
       "D19-node-tags-removal-phase5",
       "D20-python-title-required-lazy-phase5"
     ]
