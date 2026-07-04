@@ -1,0 +1,410 @@
+diff --git a/docs/swagger.json b/docs/swagger.json
+index 7489108..3c8459d 100644
+--- a/docs/swagger.json
++++ b/docs/swagger.json
+@@ -329,13 +329,6 @@
+         "tags": ["Articles"],
+         "operationId": "GetArticles",
+         "parameters": [
+-          {
+-            "name": "tag",
+-            "in": "query",
+-            "description": "Filter by tag",
+-            "required": false,
+-            "type": "string"
+-          },
+           {
+             "name": "author",
+             "in": "query",
+@@ -734,26 +727,6 @@
+           }
+         }
+       }
+-    },
+-    "/tags": {
+-      "get": {
+-        "summary": "Get tags",
+-        "description": "Get tags. Auth not required",
+-        "responses": {
+-          "200": {
+-            "description": "OK",
+-            "schema": {
+-              "$ref": "#/definitions/TagsResponse"
+-            }
+-          },
+-          "422": {
+-            "description": "Unexpected error",
+-            "schema": {
+-              "$ref": "#/definitions/GenericErrorModel"
+-            }
+-          }
+-        }
+-      }
+     }
+   },
+   "definitions": {
+@@ -905,12 +878,6 @@
+         "body": {
+           "type": "string"
+         },
+-        "tagList": {
+-          "type": "array",
+-          "items": {
+-            "type": "string"
+-          }
+-        },
+         "createdAt": {
+           "type": "string",
+           "format": "date-time"
+@@ -934,7 +901,6 @@
+         "title",
+         "description",
+         "body",
+-        "tagList",
+         "createdAt",
+         "updatedAt",
+         "favorited",
+@@ -977,12 +943,6 @@
+         },
+         "body": {
+           "type": "string"
+-        },
+-        "tagList": {
+-          "type": "array",
+-          "items": {
+-            "type": "string"
+-          }
+         }
+       },
+       "required": ["title", "description", "body"]
+@@ -1081,18 +1041,6 @@
+       },
+       "required": ["comment"]
+     },
+-    "TagsResponse": {
+-      "type": "object",
+-      "properties": {
+-        "tags": {
+-          "type": "array",
+-          "items": {
+-            "type": "string"
+-          }
+-        }
+-      },
+-      "required": ["tags"]
+-    },
+     "GenericErrorModel": {
+       "type": "object",
+       "properties": {
+diff --git a/prisma/schema.prisma b/prisma/schema.prisma
+index d915484..d120690 100644
+--- a/prisma/schema.prisma
++++ b/prisma/schema.prisma
+@@ -19,7 +19,6 @@ model Article {
+   body        String
+   createdAt   DateTime  @default(now())
+   updatedAt   DateTime  @default(now())
+-  tagList     Tag[]
+   author      User      @relation("UserArticles", fields: [authorId], references: [id], onDelete: Cascade)
+   authorId    Int
+   favoritedBy User[]    @relation("UserFavorites", references: [id])
+@@ -37,12 +36,6 @@ model Comment {
+   authorId  Int
+ }
+ 
+-model Tag {
+-  id       Int       @id @default(autoincrement())
+-  name     String    @unique
+-  articles Article[]
+-}
+-
+ model User {
+   id         Int       @id @default(autoincrement())
+   email      String    @unique
+diff --git a/src/controllers/article.controller.ts b/src/controllers/article.controller.ts
+index c237967..020982a 100644
+--- a/src/controllers/article.controller.ts
++++ b/src/controllers/article.controller.ts
+@@ -22,7 +22,6 @@ const router = Router();
+  * @route {GET} /articles
+  * @queryparam offset number of articles dismissed from the first one
+  * @queryparam limit number of articles returned
+- * @queryparam tag
+  * @queryparam author
+  * @queryparam favorited
+  * @returns articles: list of articles
+@@ -65,7 +64,6 @@ router.get(
+  * @bodyparam  title
+  * @bodyparam  description
+  * @bodyparam  body
+- * @bodyparam  tagList list of tags
+  * @returns article created article
+  */
+ router.post('/articles', auth.required, async (req: Request, res: Response, next: NextFunction) => {
+diff --git a/src/routes/routes.ts b/src/routes/routes.ts
+index b96f6d7..b0d5867 100644
+--- a/src/routes/routes.ts
++++ b/src/routes/routes.ts
+@@ -1,11 +1,9 @@
+ import { Router } from 'express';
+-import tagsController from '../controllers/tag.controller';
+ import articlesController from '../controllers/article.controller';
+ import authController from '../controllers/auth.controller';
+ import profileController from '../controllers/profile.controller';
+ 
+ const api = Router()
+-  .use(tagsController)
+   .use(articlesController)
+   .use(profileController)
+   .use(authController);
+diff --git a/src/services/article.service.ts b/src/services/article.service.ts
+index c323fdf..ad23a49 100644
+--- a/src/services/article.service.ts
++++ b/src/services/article.service.ts
+@@ -34,16 +34,6 @@ const buildFindAllQuery = (query: any, username: string | undefined) => {
+ 
+   queries.push(authorQuery);
+ 
+-  if ('tag' in query) {
+-    queries.push({
+-      tagList: {
+-        some: {
+-          name: query.tag,
+-        },
+-      },
+-    });
+-  }
+-
+   if ('favorited' in query) {
+     queries.push({
+       favoritedBy: {
+@@ -75,11 +65,6 @@ export const getArticles = async (query: any, username?: string) => {
+     skip: Number(query.offset) || 0,
+     take: Number(query.limit) || 10,
+     include: {
+-      tagList: {
+-        select: {
+-          name: true,
+-        },
+-      },
+       author: {
+         select: {
+           username: true,
+@@ -101,7 +86,7 @@ export const getArticles = async (query: any, username?: string) => {
+     articles: articles.map(({ authorId, id, _count, favoritedBy, ...article }) => ({
+       ...article,
+       author: profileMapper(article.author, username),
+-      tagList: article.tagList.map(tag => tag.name),
++      tagList: [],
+       favoritesCount: _count?.favoritedBy,
+       favorited: favoritedBy.some(item => item.username === username),
+     })),
+@@ -132,11 +117,6 @@ export const getFeed = async (offset: number, limit: number, username: string) =
+     skip: offset || 0,
+     take: limit || 10,
+     include: {
+-      tagList: {
+-        select: {
+-          name: true,
+-        },
+-      },
+       author: {
+         select: {
+           username: true,
+@@ -158,7 +138,7 @@ export const getFeed = async (offset: number, limit: number, username: string) =
+     articles: articles.map(({ authorId, id, _count, favoritedBy, ...article }) => ({
+       ...article,
+       author: profileMapper(article.author, username),
+-      tagList: article.tagList.map(tag => tag.name),
++      tagList: [],
+       favoritesCount: _count?.favoritedBy,
+       favorited: favoritedBy.some(item => item.username === username),
+     })),
+@@ -167,7 +147,7 @@ export const getFeed = async (offset: number, limit: number, username: string) =
+ };
+ 
+ export const createArticle = async (article: any, username: string) => {
+-  const { title, description, body, tagList } = article;
++  const { title, description, body } = article;
+ 
+   if (!title) {
+     throw new HttpException(422, { errors: { title: ["can't be blank"] } });
+@@ -204,12 +184,6 @@ export const createArticle = async (article: any, username: string) => {
+       description,
+       body,
+       slug,
+-      tagList: {
+-        connectOrCreate: tagList.map((tag: string) => ({
+-          create: { name: tag },
+-          where: { name: tag },
+-        })),
+-      },
+       author: {
+         connect: {
+           id: user?.id,
+@@ -217,11 +191,6 @@ export const createArticle = async (article: any, username: string) => {
+       },
+     },
+     include: {
+-      tagList: {
+-        select: {
+-          name: true,
+-        },
+-      },
+       author: {
+         select: {
+           username: true,
+@@ -240,7 +209,7 @@ export const createArticle = async (article: any, username: string) => {
+ 
+   return {
+     ...createdArticle,
+-    tagList: createdArticle.tagList.map(tag => tag.name),
++    tagList: [],
+     favoritesCount: createdArticle._count?.favoritedBy,
+     favorited: createdArticle.favoritedBy.some(item => item.username === username),
+   };
+@@ -252,11 +221,6 @@ export const getArticle = async (slug: string, username?: string) => {
+       slug,
+     },
+     include: {
+-      tagList: {
+-        select: {
+-          name: true,
+-        },
+-      },
+       author: {
+         select: {
+           username: true,
+@@ -281,7 +245,7 @@ export const getArticle = async (slug: string, username?: string) => {
+     description: article?.description,
+     createdAt: article?.createdAt,
+     updatedAt: article?.updatedAt,
+-    tagList: article?.tagList.map(tag => tag.name),
++    tagList: [],
+     favoritesCount: article?._count?.favoritedBy,
+     favorited: article?.favoritedBy.some(item => item.username === username),
+     author: {
+@@ -291,19 +255,6 @@ export const getArticle = async (slug: string, username?: string) => {
+   };
+ };
+ 
+-const disconnectArticlesTags = async (slug: string) => {
+-  await prisma.article.update({
+-    where: {
+-      slug,
+-    },
+-    data: {
+-      tagList: {
+-        set: [],
+-      },
+-    },
+-  });
+-};
+-
+ export const updateArticle = async (article: any, slug: string, username: string) => {
+   let newSlug = null;
+   const user = await findUserIdByUsername(username);
+@@ -327,15 +278,6 @@ export const updateArticle = async (article: any, slug: string, username: string
+     }
+   }
+ 
+-  const tagList = article.tagList?.length
+-    ? article.tagList.map((tag: string) => ({
+-        create: { name: tag },
+-        where: { name: tag },
+-      }))
+-    : [];
+-
+-  await disconnectArticlesTags(slug);
+-
+   const updatedArticle = await prisma.article.update({
+     where: {
+       slug,
+@@ -346,16 +288,8 @@ export const updateArticle = async (article: any, slug: string, username: string
+       ...(article.description ? { description: article.description } : {}),
+       ...(newSlug ? { slug: newSlug } : {}),
+       updatedAt: new Date(),
+-      tagList: {
+-        connectOrCreate: tagList,
+-      },
+     },
+     include: {
+-      tagList: {
+-        select: {
+-          name: true,
+-        },
+-      },
+       author: {
+         select: {
+           username: true,
+@@ -379,7 +313,7 @@ export const updateArticle = async (article: any, slug: string, username: string
+     description: updatedArticle?.description,
+     createdAt: updatedArticle?.createdAt,
+     updatedAt: updatedArticle?.updatedAt,
+-    tagList: updatedArticle?.tagList.map(tag => tag.name),
++    tagList: [],
+     favoritesCount: updatedArticle?._count?.favoritedBy,
+     favorited: updatedArticle?.favoritedBy.some(item => item.username === username),
+     author: updatedArticle?.author,
+@@ -537,11 +471,6 @@ export const favoriteArticle = async (slugPayload: string, usernameAuth: string)
+       },
+     },
+     include: {
+-      tagList: {
+-        select: {
+-          name: true,
+-        },
+-      },
+       author: {
+         select: {
+           username: true,
+@@ -562,7 +491,7 @@ export const favoriteArticle = async (slugPayload: string, usernameAuth: string)
+   const result = {
+     ...article,
+     author: profileMapper(article.author, usernameAuth),
+-    tagList: article?.tagList.map(tag => tag.name),
++    tagList: [],
+     favorited: article.favoritedBy.some(favorited => favorited.id === user?.id),
+     favoritesCount: _count?.favoritedBy,
+   };
+@@ -585,11 +514,6 @@ export const unfavoriteArticle = async (slugPayload: string, usernameAuth: strin
+       },
+     },
+     include: {
+-      tagList: {
+-        select: {
+-          name: true,
+-        },
+-      },
+       author: {
+         select: {
+           username: true,
+@@ -610,7 +534,7 @@ export const unfavoriteArticle = async (slugPayload: string, usernameAuth: strin
+   const result = {
+     ...article,
+     author: profileMapper(article.author, usernameAuth),
+-    tagList: article?.tagList.map(tag => tag.name),
++    tagList: [],
+     favorited: article.favoritedBy.some(favorited => favorited.id === user?.id),
+     favoritesCount: _count?.favoritedBy,
+   };
+diff --git a/tests/services/article.service.test.ts b/tests/services/article.service.test.ts
+index 5a52ae7..8e63fc8 100644
+--- a/tests/services/article.service.test.ts
++++ b/tests/services/article.service.test.ts
+@@ -45,7 +45,6 @@ describe('ArticleService', () => {
+         createdAt: new Date(),
+         updatedAt: new Date(),
+         authorId: 456,
+-        tagList: [],
+         favoritedBy: [],
+         author: {
+           username: 'RealWorld',
+@@ -100,7 +99,6 @@ describe('ArticleService', () => {
+         createdAt: new Date(),
+         updatedAt: new Date(),
+         authorId: 456,
+-        tagList: [],
+         favoritedBy: [],
+         author: {
+           username: 'RealWorld',
