@@ -1,0 +1,50 @@
+﻿==== D19 残留扫描（git grep 逐 token，限定 src/ tests/ prisma/ docs/）====
+执行时间：2026-07-04T10:55:01Z
+工作目录：E:\agent\real-project-fixtures-delivery\node-realworld-prisma-minimax-m3-d19-20260704
+
+--- Token: tagList ---
+
+Exit: 1
+
+--- Token: tag.controller ---
+
+Exit: 1
+
+--- Token: tag.service ---
+
+Exit: 1
+
+--- Token: getTags ---
+
+Exit: 1
+
+--- Token: "/tags" ---
+
+Exit: 1
+
+--- Token: TagsResponse ---
+
+Exit: 1
+
+--- Token: model Tag ---
+
+Exit: 1
+
+==== favorites 链路保留检查（应保留）====
+--- Token: favorited ---
+docs/swagger.json:340:            "name": "favorited", docs/swagger.json:889:        "favorited": { docs/swagger.json:906:        "favorited", prisma/schema.prisma:24:  favoritedBy User[]    @relation("UserFavorites", references: [id]) src/controllers/article.controller.ts:26: * @queryparam favorited src/controllers/article.controller.ts:214: * @returns article favorited article src/controllers/article.controller.ts:234: * @returns article unfavorited article src/models/article.model.ts:9:  favorited: boolean; src/services/article.service.ts:37:  if ('favorited' in query) { src/services/article.service.ts:39:      favoritedBy: { src/services/article.service.ts:42:            equals: query.favorited, src/services/article.service.ts:76:      favoritedBy: true, src/services/article.service.ts:79:          favoritedBy: true, src/services/article.service.ts:86:    articles: articles.map(({ authorId, id, _count, favoritedBy, ...article }) => ({ src/services/article.service.ts:89:      favoritesCount: _count?.favoritedBy, src/services/article.service.ts:90:      favorited: favoritedBy.some(item => item.username === username), src/services/article.service.ts:127:      favoritedBy: true, src/services/article.service.ts:130:          favoritedBy: true, src/services/article.service.ts:137:    articles: articles.map(({ authorId, id, _count, favoritedBy, ...article }) => ({ src/services/article.service.ts:140:      favoritesCount: _count?.favoritedBy, src/services/article.service.ts:141:      favorited: favoritedBy.some(item => item.username === username), src/services/article.service.ts:199:      favoritedBy: true, src/services/article.service.ts:202:          favoritedBy: true, src/services/article.service.ts:210:    favoritesCount: createdArticle._count?.favoritedBy, src/services/article.service.ts:211:    favorited: createdArticle.favoritedBy.some(item => item.username === username), src/services/article.service.ts:229:      favoritedBy: true, src/services/article.service.ts:232:          favoritedBy: true, src/services/article.service.ts:245:    favoritesCount: article?._count?.favoritedBy, src/services/article.service.ts:246:    favorited: article?.favoritedBy.some(item => item.username === username), src/services/article.service.ts:296:      favoritedBy: true, src/services/article.service.ts:299:          favoritedBy: true, src/services/article.service.ts:312:    favoritesCount: updatedArticle?._count?.favoritedBy, src/services/article.service.ts:313:    favorited: updatedArticle?.favoritedBy.some(item => item.username === username), src/services/article.service.ts:462:      favoritedBy: { src/services/article.service.ts:477:      favoritedBy: true, src/services/article.service.ts:480:          favoritedBy: true, src/services/article.service.ts:489:    favorited: article.favoritedBy.some(favorited => favorited.id === user?.id), src/services/article.service.ts:490:    favoritesCount: _count?.favoritedBy, src/services/article.service.ts:504:      favoritedBy: { src/services/article.service.ts:519:      favoritedBy: true, src/services/article.service.ts:522:          favoritedBy: true, src/services/article.service.ts:531:    favorited: article.favoritedBy.some(favorited => favorited.id === user?.id), src/services/article.service.ts:532:    favoritesCount: _count?.favoritedBy, tests/services/article.service.test.ts:24:    test('should return the favorited article', async () => { tests/services/article.service.test.ts:48:        favoritedBy: [], tests/services/article.service.test.ts:78:    test('should return the unfavorited article', async () => { tests/services/article.service.test.ts:102:        favoritedBy: [], 
+Exit: 0
+
+--- Token: favoritesCount ---
+docs/swagger.json:892:        "favoritesCount": { docs/swagger.json:907:        "favoritesCount", src/services/article.service.ts:89:      favoritesCount: _count?.favoritedBy, src/services/article.service.ts:140:      favoritesCount: _count?.favoritedBy, src/services/article.service.ts:210:    favoritesCount: createdArticle._count?.favoritedBy, src/services/article.service.ts:245:    favoritesCount: article?._count?.favoritedBy, src/services/article.service.ts:312:    favoritesCount: updatedArticle?._count?.favoritedBy, src/services/article.service.ts:490:    favoritesCount: _count?.favoritedBy, src/services/article.service.ts:532:    favoritesCount: _count?.favoritedBy, tests/services/article.service.test.ts:62:      await expect(favoriteArticle(slug, username)).resolves.toHaveProperty('favoritesCount'); tests/services/article.service.test.ts:116:      await expect(unfavoriteArticle(slug, username)).resolves.toHaveProperty('favoritesCount'); 
+Exit: 0
+
+--- Token: favoritedBy ---
+prisma/schema.prisma:24:  favoritedBy User[]    @relation("UserFavorites", references: [id]) src/services/article.service.ts:39:      favoritedBy: { src/services/article.service.ts:76:      favoritedBy: true, src/services/article.service.ts:79:          favoritedBy: true, src/services/article.service.ts:86:    articles: articles.map(({ authorId, id, _count, favoritedBy, ...article }) => ({ src/services/article.service.ts:89:      favoritesCount: _count?.favoritedBy, src/services/article.service.ts:90:      favorited: favoritedBy.some(item => item.username === username), src/services/article.service.ts:127:      favoritedBy: true, src/services/article.service.ts:130:          favoritedBy: true, src/services/article.service.ts:137:    articles: articles.map(({ authorId, id, _count, favoritedBy, ...article }) => ({ src/services/article.service.ts:140:      favoritesCount: _count?.favoritedBy, src/services/article.service.ts:141:      favorited: favoritedBy.some(item => item.username === username), src/services/article.service.ts:199:      favoritedBy: true, src/services/article.service.ts:202:          favoritedBy: true, src/services/article.service.ts:210:    favoritesCount: createdArticle._count?.favoritedBy, src/services/article.service.ts:211:    favorited: createdArticle.favoritedBy.some(item => item.username === username), src/services/article.service.ts:229:      favoritedBy: true, src/services/article.service.ts:232:          favoritedBy: true, src/services/article.service.ts:245:    favoritesCount: article?._count?.favoritedBy, src/services/article.service.ts:246:    favorited: article?.favoritedBy.some(item => item.username === username), src/services/article.service.ts:296:      favoritedBy: true, src/services/article.service.ts:299:          favoritedBy: true, src/services/article.service.ts:312:    favoritesCount: updatedArticle?._count?.favoritedBy, src/services/article.service.ts:313:    favorited: updatedArticle?.favoritedBy.some(item => item.username === username), src/services/article.service.ts:462:      favoritedBy: { src/services/article.service.ts:477:      favoritedBy: true, src/services/article.service.ts:480:          favoritedBy: true, src/services/article.service.ts:489:    favorited: article.favoritedBy.some(favorited => favorited.id === user?.id), src/services/article.service.ts:490:    favoritesCount: _count?.favoritedBy, src/services/article.service.ts:504:      favoritedBy: { src/services/article.service.ts:519:      favoritedBy: true, src/services/article.service.ts:522:          favoritedBy: true, src/services/article.service.ts:531:    favorited: article.favoritedBy.some(favorited => favorited.id === user?.id), src/services/article.service.ts:532:    favoritesCount: _count?.favoritedBy, tests/services/article.service.test.ts:48:        favoritedBy: [], tests/services/article.service.test.ts:102:        favoritedBy: [], 
+Exit: 0
+
+--- Token: favoriteArticle ---
+src/controllers/article.controller.ts:8:  favoriteArticle, src/controllers/article.controller.ts:13:  unfavoriteArticle, src/controllers/article.controller.ts:221:      const article = await favoriteArticle(req.params.slug, req.user?.username as string); src/controllers/article.controller.ts:241:      const article = await unfavoriteArticle(req.params.slug, req.user?.username as string); src/services/article.service.ts:454:export const favoriteArticle = async (slugPayload: string, usernameAuth: string) => { src/services/article.service.ts:496:export const unfavoriteArticle = async (slugPayload: string, usernameAuth: string) => { tests/services/article.service.test.ts:4:  favoriteArticle, tests/services/article.service.test.ts:5:  unfavoriteArticle, tests/services/article.service.test.ts:23:  describe('favoriteArticle', () => { tests/services/article.service.test.ts:62:      await expect(favoriteArticle(slug, username)).resolves.toHaveProperty('favoritesCount'); tests/services/article.service.test.ts:74:      await expect(favoriteArticle(slug, username)).rejects.toThrowError(); tests/services/article.service.test.ts:77:  describe('unfavoriteArticle', () => { tests/services/article.service.test.ts:116:      await expect(unfavoriteArticle(slug, username)).resolves.toHaveProperty('favoritesCount'); tests/services/article.service.test.ts:128:      await expect(unfavoriteArticle(slug, username)).rejects.toThrowError(); 
+Exit: 0
+
+

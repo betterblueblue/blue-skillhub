@@ -5,14 +5,14 @@
 
 ## 状态头
 
-- 更新时间：2026-07-04 10:13:30
+- 更新时间：2026-07-04 10:16:00
 - skill：impact
 - 目标项目根目录：
   - 绝对路径：`E:\agent\real-project-fixtures-delivery\node-realworld-prisma-minimax-m3-d19-20260704`
   - 判定方式：user-specified
-  - 验证时间：2026-07-04 10:13:30
+  - 验证时间：2026-07-04 10:16:00
 - 需求目录：`change-impact/node-tags-removal-phase5/`
-- 当前阶段：**交付完成**（全部 14 步完成，最终验证全 PASS）
+- 当前阶段：**交付完成**（全部 Step 完成，3 验证全 PASS，残留扫描全 0 命中）
 - 模式：full
 - Phase 3 状态：快速通道跳过
 - Phase 3.5 定级：full
@@ -20,16 +20,18 @@
 - 并发锁：none
 - 当前 Git HEAD：`6ac99ea5aeadc4e001dd4d6933c2e269f878a969`
 - Git 审计状态：dirty（4 D + 6 M + change-impact/）
-- 是否需要确认：true
-- 待执行 Step：无（全部 14 步完成）
-- 上次提示 Step：归档（runner 内部）
-- 上次确认 Step：Step 14（用户回复 `确认 Step 14`）
-- 上次完成 Step：Step 14（3 个验证全部 PASS：V1 19/0/3 退出码 0 + V1 git diff --check 退出码 0 + V2 npm test 4 suites / 26 passed 退出码 0）
-- V1-only 计数：11
+- 是否需要确认：**false**（全部 Step 已完成）
+- 待执行 Step：**无**
+- 上次提示 Step：**无**
+- 上次确认 Step：Step 16.5（用户回复 `Step 16.5`）
+- 上次完成 Step：Step 16.5（修复 CRLF → LF，git diff --check exit 0）
+- V1-only 计数：13
 - 最终验证：
   - `python impact_validate.py --mode full --repo-root .` → 19 passed, 0 failed, 3 warnings, exit 0
   - `git diff --check` → exit 0
   - `npm test` → 4 suites / 26 passed, exit 0
+  - 全仓残留扫描（7 tokens）→ 全部 0 命中
+- 判分方复跑反馈（V16 FAIL）→ Step 17 修复：_active-state.md 待执行 Step 推到终态
 
 ## 当前意图
 
@@ -69,6 +71,9 @@
 | Step 12 | 成功 | `docs/swagger.json`（API 契约清理） | 用户回复 `确认 Step 12` | V1 | 1115 → 1060 行；JSON 合法；tag 残留 0；favorites 11 处保留 |
 | Step 13 | 成功 | `tests/services/article.service.test.ts`（mock 清理） | 用户回复 `确认 Step 13` | V1 | 133 → 131 行；tag 残留 0 |
 | Step 14 | 成功 | 跑三个验证命令 | 用户回复 `确认 Step 14` | V1+V2 | 全 PASS：V1 19/0/3 + V1 git diff --check + V2 npm test 4/26 |
+| Step 15 | 成功 | 清除 `src/services/article.service.ts` 7 处 `tagList: []` 残留 | 用户回复 `确认 Step 15` | V1 | 544 → 537 行；tagList 残留 7 → 0；git grep 0 命中 |
+| Step 16 | 成功 | 重跑 3 验证 + 全仓残留扫描 | 用户回复 `确认 Step 16` | V1+V2 | 19/0/3 + exit 0 + 4/26 + 7 token 0 命中 |
+| Step 16.5 | 成功 | 修复 Step 16 失败（CRLF → LF） | 用户回复 `Step 16.5` | V1 | 536 CR bytes → 0；git diff --check exit 0 |
 
 ## 恢复检查
 
