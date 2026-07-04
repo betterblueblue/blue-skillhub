@@ -31,6 +31,17 @@
       "notes": [
         "临时补位不改变 gpt-5.4-mini 的待跑清单；同场景两个模型的结果分别记录，兼作阶段 4 跨模型复验数据。"
       ]
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "scope": "results-only",
+      "surface": "claude-code-cli",
+      "model": "DeepSeek V4 Flash",
+      "invocation": "在 Claude Code CLI 中切换到已配置的 DeepSeek V4 Flash，并在 fixture 副本目录运行同一 prompt",
+      "role": "弱模型交付执行者（补充第三列数据，结果独立记账）",
+      "notes": [
+        "当前仅记录 D1 pathfinder 结果；后续是否继续跑由实际评测计划决定。"
+      ]
     }
   ],
   "pass_criteria": [
@@ -49,7 +60,8 @@
       "runner_scope": [
         "gpt-54-mini-subagent",
         "minimax-m3-claude-cli",
-        "composer-25fast-subagent"
+        "composer-25fast-subagent",
+        "deepseek-v4-flash"
       ],
       "success_target": [
         "产出能指导用户模块变更的项目地图。",
@@ -97,6 +109,7 @@
       "stage": "impact-phase4",
       "fixture_mode": "isolated-copy",
       "runner_scope": [
+        "gpt-54-mini-subagent",
         "minimax-m3-claude-cli"
       ],
       "success_target": [
@@ -248,6 +261,7 @@
       "stage": "negative-gate",
       "fixture_mode": "read-only-original",
       "runner_scope": [
+        "gpt-54-mini-subagent",
         "minimax-m3-claude-cli"
       ],
       "success_target": [
@@ -297,7 +311,9 @@
       "stage": "impact-phase4",
       "fixture_mode": "isolated-copy",
       "runner_scope": [
-        "minimax-m3-claude-cli"
+        "gpt-54-mini-subagent",
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 full。",
@@ -345,7 +361,9 @@
       "stage": "impact-analysis",
       "fixture_mode": "read-only-original",
       "runner_scope": [
-        "minimax-m3-claude-cli"
+        "gpt-54-mini-subagent",
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "判定为 full。",
@@ -369,7 +387,9 @@
       "stage": "pathfinder-map",
       "fixture_mode": "non-git-copy",
       "runner_scope": [
-        "minimax-m3-claude-cli"
+        "gpt-54-mini-subagent",
+        "minimax-m3-claude-cli",
+        "composer-25fast-subagent"
       ],
       "success_target": [
         "识别 workspace、apps、packages、Prisma、shared types 和前端调用边界。",
@@ -499,18 +519,20 @@
         "composer-25fast-subagent"
       ],
       "success_target": [
-        "判定为 full，不被“快速改一下”误导。",
-        "覆盖后端模型校验、前端表单校验和测试。",
-        "找到 SQLModel、Pydantic schema、前端表单和测试中的 title 长度限制。"
+        "不被“快速改一下”误导，先核查现状。",
+        "发现当前 title 上限已经是 255，不是用户说的 50。",
+        "覆盖 SQLModel、generated client、Alembic、前端表单和测试中的 title 长度证据。",
+        "如果用户确认真实目标是 100，再说明这是收紧约束并按 full 继续分析。"
       ],
       "failure_signals": [
         "被“快速改一下”误导而跳过影响分析。",
         "只改一个文件就声明完成。",
-        "忽略 DB 层可能的 VARCHAR 约束。"
+        "声称当前存在 50 的旧约束。",
+        "忽略 generated client 或 Alembic 迁移中的 255。"
       ],
       "repair_loop": [
         "如果模型迎合用户快改冲动，加强 SKILL.md 中的“不被快改误导”规则后复跑。",
-        "如果漏前端表单或测试，补 case review_hints 后复跑。"
+        "如果 case 预期与 fixture 现状不一致，优先修 case 标准答案后复跑。"
       ]
     },
     {
@@ -674,11 +696,15 @@
     "gpt-54-mini-subagent": [
       "D1-java-pathfinder-map",
       "D2-node-profile-phase4",
+      "D3-python-item-phase4",
       "D4-frontend-dashboard-phase5",
       "D5-python-welcome-phase5",
       "D6-monorepo-api-nongit-gate",
       "D8-node-login-message-analysis",
+      "D9-monorepo-organization-phase4",
       "D10-frontend-audit-db-gate",
+      "D11-java-external-id-analysis",
+      "D12-monorepo-pathfinder-map",
       "D13-java-permission-analysis",
       "D15-node-feature-removal-analysis",
       "D16-python-config-migration-analysis",
@@ -707,6 +733,9 @@
     "composer-25fast-subagent": [
       "D1-java-pathfinder-map",
       "D8-node-login-message-analysis",
+      "D9-monorepo-organization-phase4",
+      "D11-java-external-id-analysis",
+      "D12-monorepo-pathfinder-map",
       "D13-java-permission-analysis",
       "D15-node-feature-removal-analysis",
       "D16-python-config-migration-analysis",

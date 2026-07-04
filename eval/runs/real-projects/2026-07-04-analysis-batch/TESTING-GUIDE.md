@@ -4,14 +4,17 @@
 
 **每个 run 开始前，fixture 必须是干净的。** 上一个 run 的 `change-impact/` 产物不能留给下一个 run 看。
 
-## 19 个 run 的 fixture 分配
+## fixture 分配
 
 | fixture | run 清单 | 数量 |
 |---------|----------|------|
-| java-ruoyi | D1×3 (composer/m3/deepseek) + D13×3 + D14×1 | 7 |
+| java-ruoyi | D1×3 (composer/m3/deepseek) + D11×1 + D13×3 + D14×1 | 8 |
 | node-realworld-prisma | D8×2 + D15×3 | 5 |
-| python-fastapi-template | D3×1 + D16×3 + D17×2 | 6 |
-| monorepo-full-stack-starter | D18×1 | 1 |
+| python-fastapi-template | D16×3 + D17×2 | 5 |
+| python-fastapi-template-d3-gpt54mini | D3 gpt-5.4-mini 专用隔离副本 | 1 |
+| monorepo-full-stack-starter | D12 gpt-5.4-mini Git 根目录版 + D18×1 | 2 |
+| monorepo-full-stack-starter-d9-gpt54mini | D9 gpt-5.4-mini 专用隔离副本 | 1 |
+| monorepo-full-stack-starter-d12-gpt54mini-nongit | D12 gpt-5.4-mini 非 Git 副本 | 1 |
 
 ## 每次 run 的操作流程
 
@@ -73,10 +76,31 @@ D1 的三个 runner（Composer、M3、DeepSeek）共用同一个 java-ruoyi fixt
 
 ## D3 的特殊处理
 
-D3 的 fixture_mode 是 `isolated-copy`，需要从原始 fixture 复制一份副本：
+D3 的 fixture_mode 是 `isolated-copy`，每个 runner 需要独立副本。gpt-5.4-mini 当前使用：
 
 ```powershell
-Copy-Item -Path "E:\agent\real-project-fixtures\python-fastapi-template" -Destination "E:\agent\real-project-fixtures\python-fastapi-template-d3-m3" -Recurse
+E:\agent\real-project-fixtures\python-fastapi-template-d3-gpt54mini
 ```
 
-然后 prompt 里的工作目录改为副本路径。
+如需重新创建：
+
+```powershell
+Copy-Item -Path "E:\agent\real-project-fixtures\python-fastapi-template" -Destination "E:\agent\real-project-fixtures\python-fastapi-template-d3-gpt54mini" -Recurse
+```
+
+然后清理副本内 `change-impact/`，并确认 `git status --short` 为空。
+
+## D9/D12 的特殊处理
+
+D9 的 fixture_mode 是 `isolated-copy`，gpt-5.4-mini 使用独立副本：
+
+```powershell
+E:\agent\real-project-fixtures\monorepo-full-stack-starter-d9-gpt54mini
+```
+
+D12 需要同一 runner 做两次 Pathfinder：
+
+1. 在 Git 根目录 `E:\agent\real-project-fixtures\monorepo-full-stack-starter` 生成项目地图。
+2. 在删除 `.git` 的副本 `E:\agent\real-project-fixtures\monorepo-full-stack-starter-d12-gpt54mini-nongit` 再生成一次。
+
+判分时要重点看第二份 `facts/git.json` 是否为非 Git 状态，且没有父仓库 `head`、`branch`、`hotspots` 或 `recent_commit_modules` 污染。
