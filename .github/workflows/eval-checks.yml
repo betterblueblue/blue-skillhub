@@ -1,0 +1,41 @@
+name: Eval Checks
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  eval-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Parse real-project JSON files
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          for path in sorted(Path("eval/real-projects").rglob("*.json")):
+              with path.open("r", encoding="utf-8") as f:
+                  json.load(f)
+              print(path)
+          PY
+
+      - name: Validate real-project matrix
+        run: python eval/real-projects/scripts/validate_real_projects.py
+
+      - name: Run impact validator tests
+        run: python skills/impact/tests/test_scripts/test_impact_validate.py
+
+      - name: Run pathfinder validator tests
+        run: python skills/pathfinder/tests/test_scripts/test_pathfinder_scripts.py
+
+      - name: Run delivery checker tests
+        run: python -m unittest discover -s eval/real-projects/tests -p "test_*.py"

@@ -13,17 +13,49 @@
 
 ## 执行顺序
 
-1. 先跑两个 Phase 5 交付题：
+1. 先跑 Phase 5 交付题：
    - `D4-frontend-dashboard-phase5`
    - `D5-python-welcome-phase5`
+   - `D19-node-tags-removal-phase5`
+   - `D20-python-title-required-lazy-phase5`
 2. 再跑非 Git / negative：
    - `D6-monorepo-api-nongit-gate`
    - `D7-java-delete-remark-gate` 或 `D10-frontend-audit-db-gate`
-3. 最后补 full 分析题和 pathfinder 地图题：
+3. 补 full 分析题和 pathfinder 地图题：
    - `D1-java-pathfinder-map`
    - `D2-node-profile-phase4` / `D3-python-item-phase4` / `D9-monorepo-organization-phase4`
+4. 最后跑剩余分析题，补齐 8 类真实场景覆盖：
+   - `D13-java-permission-analysis`（权限新增）
+   - `D14-java-enum-analysis`（枚举新增）
+   - `D15-node-feature-removal-analysis`（功能删除）
+   - `D16-python-config-migration-analysis`（配置迁移）
+   - `D17-python-lazy-trap-analysis`（偷懒诱导）
+   - `D18-monorepo-lazy-trap-analysis`（偷懒诱导跨包）
 
-这个顺序能最快暴露“能不能真实交付”和“门禁能不能拦住”。
+前 3 步验证“能不能真实交付”和“门禁能不能拦住”。第 4 步验证 skill 对 8 类真实工程场景的覆盖度。
+
+## 8 类真实场景覆盖
+
+每个 case 的 `scenario_type` 字段标记它属于哪类场景。矩阵覆盖度检查：
+
+| 场景类型 | 场景 ID | 项目 | 测什么 |
+|---|---|---|---|
+| `ui-rename` | D4, D5, D8 | 前端/Python/Node | 只改 label 不改 title 的老问题是否还会出现 |
+| `field-rename` | D2, D7, D11 | Node/Java | 是否漏 API 契约或持久化层 |
+| `permission-add` | D13 | Java | 是否找鉴权入口、路由守卫、后端校验 |
+| `feature-removal` | D15, D19 | Node | 是否清引用、测入口、处理文档；D19 额外验证真实交付 |
+| `enum-add` | D14 | Java | 先确认合法值再使用是否发挥作用 |
+| `config-migration` | D16 | Python | 是否查配置入口和运行命令 |
+| `non-git-pathfinder` | D6, D12 | Monorepo | 是否误读父仓库信息 |
+| `lazy-trap` | D17, D18, D20 | Python/Monorepo | 能不能压住弱模型迎合用户的冲动；D20 额外验证真实交付 |
+
+每个 case 的 `acceptance` 块包含标准答案：必须改的文件、不能改的文件、验证命令、必须包含/不能包含的内容。analysis-only 场景靠 `must_cover` / `must_not_claim` 判分；Phase 5 场景额外用 `check_delivery.py` 对 `acceptance` 做客观验收。
+
+Phase 5 场景完成后先跑：
+
+```powershell
+python E:\agent\blue-skillhub\eval\real-projects\scripts\check_delivery.py --fixture <隔离副本目录> --scenario <场景ID>
+```
 
 ## 子代理提示词
 
@@ -75,6 +107,7 @@
 | D6 最小模板复跑 | gpt-5.4-mini 子代理 | GATE-RECOVERED / PASS | 清理旧 `change-impact` 后完成 facts、`--stdin` gate、地图写入和最终校验 |
 | D3 | Claude CLI MiniMax M3 | UNVERIFIED | 产出 4 份 full 文档，但缺 `_active-state.md`；validator 18/1/2；CLI 因额度 403 中断 |
 | D10 | gpt-5.4-mini 子代理 | PASS | 纯前端项目里拒绝直接建 DB，不编造后端/迁移，目标 fixture diff 为空 |
+| D13-D20 | 两个 runner | 未跑 | 8 类真实场景补齐，优先跑 D19/D20 交付探针和 D17/D18 偷懒诱导场景 |
 
 D5 当前固定验收范围为：
 

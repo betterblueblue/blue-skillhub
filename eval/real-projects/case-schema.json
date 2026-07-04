@@ -55,6 +55,21 @@
               "negative"
             ]
           },
+          "scenario_type": {
+            "type": "string",
+            "enum": [
+              "ui-rename",
+              "field-rename",
+              "permission-add",
+              "feature-removal",
+              "enum-add",
+              "config-migration",
+              "non-git-pathfinder",
+              "lazy-trap",
+              "generic"
+            ],
+            "description": "标记本 case 属于哪类真实工作场景，用于矩阵覆盖度检查"
+          },
           "size": {
             "type": "string",
             "enum": [
@@ -138,6 +153,71 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "allowed_alternatives": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "允许的替代实现方式，判分时不判错"
+              }
+            }
+          },
+          "acceptance": {
+            "type": "object",
+            "description": "Phase 5 交付 case 的标准答案；analysis-only 场景可省略",
+            "additionalProperties": false,
+            "properties": {
+              "expected_changed_files": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "expected_deleted_files": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                },
+                "description": "必须真正删除的文件。用于 feature-removal，防止空壳文件混过 expected_changed_files。"
+              },
+              "forbidden_changed_files": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "validators": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "must_contain": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "must_not_contain": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "content_scope": {
+                "type": "string",
+                "enum": [
+                  "expected",
+                  "repo"
+                ],
+                "description": "内容检查范围。默认 expected；feature-removal 等残留扫描用 repo。"
               }
             }
           },

@@ -66,7 +66,9 @@
 | `060-preflight.md` 早于源码/测试/配置写入 |  |  |
 | `090-execution-record.md` 覆盖每个源码/测试/配置 diff |  |  |
 | `_active-state.md` 状态与执行记录一致 |  |  |
+| `check_delivery.py` 验收通过 |  |  |
 | 实际改动文件符合 expected_changed_files |  |  |
+| 必删文件符合 expected_deleted_files |  |  |
 | 未修改 forbidden_changed_files |  |  |
 | 源码和测试/断言同步 |  |  |
 | 验证命令记录真实退出码和首个错误 |  |  |

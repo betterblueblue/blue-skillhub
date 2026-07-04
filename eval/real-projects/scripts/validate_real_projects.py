@@ -48,6 +48,17 @@ DELIVERY_RESULT_STATUSES = {
     "UNVERIFIED",
 }
 DELIVERY_COMPLETED_STATUSES = {"PASS", "PASS-WARN", "GATE-RECOVERED"}
+ACCEPTANCE_FIELDS = {
+    "expected_changed_files",
+    "expected_deleted_files",
+    "forbidden_changed_files",
+    "validators",
+    "must_contain",
+    "must_not_contain",
+    "content_scope",
+}
+REQUIRED_ACCEPTANCE_FIELDS = {"expected_changed_files", "forbidden_changed_files", "validators"}
+ACCEPTANCE_CONTENT_SCOPES = {"expected", "repo"}
 
 
 def load_json(path: Path) -> object:
@@ -57,6 +68,39 @@ def load_json(path: Path) -> object:
 
 def as_list(value: object) -> list[object]:
     return value if isinstance(value, list) else []
+
+
+def validate_acceptance(
+    errors: list[str],
+    prefix: str,
+    acceptance: object,
+    require_core_fields: bool,
+) -> None:
+    if not isinstance(acceptance, dict):
+        errors.append(f"{prefix}: acceptance must be an object")
+        return
+
+    unknown = sorted(set(acceptance) - ACCEPTANCE_FIELDS)
+    if unknown:
+        errors.append(f"{prefix}: acceptance has unknown fields {unknown}")
+
+    fields_to_check = REQUIRED_ACCEPTANCE_FIELDS if require_core_fields else set(acceptance) & REQUIRED_ACCEPTANCE_FIELDS
+    for field in sorted(fields_to_check):
+        values = as_list(acceptance.get(field))
+        if not values or not all(isinstance(item, str) and item for item in values):
+            errors.append(f"{prefix}: acceptance.{field} must be a non-empty string array")
+
+    for field in ("expected_deleted_files", "must_contain", "must_not_contain"):
+        if field in acceptance:
+            values = as_list(acceptance.get(field))
+            if not values or not all(isinstance(item, str) and item for item in values):
+                errors.append(f"{prefix}: acceptance.{field} must be a non-empty string array when present")
+
+    content_scope = acceptance.get("content_scope")
+    if content_scope is not None and content_scope not in ACCEPTANCE_CONTENT_SCOPES:
+        errors.append(
+            f"{prefix}: acceptance.content_scope must be one of {sorted(ACCEPTANCE_CONTENT_SCOPES)}"
+        )
 
 
 def main() -> int:
@@ -208,6 +252,12 @@ def main() -> int:
                 errors.append(f"{prefix}: invalid delivery_mode {delivery_mode!r}")
             else:
                 case_delivery_modes.add(delivery_mode)
+
+            acceptance = case.get("acceptance")
+            if delivery_mode == "phase5-delivery":
+                validate_acceptance(errors, prefix, acceptance, require_core_fields=True)
+            elif acceptance is not None:
+                validate_acceptance(errors, prefix, acceptance, require_core_fields=False)
 
             prompt = case.get("prompt")
             if not isinstance(prompt, str) or len(prompt.strip()) < 20:
@@ -363,10 +413,9 @@ def validate_delivery_matrix(
             if not isinstance(acceptance, dict):
                 errors.append(f"{prefix}: impact-phase5 requires acceptance")
             else:
-                for field in ("expected_changed_files", "forbidden_changed_files", "validators"):
-                    values = as_list(acceptance.get(field))
-                    if not values or not all(isinstance(item, str) and item for item in values):
-                        errors.append(f"{prefix}: acceptance.{field} must be a non-empty string array")
+                validate_acceptance(errors, prefix, acceptance, require_core_fields=True)
+        elif acceptance is not None:
+            validate_acceptance(errors, prefix, acceptance, require_core_fields=False)
 
     missing_complexities = DELIVERY_COMPLEXITIES - scenario_complexities
     if missing_complexities:

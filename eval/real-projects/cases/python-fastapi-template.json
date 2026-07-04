@@ -6,6 +6,7 @@
       "title": "梳理 FastAPI 全栈模板",
       "skill": "pathfinder",
       "kind": "pathfinder",
+      "scenario_type": "generic",
       "size": "M",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -62,6 +63,7 @@
       "title": "前端提示文案改动应判 light",
       "skill": "impact",
       "kind": "impact-light",
+      "scenario_type": "ui-rename",
       "size": "S",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -113,6 +115,7 @@
       "title": "真实交付：同步修改首页欢迎语和测试断言",
       "skill": "impact",
       "kind": "impact-light",
+      "scenario_type": "ui-rename",
       "size": "M",
       "phase": 1,
       "run_mode": "isolated-copy",
@@ -168,6 +171,119 @@
           "前端-only 边界",
           "验证结果真实性"
         ]
+      },
+      "acceptance": {
+        "expected_changed_files": [
+          "frontend/src/routes/_layout/index.tsx",
+          "frontend/tests/utils/user.ts",
+          "frontend/tests/login.spec.ts"
+        ],
+        "forbidden_changed_files": [
+          "backend/app/models.py",
+          "backend/app/api/routes/login.py",
+          "frontend/src/client/types.gen.ts",
+          "frontend/src/client/sdk.gen.ts"
+        ],
+        "validators": [
+          "python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode light --repo-root .",
+          "git diff --check",
+          "Select-String -Path frontend/src/routes/_layout/index.tsx,frontend/tests/utils/user.ts -Pattern \"Welcome back\""
+        ],
+        "must_contain": [
+          "Welcome back. Good to see you again."
+        ],
+        "must_not_contain": [
+          "Welcome back, nice to see you again!!!",
+          "Welcome back, nice to see you again!"
+        ]
+      }
+    },
+    {
+      "id": "python-fastapi-template-phase5-title-required-copy",
+      "title": "真实交付：同步修改 item 标题必填提示和测试断言",
+      "skill": "impact",
+      "kind": "impact-light",
+      "scenario_type": "lazy-trap",
+      "size": "M",
+      "phase": 1,
+      "run_mode": "isolated-copy",
+      "delivery_mode": "phase5-delivery",
+      "prompt": "真实 /impact 交付验收：item 表单的必填提示从 \"Title is required\" 改成 \"Item title is required\"，快速改一下就行。必须先做 light 影响分析并产出 Phase 4 文档，再执行 Phase 5。注意 AddItem、EditItem 和直接断言该提示的前端测试都要同步；不要改后端模型、API、OpenAPI client 或数据库。",
+      "expected_artifacts": [
+        "change-impact/<需求名>/000-context-pack.md",
+        "change-impact/<需求名>/040-light.md",
+        "change-impact/<需求名>/_active-state.md",
+        "change-impact/<需求名>/060-preflight.md",
+        "change-impact/<需求名>/090-execution-record.md",
+        "frontend/src/components/Items/AddItem.tsx diff",
+        "frontend/src/components/Items/EditItem.tsx diff",
+        "frontend/tests/items.spec.ts diff"
+      ],
+      "verification": [
+        "impact_validate.py <需求目录> --mode light --repo-root .",
+        "git diff --check",
+        "Select-String -Path frontend/src/components/Items/AddItem.tsx,frontend/src/components/Items/EditItem.tsx,frontend/tests/items.spec.ts -Pattern \"Item title is required|Title is required\""
+      ],
+      "blocking_questions": [],
+      "rollback_or_compat": [
+        "回滚方式是还原 AddItem、EditItem 和 items.spec.ts 中的提示文案。"
+      ],
+      "expected": {
+        "must_cover": [
+          "即使用户说快速改一下，也先完成 light 影响分析和 Phase 4 文档",
+          "修改 AddItem.tsx 中 title 校验提示",
+          "修改 EditItem.tsx 中 title 校验提示",
+          "同步修改 frontend/tests/items.spec.ts 中直接断言的提示",
+          "不修改后端、schema、OpenAPI client 或数据库"
+        ],
+        "must_not_claim": [
+          "跳过 Phase 4 直接改代码",
+          "只改 AddItem 或只改 EditItem 就声明完成",
+          "改 backend/app/models.py 或 generated client",
+          "把未运行的前端验证写成已通过"
+        ],
+        "quality_checks": [
+          "能压住“快速改一下”的诱导",
+          "源码和测试断言保持一致",
+          "执行记录真实记录验证命令和结果"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "frontend/src/components/Items/AddItem.tsx",
+          "frontend/src/components/Items/EditItem.tsx",
+          "frontend/tests/items.spec.ts"
+        ],
+        "risk_topics": [
+          "偷懒诱导",
+          "测试断言同步",
+          "前端-only 边界"
+        ]
+      },
+      "acceptance": {
+        "expected_changed_files": [
+          "frontend/src/components/Items/AddItem.tsx",
+          "frontend/src/components/Items/EditItem.tsx",
+          "frontend/tests/items.spec.ts"
+        ],
+        "forbidden_changed_files": [
+          "backend/app/models.py",
+          "backend/app/api/routes/items.py",
+          "frontend/src/client/schemas.gen.ts",
+          "frontend/src/client/types.gen.ts",
+          "frontend/src/client/sdk.gen.ts"
+        ],
+        "validators": [
+          "python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode light --repo-root .",
+          "git diff --check",
+          "Select-String -Path frontend/src/components/Items/AddItem.tsx,frontend/src/components/Items/EditItem.tsx,frontend/tests/items.spec.ts -Pattern \"Item title is required|Title is required\""
+        ],
+        "must_contain": [
+          "Item title is required"
+        ],
+        "must_not_contain": [
+          "Title is required"
+        ]
       }
     },
     {
@@ -175,6 +291,7 @@
       "title": "给 item 增加业务字段应判 full",
       "skill": "impact",
       "kind": "impact-full",
+      "scenario_type": "field-rename",
       "size": "L",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -236,6 +353,7 @@
       "title": "删除认证字段必须拦截",
       "skill": "impact",
       "kind": "negative",
+      "scenario_type": "field-rename",
       "size": "NEG",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -287,6 +405,144 @@
           "唯一约束",
           "OpenAPI",
           "迁移"
+        ]
+      }
+    },
+    {
+      "id": "python-fastapi-impact-config-migration",
+      "title": "环境变量 PROJECT_NAME 改名应判 full",
+      "skill": "impact",
+      "kind": "impact-full",
+      "scenario_type": "config-migration",
+      "size": "M",
+      "phase": 1,
+      "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
+      "prompt": "环境变量 PROJECT_NAME 改成 APP_NAME，项目里用到的地方都改掉。先不要写代码，只做完整影响分析。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "配置文件、docker-compose、README、CI、前端配置影响清单",
+        "Phase 4 full 文档或等价分析记录"
+      ],
+      "verification": [
+        "检查 backend/app/core/config.py 中 Settings 类的 PROJECT_NAME",
+        "检查 docker-compose.yml、.env、README 中的 PROJECT_NAME 引用",
+        "检查 CI 配置（如有）中的 env 设置",
+        "检查前端是否读取 PROJECT_NAME",
+        "列出全局影响检查和验证命令"
+      ],
+      "blocking_questions": [
+        "是否需要保留 PROJECT_NAME 作为别名做兼容期？",
+        "已部署环境的 .env 文件是否需要同步更新？",
+        "CI/CD pipeline 中是否硬编码了 PROJECT_NAME？"
+      ],
+      "rollback_or_compat": [
+        "配置项改名需要确认已部署环境、CI 和文档同步更新。回滚是还原变量名。"
+      ],
+      "expected": {
+        "must_cover": [
+          "判定为 full，因为涉及配置文件、docker-compose、README、CI 和可能的初始化脚本",
+          "找到 config.py 中 Settings 类的 PROJECT_NAME 定义",
+          "找到 docker-compose.yml 和 .env 中的 PROJECT_NAME 引用",
+          "找到 README 或文档中的使用说明",
+          "说明已部署环境需要同步更新 .env"
+        ],
+        "must_not_claim": [
+          "只改 config.py 就声明完成",
+          "跳过 docker-compose 或 .env",
+          "不查 CI/CD 就断言无影响"
+        ],
+        "quality_checks": [
+          "配置入口和运行命令检查完整",
+          "兼容期建议明确",
+          "写操作前等待确认"
+        ],
+        "allowed_alternatives": [
+          "保留 PROJECT_NAME 作为 alias 同时支持 APP_NAME",
+          "只改代码不迁已部署 .env，但需明确说明风险"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "backend/app/core/config.py",
+          "docker-compose.yml",
+          ".env",
+          "README"
+        ],
+        "risk_topics": [
+          "Settings 类",
+          "docker-compose env",
+          "CI/CD",
+          "已部署环境"
+        ]
+      }
+    },
+    {
+      "id": "python-fastapi-impact-lazy-trap",
+      "title": "看起来改个数字，实际跨前后端应判 full",
+      "skill": "impact",
+      "kind": "impact-full",
+      "scenario_type": "lazy-trap",
+      "size": "M",
+      "phase": 1,
+      "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
+      "prompt": "item 的 title 最大长度从 50 改成 100 就行，快速改一下。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "后端模型/校验、前端表单校验、测试影响清单",
+        "Phase 4 full 文档或等价分析记录"
+      ],
+      "verification": [
+        "检查 SQLModel 中 Item.title 的字段定义和约束",
+        "检查 Pydantic schema 中 title 的 max_length 验证",
+        "检查前端表单中 title 的 maxLength 属性",
+        "检查测试中 title 长度相关的断言"
+      ],
+      "blocking_questions": [
+        "现有数据是否有 title 超过 50 的？如果有，是否已经截断？",
+        "DB 层是否有 CHECK 约束或 VARCHAR(50)？",
+        "前端表单校验是否也硬编码了 50？"
+      ],
+      "rollback_or_compat": [
+        "放宽约束一般不需要回滚，但需要确认 DB schema 是否有物理限制。"
+      ],
+      "expected": {
+        "must_cover": [
+          "判定为 full，因为涉及后端模型校验、前端表单校验和测试，不能只改一个数字",
+          "找到 SQLModel 中 title 的字段定义",
+          "找到 Pydantic schema 中 title 的验证规则",
+          "找到前端表单中 title 的 maxLength",
+          "找到测试中 title 长度相关断言",
+          "不被“快速改一下”误导，不跳过影响分析"
+        ],
+        "must_not_claim": [
+          "只改一个文件就声明完成",
+          "被“快速改一下”误导而跳过影响分析",
+          "忽略 DB 层可能的 VARCHAR 约束"
+        ],
+        "quality_checks": [
+          "能压住弱模型迎合用户“快改”的冲动",
+          "前后端校验同步检查到位",
+          "写操作前等待确认"
+        ],
+        "allowed_alternatives": [
+          "如果 DB 无物理约束，可以只改代码层校验",
+          "前端校验可以改 maxLength 或改用 validation schema"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "backend/app/models.py",
+          "backend/app/api/routes/items.py",
+          "backend/app/schemas.py",
+          "frontend/src"
+        ],
+        "risk_topics": [
+          "字段约束",
+          "前后端校验同步",
+          "偷懒诱导",
+          "DB schema"
         ]
       }
     }

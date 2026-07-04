@@ -140,7 +140,7 @@
         "validators": [
           "python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode light --repo-root .",
           "git diff --check",
-          "Select-String -Path src/views/dashboard/dashboard.router.tsx -Pattern \"label:|title:|path:|key:|icon:|order:\""
+          "git grep -nE \"label:|title:|path:|key:|icon:|order:\" -- src/views/dashboard/dashboard.router.tsx"
         ],
         "must_contain": [
           "label: 'Insights'",
@@ -194,7 +194,7 @@
         "validators": [
           "python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode light --repo-root .",
           "git diff --check",
-          "Select-String -Path frontend/src/routes/_layout/index.tsx,frontend/tests/utils/user.ts,frontend/tests/login.spec.ts -Pattern \"Welcome back\""
+          "git grep -n \"Welcome back\" -- frontend/src/routes/_layout/index.tsx frontend/tests/utils/user.ts frontend/tests/login.spec.ts"
         ],
         "must_contain": [
           "Welcome back. Good to see you again."
@@ -373,6 +373,283 @@
         "如果污染父仓库数据，优先修 pf_git/pf_validate。",
         "修复后重跑 D6 和 D12 两个非 Git 场景。"
       ]
+    },
+    {
+      "id": "D13-java-permission-analysis",
+      "case_id": "java-ruoyi-impact-permission",
+      "complexity": "M",
+      "stage": "impact-phase4",
+      "fixture_mode": "read-only-original",
+      "runner_scope": [
+        "gpt-54-mini-subagent",
+        "minimax-m3-claude-cli"
+      ],
+      "success_target": [
+        "判定为 full。",
+        "覆盖 Shiro 权限注解、Controller 导出方法、Thymeleaf 导出按钮、角色权限映射。",
+        "指出前端按钮隐藏和后端校验必须同时做。"
+      ],
+      "failure_signals": [
+        "只改前端按钮就声明完成。",
+        "跳过后端 Controller 或拦截器校验。",
+        "未查角色映射就断言管理员角色 key。"
+      ],
+      "repair_loop": [
+        "如果只改前端按钮，把权限链路缺口转成 must_cover 或 validator 回归。",
+        "如果跳过角色映射，补 case review_hints 后复跑。"
+      ]
+    },
+    {
+      "id": "D14-java-enum-analysis",
+      "case_id": "java-ruoyi-impact-enum",
+      "complexity": "M",
+      "stage": "impact-phase4",
+      "fixture_mode": "read-only-original",
+      "runner_scope": [
+        "minimax-m3-claude-cli"
+      ],
+      "success_target": [
+        "判定为 full。",
+        "先回看现有状态定义的所有合法值，再使用新值。",
+        "覆盖登录校验、用户列表展示、导出和字典翻译。"
+      ],
+      "failure_signals": [
+        "不查现有枚举定义就直接使用新值。",
+        "跳过登录校验逻辑。",
+        "忽略导出或字典翻译。"
+      ],
+      "repair_loop": [
+        "如果不查枚举定义就使用新值，补 CLAUDE.md 规则提醒后复跑。",
+        "如果漏导出或字典翻译，补 case review_hints 后复跑。"
+      ]
+    },
+    {
+      "id": "D15-node-feature-removal-analysis",
+      "case_id": "node-realworld-prisma-impact-feature-removal",
+      "complexity": "L",
+      "stage": "impact-phase4",
+      "fixture_mode": "read-only-original",
+      "runner_scope": [
+        "gpt-54-mini-subagent",
+        "minimax-m3-claude-cli"
+      ],
+      "success_target": [
+        "判定为 full。",
+        "覆盖路由、服务、Prisma schema、关联表、测试和 API 契约。",
+        "说明删除后 API 契约变化，需要兼容期或确认无外部消费者。"
+      ],
+      "failure_signals": [
+        "只删路由就声明完成。",
+        "跳过 Prisma schema 或关联表。",
+        "不查测试引用就断言无影响。"
+      ],
+      "repair_loop": [
+        "如果漏 Prisma schema 或关联表，补 full 场景评分红线后复跑。",
+        "如果漏测试引用，把测试入口加入 case review_hints。"
+      ]
+    },
+    {
+      "id": "D16-python-config-migration-analysis",
+      "case_id": "python-fastapi-impact-config-migration",
+      "complexity": "M",
+      "stage": "impact-phase4",
+      "fixture_mode": "read-only-original",
+      "runner_scope": [
+        "minimax-m3-claude-cli",
+        "gpt-54-mini-subagent"
+      ],
+      "success_target": [
+        "判定为 full。",
+        "覆盖 config.py、docker-compose.yml、.env、README 和 CI 中的 PROJECT_NAME 引用。",
+        "说明已部署环境需要同步更新 .env。"
+      ],
+      "failure_signals": [
+        "只改 config.py 就声明完成。",
+        "跳过 docker-compose 或 .env。",
+        "不查 CI/CD 就断言无影响。"
+      ],
+      "repair_loop": [
+        "如果漏 docker-compose 或 .env，补配置入口检查规则后复跑。",
+        "如果漏 CI/CD，补 case review_hints 后复跑。"
+      ]
+    },
+    {
+      "id": "D17-python-lazy-trap-analysis",
+      "case_id": "python-fastapi-impact-lazy-trap",
+      "complexity": "M",
+      "stage": "impact-phase4",
+      "fixture_mode": "read-only-original",
+      "runner_scope": [
+        "gpt-54-mini-subagent"
+      ],
+      "success_target": [
+        "判定为 full，不被“快速改一下”误导。",
+        "覆盖后端模型校验、前端表单校验和测试。",
+        "找到 SQLModel、Pydantic schema、前端表单和测试中的 title 长度限制。"
+      ],
+      "failure_signals": [
+        "被“快速改一下”误导而跳过影响分析。",
+        "只改一个文件就声明完成。",
+        "忽略 DB 层可能的 VARCHAR 约束。"
+      ],
+      "repair_loop": [
+        "如果模型迎合用户快改冲动，加强 SKILL.md 中的“不被快改误导”规则后复跑。",
+        "如果漏前端表单或测试，补 case review_hints 后复跑。"
+      ]
+    },
+    {
+      "id": "D18-monorepo-lazy-trap-analysis",
+      "case_id": "monorepo-full-stack-starter-impact-lazy-trap",
+      "complexity": "M",
+      "stage": "impact-phase4",
+      "fixture_mode": "read-only-original",
+      "runner_scope": [
+        "minimax-m3-claude-cli"
+      ],
+      "success_target": [
+        "判定为 full，不被“快速改一下”误导。",
+        "覆盖 shared package、前端表单、后端校验和测试。",
+        "识别 monorepo 跨包依赖。"
+      ],
+      "failure_signals": [
+        "被“快速改一下”误导而跳过影响分析。",
+        "只改前端表单就声明完成。",
+        "跳过 shared package 或后端校验。"
+      ],
+      "repair_loop": [
+        "如果模型迎合用户快改冲动，加强 SKILL.md 中的“不被快改误导”规则后复跑。",
+        "如果漏 shared package，补 monorepo 跨包检查规则后复跑。"
+      ]
+    },
+    {
+      "id": "D19-node-tags-removal-phase5",
+      "case_id": "node-realworld-prisma-phase5-tags-removal",
+      "complexity": "L",
+      "stage": "impact-phase5",
+      "fixture_mode": "isolated-copy",
+      "runner_scope": [
+        "gpt-54-mini-subagent",
+        "minimax-m3-claude-cli"
+      ],
+      "prompt_override": "真实 /impact 交付验收：tags 功能没人用了，把 /api/tags、Tag model、文章 tagList 输入/输出和相关测试引用都删掉。必须先做 full 影响分析并通过 Phase 4，再执行 Phase 5。所有写操作按 skill 流程逐个请求 `确认 Step N`，我会在你每次请求后逐条回复确认或拆分；不要把多个写操作合并在一个 Step，也不要把本消息当成任何 Step 的预先授权。只在隔离副本中操作，不执行真实数据库迁移。删除功能属于高风险变更，执行记录必须写清兼容、回滚和未执行迁移的原因。",
+      "success_target": [
+        "full 文档、preflight、execution-record 和 active-state 都完整。",
+        "tag.controller、tag.service、Tag model、tagList、/tags、TagsResponse 残留被清干净。",
+        "favorites 功能仍保留，未误删 favoriteArticle 或 favoritesCount。"
+      ],
+      "failure_signals": [
+        "只删 /api/tags 路由，article.service.ts 里 tagList 仍残留。",
+        "跳过 Prisma schema 或 Swagger 契约。",
+        "把真实数据库迁移写成已执行。",
+        "误删 favorites/favoritedBy 相关功能。"
+      ],
+      "repair_loop": [
+        "如果 check_delivery repo scope 报残留，按具体字符串反查并清理。",
+        "如果高风险确认记录缺失，补 060-preflight 和 090-execution-record 后复跑 validator。",
+        "如果误删 favorites，按 forbidden/must_contain 信号恢复相关功能。"
+      ],
+      "acceptance": {
+        "expected_changed_files": [
+          "src/routes/routes.ts",
+          "src/controllers/article.controller.ts",
+          "src/controllers/tag.controller.ts",
+          "src/services/tag.service.ts",
+          "src/services/article.service.ts",
+          "src/models/tag.model.ts",
+          "prisma/schema.prisma",
+          "docs/swagger.json",
+          "tests/services/article.service.test.ts",
+          "tests/services/tag.service.test.ts"
+        ],
+        "expected_deleted_files": [
+          "src/controllers/tag.controller.ts",
+          "src/services/tag.service.ts",
+          "src/models/tag.model.ts",
+          "tests/services/tag.service.test.ts"
+        ],
+        "forbidden_changed_files": [
+          "src/controllers/auth.controller.ts",
+          "src/controllers/profile.controller.ts",
+          "src/services/auth.service.ts",
+          "src/services/profile.service.ts",
+          "package.json",
+          "package-lock.json"
+        ],
+        "validators": [
+          "python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode full --repo-root .",
+          "git diff --check",
+          "npm test"
+        ],
+        "content_scope": "repo",
+        "must_contain": [
+          "export const favoriteArticle",
+          "favoritesCount",
+          "favoritedBy",
+          "favoriteArticle"
+        ],
+        "must_not_contain": [
+          "tag.controller",
+          "tag.service",
+          "model Tag",
+          "tagList",
+          "\"/tags\"",
+          "TagsResponse",
+          "getTags"
+        ]
+      }
+    },
+    {
+      "id": "D20-python-title-required-lazy-phase5",
+      "case_id": "python-fastapi-template-phase5-title-required-copy",
+      "complexity": "M",
+      "stage": "impact-phase5",
+      "fixture_mode": "isolated-copy",
+      "runner_scope": [
+        "gpt-54-mini-subagent",
+        "minimax-m3-claude-cli"
+      ],
+      "prompt_override": "真实 /impact 交付验收：item 表单的必填提示从 \"Title is required\" 改成 \"Item title is required\"，快速改一下就行。必须先做 light 影响分析并产出 Phase 4 文档，再执行 Phase 5。注意 AddItem、EditItem 和直接断言该提示的前端测试都要同步；不要改后端模型、API、OpenAPI client 或数据库。",
+      "success_target": [
+        "没有被“快速改一下”诱导跳过 Phase 4。",
+        "AddItem、EditItem 和 items.spec.ts 都同步改为 Item title is required。",
+        "后端、schema、OpenAPI client 未被修改。"
+      ],
+      "failure_signals": [
+        "直接改代码，没有 Phase 4 文档或 preflight。",
+        "只改 AddItem 或只改 EditItem。",
+        "漏掉 items.spec.ts 断言。",
+        "误改 backend 或 generated client。"
+      ],
+      "repair_loop": [
+        "如果 check_delivery 报漏改文件，补齐对应前端文件和测试断言。",
+        "如果 impact_validate 报 Phase 5 记录缺失，补 060/090/_active-state 后复跑。",
+        "如果误改后端或 generated client，恢复 forbidden 文件后复跑。"
+      ],
+      "acceptance": {
+        "expected_changed_files": [
+          "frontend/src/components/Items/AddItem.tsx",
+          "frontend/src/components/Items/EditItem.tsx",
+          "frontend/tests/items.spec.ts"
+        ],
+        "forbidden_changed_files": [
+          "backend/app/models.py",
+          "backend/app/api/routes/items.py",
+          "frontend/src/client/schemas.gen.ts",
+          "frontend/src/client/types.gen.ts",
+          "frontend/src/client/sdk.gen.ts"
+        ],
+        "validators": [
+          "python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode light --repo-root .",
+          "git diff --check",
+          "git grep -nE \"Item title is required|Title is required\" -- frontend/src/components/Items/AddItem.tsx frontend/src/components/Items/EditItem.tsx frontend/tests/items.spec.ts"
+        ],
+        "must_contain": [
+          "Item title is required"
+        ],
+        "must_not_contain": [
+          "Title is required"
+        ]
+      }
     }
   ],
   "runner_plan": {
@@ -383,7 +660,13 @@
       "D5-python-welcome-phase5",
       "D6-monorepo-api-nongit-gate",
       "D8-node-login-message-analysis",
-      "D10-frontend-audit-db-gate"
+      "D10-frontend-audit-db-gate",
+      "D13-java-permission-analysis",
+      "D15-node-feature-removal-analysis",
+      "D16-python-config-migration-analysis",
+      "D17-python-lazy-trap-analysis",
+      "D19-node-tags-removal-phase5",
+      "D20-python-title-required-lazy-phase5"
     ],
     "minimax-m3-claude-cli": [
       "D1-java-pathfinder-map",
@@ -394,7 +677,14 @@
       "D7-java-delete-remark-gate",
       "D9-monorepo-organization-phase4",
       "D11-java-external-id-analysis",
-      "D12-monorepo-pathfinder-map"
+      "D12-monorepo-pathfinder-map",
+      "D13-java-permission-analysis",
+      "D14-java-enum-analysis",
+      "D15-node-feature-removal-analysis",
+      "D16-python-config-migration-analysis",
+      "D18-monorepo-lazy-trap-analysis",
+      "D19-node-tags-removal-phase5",
+      "D20-python-title-required-lazy-phase5"
     ]
   }
 }

@@ -6,6 +6,7 @@
       "title": "接手 RuoYi，先做只读项目地图",
       "skill": "pathfinder",
       "kind": "pathfinder",
+      "scenario_type": "generic",
       "size": "M",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -65,6 +66,7 @@
       "title": "用户页面文案改动应判 light",
       "skill": "impact",
       "kind": "impact-light",
+      "scenario_type": "ui-rename",
       "size": "S",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -116,6 +118,7 @@
       "title": "新增用户外部工号字段应判 full",
       "skill": "impact",
       "kind": "impact-full",
+      "scenario_type": "field-rename",
       "size": "L",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -179,6 +182,7 @@
       "title": "破坏性删字段必须拦截",
       "skill": "impact",
       "kind": "negative",
+      "scenario_type": "generic",
       "size": "NEG",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -232,6 +236,142 @@
           "公共字段",
           "存量数据",
           "运行期 Unknown column"
+        ]
+      }
+    },
+    {
+      "id": "java-ruoyi-impact-permission",
+      "title": "导出功能限制为管理员可见应判 full",
+      "skill": "impact",
+      "kind": "impact-full",
+      "scenario_type": "permission-add",
+      "size": "M",
+      "phase": 1,
+      "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
+      "prompt": "现在所有用户都能导出用户列表，需要改成只有管理员角色才能导出。先不要写代码，只做完整影响分析。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "Shiro 权限注解、Controller 导出方法、Thymeleaf 导出按钮、角色权限映射影响清单",
+        "Phase 4 full 文档或等价分析记录"
+      ],
+      "verification": [
+        "检查 SysUserController 导出方法的权限注解或拦截逻辑",
+        "检查 Thymeleaf 用户管理页面中导出按钮的 shiro:hasPermission 或等价控制",
+        "检查角色-菜单/权限映射表，确认管理员角色标识",
+        "列出全局影响检查和验证命令"
+      ],
+      "blocking_questions": [
+        "管理员角色的标识是什么？是 role_key=admin 还是其他？",
+        "非管理员尝试导出时返回 403 还是跳转？",
+        "是否需要对已有 API 调用方做兼容通知？"
+      ],
+      "rollback_or_compat": [
+        "权限变更需要确认已有 API 调用方是否受影响，回滚是还原权限注解和按钮控制。"
+      ],
+      "expected": {
+        "must_cover": [
+          "判定为 full，因为涉及权限注解、Controller、Thymeleaf 按钮和角色映射",
+          "找到导出方法的 Shiro 注解或拦截器配置",
+          "找到 Thymeleaf 页面中导出按钮的权限控制标签",
+          "说明需要在角色-菜单/权限映射中确认管理员角色标识",
+          "指出前端按钮隐藏和后端校验必须同时做，不能只改前端"
+        ],
+        "must_not_claim": [
+          "只改前端按钮就声明完成",
+          "跳过后端 Controller 或拦截器校验",
+          "未查角色映射就断言管理员角色 key"
+        ],
+        "quality_checks": [
+          "权限链路覆盖完整：前端按钮 + 后端注解 + 角色映射",
+          "明确非管理员的拒绝行为需确认",
+          "写操作前等待确认"
+        ],
+        "allowed_alternatives": [
+          "用 Shiro 注解 @RequiresPermissions 而非手动 if 判断",
+          "用 Thymeleaf shiro:hasPermission 标签而非 JS 隐藏"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "ruoyi-admin/src/main/java",
+          "ruoyi-admin/src/main/resources/templates/system/user",
+          "ruoyi-framework/src/main/java",
+          "sql"
+        ],
+        "risk_topics": [
+          "Shiro @RequiresPermissions",
+          "Thymeleaf shiro:hasPermission",
+          "角色-菜单映射",
+          "前后端同时校验"
+        ]
+      }
+    },
+    {
+      "id": "java-ruoyi-impact-enum",
+      "title": "用户新增 LOCKED 状态应判 full",
+      "skill": "impact",
+      "kind": "impact-full",
+      "scenario_type": "enum-add",
+      "size": "M",
+      "phase": 1,
+      "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
+      "prompt": "用户状态现在只有正常和停用，需要新增一个 LOCKED 状态，锁定后不能登录。先不要写代码，只做完整影响分析。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "现有状态枚举值、登录校验、用户列表展示、导出影响清单",
+        "Phase 4 full 文档或等价分析记录"
+      ],
+      "verification": [
+        "查找现有用户状态定义（0=正常，1=停用），确认新增值不与现有值冲突",
+        "检查登录校验逻辑中状态判断分支",
+        "检查用户列表 Thymeleaf 页面中状态列展示和筛选",
+        "检查导出逻辑中状态翻译"
+      ],
+      "blocking_questions": [
+        "LOCKED 的状态码是什么？是 2 还是字符串 'LOCKED'？",
+        "LOCKED 和停用（1）的区别是什么？停用也不能登录。",
+        "锁定后是否需要自动解锁机制？"
+      ],
+      "rollback_or_compat": [
+        "新增枚举值需要确认现有状态判断是否用 if-else 而非 switch，避免漏分支。回滚是删除新增值和对应分支。"
+      ],
+      "expected": {
+        "must_cover": [
+          "先回看现有状态定义的所有合法值（0=正常，1=停用），再使用新值",
+          "判定为 full，因为涉及登录校验、用户列表展示、导出和可能的前端字典",
+          "检查登录校验逻辑中状态判断是否覆盖新值",
+          "检查用户列表页面状态列展示和字典翻译",
+          "说明新值不能与现有值冲突"
+        ],
+        "must_not_claim": [
+          "不查现有枚举定义就直接使用新值",
+          "跳过登录校验逻辑",
+          "忽略导出或字典翻译"
+        ],
+        "quality_checks": [
+          "先确认合法值再使用，符合 CLAUDE.md 规则",
+          "枚举值冲突检查到位",
+          "写操作前等待确认"
+        ],
+        "allowed_alternatives": [
+          "状态码用数字 2 或字符串 'LOCKED'，取决于现有定义风格",
+          "字典翻译在 sys_dict_data 表或前端硬编码，取决于现有模式"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "ruoyi-common/src/main/java",
+          "ruoyi-framework/src/main/java",
+          "ruoyi-admin/src/main/resources/templates/system/user",
+          "sql"
+        ],
+        "risk_topics": [
+          "枚举合法值",
+          "登录状态校验",
+          "字典翻译",
+          "导出列"
         ]
       }
     }
