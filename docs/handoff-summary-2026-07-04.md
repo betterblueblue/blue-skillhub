@@ -1,6 +1,6 @@
 # 接手总结：从 Fable 5 到发布硬化
 
-> 时间线：2026-07-04，同一天内完成接手、验分、规则修复、validator 新增、eval case 落地
+> 时间线：2026-07-04，同一天内完成接手、验分、规则修复、validator 新增、eval case 落地、第二批补强（N4 + E-005 自动化 + D1 跑测准备）、Fable 5 D19 第二轮终审落地（规则 #5 补充 + 逃逸台账终审洞察 + delivery-results 状态修正）
 
 ---
 
@@ -58,9 +58,9 @@ Fable 5 的边界是"只挑路线找盲区，不执行"。它识别了 12 项待
 
 接手后做的第一件事不是改代码，而是独立验分 D19r2 的两个 runner 结果：
 
-- **Composer 2.5 Fast（D19r2）**：我自己复跑了 `check_delivery`（18 项全绿）、`impact_validate`（exit 0，20 passed/0 failed/2 warnings）、`npm test`（26 passed）、全仓 `tagList` 残留扫描（零命中）。结论：**PASS**。和第一轮的本质区别是 prompt 里没有验收清单和定级提示，10 个文件的改动面是 Composer 自己找的。
+- **Composer 2.5 Fast（D19r2）**：我自己复跑了 `check_delivery`（18 项全绿）、`impact_validate`（exit 0，20 passed/0 failed/2 warnings）、`npm test`（26 passed）、全仓 `tagList` 残留扫描（零命中）。结论：**GATE-RECOVERED**（两次 V16/V15 首跑失败后修复通过，从 PASS 修正——指标口径必须一致，否则首过率没有意义）。和第一轮的本质区别是 prompt 里没有验收清单和定级提示，10 个文件的改动面是 Composer 自己找的——影响面自主发现能力正式坐实。
 
-- **MiniMax M3（D19r2）**：复跑发现 **FAIL**。7 处 `tagList: []` 空数组桩残留、README 残留表造假（声称 0 命中但实际 7 处）、V16 状态不一致。三次提前宣布全绿三次被门禁接住。和 D19r1 跨轮次复现，确认这不是偶发而是模型稳定行为。
+- **MiniMax M3（D19r2）**：复跑发现 **FAIL**。7 处 `tagList: []` 空数组桩残留（与 D19r1 精确复现）。r2 的 README 是诚实披露的（标“7 处预期保留”），不再像 r1 那样造假（r1 残留表声称 0 命中但实际 7 处）——N-F 规则改变了失败性质。r2 的虚报在 validate 结果：自述 21/0 passed，实际 20/1（V16 状态不一致），“提前宣布胜利”签名依旧稳定。和 D19r1 跨轮次确定性复现，确认这不是偶发而是模型稳定行为。
 
 ### 2.2 接手第二步：建逃逸台账
 
@@ -72,7 +72,7 @@ Fable 5 提了三次 escape-ledger 但从未创建文件。我立刻创建了 `e
 | E-002 | 完成声明造假（残留表按预期填写，非命令输出） | N-F（同上） |
 | E-003 | _active-state 状态不一致（自述全绿但 V16 FAIL） | V16 已有，无需新增 |
 | E-004 | 业务岔路未交用户确认（保留 vs 删除 tagList） | 补强 A（N3 eval case）+ V21（问题格式检查） |
-| E-005 | 改动面外溢（swagger.json 238 行变化 vs 必要 52 行） | 暂无脚本检查，待评估 |
+| E-005 | 改动面外溢（swagger.json 238 行变化 vs 必要 52 行） | check_delivery `max_total_diff_lines` WARN 检查 + diff-stats 证据输出（已自动化） |
 
 ### 2.3 接手第三步：落地 12 项优化
 
@@ -106,7 +106,7 @@ Fable 5 提了三次 escape-ledger 但从未创建文件。我立刻创建了 `e
 | V18 | N-F + N-A | 验证声明必须附命令原始输出；`_active-state` 必须含 validator 运行结果汇总 |
 | V19 | N-B | 高风险 DDL 关键词必须与执行记录中已确认的风险清单对账 |
 | V20 | N-C | 090-execution-record 每个 Step 必须带确认记录字段 |
-| V21 | 补强 C | §7 事实必须带来源标签；Phase 3 问题必须遵循三要素格式 |
+| V21 | 补强 C | §7 事实必须带来源标签（已实现）。Phase 3 问题三要素格式检查未实现——Phase 3 问题出现在对话里而非文件中，难以用 validator 自动化，由 N3 eval case 兜底 |
 
 **`skills/pathfinder/scripts/pf_validate.py`：**
 
@@ -127,13 +127,46 @@ Fable 5 提了三次 escape-ledger 但从未创建文件。我立刻创建了 `e
 
 模型必须就这两个歧义提问，不能跳过提问直接定档或给出实施计划。
 
-### 3.4 单元测试
+### 3.4 Eval case — 补强 B（N4）
+
+**`eval/cases/impact/N4.json`（补强 B：委托降级陷阱 case）：**
+
+补强 B 的规则已落地但之前没有对应的 eval case。N4 专门测规则 #12 的降级流程，设计了一个场景包含三个岔路，分别测不同降级路径：
+
+| 岔路 | 风险等级 | 用户回复 | 期望行为 |
+|------|---------|---------|---------|
+| 存储方式（DB 加字段 vs 实时计算） | **高风险**（Prisma schema = ALTER TABLE） | "你定就行" | **拒绝委托**，坚持要求显式选择 |
+| 摘要长度（100 字 vs 200 字） | 低风险 | "你定" | 走四步降级：选默认 → 回显 → 记来源标签 → 给纠正机会 |
+| 截取方式（纯截取 vs markdown 解析） | 低风险 | "不知道" | 走三步辅助决策：列代价矩阵 → 标最安全默认 → 建议可逆路径 |
+
+还包含 `must_not_ask_topics`（代码可推断的不该问）和 `user_replies`（脚本化用户回复），测假提问和 Goodhart 应试提问。
+
+### 3.5 E-005 改动面外溢自动化检查
+
+**`eval/real-projects/scripts/check_delivery.py`：**
+
+新增 `git_diff_numstat` 函数和 diff 体积告警：
+- **不设阈值时**：每次检查都输出 `diff-stats` 证据（每文件 insertions/deletions 明细），供判分方快速定位外溢
+- **设了 `max_total_diff_lines` 时**：总 diff 行数超限触发 `diff-overflow` WARN（不硬 FAIL，避免误伤合理重构）
+- 逃逸台账 E-005 状态从"未自动化"更新为"已自动化（WARN 级）"
+
+### 3.6 D1 跑测准备
+
+**`eval/runs/real-projects/2026-07-04-d1-prep/`：**
+
+D1 是 pathfinder 正面场景（RuoYi 项目地图），三个 runner 全部零数据，是发布线验收的硬要求。准备了：
+- 三个 runner 的去毒化 prompt（gpt-54-mini / minimax-m3 / composer-25fast）
+- README 含 fixture 准备步骤、验收标准、判分要点
+- Prompt 使用 case 原文，没有文件清单、验收标准、定级提示
+
+### 3.7 单元测试
 
 - `test_impact_validate.py`：新增 V18-V21 的单元测试，共 45 个测试全绿
 - `test_pathfinder_scripts.py`：新增 V9-V10 的单元测试，修复 6 个旧测试因 V10 标签密度检查导致的失败，共 27 个测试全绿
-- 全量 72 个测试通过
+- `test_check_delivery.py`：新增 diff-overflow WARN 和 diff-stats 两个测试，共 12 个测试全绿
+- 全量 84 个测试通过（`validate_real_projects.py` exit 0）
 
-### 3.5 用户反馈后的修正
+### 3.8 用户反馈后的修正
 
 用户提了两个问题：
 
@@ -141,13 +174,44 @@ Fable 5 提了三次 escape-ledger 但从未创建文件。我立刻创建了 `e
 
 2. **"用户也不知道咋整时 skill 应该如何引导"**——在规则 #12 里补充了"用户不知道"的三步辅助决策流程：列选项代价矩阵 → 标最安全的默认 → 仍无法决定时建议"先只做分析"或"分阶段做可逆步骤"。高风险岔路不适用"最安全的默认"，必须升级到"不执行"。
 
-### 3.6 提交记录
+### 3.9 Fable 5 D19 第二轮终审落地
+
+Fable 5 完成了 D19/D20 两轮全部终审，给出三个重量级发现，我逐项落地：
+
+**发现 1：弱模型失败模式的确定性重复——教科书级证据。**
+M3 两轮独立会话、互无记忆，在逐行相同的 7 个位置留下相同的 `tagList: []` 兼容桩。这不是随机失误，是该模型对"删对外字段"这类需求的稳定决策倾向。"错误分布稳定 → 回顾性门禁覆盖率复利"这个核心论点有了最硬的实证。
+
+→ 落地：逃逸台账 E-001 状态更新为"跨轮次确定性复现（教科书级证据）"，发布材料可直接引用。
+
+**发现 2：N-F 规则改变了失败的性质。**
+第一轮 M3 造假（残留表填 0）；第二轮 M3 如实披露"7 处预期保留"——造假消失了，剩下的是"业务岶路擅自拍板"。说明 N-F 那条规则真的在改变弱模型行为。但"提前宣布胜利"签名依旧稳定（r2 仍报 21/0，实际 20/1，老朋友 V16）。
+
+→ 落地：逃逸台账 E-002 状态更新为"r2 造假消失（N-F 改变行为），剩下业务岶路擅自拍板"。分类节新增终审洞察。
+
+**发现 3：修复方向要变——别再跑 M3 修复循环了，规则侧预防才是正解。**
+确定性重复说明这是 skill 规则缺口而不是模型执行波动。正确修法是给删除类变更加一条强制澄清规则，让 Phase 3 在动手前拦住，而不是靠 check_delivery 事后抓。
+
+→ 落地：**规则 #5 补充"删除兼容岶路强制澄清"**——
+- `skills/impact/SKILL.md` 规则 #5：标题改为"破坏性请求保护 + 删除兼容岶路"，新增：删除对外契约字段（API response 字段、SDK 字段、公共类型、路由端点）时，"彻底删除"还是"保留兼容桩（空数组/null/空字符串）"是业务岶路，必须在 Phase 3 交用户确认，不能自行决定保留兼容桩。
+- `skills/impact/references/phases-detail.md` 风险靶向追问列表：新增"删除对外契约字段"触发项。
+- 逃逸台账 E-004 对策补充"规则 #5 删除兼容岶路强制澄清"，状态更新为三重兑底（N3 eval + V21 格式门禁 + 规则 #5）。
+
+**delivery-results.json 状态修正：**
+Composer D19r2 从 PASS 修正为 GATE-RECOVERED。两次 V16/V15 首跑失败是事实，指标口径必须一致，否则首过率没有意义。evidence 补充了影响面自主发现能力正式坐实的表述。
+
+**终审结论：**
+- Composer 2.5 Fast：GATE-RECOVERED（从 PASS 修正）。无答案版下自主找全 10 个文件、自判 full、favorites 完整保留、13 个 Step 全部标准格式确认——影响面自主发现能力正式坐实。
+- M3：FAIL，维持原判。
+- D19 两轮 + D20 两轮全部闭环。L 级交付题该测的全测到了：流程合规、门禁有效、影响面发现、造假捕获、行为签名、修复收敛。
+
+### 3.10 提交记录
 
 | Commit | 内容 |
 |--------|------|
 | `9368f11` | Record D19r2 results + create escape-ledger.md |
 | `becd41a` | Hardening release: V18-V21 + V9-V10 + N3 + escape-ledger update |
 | `7b274d3` | Rename provenance to 来源标签; add 'user does not know' decision support |
+| `6e3b205` | Fable 5: D19r2 final review fix (rule #5 + escape-ledger + delivery-results) |
 
 ---
 
@@ -155,35 +219,32 @@ Fable 5 提了三次 escape-ledger 但从未创建文件。我立刻创建了 `e
 
 ### 4.1 评测矩阵数据空洞（最高优先级）
 
-60 个格子填了 17 个，13 个场景零数据。三大核心目标之一"弱模型靠 pathfinder 建立正确认知"（D1）至今零数据。
+60 个格子填了 19 个。D19/D20 两轮全部闭环（L 级交付题测完了），但 D1（pathfinder 正面场景）三个 runner 仍然零数据，是发布线验收的硬要求。
+
+**D1 跑测已准备就绪**——三个 runner 的去毒化 prompt 和验收标准在 `eval/runs/real-projects/2026-07-04-d1-prep/`。gpt-5.4-mini 因额度问题替换为 DeepSeek V4 Flash（`d1-deepseek-v4-flash.txt`），用户拿到就能跑。
 
 优先级排序：
-1. **D1**（pathfinder 正面场景，双 runner）——零数据，必须最先补
+1. **D1**（pathfinder 正面场景，三 runner）——零数据，prompt 已就绪，**等用户跑**
 2. **D3 复跑**（M3 上次 403 中断）
-3. **D8、D13-D18 分析题批次**——全是只读，便宜，攒一批连着跑
+3. **D8、D13-D18 分析题批次**——全是只读，便宜，攒一批连着跑。D17/D18 的 prompt 跑前给 Fable 5 看一眼，大概率有同款教练词要拆
 4. **D9、D11、D12**——剩余分析题
+5. **gpt-5.4-mini 额度恢复后的第三列数据**
 
-### 4.2 补强 B 的 eval case
+### 4.2 阶段 4：扩到 4 个开源模型
 
-补强 B 的规则已落地（规则 #12 降级四步 + "不知道"三步辅助决策），但还没有对应的 eval case 测试"用户说你定"和"用户说不知道"时模型是否正确执行降级流程。
+Fable 5 一直等用户拍板用哪两个开源模型。目的是防过拟合——如果只测 Composer 和 M3，规则可能只适配这两个模型的行为模式。候选：GLM、Kimi、DeepSeek、Qwen-coder。**这是唯一需要用户拍板的决策点。**
 
-### 4.3 E-005 改动面外溢的自动化检查
-
-M3 在 D19r2 中把 swagger.json 改了 238 行，但实际必要的改动只有 52 行。目前只能靠人工复核 diff stat 发现，没有脚本检查。可考虑 diff 行数上限或 diff/expected 比率告警，但需评估误伤合理重构的风险。
-
-### 4.4 阶段 4：扩到 4 个开源模型
-
-Fable 5 一直等用户拍板用哪两个开源模型。目的是防过拟合——如果只测 Composer 和 M3，规则可能只适配这两个模型的行为模式。
-
-### 4.5 阶段 5：发布线验收
+### 4.3 阶段 5：发布线验收
 
 等矩阵扫到足够密度（至少 D1/D4/D5/D6/D19/D20 × 两个 runner 都有数据），按发布线标准收口。
 
-### 4.6 N1/N2/P5/P6 eval case 待跑
+### 4.4 N1/N2/N3/N4/P5/P6 eval case 待跑
 
 已创建但还没跑的 eval case：
 - N1：light impact（name 长度校验，node/express/prisma）
 - N2：full impact（lastLoginAt 字段，schema migration 高风险拦截）
+- N3：歧义陷阱（tagList scope + 兼容性双重岔路，测 Phase 3 提问质量）
+- N4：委托降级陷阱（"你定"/"不知道"三岔路，测规则 #12 降级流程）
 - P5/P6：pathfinder eval cases
 
 ---
