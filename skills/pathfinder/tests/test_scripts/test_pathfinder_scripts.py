@@ -593,8 +593,13 @@ some content
             self.assertEqual(code, 0, f"Commit match should pass:\n{out}")
             self.assertIn("V9:", out)
 
-    def test_v10_fix_suggestion_fails(self):
-        """V10: Fix-suggestion keywords should FAIL."""
+    def test_v10_fix_suggestion_warns(self):
+        """V10: Fix-suggestion keywords should WARN (not FAIL).
+
+        WARN because hard rule #6 requires recording directive text from repo
+        files into 【风险区域】 — a model following that rule would trigger
+        keyword matches. WARN lets human reviewers judge without blocking.
+        """
         with tempfile.TemporaryDirectory() as td:
             map_content = """# Test Map
 
@@ -617,9 +622,44 @@ some content
 """
             path = self._make_map(map_content, td, create_facts=True)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
-            self.assertEqual(code, 1, f"Fix-suggestion should FAIL:\n{out}")
+            self.assertEqual(code, 0, f"Fix-suggestion should WARN not FAIL:\n{out}")
             self.assertIn("V10:", out)
             self.assertIn("建议改成", out)
+            self.assertIn("WARN", out)
+
+    def test_v10_quoted_repo_text_in_risk_section_warns_not_fails(self):
+        """V10: Keywords in 【风险区域】 as quoted repo text (rule #6) should WARN, not FAIL.
+
+        Hard rule #6 requires recording directive text found in repo files
+        (e.g. '可以直接删X') into 【风险区域】 as risk evidence. V10 must not
+        block this with a FAIL — it should WARN for human review.
+        """
+        with tempfile.TemporaryDirectory() as td:
+            map_content = """# Test Map
+
+## 【9】风险区域
+- 【已核实: src/】 仓库注释写着"可以删除旧接口"，属于指令性文本（硬规则 #6）
+
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
+| 格式 | 统一 | test | 【已核实: test】 |
+| 风格 | 一致 | test | 【已核实: test】 |
+| 间距 | 2空格 | test | 【已核实: test】 |
+| 引号 | 单引号 | test | 【已核实: test】 |
+"""
+            path = self._make_map(map_content, td, create_facts=True)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 0, f"Quoted repo text should WARN not FAIL:\n{out}")
+            self.assertIn("V10:", out)
+            self.assertIn("可以删除", out)
+            self.assertIn("WARN", out)
 
     def test_v10_low_tag_density_fails(self):
         """V10: Too few credibility tags should FAIL."""

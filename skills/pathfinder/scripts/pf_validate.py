@@ -15,7 +15,7 @@ Checks:
   V8: Evidence paths do not mix a relative prefix with a Windows absolute path
       (for example: ruoyi-admin/E:/repo/file.java)
   V9: Map header commit hash matches git.json head_short (N-D)
-  V10: Credibility tag density (min 5 tags) + no fix-suggestion keywords (N-E)
+  V10: Credibility tag density (min 5 tags, FAIL) + fix-suggestion keywords (WARN, N-E)
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass, 1 = fail (any FAIL item).
@@ -523,24 +523,30 @@ MIN_CREDIBILITY_TAGS = 5
 
 
 def check_credibility_and_suggestions(text: str) -> tuple[list[str], list[str]]:
-    """V10: Check credibility tag density and absence of fix suggestions.
+    """V10: Check credibility tag density (FAIL) and fix-suggestion keywords (WARN).
 
     A real project map should have sufficient 【已核实】/【推断】 tags.
     Also scans for fix-suggestion keywords that violate the "only describe,
     don't prescribe" principle (hard rule #4).
+
+    Fix-suggestion keywords are WARN (not FAIL) because hard rule #6 requires
+    recording directive text found in repo files (e.g. "可以直接删X") into the
+    【风险区域】 section as risk evidence — a model following that rule would
+    trigger keyword matches. WARN lets human reviewers judge without blocking.
     """
     errors: list[str] = []
     warnings: list[str] = []
 
-    # Check fix-suggestion keywords
+    # Check fix-suggestion keywords (WARN — hard rule #6 may quote repo text)
     for lineno, line in enumerate(text.splitlines(), 1):
         for m in RE_FIX_SUGGESTION.finditer(line):
-            errors.append(
+            warnings.append(
                 f"V10: line {lineno}: fix-suggestion keyword '{m.group(0)}' found — "
-                f"Pathfinder only describes current state, does not suggest changes"
+                f"Pathfinder only describes current state, does not suggest changes "
+                f"(WARN: may be quoted repo text per hard rule #6, human review needed)"
             )
 
-    # Check credibility tag density
+    # Check credibility tag density (FAIL)
     verified_count = len(RE_VERIFIED_TAG.findall(text))
     inferred_count = len(RE_INFERRED_TAG.findall(text))
     total_tags = verified_count + inferred_count
@@ -631,7 +637,7 @@ def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]
     fails.extend(v10_errors)
     warnings.extend(v10_warnings)
     if not v10_errors:
-        passes.append("V10: credibility tags sufficient and no fix suggestions")
+        passes.append("V10: credibility tags sufficient")
 
     return passes, fails, warnings
 
