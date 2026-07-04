@@ -1,0 +1,37 @@
+你是本轮真实交付评测 runner，不是评审员。
+
+## 工作目录
+
+repo-root（只读原始 fixture）：
+E:\agent\real-project-fixtures\java-ruoyi
+
+所有读写在上述目录内进行。不要碰其他 fixture 或 blue-skillhub 源码（除写 run README 外）。
+
+## 场景
+
+- 矩阵：E:\agent\blue-skillhub\eval\real-projects\delivery-matrix.json
+- 场景 ID：D1-java-pathfinder-map
+- Case ID：java-ruoyi-pathfinder
+- 复杂度：M · stage：pathfinder-map · fixture_mode：read-only-original
+- Runner：minimax-m3-claude-cli · 模型：MiniMax M3
+
+## 任务 prompt（case 原文，一字不改）
+
+我刚接手这个 RuoYi 项目。请先只读摸底，给我一份项目地图，重点关注用户、角色、菜单、权限、导出、运行/测试命令，以及后续改用户模块最容易踩坑的地方。
+
+## 执行规则
+
+1. 遵循 E:\agent\blue-skillhub\skills\pathfinder\SKILL.md 及其模板。
+2. 全程只读——不修改项目源码、配置、数据。唯一允许的写入是 `change-impact/_project-map.md` 和 `change-impact/_project-map/facts/` 下的 facts 文件。
+3. 运行 pf_scan.py 和 pf_git.py 生成 facts，再运行 pf_validate.py 验证。
+4. 验证命令必须记录真实输出、退出码。没跑成功不能写成通过。
+5. pf_validate.py 失败时按错误修复后重跑，不要跳过门禁。
+
+## 输出归档
+
+完成后写 run README：
+E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-minimax-m3-delivery-d1\README.md
+
+README 须含：fixture 路径、HEAD commit、pf_validate.py 结果（passed/failed/warnings）、git diff 摘要（应为空）、最终判定（PASS / GATE-RECOVERED / FAIL / UNVERIFIED）。
+
+结束时按 eval/real-projects/scorecard-template.md 填评分卡草稿。
