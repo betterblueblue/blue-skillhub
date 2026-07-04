@@ -658,7 +658,196 @@
 - `090-execution-record.md` 更新：已同步（本条记录）
 - `_active-state.md` 更新：已更新（routine 同步）
 
+## [2026-07-04 10:14:30] Step 15: 清除 `src/services/article.service.ts` 7 处 `tagList: []` 残留
+
+- 状态：成功（本条）
+- 触发原因：判分方独立验收发现 `check_delivery FAIL: must-not-contain: Forbidden text found: tagList` 共 7 处残留（行 89/141/212/248/316/494/537）；我之前在 Step 10 重写时为"保留 API 契约"返回 `tagList: []` 是错误判断，违反判分方要求"删除 tagList 输入/输出"。
+- 确认类型：改代码（清理残留）
+- 维度：源码清理
+- 操作对象：`src/services/article.service.ts`（修改，544 → 537 行）
+- 操作内容：删除 7 处 `tagList: [],` 字段整行（不分缩进，按行匹配）：
+  - 6 空格缩进版本（2 处）：行 89、141
+  - 4 空格缩进版本（5 处）：行 210、246、314、492、535
+- 目标项目根目录：`E:\agent\real-project-fixtures-delivery\node-realworld-prisma-minimax-m3-d19-20260704`
+- 影响范围：
+  - 7 个返回对象（list / detail / create / update / feed 场景）不再含 `tagList` 字段
+  - 测试断言不依赖 `tagList` 字段（grep 0 命中），无需修测试
+  - API 响应 schema 变更（break change，用户已接受）
+- 回滚方式：`git checkout HEAD -- src/services/article.service.ts`
+- 语义约定：不涉及
+- 验证方式：
+  - 立即：`grep -c "tagList" src/services/article.service.ts` = 0
+  - 立即：全仓 `git grep "tagList" -- "src/" "tests/" "prisma/" "docs/"` = 0 命中
+  - Step 16：跑 3 个验证
+- 验证等级：V1
+- 用户确认：用户回复 `确认 Step 15`
+- 决策依据：
+  - 判分方反馈（独立验收）`must-not-contain: Forbidden text found: tagList`
+  - 用户原话"删除 tagList 输入/输出" + "用户已接受 break change"
+  - Step 10 的"保留 tagList: [] 以兼容旧客户端"决定错误，予以纠正
+- 高风险清单检查：
+  | 检查项 | 状态 | 说明 |
+  | --- | --- | --- |
+  | DROP TABLE / DROP COLUMN | PASS | 不涉及 DDL |
+  | DELETE FROM 无 WHERE | PASS | 不涉及 DML |
+  | 删旧接口 / 删旧 Controller 类 | PASS | 不涉及 |
+  | 删除文件 without backup | PASS | 不删文件，只改源码（Git 可回滚） |
+  | 修改 status / enum / 错误码 / 权限标识 | PASS | 本步不修改 |
+  | 任何不可逆操作 | PASS | `git checkout HEAD -- src/services/article.service.ts` 可回滚 |
+- 执行结果：article.service.ts 544 → 537 行；tagList 残留 7 → 0
+- 写入目标检查：修改的文件位于目标项目根目录内
+- 验证结果：grep `tagList` 命中 0
+- V1-only 计数：12
+- 后续动作：进入 Step 16（重跑 3 个验证 + 全仓残留扫描）
+- `090-execution-record.md` 更新：已同步（本条记录）
+- `_active-state.md` 更新：已更新（routine 同步）
+
+## [2026-07-04 10:14:50] Step 16.5: 修复 Step 16 失败（CRLF → LF）
+
+- 状态：成功
+- 触发原因：Step 16 重跑 `git diff --check` 退出码 2（50+ 处 trailing whitespace 警告）。line 486+ 在 favoriteArticle / unfavoriteArticle 函数体内。
+- 根因分析：用 hexdump 看 line 486 实际字节为 `b'  const result = {\r'`（CRLF 换行）。Python 之前的 `rstrip()` 默认会 strip `\r`（误报为无 trailing whitespace）。`git diff --check` 把 `\r` 视为 trailing whitespace。
+- 修复方案：用 Python binary 模式 `b'\r\n' → b'\n'` 全部替换，再 `b'\r' → b''` 兜底。共 536 CR bytes → 0。
+- 用户确认：用户回复 `Step 16.5`
+- 验证结果：line 486 起所有 \r 已被清除；`git diff --check` 退出码 0
+
+## [2026-07-04 10:15:00] Step 16（重跑完成）：3 验证全 PASS + 残留扫描全 0 命中
+
+### 16.1 `python impact_validate.py --mode full --repo-root .`
+- 退出码：**0**
+- 结果：**SUMMARY: 19 passed, 0 failed, 3 warnings**
+- 3 个 warnings 都是预期：
+  - V2: 010-requirements.md 含任务必改文件路径
+  - V6 × 2: tag.service.test.ts 和 tag.controller.ts 已删，脚本无法 verify
+
+### 16.2 `git diff --check`
+- 退出码：**0**
+- 输出：无（工作树无 trailing whitespace / 无空白错误）
+
+### 16.3 `npm test`
+- 退出码：**0**
+- 结果：**Test Suites: 4 passed, 4 total / Tests: 26 passed, 26 total**
+- 基线偏差：4 suites / 26 passed / 0 todo（基线 5 suites / 26 passed / 1 todo，Step 7 删 tag.service.test.ts）
+
+### 16.4 全仓残留扫描（git grep 逐 token）
+
+执行命令（保存到归档 `residue-scan.txt`）：
+```bash
+for token in tagList tag.controller tag.service getTags "/tags" TagsResponse "model Tag"; do
+  git grep -n "$token" -- "src/" "tests/" "prisma/" "docs/"
+done
+```
+
+| Token | 命中数 | 状态 |
+| --- | --- | --- |
+| `tagList` | 0 | ✅ 已清除 |
+| `tag.controller` | 0 | ✅ 已清除 |
+| `tag.service` | 0 | ✅ 已清除 |
+| `getTags` | 0 | ✅ 已清除 |
+| `"/tags"` | 0 | ✅ 已清除 |
+| `TagsResponse` | 0 | ✅ 已清除 |
+| `model Tag` | 0 | ✅ 已清除 |
+
+favorites 保留检查：
+| Token | 命中数 | 状态 |
+| --- | --- | --- |
+| `favorited` | 41 处 | ✅ 保留 |
+| `favoritesCount` | 10 处 | ✅ 保留 |
+| `favoritedBy` | 27 处 | ✅ 保留 |
+| `favoriteArticle` | 11 处 | ✅ 保留 |
+
+### 16.5 Step 16 最终结论
+
+| 验证 | 等级 | 退出码 | 状态 |
+| --- | --- | --- | --- |
+| `python impact_validate.py --mode full` | V1 | 0 | ✅ PASS（19/0/3） |
+| `git diff --check` | V1 | 0 | ✅ PASS（无输出） |
+| `npm test` | V2 | 0 | ✅ PASS（4 suites / 26 passed） |
+| 全仓残留扫描（7 tokens） | V1 | 1（无匹配） | ✅ PASS（0 命中） |
+
+- V1-only 计数：13
+- 后续动作：进入 README 修正 + 归档
+- `090-execution-record.md` 更新：已同步（本条记录）
+- `_active-state.md` 更新：已更新（routine 同步）
+
 ## 测试失败诊断记录（如有）
+
+## [2026-07-04 10:16:00] Step 17：修复 V16 FAIL（_active-state 终态）
+
+- 状态：成功
+- 触发原因：判分方复跑 impact_validate.py 退出码 1，V16 FAIL：
+  ```
+  FAIL: V16: _active-state.md Step state is inconsistent —
+  待执行 Step is Step 16 but Step 台账 marks it as 成功
+  ```
+  V16 规则（impact_validate.py line 1764）：如果 "待执行 Step" 不为空且对应 row 已标 terminal 状态（"成功"），判 FAIL。
+- 修复内容（仅 _active-state.md 状态头，不动源码）：
+  - 更新时间 → 2026-07-04 10:16:00
+  - 当前阶段 → "交付完成"
+  - 是否需要确认 → false（line 1748 规则：true + pending=none → FAIL，所以必须改 false）
+  - 待执行 Step → 无
+  - 上次提示 Step → 无
+  - 上次确认 Step → Step 16.5
+  - 上次完成 Step → Step 16.5
+- 用户确认：用户回复 `Step 17`
+- 验证结果：见 Step 17.1
+
+### Step 17.1 修复后重跑 `python impact_validate.py --mode full --repo-root .`
+
+**完整原始输出**：
+```
+Requirement directory: E:\agent\real-project-fixtures-delivery\node-realworld-prisma-minimax-m3-d19-20260704\change-impact\node-tags-removal-phase5
+Mode: full
+Repo root: E:\agent\real-project-fixtures-delivery\node-realworld-prisma-minimax-m3-d19-20260704
+
+PASS: V1: 000-context-pack.md exists (full mode)
+PASS: V1: 010-requirements.md exists (full mode)
+PASS: V1: 020-design.md exists (full mode)
+PASS: V1: 030-implementation.md exists (full mode)
+PASS: V1: _active-state.md exists
+PASS: V3: 030-implementation.md has §3.2 table with method verification markers (verified)
+PASS: V4: Grading decision table found in output
+PASS: V5: No credential leakage detected
+PASS: V6: tests/prisma-mock.ts:1 OK (import { PrismaClient } from '@prisma/client';)
+PASS: V6: prisma/schema.prisma:46 OK (articles   Article[] @relation("UserArticles"))
+PASS: V7: Universal quantifier(s) (每次, 所有, 任何) in user request, coverage analysis present
+PASS: V8: No _style-rules.md found — style checks退回 profile style_axes
+PASS: V9: Grading table facts consistent with context-pack §7 (21 entities verified)
+PASS: V10: 020-design.md §6 全局影响检查 table present with 19 dimension rows, 19 marked
+PASS: V12: _active-state.md has Phase 3 状态 and Phase 3.5 定级 fields
+PASS: V13: Phase 4 document writes are separated from source/test/config Steps
+PASS: V14: 060-preflight.md exists before source/test/config write review
+PASS: V15: Source/test/config write Steps include execution record and active-state updates
+PASS: V16: _active-state.md Step state is internally consistent
+PASS: V17: No obvious partial route display-text update detected
+WARN: V2: 010-requirements.md may contain technical details — contains file paths: article.service.test.ts, tag.service.test.ts
+WARN: V6: Cannot verify src/services/tag.service.ts:14 — file not found
+
+SUMMARY: 20 passed, 0 failed, 2 warnings
+WARN items should be communicated to user during confirmation.
+
+EXIT: 0
+```
+
+- 退出码：**0**
+- 结果：**20 passed, 0 failed, 2 warnings**
+- 关键 V16：**PASS** ✅
+- 2 个 warnings 都是预期的：
+  - V2: 010-requirements.md 包含任务必改文件路径（用户原话明确要求"必改 src/.../tag.service.test.ts"）
+  - V6: src/services/tag.service.ts 已删（验证脚本无法 verify 是预期的）
+
+### Step 17 最终结论
+
+| 验证 | 等级 | 退出码 | 状态 |
+| --- | --- | --- | --- |
+| `python impact_validate.py --mode full` | V1 | **0** | ✅ PASS（20/0/2） |
+| `git diff --check` | V1 | 0 | ✅ PASS（无输出） |
+| `npm test` | V2 | 0 | ✅ PASS（4 suites / 26 passed） |
+| 全仓残留扫描（7 tokens） | V1 | 1（无匹配） | ✅ PASS（0 命中） |
+| V16 状态一致性 | V1 | 0 | ✅ PASS（修复后） |
+
+- 所有判分方反馈的 FAIL 全部修复
+- 本次仅修改 _active-state.md + 090（不动源码，符合判分方要求）
 
 - 失败命令：N/A（截至本步未跑测试）
 - 失败类型：N/A
