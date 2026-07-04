@@ -1,0 +1,9 @@
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\python-fastapi-template
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-minimax-m3-delivery-d16\README.md
+
+---
+
+[用户输入]
+环境变量 PROJECT_NAME 改成 APP_NAME，项目里用到的地方都改掉。先不要写代码，只做完整影响分析。
