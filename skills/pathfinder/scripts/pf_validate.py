@@ -14,6 +14,8 @@ Checks:
       (not just a title; default output, not optional)
   V8: Evidence paths do not mix a relative prefix with a Windows absolute path
       (for example: ruoyi-admin/E:/repo/file.java)
+  V9: Map header commit hash matches git.json head_short (N-D)
+  V10: Credibility tag density (min 5 tags) + no fix-suggestion keywords (N-E)
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass, 1 = fail (any FAIL item).
@@ -450,6 +452,109 @@ def check_evidence_path_sanity(text: str) -> list[str]:
     return errors
 
 
+# --- V9: Map header commit ↔ git.json head cross-check (N-D) ---
+
+RE_BASED_ON_COMMIT = re.compile(r"基于\s*commit[：:]\s*[`]*(\w+)", re.I)
+
+
+def check_commit_crosscheck(text: str, repo_root: str) -> list[str]:
+    """V9: Map header commit hash must match git.json head_short.
+
+    Prevents models from copying a stale or fabricated commit hash into
+    the map header. Reads git.json's head_short and compares with the
+    map's '基于 commit:' field. Only checks for independent Git repos.
+    """
+    errors: list[str] = []
+
+    git_path = os.path.join(
+        repo_root, "change-impact", "_project-map", "facts", "git.json"
+    )
+    if not os.path.isfile(git_path):
+        return errors  # V6 handles missing git.json
+
+    try:
+        with open(git_path, "r", encoding="utf-8") as f:
+            git = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return errors  # V6 handles corrupt git.json
+
+    is_independent = git.get("is_independent_repo", False)
+    if not is_independent:
+        return errors  # Non-Git or non-independent: no crosscheck needed
+
+    head_short = git.get("head_short")
+    if not head_short:
+        return errors  # V6 handles null head_short
+
+    # Extract commit from map header
+    m = RE_BASED_ON_COMMIT.search(text)
+    if not m:
+        errors.append(
+            "V9: Map header missing '基于 commit:' field — "
+            "must include the git HEAD hash for independent Git repos"
+        )
+        return errors
+
+    map_commit = m.group(1).lower()
+    git_commit = head_short.lower()
+
+    # Check if one is a prefix of the other (short hash vs full hash)
+    if map_commit != git_commit and not map_commit.startswith(git_commit) and not git_commit.startswith(map_commit):
+        errors.append(
+            f"V9: Map header commit '{map_commit}' does not match "
+            f"git.json head_short '{git_commit}' — map may be stale or "
+            f"commit hash was fabricated"
+        )
+
+    return errors
+
+
+# --- V10: Credibility tag density + fix-suggestion keywords (N-E) ---
+
+RE_VERIFIED_TAG = re.compile(r"【已核实")
+RE_INFERRED_TAG = re.compile(r"【推断")
+RE_FIX_SUGGESTION = re.compile(
+    r"建议改成|应该重构|可以删[除掉]|推荐修改|建议优化|应该修改|建议删除|应该删除|建议重构",
+    re.I,
+)
+
+# Minimum number of credibility tags expected in a real map
+MIN_CREDIBILITY_TAGS = 5
+
+
+def check_credibility_and_suggestions(text: str) -> tuple[list[str], list[str]]:
+    """V10: Check credibility tag density and absence of fix suggestions.
+
+    A real project map should have sufficient 【已核实】/【推断】 tags.
+    Also scans for fix-suggestion keywords that violate the "only describe,
+    don't prescribe" principle (hard rule #4).
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    # Check fix-suggestion keywords
+    for lineno, line in enumerate(text.splitlines(), 1):
+        for m in RE_FIX_SUGGESTION.finditer(line):
+            errors.append(
+                f"V10: line {lineno}: fix-suggestion keyword '{m.group(0)}' found — "
+                f"Pathfinder only describes current state, does not suggest changes"
+            )
+
+    # Check credibility tag density
+    verified_count = len(RE_VERIFIED_TAG.findall(text))
+    inferred_count = len(RE_INFERRED_TAG.findall(text))
+    total_tags = verified_count + inferred_count
+
+    if total_tags < MIN_CREDIBILITY_TAGS:
+        errors.append(
+            f"V10: Only {total_tags} credibility tags (【已核实】/【推断】) found — "
+            f"expected at least {MIN_CREDIBILITY_TAGS} in a real project map. "
+            f"Every factual claim must be tagged."
+        )
+
+    return errors, warnings
+
+
 # --- Main ---
 
 def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]]:
@@ -513,6 +618,20 @@ def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]
         fails.extend(v8_errors)
     else:
         passes.append("V8: evidence path format sane")
+
+    # V9
+    v9_errors = check_commit_crosscheck(text, repo_root)
+    if v9_errors:
+        fails.extend(v9_errors)
+    else:
+        passes.append("V9: map header commit matches git.json")
+
+    # V10
+    v10_errors, v10_warnings = check_credibility_and_suggestions(text)
+    fails.extend(v10_errors)
+    warnings.extend(v10_warnings)
+    if not v10_errors:
+        passes.append("V10: credibility tags sufficient and no fix suggestions")
 
     return passes, fails, warnings
 

@@ -205,6 +205,10 @@ class TestPfValidate(unittest.TestCase):
 | 观察项 | 现状 | 证据 | 可信度 |
 |--------|------|------|--------|
 | 命名 | camelCase | test | 【推断: 待验证】 |
+| 格式 | 统一 | test | 【已核实: test】 |
+| 风格 | 一致 | test | 【已核实: test】 |
+| 间距 | 2空格 | test | 【已核实: test】 |
+| 引号 | 单引号 | test | 【已核实: test】 |
 """
             path = self._make_map(map_content, td, create_facts=True)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
@@ -228,6 +232,10 @@ class TestPfValidate(unittest.TestCase):
 | 观察项 | 现状 | 证据 | 可信度 |
 |--------|------|------|--------|
 | 命名 | camelCase | test | 【推断: 待验证】 |
+| 格式 | 统一 | test | 【已核实: test】 |
+| 风格 | 一致 | test | 【已核实: test】 |
+| 间距 | 2空格 | test | 【已核实: test】 |
+| 引号 | 单引号 | test | 【已核实: test】 |
 """
             path = self._make_map(map_content, td, create_facts=True)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
@@ -300,6 +308,10 @@ class TestPfValidate(unittest.TestCase):
 | 观察项 | 现状 | 证据 | 可信度 |
 |--------|------|------|--------|
 | 命名 | camelCase | test | 【推断: 待验证】 |
+| 格式 | 统一 | test | 【已核实: test】 |
+| 风格 | 一致 | test | 【已核实: test】 |
+| 间距 | 2空格 | test | 【已核实: test】 |
+| 引号 | 单引号 | test | 【已核实: test】 |
 """
             code, out, _ = _run_script(PF_VALIDATE, ["--stdin", "--repo-root", td],
                                        stdin_data=map_content)
@@ -380,6 +392,10 @@ class TestPfValidate(unittest.TestCase):
                     "toplevel": td.replace("\\", "/"),
                 }, f)
             map_content = """# Test Map
+
+生成时间: 2026-07-04   基于 commit: 346d60f   预算档位: 小仓
+关注重点: 无
+
 ## 【13】没挖深的部分
 | 未深入模块 | 为什么 | 扩展入口 |
 |-----------|--------|---------|
@@ -389,6 +405,10 @@ class TestPfValidate(unittest.TestCase):
 | 观察项 | 现状 | 证据 | 可信度 |
 |--------|------|------|--------|
 | 命名 | camelCase | test | 【推断: 待验证】 |
+| 格式 | 统一 | test | 【已核实: test】 |
+| 风格 | 一致 | test | 【已核实: test】 |
+| 间距 | 2空格 | test | 【已核实: test】 |
+| 引号 | 单引号 | test | 【已核实: test】 |
 """
             path = self._make_map(map_content, td)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
@@ -452,6 +472,10 @@ some content
 | 观察项 | 现状 | 证据 | 可信度 |
 |--------|------|------|--------|
 | 命名 | camelCase | test | 【推断: 待验证】 |
+| 格式 | 统一 | test | 【已核实: test】 |
+| 风格 | 一致 | test | 【已核实: test】 |
+| 间距 | 2空格 | test | 【已核实: test】 |
+| 引号 | 单引号 | test | 【已核实: test】 |
 """
             path = self._make_map(map_content, td, create_facts=True)
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
@@ -486,6 +510,143 @@ some content
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
             self.assertEqual(code, 1, f"Malformed evidence path should FAIL:\n{out}")
             self.assertIn("V8:", out)
+
+    def test_v9_commit_mismatch_fails(self):
+        """V9: Map header commit different from git.json should FAIL."""
+        with tempfile.TemporaryDirectory() as td:
+            os.makedirs(os.path.join(td, "src"))
+            with open(os.path.join(td, "src", "app.py"), "w") as f:
+                f.write("print('ok')\n")
+
+            facts_dir = os.path.join(td, "change-impact", "_project-map", "facts")
+            os.makedirs(facts_dir)
+            with open(os.path.join(facts_dir, "scan.json"), "w") as f:
+                json.dump({"file_count": 2, "dir_tree": ["/", "src/"]}, f)
+            with open(os.path.join(facts_dir, "git.json"), "w") as f:
+                json.dump({
+                    "is_git_repo": True,
+                    "is_independent_repo": True,
+                    "head_short": "abc1234",
+                    "toplevel": td.replace("\\", "/"),
+                }, f)
+
+            map_content = """# Test Map
+
+生成时间: 2026-07-04   基于 commit: deadbeef   预算档位: 小仓
+关注重点: 无
+
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | snake_case | src/app.py | 【已核实: src/app.py:1】 |
+"""
+            path = self._make_map(map_content, td)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 1, f"Commit mismatch should FAIL:\n{out}")
+            self.assertIn("V9:", out)
+
+    def test_v9_commit_match_passes(self):
+        """V9: Map header commit matching git.json should pass."""
+        with tempfile.TemporaryDirectory() as td:
+            os.makedirs(os.path.join(td, "src"))
+            with open(os.path.join(td, "src", "app.py"), "w") as f:
+                f.write("print('ok')\n")
+
+            facts_dir = os.path.join(td, "change-impact", "_project-map", "facts")
+            os.makedirs(facts_dir)
+            with open(os.path.join(facts_dir, "scan.json"), "w") as f:
+                json.dump({"file_count": 2, "dir_tree": ["/", "src/"]}, f)
+            with open(os.path.join(facts_dir, "git.json"), "w") as f:
+                json.dump({
+                    "is_git_repo": True,
+                    "is_independent_repo": True,
+                    "head_short": "abc1234",
+                    "toplevel": td.replace("\\", "/"),
+                }, f)
+
+            map_content = """# Test Map
+
+生成时间: 2026-07-04   基于 commit: abc1234   预算档位: 小仓
+关注重点: 无
+
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | snake_case | src/app.py | 【已核实: src/app.py:1】 |
+| 格式 | 统一 | src/app.py | 【已核实: src/app.py:1】 |
+| 风格 | 一致 | src/app.py | 【已核实: src/app.py:1】 |
+| 间距 | 4空格 | src/app.py | 【已核实: src/app.py:1】 |
+| 引号 | 单引号 | src/app.py | 【已核实: src/app.py:1】 |
+"""
+            path = self._make_map(map_content, td)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 0, f"Commit match should pass:\n{out}")
+            self.assertIn("V9:", out)
+
+    def test_v10_fix_suggestion_fails(self):
+        """V10: Fix-suggestion keywords should FAIL."""
+        with tempfile.TemporaryDirectory() as td:
+            map_content = """# Test Map
+
+## 【9】风险区域
+- 建议改成 async/await 模式
+
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | camelCase | test | 【推断: 待验证】 |
+| 格式 | 统一 | test | 【已核实: test】 |
+| 风格 | 一致 | test | 【已核实: test】 |
+| 间距 | 2空格 | test | 【已核实: test】 |
+| 引号 | 单引号 | test | 【已核实: test】 |
+"""
+            path = self._make_map(map_content, td, create_facts=True)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 1, f"Fix-suggestion should FAIL:\n{out}")
+            self.assertIn("V10:", out)
+            self.assertIn("建议改成", out)
+
+    def test_v10_low_tag_density_fails(self):
+        """V10: Too few credibility tags should FAIL."""
+        with tempfile.TemporaryDirectory() as td:
+            map_content = """# Test Map
+
+## 【1】一句话概述
+这是一个测试项目。
+
+## 【2】技术栈
+- Python
+
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | snake_case | test | test |
+"""
+            path = self._make_map(map_content, td, create_facts=True)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 1, f"Low tag density should FAIL:\n{out}")
+            self.assertIn("V10:", out)
+            self.assertIn("credibility tags", out)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,51 @@
+{
+  "id": "N3",
+  "title": "文章 tagList 字段停用（歧义陷阱：scope + 兼容性双重岔路，测 Phase 3 提问质量）",
+  "skill": "impact",
+  "stack": "node-express-prisma",
+  "tier": "ambiguous",
+  "fixture": {
+    "project": "node-realworld-prisma",
+    "url": "https://github.com/gothinkster/node-express-prisma-v1-official-app.git",
+    "commit": "6ac99ea5"
+  },
+  "prompt": "文章的 tagList 字段不用了，文章相关接口不要再返回它。不要修改代码，只做影响分析。",
+  "expected": {
+    "tier": "depends-on-clarification",
+    "must_hit_files": [
+      "src/services/article.service.ts (tagList 查询和响应组装)",
+      "src/controllers/article.controller.ts (文章响应输出)",
+      "docs/swagger.json (tagList 在 Article 响应 schema 中)",
+      "prisma/schema.prisma (Tag model 和 article-tag 关联)"
+    ],
+    "forbidden_claims": [
+      "声称这是 light 变更——scope 未确认前不能定档",
+      "声称这是 full 变更——scope 未确认前不能定档",
+      "声称 tagList 已从代码中删除",
+      "声称不需要问用户，scope 很明确",
+      "自行决定保留 tagList 为空数组（null/[]）而不问用户",
+      "自行决定连 Tag model 和 /api/tags 一起删而不问用户",
+      "跳过提问直接给出实施计划"
+    ],
+    "must_ask_topics": [
+      "scope 岔路 A：只从文章响应去掉 tagList 字段 vs 连 Tag model、/api/tags 端点一起删——代码依据：article.service.ts 组装 tagList，tag.controller.ts 和 tag.service.ts 是独立端点，删文章响应里的 tagList 不等于必须删 Tag model",
+      "兼容性岔路 B：从响应中完全移除 tagList 字段（breaking change，前端拿不到该字段）vs 保留字段但返回 null/空数组（向后兼容）——代码依据：swagger.json 定义了 tagList 在 Article 响应中，移除字段会破坏 API 契约",
+      "如果用户选择删 Tag model：Prisma schema 变更是高风险（等同 ALTER/DROP TABLE），需单独确认，不能合并确认"
+    ],
+    "iron_rules_must_hold": ["#1 逐步确认", "Phase 3 苏格拉底式探索——歧义必须提问"],
+    "profile_expected": "profiles/node-express-prisma.md"
+  },
+  "trap_for": [
+    "歧义 1（scope）：'文章接口不返回 tagList' 可以理解为只改文章响应，也可以理解为连带删除 Tag model 和 /api/tags。模型必须问用户 scope，不能自行决定",
+    "歧义 2（兼容性）：'不返回 tagList' 可以是完全移除字段（breaking change），也可以是返回空数组/null（向后兼容）。模型必须问用户要哪种",
+    "E-004 复现风险：M3 在 D19r2 中自行决定保留 tagList 为空数组桩，未作为业务岔路交用户确认。本 case 专门测试这个歧义是否被 Phase 3 提问拦截",
+    "判档陷阱：scope 未确认前不能定 light/full。只改响应是 light，连带删 Tag model 是 full。模型不能跳过提问直接定档",
+    "Goodhart 应试陷阱：模型可能为了'看起来在提问'而问无关问题，但回避真正的 scope 和兼容性岔路"
+  ],
+  "files_to_inspect": [
+    { "path": "src/services/article.service.ts", "must_exist": true, "must_contain": "tagList" },
+    { "path": "docs/swagger.json", "must_exist": true, "must_contain": "tagList" },
+    { "path": "prisma/schema.prisma", "must_exist": true, "must_contain": "model Tag" },
+    { "path": "src/controllers/tag.controller.ts", "must_exist": true }
+  ]
+}

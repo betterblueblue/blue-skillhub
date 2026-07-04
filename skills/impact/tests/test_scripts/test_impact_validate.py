@@ -293,7 +293,7 @@ class TestV9NoGradingTable(unittest.TestCase):
     """V9: No grading decision table in output → PASS (skip)."""
 
     def test_no_grading_table_passes(self):
-        ctx = "# Context Pack\n\n## 7. 已确认事实\n\n- updateUserById 默认不含 password\n"
+        ctx = "# Context Pack\n\n## 7. 已确认事实\n\n- updateUserById 默认不含 password 【代码推断: src/services/user.service.ts:92】\n"
         td, rd = _make_repo(context_pack=ctx)
         _write_impl(rd, "# Implementation\n\nNo table here.\n")
         code, out = _run_validator(td, rd)
@@ -323,7 +323,7 @@ class TestV9Consistent(unittest.TestCase):
         ctx = (
             "# Context Pack\n\n"
             "## 7. 已确认事实\n\n"
-            "- updateUserById 默认不含 password — 来源：`src/services/user.service.ts:92-100`\n"
+            "- updateUserById 默认不含 password — 来源：`src/services/user.service.ts:92-100` 【代码推断: src/services/user.service.ts:92】\n"
         )
         td, rd = _make_repo(context_pack=ctx)
         impl = (
@@ -350,7 +350,7 @@ class TestV9Contradiction(unittest.TestCase):
         ctx = (
             "# Context Pack\n\n"
             "## 7. 已确认事实\n\n"
-            "- updateUserById 默认不含 password — 来源：`src/services/user.service.ts:92-100`\n"
+            "- updateUserById 默认不含 password — 来源：`src/services/user.service.ts:92-100` 【代码推断: src/services/user.service.ts:92】\n"
         )
         td, rd = _make_repo(context_pack=ctx)
         impl = (
@@ -376,7 +376,7 @@ class TestV9Unconfirmed(unittest.TestCase):
         ctx = (
             "# Context Pack\n\n"
             "## 7. 已确认事实\n\n"
-            "- getUserById 默认含 password — 来源：`src/services/user.service.ts:81-90`\n"
+            "- getUserById 默认含 password — 来源：`src/services/user.service.ts:81-90` 【代码推断: src/services/user.service.ts:81】\n"
         )
         td, rd = _make_repo(context_pack=ctx)
         impl = (
@@ -402,7 +402,7 @@ class TestV9NoSharedEntities(unittest.TestCase):
         ctx = (
             "# Context Pack\n\n"
             "## 7. 已确认事实\n\n"
-            "- getUserById 默认含 password — 来源：`src/services/user.service.ts:81-90`\n"
+            "- getUserById 默认含 password — 来源：`src/services/user.service.ts:81-90` 【代码推断: src/services/user.service.ts:81】\n"
         )
         td, rd = _make_repo(context_pack=ctx)
         impl = (
@@ -428,7 +428,7 @@ class TestV9SectionHeaderTable(unittest.TestCase):
         ctx = (
             "# Context Pack\n\n"
             "## 7. 已确认事实\n\n"
-            "- updateUserById 默认不含 password — 来源：`src/services/user.service.ts:92`\n"
+            "- updateUserById 默认不含 password — 来源：`src/services/user.service.ts:92` 【代码推断: src/services/user.service.ts:92】\n"
         )
         td, rd = _make_repo(context_pack=ctx)
         impl = (
@@ -1025,6 +1025,308 @@ class TestV16ActiveStateConsistency(unittest.TestCase):
             any("internally consistent" in l for l in v16),
             f"Expected V16 consistency PASS, got: {v16}"
         )
+
+
+# ===========================================================================
+# V18 Tests: Verification evidence
+# ===========================================================================
+
+
+def _v18_lines(stdout: str) -> list[str]:
+    return [l for l in stdout.splitlines() if "V18:" in l]
+
+
+class TestV18VerificationEvidence(unittest.TestCase):
+    """V18: _active-state.md 最近验证 must have actual validator output."""
+
+    def test_placeholder_result_fails(self):
+        td, rd = _make_repo()
+        _write_active_state(rd, """# Active State
+
+## 状态头
+
+- 当前阶段：Phase 4
+- 模式：full
+- Phase 3 状态：已完成
+- Phase 3.5 定级：full
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：none
+- 上次确认 Step：none
+- 上次完成 Step：none
+- V1-only 计数：0
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+
+## 最近验证
+
+- 命令：`python skills/impact/scripts/impact_validate.py`
+- 结果：[X passed, Y failed, Z warnings]
+- 验证等级：V1
+- 跳过原因：不适用 — 必须运行
+
+## 恢复备注
+
+- 无
+""")
+        code, out = _run_validator(td, rd)
+        v18 = _v18_lines(out)
+        self.assertEqual(code, 1, f"Placeholder result should FAIL, got {code}\n{out}")
+        self.assertTrue(any("placeholder" in l for l in v18), f"Expected placeholder FAIL, got: {v18}")
+
+    def test_na_result_fails(self):
+        td, rd = _make_repo()
+        _write_active_state(rd, """# Active State
+
+## 状态头
+
+- 当前阶段：Phase 4
+- 模式：full
+- Phase 3 状态：已完成
+- Phase 3.5 定级：full
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：none
+- 上次确认 Step：none
+- 上次完成 Step：none
+- V1-only 计数：0
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+
+## 最近验证
+
+- 命令：`python skills/impact/scripts/impact_validate.py`
+- 结果：N/A
+- 验证等级：V0
+- 跳过原因：不适用
+
+## 恢复备注
+
+- 无
+""")
+        code, out = _run_validator(td, rd)
+        v18 = _v18_lines(out)
+        self.assertEqual(code, 1, f"N/A result should FAIL, got {code}\n{out}")
+        self.assertTrue(any("placeholder" in l for l in v18), f"Expected placeholder FAIL, got: {v18}")
+
+    def test_actual_result_passes(self):
+        td, rd = _make_repo()
+        _write_active_state(rd, """# Active State
+
+## 状态头
+
+- 当前阶段：Phase 4
+- 模式：full
+- Phase 3 状态：已完成
+- Phase 3.5 定级：full
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：none
+- 上次确认 Step：none
+- 上次完成 Step：none
+- V1-only 计数：0
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+
+## 最近验证
+
+- 命令：`python skills/impact/scripts/impact_validate.py`
+- 结果：15 passed, 0 failed, 2 warnings
+- 验证等级：V1
+- 跳过原因：不适用 — 必须运行
+
+## 恢复备注
+
+- 无
+""")
+        code, out = _run_validator(td, rd)
+        v18 = _v18_lines(out)
+        self.assertEqual(code, 0, f"Actual result should pass, got {code}\n{out}")
+        self.assertTrue(any("actual validator result" in l for l in v18), f"Expected V18 PASS, got: {v18}")
+
+
+# ===========================================================================
+# V19 Tests: High-risk DDL crosscheck
+# ===========================================================================
+
+
+def _v19_lines(stdout: str) -> list[str]:
+    return [l for l in stdout.splitlines() if "V19:" in l]
+
+
+class TestV19DDLCCrosscheck(unittest.TestCase):
+    """V19: Steps with DDL keywords must have high-risk checklist."""
+
+    def test_ddl_without_checklist_fails(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: DROP TABLE old_tags
+
+- 确认类型：DDL
+- 操作对象：`old_tags` table
+- 操作内容：DROP TABLE old_tags
+- 决策依据：不涉及
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v19 = _v19_lines(out)
+        self.assertEqual(code, 1, f"DDL without checklist should FAIL, got {code}\n{out}")
+        self.assertTrue(any("high-risk checklist" in l for l in v19), f"Expected V19 FAIL, got: {v19}")
+
+    def test_ddl_with_checklist_passes(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: DROP TABLE old_tags
+
+- 确认类型：DDL
+- 操作对象：`old_tags` table
+- 操作内容：DROP TABLE old_tags
+- 决策依据：命中 DROP TABLE，用户已单独确认
+- 高风险清单检查（PASS/FAIL 表格）：
+
+  | 检查项 | 状态 | 说明 |
+  | --- | --- | --- |
+  | DROP TABLE | PASS | 用户已确认 |
+
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v19 = _v19_lines(out)
+        self.assertTrue(any("checklist filled" in l for l in v19), f"Expected V19 PASS, got: {v19}")
+
+    def test_no_ddl_passes(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: 修改文案
+
+- 确认类型：改代码
+- 操作对象：`src/views/dashboard.tsx`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改展示文案
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v19 = _v19_lines(out)
+        self.assertTrue(any("No DDL keywords" in l for l in v19), f"Expected V19 no-DDL PASS, got: {v19}")
+
+
+# ===========================================================================
+# V20 Tests: Step confirmation field
+# ===========================================================================
+
+
+def _v20_lines(stdout: str) -> list[str]:
+    return [l for l in stdout.splitlines() if "V20:" in l]
+
+
+class TestV20StepConfirmation(unittest.TestCase):
+    """V20: Every Step must have 用户确认 with Step number."""
+
+    def test_step_without_confirmation_fails(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: 修改文案
+
+- 确认类型：改代码
+- 操作对象：`src/views/dashboard.tsx`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改展示文案
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v20 = _v20_lines(out)
+        self.assertEqual(code, 1, f"Step without confirmation should FAIL, got {code}\n{out}")
+        self.assertTrue(any("missing" in l for l in v20), f"Expected V20 FAIL, got: {v20}")
+
+    def test_step_with_confirmation_passes(self):
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: 修改文案
+
+- 确认类型：改代码
+- 操作对象：`src/views/dashboard.tsx`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改展示文案
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v20 = _v20_lines(out)
+        self.assertTrue(any("All Steps have" in l for l in v20), f"Expected V20 PASS, got: {v20}")
+
+
+# ===========================================================================
+# V21 Tests: Provenance tags
+# ===========================================================================
+
+
+def _v21_lines(stdout: str) -> list[str]:
+    return [l for l in stdout.splitlines() if "V21:" in l]
+
+
+class TestV21ProvenanceTags(unittest.TestCase):
+    """V21: §7 facts must have provenance tags."""
+
+    def test_untagged_facts_fail(self):
+        ctx = (
+            "# Context Pack\n\n"
+            "## 7. 已确认事实\n\n"
+            "- updateUserById 默认不含 password — 来源：`src/services/user.service.ts:92`\n"
+        )
+        td, rd = _make_repo(context_pack=ctx)
+        code, out = _run_validator(td, rd)
+        v21 = _v21_lines(out)
+        self.assertEqual(code, 1, f"Untagged facts should FAIL, got {code}\n{out}")
+        self.assertTrue(any("missing provenance" in l for l in v21), f"Expected V21 FAIL, got: {v21}")
+
+    def test_tagged_facts_pass(self):
+        ctx = (
+            "# Context Pack\n\n"
+            "## 7. 已确认事实\n\n"
+            "- updateUserById 默认不含 password — 来源：`src/services/user.service.ts:92` 【代码推断: src/services/user.service.ts:92】\n"
+        )
+        td, rd = _make_repo(context_pack=ctx)
+        code, out = _run_validator(td, rd)
+        v21 = _v21_lines(out)
+        self.assertEqual(code, 0, f"Tagged facts should pass, got {code}\n{out}")
+        self.assertTrue(any("provenance tags" in l for l in v21), f"Expected V21 PASS, got: {v21}")
+
+    def test_no_facts_passes(self):
+        ctx = "# Context Pack\n\n## 1. 变更意图\n\n- 用户原话：test\n"
+        td, rd = _make_repo(context_pack=ctx)
+        code, out = _run_validator(td, rd)
+        v21 = _v21_lines(out)
+        self.assertTrue(any("no §7" in l for l in v21) or any("no fact entries" in l for l in v21),
+                        f"Expected V21 no-facts WARN/PASS, got: {v21}")
 
 
 if __name__ == "__main__":
