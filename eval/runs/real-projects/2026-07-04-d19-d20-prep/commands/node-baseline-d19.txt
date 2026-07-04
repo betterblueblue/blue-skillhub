@@ -1,0 +1,59 @@
+# D19 node 副本基线 — 2026-07-04
+
+## 副本 1: gpt54mini-d19
+
+目录: E:\agent\real-project-fixtures-delivery\node-realworld-prisma-gpt54mini-d19-20260704
+
+### npm ci
+
+退出码: 0
+
+### npm test
+
+退出码: 0
+
+输出:
+
+> express-prisma-realworld-official-app@1.0.0 test
+> jest -i
+
+PASS tests/services/auth.service.test.ts
+PASS tests/services/profile.service.test.ts
+PASS tests/services/article.service.test.ts
+PASS tests/utils/profile.utils.test.ts
+PASS tests/services/tag.service.test.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       1 todo, 26 passed, 27 total
+Snapshots:   0 total
+Time:        2.197 s
+
+---
+
+## 副本 2: minimax-m3-d19
+
+目录: E:\agent\real-project-fixtures-delivery\node-realworld-prisma-minimax-m3-d19-20260704
+
+### npm ci
+
+退出码: 0
+
+### npm test
+
+退出码: 0
+
+输出:
+
+> express-prisma-realworld-official-app@1.0.0 test
+> jest -i
+
+PASS tests/services/auth.service.test.ts
+PASS tests/services/profile.service.test.ts
+PASS tests/services/article.service.test.ts
+PASS tests/utils/profile.utils.test.ts
+PASS tests/services/tag.service.test.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       1 todo, 26 passed, 27 total
+Snapshots:   0 total
+Time:        2.122 s

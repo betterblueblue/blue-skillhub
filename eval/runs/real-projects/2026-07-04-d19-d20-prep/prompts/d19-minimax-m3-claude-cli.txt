@@ -1,0 +1,60 @@
+你是本轮真实交付评测 runner，不是评审员。
+
+## 工作目录
+
+使用当前目录作为隔离副本（repo-root）：
+E:\agent\real-project-fixtures-delivery\node-realworld-prisma-minimax-m3-d19-20260704
+
+启动 CLI 前请先 cd 到此目录。所有读写在当前目录内进行。
+
+## 场景
+
+- 矩阵：E:\agent\blue-skillhub\eval\real-projects\delivery-matrix.json
+- 场景 ID：D19-node-tags-removal-phase5
+- Case ID：node-realworld-prisma-phase5-tags-removal
+- 复杂度：L · stage：impact-phase5 · fixture_mode：isolated-copy
+- Runner：minimax-m3-claude-cli · 模型：MiniMax M3（启动前确认 CLI 已切换到此模型）
+
+## 任务 prompt（必须使用矩阵 prompt_override，不要用 case 自带 prompt）
+
+真实 /impact 交付验收：tags 功能没人用了，把 /api/tags、Tag model、文章 tagList 输入/输出和相关测试引用都删掉。必须先做 full 影响分析并通过 Phase 4，再执行 Phase 5。所有写操作按 skill 流程逐个请求 `确认 Step N`，我会在你每次请求后逐条回复确认或拆分；不要把多个写操作合并在一个 Step，也不要把本消息当成任何 Step 的预先授权。只在隔离副本中操作，不执行真实数据库迁移。删除功能属于高风险变更，执行记录必须写清兼容、回滚和未执行迁移的原因。
+
+## 执行规则
+
+1. 遵循 E:\agent\blue-skillhub\skills\impact\SKILL.md 及 Phase 4/5 模板。
+2. Phase 5 只能在当前隔离副本写代码；negative 场景不得写源码（本场景是 Phase 5 交付）。
+3. 先产出 Phase 4 full 文档并通过 impact_validate.py（--mode full --repo-root .），再写源码。
+4. 每个写操作必须单独请求 `确认 Step N`；我没回复前不要写。Step 过宽时等我回复 `拆分 Step N`。
+5. 090-execution-record.md 和 _active-state.md 每步同步。
+6. impact_validate.py 或 git diff --check 失败时，先按错误修复，再重跑验证。不要跳过门禁。
+7. 验证命令记录真实输出、退出码和首个错误；没跑成功不能写成通过。
+8. 不执行真实数据库 migration；090 须写清兼容、回滚和未执行迁移原因。
+9. 不要误删 favorites（favoriteArticle、favoritesCount、favoritedBy 必须保留）。
+
+## 验收对照（delivery-matrix acceptance）
+
+必改/必删：
+- src/routes/routes.ts, src/controllers/article.controller.ts, src/services/article.service.ts
+- prisma/schema.prisma, docs/swagger.json, tests/services/article.service.test.ts
+- 删除：src/controllers/tag.controller.ts, src/services/tag.service.ts, src/models/tag.model.ts, tests/services/tag.service.test.ts
+
+禁改：
+- src/controllers/auth.controller.ts, src/controllers/profile.controller.ts
+- src/services/auth.service.ts, src/services/profile.service.ts
+- package.json, package-lock.json
+
+内容残留不得出现：tag.controller, tag.service, model Tag, tagList, "/tags", TagsResponse, getTags
+
+最终 validators：
+- python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode full --repo-root .
+- git diff --check
+- npm test
+
+基线（prep 已验证）：npm test 退出码 0，5 suites / 26 passed / 1 todo。
+
+## 输出归档
+
+每个场景完成后，把完整输出、命令、diff 和失败修复过程保存到：
+E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-minimax-m3-delivery-d19\
+
+至少包含 README.md：fixture 路径、HEAD commit、Step 确认原话、命令+退出码、验收矩阵对照、最终判定。
