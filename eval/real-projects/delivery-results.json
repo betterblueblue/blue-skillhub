@@ -287,7 +287,8 @@
         "spot-check 8 个关键路径全部命中：pom.xml 技术栈、SysUserController 路由+导出、UserRealm 授权流程、SQL DDL、BaseEntity.remark 跨实体、@Excel 注解、SysUserMapper.xml JOIN。",
         "must_cover 5/5 命中；must_not_claim 全部规避（remark 跨实体共享正确识别、凭证只记键名+路径、运行命令标未验证）；红线全 PASS。",
         "估分 91/100（scorecard.md）。零源码 diff；只读硬性规则遵守。",
-        "案例价值：M3 在 pathfinder 只读场景下首过，与 D19 交付场景的稳定失败模式对比——说明 M3 的失败集中在'删除类变更的业务岔路决策'，而非'只读分析能力'。"
+        "案例价值：M3 在 pathfinder 只读场景下首过，与 D19 交付场景的稳定失败模式对比——说明 M3 的失败集中在'删除类变更的业务岔路决策'，而非'只读分析能力'。",
+        "污染注记：M3 跑之前 Composer 已在同 fixture 写了 change-impact/_project-map.md，M3 README 写了'已存在+本轮重跑覆盖'。M3 可能读了 Composer 的产物作为参考。经确认影响不大，标注后保留结果不重跑。"
       ],
       "blockers": []
     },
@@ -301,7 +302,8 @@
         "去毒化 prompt。pf_validate 首次 V5 FAIL（4 个 Mermaid 节点 DSP/SVC/FMW/CTRL 未在正文提及）→ 补充节点说明 → exit 0（10/0/0）。",
         "git diff --stat 空；零源码改动；只写 change-impact/。",
         "must_cover 全部命中；must_not_claim 全部规避（remark 跨实体共享正确识别、凭证脱敏、运行命令标未验证）；红线全 PASS。",
-        "V5 Mermaid 一致性是三模型共有的首个失败点——Composer 和 DeepSeek 都在 V5 上失败后修复，M3 首过。"
+        "V5 Mermaid 一致性是三模型共有的首个失败点——Composer 和 DeepSeek 都在 V5 上失败后修复，M3 首过。",
+        "污染注记：DeepSeek 跑之前 Composer 和 M3 已在同 fixture 写了 change-impact/ 产物，DeepSeek README 写了'已有但已覆盖'。经确认影响不大，标注后保留结果不重跑。"
       ],
       "blockers": []
     }
