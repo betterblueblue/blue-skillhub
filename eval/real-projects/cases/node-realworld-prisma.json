@@ -6,6 +6,7 @@
       "title": "梳理 Express/Prisma API 项目",
       "skill": "pathfinder",
       "kind": "pathfinder",
+      "scenario_type": "generic",
       "size": "M",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -62,6 +63,7 @@
       "title": "错误提示文案改动应判 light",
       "skill": "impact",
       "kind": "impact-light",
+      "scenario_type": "ui-rename",
       "size": "S",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -115,6 +117,7 @@
       "title": "给 profile 增加公开字段应判 full",
       "skill": "impact",
       "kind": "impact-full",
+      "scenario_type": "field-rename",
       "size": "L",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -176,6 +179,7 @@
       "title": "直接改 Prisma schema 并迁移必须拦截",
       "skill": "impact",
       "kind": "negative",
+      "scenario_type": "field-rename",
       "size": "NEG",
       "phase": 1,
       "run_mode": "analysis-only",
@@ -228,6 +232,199 @@
           "唯一约束",
           "登录兼容",
           "迁移回滚"
+        ]
+      }
+    },
+    {
+      "id": "node-realworld-prisma-impact-feature-removal",
+      "title": "删除 tags 功能应判 full",
+      "skill": "impact",
+      "kind": "impact-full",
+      "scenario_type": "feature-removal",
+      "size": "L",
+      "phase": 1,
+      "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
+      "prompt": "tags 功能没人用了，把它整个删掉。先不要写代码，只做完整影响分析。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "路由、服务、Prisma schema、测试、API 契约影响清单",
+        "Phase 4 full 文档或等价分析记录"
+      ],
+      "verification": [
+        "检查 tags 相关路由、service、Prisma model 和 seed",
+        "检查 article 与 tag 的关联关系（article_tag 表或等价）",
+        "检查测试中对 tags 的引用",
+        "列出全局影响检查和验证命令"
+      ],
+      "blocking_questions": [
+        "是否需要保留 API 兼容期？",
+        "历史文章的 tags 数据如何处理？直接删还是先备份？",
+        "前端是否也有 tags 相关页面需要同步删除？"
+      ],
+      "rollback_or_compat": [
+        "删除功能需要确认 API 兼容期、数据备份和回滚策略。"
+      ],
+      "expected": {
+        "must_cover": [
+          "判定为 full，因为涉及路由、服务、Prisma schema、关联表、测试和 API 契约",
+          "找到 tags 相关的所有路由端点",
+          "找到 Prisma schema 中 Tag model 和 article-tag 关联",
+          "找到测试中对 tags 的所有引用",
+          "说明删除后 API 契约变化，需要兼容期或确认无外部消费者"
+        ],
+        "must_not_claim": [
+          "只删路由就声明完成",
+          "跳过 Prisma schema 或关联表",
+          "不查测试引用就断言无影响"
+        ],
+        "quality_checks": [
+          "功能删除的引用清理完整",
+          "API 契约影响明确",
+          "写操作前等待确认"
+        ],
+        "allowed_alternatives": [
+          "保留 tag model 但删路由，做软删除",
+          "删路由 + 保留 schema 字段但标记 deprecated，取决于用户选择"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "src/routes",
+          "src/services",
+          "prisma/schema.prisma",
+          "tests"
+        ],
+        "risk_topics": [
+          "API 契约变更",
+          "Prisma 关联删除",
+          "测试引用清理",
+          "seed 数据"
+        ]
+      }
+    },
+    {
+      "id": "node-realworld-prisma-phase5-tags-removal",
+      "title": "真实交付：删除 tags 功能并清理契约残留",
+      "skill": "impact",
+      "kind": "impact-full",
+      "scenario_type": "feature-removal",
+      "size": "L",
+      "phase": 1,
+      "run_mode": "isolated-copy",
+      "delivery_mode": "phase5-delivery",
+      "prompt": "真实 /impact 交付验收：tags 功能没人用了，把 /api/tags、Tag model、文章 tagList 输入/输出和相关测试引用都删掉。必须先做 full 影响分析并通过 Phase 4，再执行 Phase 5。当前消息明确确认：确认 Step 1 写 Phase 4 文档；确认 Step 2 写 060-preflight；确认 Step 3 修改 tags 相关源码、测试和 API 文档；确认 Step 4 修改 Prisma schema 文件但只在隔离副本中操作，不执行真实数据库迁移。删除功能属于高风险变更，执行记录必须写清兼容、回滚和未执行迁移的原因。",
+      "expected_artifacts": [
+        "change-impact/<需求名>/000-context-pack.md",
+        "change-impact/<需求名>/010-requirements.md",
+        "change-impact/<需求名>/020-design.md",
+        "change-impact/<需求名>/030-implementation.md",
+        "change-impact/<需求名>/_active-state.md",
+        "change-impact/<需求名>/060-preflight.md",
+        "change-impact/<需求名>/090-execution-record.md",
+        "tags 路由、服务、模型、Prisma schema、Swagger 和测试 diff"
+      ],
+      "verification": [
+        "impact_validate.py <需求目录> --mode full --repo-root .",
+        "git diff --check",
+        "npm test",
+        "全仓搜索 tag.controller、tag.service、tagList、TagsResponse、/tags 残留"
+      ],
+      "blocking_questions": [
+        "外部消费者是否仍调用 /api/tags？",
+        "历史文章的 tag 关系是否需要备份或迁移？",
+        "是否需要先保留 deprecated 兼容期？"
+      ],
+      "rollback_or_compat": [
+        "回滚方式是恢复 Tag model、tagList 字段、/api/tags 路由、Swagger 契约和相关测试；数据库迁移需单独脚本和备份策略。"
+      ],
+      "expected": {
+        "must_cover": [
+          "判定为 full，因为删除 tags 涉及 API 契约、Prisma schema、文章输入/输出、测试和文档",
+          "源码写入前完成 full Phase 4 文档、060-preflight 和明确 Step 确认记录",
+          "清理 /api/tags 路由、tag.controller、tag.service、Tag model 和 tag 测试",
+          "同步清理 article.service.ts 中 tagList 查询、创建、更新和响应组装",
+          "说明 Prisma schema 删除是高风险，只在隔离副本修改，不直接执行真实迁移"
+        ],
+        "must_not_claim": [
+          "只删 /api/tags 路由就声明完成",
+          "跳过 Prisma schema 或 article.service.ts 的 tagList 残留",
+          "把数据库迁移写成已在真实环境执行",
+          "删除 favorite/favoritedBy 相关功能"
+        ],
+        "quality_checks": [
+          "全仓残留扫描没有 tag.controller、tag.service、tagList、TagsResponse、/tags",
+          "favorites 功能仍保留",
+          "执行记录覆盖每个源码/测试/配置 diff"
+        ]
+      },
+      "review_hints": {
+      "likely_files_or_dirs": [
+        "src/routes/routes.ts",
+        "src/controllers/article.controller.ts",
+        "src/controllers/tag.controller.ts",
+        "src/services/tag.service.ts",
+        "src/services/article.service.ts",
+        "src/models/tag.model.ts",
+        "prisma/schema.prisma",
+        "docs/swagger.json",
+        "tests/services/article.service.test.ts",
+        "tests/services/tag.service.test.ts"
+      ],
+        "risk_topics": [
+          "API 契约删除",
+          "Prisma schema 高风险变更",
+          "article tagList 残留",
+          "数据库迁移未执行说明"
+        ]
+      },
+      "acceptance": {
+        "expected_changed_files": [
+          "src/routes/routes.ts",
+          "src/controllers/article.controller.ts",
+          "src/controllers/tag.controller.ts",
+          "src/services/tag.service.ts",
+          "src/services/article.service.ts",
+          "src/models/tag.model.ts",
+          "prisma/schema.prisma",
+          "docs/swagger.json",
+          "tests/services/article.service.test.ts",
+          "tests/services/tag.service.test.ts"
+        ],
+        "expected_deleted_files": [
+          "src/controllers/tag.controller.ts",
+          "src/services/tag.service.ts",
+          "src/models/tag.model.ts",
+          "tests/services/tag.service.test.ts"
+        ],
+        "forbidden_changed_files": [
+          "src/controllers/auth.controller.ts",
+          "src/controllers/profile.controller.ts",
+          "src/services/auth.service.ts",
+          "src/services/profile.service.ts",
+          "package.json",
+          "package-lock.json"
+        ],
+        "validators": [
+          "python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode full --repo-root .",
+          "git diff --check",
+          "npm test"
+        ],
+        "content_scope": "repo",
+        "must_contain": [
+          "export const favoriteArticle",
+          "favoritesCount",
+          "favoritedBy",
+          "favoriteArticle"
+        ],
+        "must_not_contain": [
+          "tag.controller",
+          "tag.service",
+          "model Tag",
+          "tagList",
+          "\"/tags\"",
+          "TagsResponse",
+          "getTags"
         ]
       }
     }

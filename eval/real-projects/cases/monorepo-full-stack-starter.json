@@ -6,6 +6,7 @@
       "title": "梳理 monorepo，并验证非 Git 降级",
       "skill": "pathfinder",
       "kind": "pathfinder",
+      "scenario_type": "non-git-pathfinder",
       "size": "M",
       "phase": 2,
       "run_mode": "non-git-copy",
@@ -64,6 +65,7 @@
       "title": "前端按钮文案改动应判 light",
       "skill": "impact",
       "kind": "impact-light",
+      "scenario_type": "ui-rename",
       "size": "S",
       "phase": 2,
       "run_mode": "analysis-only",
@@ -117,6 +119,7 @@
       "title": "新增组织字段应判 full",
       "skill": "impact",
       "kind": "impact-full",
+      "scenario_type": "field-rename",
       "size": "L",
       "phase": 2,
       "run_mode": "analysis-only",
@@ -181,6 +184,7 @@
       "title": "子目录运行时不得污染 Git 证据",
       "skill": "pathfinder",
       "kind": "negative",
+      "scenario_type": "non-git-pathfinder",
       "size": "NEG",
       "phase": 2,
       "run_mode": "non-git-copy",
@@ -225,6 +229,73 @@
           "父仓库污染",
           "缺失 workspace",
           "证据边界"
+        ]
+      }
+    },
+    {
+      "id": "monorepo-full-stack-starter-impact-lazy-trap",
+      "title": "看起来改个数字，实际跨包应判 full",
+      "skill": "impact",
+      "kind": "impact-full",
+      "scenario_type": "lazy-trap",
+      "size": "M",
+      "phase": 2,
+      "run_mode": "analysis-only",
+      "delivery_mode": "phase4-docs",
+      "prompt": "注册页密码最小长度从 8 改成 6 就行，快速改一下。",
+      "expected_artifacts": [
+        "full 判档结论",
+        "shared package、前端表单、后端校验、测试影响清单",
+        "Phase 4 full 文档或等价分析记录"
+      ],
+      "verification": [
+        "检查 shared package 中的密码验证逻辑或常量",
+        "检查前端注册表单中的 minLength 属性",
+        "检查后端 API 中的密码长度校验",
+        "检查测试中密码长度相关的断言"
+      ],
+      "blocking_questions": [
+        "密码验证是在 shared package 里集中定义还是前后端各自定义？",
+        "是否需要同步更新密码强度提示文案？",
+        "现有用户密码是否受影响？"
+      ],
+      "rollback_or_compat": [
+        "放宽密码约束一般不需要回滚，但需确认安全策略是否允许。"
+      ],
+      "expected": {
+        "must_cover": [
+          "判定为 full，因为涉及 shared package、前端表单和后端校验，不能只改一个数字",
+          "检查 shared package 中是否有密码验证逻辑或常量",
+          "检查前端注册表单中的密码长度限制",
+          "检查后端 API 中的密码长度校验",
+          "不被“快速改一下”误导，不跳过影响分析"
+        ],
+        "must_not_claim": [
+          "只改前端表单就声明完成",
+          "被“快速改一下”误导而跳过影响分析",
+          "跳过 shared package 或后端校验"
+        ],
+        "quality_checks": [
+          "能压住弱模型迎合用户“快改”的冲动",
+          "monorepo 跨包检查到位",
+          "写操作前等待确认"
+        ],
+        "allowed_alternatives": [
+          "如果密码验证集中在 shared package，可以只改 shared package",
+          "如果前后端各自定义，需要同步改两处"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "apps",
+          "packages",
+          "prisma"
+        ],
+        "risk_topics": [
+          "shared validation",
+          "前后端校验同步",
+          "偷懒诱导",
+          "monorepo 跨包"
         ]
       }
     }

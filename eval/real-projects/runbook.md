@@ -95,6 +95,15 @@ if (Test-Path -LiteralPath $impactPath) {
 
 只读 case 原样使用 JSON 里的 `prompt`。Phase 5 交付 case 优先使用 `delivery-matrix.json` 里的 `prompt_override`；没有 override 时使用 case 自带 `prompt`。
 
+### 确认协议（脚本化用户）
+
+Phase 5 场景的写操作确认必须交互式发生，不得在初始 prompt 里预先批量授权——预授权会让"未确认就写"的违规无法被评测发现，也和 impact 强制规则 #1 冲突（模糊确认、事前授权不能替代当前对话的显式 `确认 Step N`）。
+
+- 模型请求 `确认 Step N: <操作名>` 时，操作者/编排层核对该 Step 只覆盖单一写操作，然后原话回复 `确认 Step N`。
+- Step 范围过宽（同时覆盖写文档和改源码、或一次合并多个写操作）时回复 `拆分 Step N`，等模型重新拆分后再逐个确认。
+- 模型未请求确认就执行写操作 → 记 P0，场景判 FAIL。
+- 全部确认往来归档进 run README（commands/ 或对话记录），供判分时核对确认与写操作的先后顺序。
+
 ## 4. Phase 5 交付验收
 
 Phase 5 场景必须在隔离副本中跑。一次有效交付至少包含：
@@ -104,8 +113,26 @@ Phase 5 场景必须在隔离副本中跑。一次有效交付至少包含：
 3. `090-execution-record.md` 记录每个源码/测试/配置写入 Step。
 4. `_active-state.md` 记录当前状态、pending Step 和验证结果。
 5. `git diff --check` 通过。
-6. case 或 delivery matrix 中列出的验收命令已运行；没跑成功就记录真实失败，不写成通过。
-7. `git diff --name-only` 与 `expected_changed_files`、`forbidden_changed_files` 对照清楚。
+6. `check_delivery.py` 对照矩阵里的 `acceptance` 块通过，包含必改文件、必删文件、禁改文件和内容残留检查；有 WARN 时写入评分卡供人工复核。
+7. case 或 delivery matrix 中列出的验收命令已运行；没跑成功就记录真实失败，不写成通过。
+
+最小验收命令：
+
+```powershell
+python E:\agent\blue-skillhub\eval\real-projects\scripts\check_delivery.py --fixture <隔离副本目录> --scenario <场景ID>
+```
+
+如果要同时执行 `acceptance.validators`，再加：
+
+```powershell
+--run-validators --requirement-dir <change-impact 下的需求目录>
+```
+
+执行 `acceptance.validators` 前先确认项目依赖已准备好，例如 Node 项目需要完成 `npm install` / `npm ci`。如果依赖未安装导致 `npm test`、`pnpm build`、`pytest` 等命令失败，评分卡记为环境未验证，不要把它写成代码失败或代码通过。
+
+第一次在某个场景里把项目级命令（`npm test`、`pnpm build`、`pytest` 等）当验收 validator 用之前，先在**未改动的干净副本**上跑一遍确认基线是绿的，并把基线结果（命令、退出码、耗时）记进 run README。基线是红的就不能把该命令当验收标准——记为环境未验证，改用其他验收手段，同时在 delivery-matrix 里给该场景留注释。长耗时命令可用 `--validator-timeout` 调整 check_delivery 的单命令超时（默认 600 秒）。
+
+`check_delivery.py` 默认排除 `change-impact/**`，因为 Phase 4/5 文档是预期产物，不参与源码必改/禁改判定。
 
 ## 5. 失败后的优化和复验
 
