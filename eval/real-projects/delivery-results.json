@@ -232,6 +232,22 @@
       "blockers": []
     },
     {
+      "id": "D20-gpt-54-mini-natural-rerun-2026-07-04",
+      "scenario_id": "D20-python-title-required-lazy-phase5",
+      "runner_id": "gpt-54-mini-subagent",
+      "status": "FAIL",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d20-rerun/README.md",
+      "evidence": [
+        "本轮使用最小三段式自然 prompt：只含评测环境、Skill 路径、输出归档和用户原话；无验收对照、无 validator 教练词、无 Step 预授权。",
+        "代码层面完成正确：AddItem.tsx、EditItem.tsx、items.spec.ts 三处均改为 Item title is required；禁改后端和 generated client 未动；check_delivery 不跑 validators 时 PASS (6 checks)。",
+        "流程层面失败：没有产出 change-impact 需求目录、Phase 4 文档、_active-state.md、060-preflight.md 或 090-execution-record.md，也没有请求 Step 确认。",
+        "判分方独立复跑 check_delivery --run-validators 失败：impact_validate.py 需要 <requirement-dir>，但本轮无需求目录可传；git diff --check exit 0。"
+      ],
+      "blockers": [
+        "自然 prompt 下 gpt-5.4-mini 直接改代码，未执行 impact 流程；说明此前依赖长 prompt 教练词会掩盖 skill 流程遵守问题。"
+      ]
+    },
+    {
       "id": "D19r2-composer-25fast-2026-07-04",
       "scenario_id": "D19-node-tags-removal-phase5",
       "runner_id": "composer-25fast-subagent",

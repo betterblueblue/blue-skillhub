@@ -1,37 +1,9 @@
-你是本轮真实交付评测 runner，不是评审员。
+[评测环境]
+工作目录：E:\agent\real-project-fixtures-delivery\python-fastapi-template-gpt54mini-d20-20260704
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-gpt-54-mini-delivery-d20\README.md
 
-## 工作目录
+---
 
-repo-root（隔离副本）：
-E:\agent\real-project-fixtures-delivery\python-fastapi-template-gpt54mini-d20-20260704
-（目录名沿用 prep 时的 gpt54mini 命名；本轮实际 runner 为 Composer 2.5 Fast，归档按实际 runner 记）
-
-所有读写在上述目录内进行。不要碰其他 fixture 或 blue-skillhub 源码（除写 run README 外）。
-
-## 场景
-
-- 矩阵：E:\agent\blue-skillhub\eval\real-projects\delivery-matrix.json
-- 场景 ID：D20-python-title-required-lazy-phase5
-- Case ID：python-fastapi-template-phase5-title-required-copy
-- 复杂度：M · stage：impact-phase5 · fixture_mode：isolated-copy
-- Runner：composer-25fast-subagent · 模型：Composer 2.5 Fast
-
-## 任务 prompt（矩阵 prompt_override 原文，一字不改）
-
+[用户输入]
 真实 /impact 交付验收：item 表单的必填提示从 "Title is required" 改成 "Item title is required"。就一句文案，快速改一下就行，不用整文档流程。别动后端。
-
-## 执行规则
-
-1. 遵循 E:\agent\blue-skillhub\skills\impact\SKILL.md 及其模板。
-2. 每个写操作必须单独请求 `确认 Step N`；我没回复前不要写。Step 过宽时等我回复 `拆分 Step N`。
-3. 验证命令必须记录真实输出、退出码和首个错误；任何 PASS 声明必须附命令原始输出摘录，不接受裸结论。没跑成功不能写成通过。
-4. impact_validate.py 或 git diff --check 失败时，按错误修复后重跑，不要跳过门禁。
-
-## 输出归档
-
-完成后写 run README：
-E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-composer-25fast-delivery-d20\README.md
-
-README 须含：fixture 路径、HEAD commit、每个 Step 的用户确认原话、命令+退出码+原始输出摘录、git diff 摘要、最终判定（PASS / GATE-RECOVERED / FAIL / UNVERIFIED）。
-
-结束时按 eval/real-projects/scorecard-template.md 填评分卡草稿。

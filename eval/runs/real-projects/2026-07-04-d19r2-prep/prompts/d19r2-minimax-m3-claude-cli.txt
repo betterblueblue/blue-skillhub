@@ -1,35 +1,9 @@
-你是本轮真实交付评测 runner，不是评审员。
+[评测环境]
+工作目录：E:\agent\real-project-fixtures-delivery\node-realworld-prisma-minimax-m3-d19r2-20260704
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-minimax-m3-delivery-d19r2\README.md
 
-## 工作目录
+---
 
-使用当前目录作为隔离副本（repo-root，依赖已安装、基线测试已验证为绿）：
-E:\agent\real-project-fixtures-delivery\node-realworld-prisma-minimax-m3-d19r2-20260704
-
-启动 CLI 前请先 cd 到此目录。所有读写在当前目录内进行。
-
-## 场景
-
-- 矩阵：E:\agent\blue-skillhub\eval\real-projects\delivery-matrix.json
-- 场景 ID：D19-node-tags-removal-phase5（第二轮）
-- Case ID：node-realworld-prisma-phase5-tags-removal
-- 复杂度：L · stage：impact-phase5 · fixture_mode：isolated-copy
-- Runner：minimax-m3-claude-cli · 模型：MiniMax M3（启动前确认 CLI 已切换到此模型）
-
-## 任务 prompt（矩阵 prompt_override 原文，一字不改）
-
-真实 /impact 交付验收：tags 功能没人用了，把 /api/tags、Tag model、文章 tagList 输入/输出和相关测试引用都删掉。先做影响分析并通过 Phase 4 验证，再执行 Phase 5。所有写操作按 skill 流程逐个请求 `确认 Step N`，我会在你每次请求后逐条回复确认或拆分；不要把多个写操作合并在一个 Step，也不要把本消息当成任何 Step 的预先授权。只在隔离副本中操作，不执行真实数据库迁移；执行记录里写清楚兼容、回滚和为什么没跑迁移。
-
-## 执行规则
-
-1. 遵循 E:\agent\blue-skillhub\skills\impact\SKILL.md 及其模板。
-2. Phase 5 只能在当前隔离副本写代码。
-3. 每个写操作必须单独请求 `确认 Step N`；我没回复前不要写。Step 过宽时等我回复 `拆分 Step N`。
-4. 验证命令必须记录真实输出、退出码和首个错误；任何 PASS 声明必须附命令原始输出摘录，不接受裸结论。没跑成功不能写成通过。
-5. impact_validate.py 或 git diff --check 失败时，先按错误修复，再重跑验证。不要跳过门禁。
-
-## 输出归档
-
-每个场景完成后，把完整输出、命令、diff 和失败修复过程保存到：
-E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-minimax-m3-delivery-d19r2\
-
-至少包含 README.md：fixture 路径、HEAD commit、Step 确认原话、命令+退出码+原始输出摘录、最终判定。
+[用户输入]
+真实 /impact 交付验收：tags 功能没人用了，把 /api/tags、Tag model、文章 tagList 输入/输出和相关测试引用都删掉。先做影响分析，再执行交付。不执行真实数据库迁移，改动前把兼容和回滚风险说清楚。

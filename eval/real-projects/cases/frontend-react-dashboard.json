@@ -121,7 +121,7 @@
       "phase": 2,
       "run_mode": "isolated-copy",
       "delivery_mode": "phase5-delivery",
-      "prompt": "真实 /impact 交付验收：把侧边栏 Dashboard 的显示文案改成 Insights。必须先做 light 影响分析并产出 Phase 4 文档，再完成 060-preflight、090-execution-record 和源码修改。只允许改显示文案，不改 path、key、icon、order。完成后运行 impact_validate.py、git diff --check，并展示 dashboard.router.tsx 的 diff。",
+      "prompt": "真实 /impact 交付验收：把侧边栏 Dashboard 的显示文案改成 Insights。只改显示文案，不改 path、key、icon、order。",
       "expected_artifacts": [
         "change-impact/<需求名>/000-context-pack.md",
         "change-impact/<需求名>/040-light.md",
