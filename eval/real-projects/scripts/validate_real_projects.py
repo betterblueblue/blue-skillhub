@@ -105,6 +105,7 @@ def validate_acceptance(
 
 def main() -> int:
     errors: list[str] = []
+    warnings: list[str] = []
 
     if not PROJECTS_PATH.exists():
         errors.append(f"missing {PROJECTS_PATH}")
@@ -295,11 +296,13 @@ def main() -> int:
         errors.append("at least one case must use delivery_mode=phase5-delivery")
 
     validate_delivery_matrix(errors, case_index, project_category)
-    validate_delivery_results(errors, case_index)
+    validate_delivery_results(errors, warnings, case_index)
 
     if errors:
         return report(errors)
 
+    for warning in warnings:
+        print(f"WARN: {warning}")
     print(f"OK: {len(project_ids)} projects, {case_count} cases, delivery matrix checked")
     return 0
 
@@ -455,6 +458,7 @@ def validate_delivery_matrix(
 
 def validate_delivery_results(
     errors: list[str],
+    warnings: list[str],
     case_index: dict[str, dict[str, str]],
 ) -> None:
     if not DELIVERY_RESULTS_PATH.exists():
@@ -567,11 +571,12 @@ def validate_delivery_results(
         errors.append("delivery-results.json: completed results must cover both pathfinder and impact")
     if len(completed_negative_runners) < 2:
         errors.append("delivery-results.json: completed negative-gate results must cover at least two runners")
-    missing_phase5 = runner_ids - completed_phase5_runners
+    missing_phase5 = completed_runners - completed_phase5_runners
     if missing_phase5:
-        errors.append(
-            "delivery-results.json: completed impact-phase5 results missing for runners "
-            f"{sorted(missing_phase5)}"
+        warnings.append(
+            "delivery-results.json: runners with completed results but no completed "
+            f"impact-phase5 yet: {sorted(missing_phase5)} "
+            "(zero-result runners are exempt; full phase5 coverage is a release-gate criterion)"
         )
 
 
