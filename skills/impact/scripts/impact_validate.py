@@ -1984,22 +1984,22 @@ def check_step_confirmation(req_dir: Path) -> tuple[list[str], list[str], list[s
 
 
 # ===========================================================================
-# V21: Provenance tags — §7 已确认事实 entries must carry a provenance tag
+# V21: 来源标签 — §7 已确认事实 entries must carry a source tag
 #      (补强 C script-enforceable part).
 # ===========================================================================
 
-RE_PROVENANCE_TAG = re.compile(r"【用户确认|【代码推断|【用户委托默认")
+RE_SOURCE_TAG = re.compile(r"【用户确认|【代码推断|【用户委托默认")
 
 
-def check_provenance_tags(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
-    """V21: 000-context-pack §7 facts must have provenance tags.
+def check_source_tags(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V21: 000-context-pack §7 facts must have source tags.
 
     Each fact entry in §7 已确认事实 must carry one of:
       - 【用户确认】
       - 【代码推断: file:line】
       - 【用户委托默认: YYYY-MM-DD 选项X 依据file:line】
     Missing tags → FAIL. The script cannot verify tag truthfulness, but
-    forcing provenance makes fabrication explicitly auditable.
+    forcing source tags makes fabrication explicitly auditable.
     """
     passes: list[str] = []
     fails: list[str] = []
@@ -2024,7 +2024,7 @@ def check_provenance_tags(req_dir: Path) -> tuple[list[str], list[str], list[str
         # Skip template placeholders
         if stripped.startswith("- `[") or stripped.startswith("- [事实"):
             continue
-        if "provenance 标签" in stripped:
+        if "来源标签" in stripped:
             continue
         fact_lines.append(stripped)
 
@@ -2034,17 +2034,17 @@ def check_provenance_tags(req_dir: Path) -> tuple[list[str], list[str], list[str
 
     untagged: list[str] = []
     for fact in fact_lines:
-        if not RE_PROVENANCE_TAG.search(fact):
+        if not RE_SOURCE_TAG.search(fact):
             untagged.append(fact[:80])
 
     if untagged:
         fails.append(
-            "V21: §7 已确认事实 entries missing provenance tags — "
+            "V21: §7 已确认事实 entries missing source tags — "
             "each fact must have 【用户确认】/【代码推断: file:line】/【用户委托默认: …】. "
             f"Untagged: {'; '.join(untagged[:3])}"
         )
     else:
-        passes.append(f"V21: §7 已确认事实 all {len(fact_lines)} entries have provenance tags")
+        passes.append(f"V21: §7 已确认事实 all {len(fact_lines)} entries have source tags")
 
     return passes, fails, warns
 
@@ -2226,7 +2226,7 @@ def main():
     all_warns.extend(w)
 
     # V21: Provenance tags
-    p, f, w = check_provenance_tags(req_dir)
+    p, f, w = check_source_tags(req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)
