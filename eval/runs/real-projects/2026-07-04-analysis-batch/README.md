@@ -30,12 +30,16 @@
 | `d8-deepseek-v4-flash.txt` | D8-node-login-message-analysis (S) | DeepSeek V4 Flash | node-realworld-prisma | impact |
 | `d8-composer-25fast-subagent.txt` | D8-node-login-message-analysis (S) | Composer 2.5 Fast | node-realworld-prisma | impact |
 | `d9-gpt-54-mini-subagent.txt` | D9-monorepo-organization-phase4 (L) | GPT-5.4 Mini | monorepo-full-stack-starter-d9-gpt54mini | impact |
+| `d9-minimax-m3-claude-cli.txt` | D9-monorepo-organization-phase4 (L) | MiniMax M3 | monorepo-full-stack-starter-d9-m3 | impact |
 | `d11-gpt-54-mini-subagent.txt` | D11-java-external-id-analysis (L) | GPT-5.4 Mini | java-ruoyi | impact |
+| `d11-minimax-m3-claude-cli.txt` | D11-java-external-id-analysis (L) | MiniMax M3 | java-ruoyi | impact |
 | `d12-gpt-54-mini-subagent.txt` | D12-monorepo-pathfinder-map (M) | GPT-5.4 Mini | monorepo-full-stack-starter + non-git copy | pathfinder |
+| `d12-minimax-m3-claude-cli.txt` | D12-monorepo-pathfinder-map (M) | MiniMax M3 | monorepo-full-stack-starter + non-git copy | pathfinder |
 | `d13-deepseek-v4-flash.txt` | D13-java-permission-analysis (M) | DeepSeek V4 Flash | java-ruoyi | impact |
 | `d13-minimax-m3-claude-cli.txt` | D13-java-permission-analysis (M) | MiniMax M3 | java-ruoyi | impact |
 | `d13-composer-25fast-subagent.txt` | D13-java-permission-analysis (M) | Composer 2.5 Fast | java-ruoyi | impact |
-| `d14-minimax-m3-claude-cli.txt` | D14-java-enum-analysis (M) | MiniMax M3 | java-ruoyi | impact |
+| `d14-minimax-m3-claude-cli.txt` | D14-java-enum-analysis (M) | MiniMax M3 | java-ruoyi-d14-m3-20260704-223205 | impact |
+| `d14-composer-25fast-subagent.txt` | D14-java-enum-analysis (M) | Composer 2.5 Fast | java-ruoyi-d14-composer-20260704-223205 | impact |
 | `d15-deepseek-v4-flash.txt` | D15-node-feature-removal-analysis (L) | DeepSeek V4 Flash | node-realworld-prisma | impact |
 | `d15-minimax-m3-claude-cli.txt` | D15-node-feature-removal-analysis (L) | MiniMax M3 | node-realworld-prisma | impact |
 | `d15-composer-25fast-subagent.txt` | D15-node-feature-removal-analysis (L) | Composer 2.5 Fast | node-realworld-prisma | impact |
@@ -44,9 +48,10 @@
 | `d16-composer-25fast-subagent.txt` | D16-python-config-migration-analysis (M) | Composer 2.5 Fast | python-fastapi-template | impact |
 | `d17-deepseek-v4-flash.txt` | D17-python-lazy-trap-analysis (M) | DeepSeek V4 Flash | python-fastapi-template | impact |
 | `d17-composer-25fast-subagent.txt` | D17-python-lazy-trap-analysis (M) | Composer 2.5 Fast | python-fastapi-template | impact |
-| `d18-minimax-m3-claude-cli.txt` | D18-monorepo-lazy-trap-analysis (M) | MiniMax M3 | monorepo-full-stack-starter | impact |
+| `d18-minimax-m3-claude-cli.txt` | D18-monorepo-lazy-trap-analysis (M) | MiniMax M3 | monorepo-full-stack-starter-d18-m3-20260704-223205 | impact |
+| `d18-composer-25fast-subagent.txt` | D18-monorepo-lazy-trap-analysis (M) | Composer 2.5 Fast | monorepo-full-stack-starter-d18-composer-20260704-223205 | impact |
 
-共 19 个 prompt 文件，覆盖 10 个场景 × 不同 runner 组合。
+共 24 个 prompt 文件，覆盖 10 个场景 × 不同 runner 组合。
 
 ## Runner 替换说明
 
@@ -63,6 +68,18 @@
 3. **门禁不跳**：validator FAIL 时是否修复重跑
 4. **只读边界**：read-only-original 场景下 git diff 应为空（change-impact/ 目录除外）
 5. **输出真实**：README 中的 validator 结果须附原始输出和退出码
+
+D14/D18 这类 `impact-phase4` 场景跑完后，还要跑 analysis gate：
+
+```powershell
+python E:\agent\blue-skillhub\eval\real-projects\scripts\check_delivery.py `
+  --fixture <对应 fixture> `
+  --scenario <D14-java-enum-analysis 或 D18-monorepo-lazy-trap-analysis> `
+  --run-record <对应 README.md> `
+  --requirement-dir <实际 change-impact 需求目录>
+```
+
+它会检查：除 `change-impact/**` 外无源码 diff、run README 存在、Phase 4 full 文档齐全。
 
 ## 判分要点
 

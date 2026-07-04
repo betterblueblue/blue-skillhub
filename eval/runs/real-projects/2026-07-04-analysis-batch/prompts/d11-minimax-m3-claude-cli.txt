@@ -1,0 +1,9 @@
+[评测环境]
+工作目录：E:\agent\real-project-fixtures\java-ruoyi
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-minimax-m3-delivery-d11\README.md
+
+---
+
+[用户输入]
+给系统用户新增一个“外部工号 external_id”字段，要求新增/编辑能维护，列表能展示，导出也带上。先不要写代码，只做完整影响分析。

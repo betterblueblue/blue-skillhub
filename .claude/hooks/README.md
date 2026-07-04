@@ -10,6 +10,12 @@ It adds a settings-layer check before write tools run:
    to start with `确认 Step N`.
 3. The confirmation is consumed once per protected root. A second write requires
    another explicit `确认 Step N`.
+4. Source/test/config/schema writes also require a matching
+   `change-impact/<request>/_active-state.md` whose pending or last prompted
+   Step matches the confirmed Step, whose Phase 4 documents and
+   `060-preflight.md` exist, and whose latest validator result has `0 failed`.
+   Writes inside `change-impact/` itself can still happen earlier, so the model
+   can create Phase 4 documents and preflight records.
 
 ## Enable
 
@@ -42,3 +48,17 @@ If a wrapper is preferred:
 - The Bash check is heuristic. It catches common write-like commands, but it is
   not a sandbox. Keep DB read-only accounts and settings deny rules for hard
   boundaries.
+
+## Verify
+
+Run the hook tests from the skillhub root:
+
+```powershell
+python -m unittest eval.real-projects.tests.test_impact_write_gate
+```
+
+These tests simulate Claude Code `PreToolUse` events and cover the D20 failure
+mode: a weak runner tries to edit files before the latest user message is
+`确认 Step N`. They also cover the D19 failure mode: a weak runner receives a
+Step confirmation but tries to edit source files before Phase 4 and preflight
+are complete.

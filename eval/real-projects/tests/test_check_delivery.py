@@ -51,14 +51,60 @@ def make_acceptance(repo: Path, data: dict[str, object]) -> Path:
     return path
 
 
-def run_check(repo: Path, acceptance: dict[str, object]) -> tuple[int, dict[str, object]]:
+def make_matrix(data: dict[str, object]) -> Path:
+    path = Path(tempfile.mkdtemp()) / "delivery-matrix.json"
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def make_run_record(content: str = "run record\n") -> Path:
+    path = Path(tempfile.mkdtemp()) / "README.md"
+    path.write_text(content, encoding="utf-8")
+    return path
+
+
+def run_check(
+    repo: Path,
+    acceptance: dict[str, object],
+    *,
+    run_validators: bool = False,
+    requirement_dir: str | None = None,
+) -> tuple[int, dict[str, object]]:
     acceptance_path = make_acceptance(repo, acceptance)
-    result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--fixture", str(repo), "--acceptance", str(acceptance_path), "--json"],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
+    cmd = [sys.executable, str(SCRIPT), "--fixture", str(repo), "--acceptance", str(acceptance_path), "--json"]
+    if run_validators:
+        cmd.append("--run-validators")
+    if requirement_dir is not None:
+        cmd.extend(["--requirement-dir", requirement_dir])
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+    return result.returncode, json.loads(result.stdout)
+
+
+def run_scenario_check(
+    repo: Path,
+    matrix: dict[str, object],
+    scenario_id: str,
+    *,
+    run_record: Path | None = None,
+    requirement_dir: str | None = None,
+) -> tuple[int, dict[str, object]]:
+    matrix_path = make_matrix(matrix)
+    cmd = [
+        sys.executable,
+        str(SCRIPT),
+        "--fixture",
+        str(repo),
+        "--scenario",
+        scenario_id,
+        "--matrix",
+        str(matrix_path),
+        "--json",
+    ]
+    if run_record is not None:
+        cmd.extend(["--run-record", str(run_record)])
+    if requirement_dir is not None:
+        cmd.extend(["--requirement-dir", requirement_dir])
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
     return result.returncode, json.loads(result.stdout)
 
 
@@ -264,6 +310,193 @@ class TestCheckDelivery(unittest.TestCase):
         self.assertEqual(len(stats), 1)
         self.assertEqual(stats[0]["level"], "PASS")
         self.assertIn("per_file", stats[0]["evidence"])
+
+    def test_validator_placeholder_without_requirement_dir_reports_missing_artifacts(self) -> None:
+        repo = make_repo()
+        write(
+            repo / "src/views/dashboard/dashboard.router.tsx",
+            "label: 'Insights'\ntitle: 'Insights'\npath: 'dashboard'\nkey: '/dashboard'\n",
+        )
+        acceptance = dict(BASE_ACCEPTANCE)
+        acceptance["validators"] = ["python impact_validate.py <requirement-dir> --mode light"]
+
+        code, report = run_check(repo, acceptance, run_validators=True)
+
+        self.assertEqual(code, 1)
+        missing = [c for c in report["checks"] if c["code"] == "validator_missing_artifacts"]
+        self.assertEqual(len(missing), 1)
+        self.assertEqual(missing[0]["level"], "FAIL")
+        self.assertIn("change-impact", missing[0]["evidence"]["hint"])
+
+    def test_validator_placeholder_with_missing_requirement_dir_reports_missing_artifacts(self) -> None:
+        repo = make_repo()
+        write(
+            repo / "src/views/dashboard/dashboard.router.tsx",
+            "label: 'Insights'\ntitle: 'Insights'\npath: 'dashboard'\nkey: '/dashboard'\n",
+        )
+        acceptance = dict(BASE_ACCEPTANCE)
+        acceptance["validators"] = ["python impact_validate.py <requirement-dir> --mode light"]
+
+        code, report = run_check(
+            repo,
+            acceptance,
+            run_validators=True,
+            requirement_dir="change-impact/missing-request",
+        )
+
+        self.assertEqual(code, 1)
+        missing = [c for c in report["checks"] if c["code"] == "validator_missing_artifacts"]
+        self.assertEqual(len(missing), 1)
+        self.assertEqual(missing[0]["level"], "FAIL")
+        self.assertEqual(missing[0]["evidence"]["requirement_dir"], "change-impact/missing-request")
+
+    def test_phase4_analysis_gate_passes_with_docs_and_no_source_diff(self) -> None:
+        repo = make_repo()
+        for name in (
+            "000-context-pack.md",
+            "010-requirements.md",
+            "020-design.md",
+            "030-implementation.md",
+            "_active-state.md",
+        ):
+            write(repo / f"change-impact/locked-user/{name}", f"{name}\n")
+        matrix = {
+            "scenarios": [
+                {
+                    "id": "D14-java-enum-analysis",
+                    "case_id": "java-ruoyi-impact-enum",
+                    "stage": "impact-phase4",
+                }
+            ]
+        }
+
+        code, report = run_scenario_check(
+            repo,
+            matrix,
+            "D14-java-enum-analysis",
+            run_record=make_run_record(),
+            requirement_dir="change-impact/locked-user",
+        )
+
+        self.assertEqual(code, 0, report)
+        self.assertEqual(report["status"], "PASS")
+        self.assertTrue(any(c["code"] == "phase4-artifacts" and c["level"] == "PASS" for c in report["checks"]))
+
+    def test_phase4_analysis_gate_auto_detects_single_requirement_dir(self) -> None:
+        repo = make_repo()
+        for name in (
+            "000-context-pack.md",
+            "010-requirements.md",
+            "020-design.md",
+            "030-implementation.md",
+            "_active-state.md",
+        ):
+            write(repo / f"change-impact/locked-user/{name}", f"{name}\n")
+        matrix = {
+            "scenarios": [
+                {
+                    "id": "D14-java-enum-analysis",
+                    "case_id": "java-ruoyi-impact-enum",
+                    "stage": "impact-phase4",
+                }
+            ]
+        }
+
+        code, report = run_scenario_check(
+            repo,
+            matrix,
+            "D14-java-enum-analysis",
+            run_record=make_run_record(),
+        )
+
+        self.assertEqual(code, 0, report)
+        phase4 = [c for c in report["checks"] if c["code"] == "phase4-artifacts"]
+        self.assertEqual(len(phase4), 1)
+        self.assertEqual(phase4[0]["level"], "PASS")
+        self.assertTrue(phase4[0]["evidence"]["auto_detected"])
+        self.assertEqual(phase4[0]["evidence"]["requirement_dir"], "change-impact/locked-user")
+
+    def test_phase4_analysis_gate_fails_when_multiple_requirement_dirs_match(self) -> None:
+        repo = make_repo()
+        for request in ("locked-user", "old-run"):
+            for name in (
+                "000-context-pack.md",
+                "010-requirements.md",
+                "020-design.md",
+                "030-implementation.md",
+                "_active-state.md",
+            ):
+                write(repo / f"change-impact/{request}/{name}", f"{name}\n")
+        matrix = {
+            "scenarios": [
+                {
+                    "id": "D14-java-enum-analysis",
+                    "case_id": "java-ruoyi-impact-enum",
+                    "stage": "impact-phase4",
+                }
+            ]
+        }
+
+        code, report = run_scenario_check(
+            repo,
+            matrix,
+            "D14-java-enum-analysis",
+            run_record=make_run_record(),
+        )
+
+        self.assertEqual(code, 1)
+        phase4 = [c for c in report["checks"] if c["code"] == "phase4-artifacts"]
+        self.assertEqual(len(phase4), 1)
+        self.assertEqual(phase4[0]["level"], "FAIL")
+        self.assertIn("Multiple complete Phase 4 directories", phase4[0]["message"])
+
+    def test_phase4_analysis_gate_fails_when_docs_missing(self) -> None:
+        repo = make_repo()
+        matrix = {
+            "scenarios": [
+                {
+                    "id": "D14-java-enum-analysis",
+                    "case_id": "java-ruoyi-impact-enum",
+                    "stage": "impact-phase4",
+                }
+            ]
+        }
+
+        code, report = run_scenario_check(
+            repo,
+            matrix,
+            "D14-java-enum-analysis",
+            run_record=make_run_record(),
+        )
+
+        self.assertEqual(code, 1)
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any(c["code"] == "phase4-artifacts" and c["level"] == "FAIL" for c in report["checks"]))
+
+    def test_analysis_gate_fails_on_source_diff(self) -> None:
+        repo = make_repo()
+        write(repo / "src/feature.ts", "export const feature = 'changed'\n")
+        matrix = {
+            "scenarios": [
+                {
+                    "id": "D18-monorepo-lazy-trap-analysis",
+                    "case_id": "monorepo-full-stack-starter-impact-lazy-trap",
+                    "stage": "impact-phase4",
+                }
+            ]
+        }
+
+        code, report = run_scenario_check(
+            repo,
+            matrix,
+            "D18-monorepo-lazy-trap-analysis",
+            run_record=make_run_record(),
+            requirement_dir="change-impact/password-length",
+        )
+
+        self.assertEqual(code, 1)
+        self.assertEqual(report["status"], "FAIL")
+        self.assertTrue(any(c["code"] == "analysis-source-diff" and c["level"] == "FAIL" for c in report["checks"]))
 
 
 if __name__ == "__main__":

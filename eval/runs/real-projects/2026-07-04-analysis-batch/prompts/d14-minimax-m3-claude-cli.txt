@@ -1,5 +1,5 @@
 [评测环境]
-工作目录：E:\agent\real-project-fixtures\java-ruoyi
+工作目录：E:\agent\real-project-fixtures\java-ruoyi-d14-m3-20260704-223205
 Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
 输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-04-minimax-m3-delivery-d14\README.md
 
