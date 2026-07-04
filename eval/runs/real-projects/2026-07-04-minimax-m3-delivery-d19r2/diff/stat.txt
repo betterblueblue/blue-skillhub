@@ -1,0 +1,7 @@
+ docs/swagger.json                      | 238 ++++++++++++++++++++-------------
+ prisma/schema.prisma                   |   7 -
+ src/controllers/article.controller.ts  |   2 -
+ src/routes/routes.ts                   |   2 -
+ src/services/article.service.ts        |  92 ++-----------
+ tests/services/article.service.test.ts |   2 -
+ 6 files changed, 152 insertions(+), 191 deletions(-)

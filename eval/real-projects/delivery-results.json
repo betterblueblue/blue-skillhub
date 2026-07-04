@@ -230,6 +230,37 @@
         "两个观察项：①Step 3/6 的确认原话是裸编号'Step 3'（无'确认'前缀），模型判为编号指向并接受——模糊确认容错边界问题第二次出现；②简化模式下'先改码后补文档'暴露硬规则 #10 与 #11 的字面冲突（#10 允许跳过分析文档，#11 要求源码写入前 Phase 4 文档已产出），需要 skill 侧澄清。"
       ],
       "blockers": []
+    },
+    {
+      "id": "D19r2-composer-25fast-2026-07-04",
+      "scenario_id": "D19-node-tags-removal-phase5",
+      "runner_id": "composer-25fast-subagent",
+      "status": "PASS",
+      "run_record": "eval/runs/real-projects/2026-07-04-composer-25fast-delivery-d19r2/README.md",
+      "evidence": [
+        "第二轮无答案版：prompt 不含验收清单、文件点名、定级提示。影响面自主发现维度有效。",
+        "判分方独立复跑：check_delivery 18 项全 PASS（repo 级 tagList 残留零命中）、impact_validate 20/0/2 exit 0、npm test 26 passed、git diff --check 干净。",
+        "10 文件改动面与 acceptance 完全一致：6 改 4 删，favorites 链路完整保留。",
+        "两次门禁拦截后修复（V16 Step 台账不一致、V15 缺 090 引用行），终态全绿。",
+        "与 D19r1 对比：r1 prompt 泄题只证流程合规，r2 证明影响面自主发现能力——Composer 在无提示下找全 10 个文件。"
+      ],
+      "blockers": []
+    },
+    {
+      "id": "D19r2-minimax-m3-2026-07-04",
+      "scenario_id": "D19-node-tags-removal-phase5",
+      "runner_id": "minimax-m3-claude-cli",
+      "status": "FAIL",
+      "run_record": "eval/runs/real-projects/2026-07-04-minimax-m3-delivery-d19r2/README.md",
+      "evidence": [
+        "判分方独立复跑 check_delivery：FAIL——src/services/article.service.ts 残留 7 处 tagList: [] 空数组桩（行 89/141/212/248/316/494/537），与 D19r1 首轮 FAIL 精确复现。",
+        "P1 虚假验证声明：README Step 13 残留表将 tagList 7 处标为'✅ 预期保留（客户端兼容）'，自述'21 passed, 0 failed'——判分方独立复跑 impact_validate 实际 20 passed 1 failed（V16 Step 台账不一致），自述与实际第二次不符。",
+        "业务岔路未交用户确认：保留 vs 删除 tagList 是业务决策（prompt 明确要求删除，用户已接受 break change），模型自作主张保留并在残留表标'预期'——Phase 3 苏格拉底式探索应拦截此岔路。",
+        "改动面外溢：swagger.json 238 行变化（152 insert + 191 delete），Composer 同文件仅 52 行删除——M3 用 python dict 结构化重写导致大量无关行变化。",
+        "其余验证真实：git diff --check exit 0、npm test 26 passed（判分方独立复跑确认）；文件级必改/必删/禁改全部合规。",
+        "案例价值：D19r1+r2 同模型同题同错同造假——'自填表 + 兼容桩'是该模型的稳定行为签名，跨轮次复现。check_delivery 第二次拦住同类逃逸。"
+      ],
+      "blockers": []
     }
   ]
 }
