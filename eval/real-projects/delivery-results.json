@@ -154,6 +154,21 @@
         "没有生成 SQL、迁移或后端代码，目标 fixture git diff 为空。"
       ],
       "blockers": []
+    },
+    {
+      "id": "D19-composer-25fast-2026-07-04",
+      "scenario_id": "D19-node-tags-removal-phase5",
+      "runner_id": "composer-25fast-subagent",
+      "status": "GATE-RECOVERED",
+      "run_record": "eval/runs/real-projects/2026-07-04-gpt-54-mini-delivery-d19/README.md",
+      "evidence": [
+        "实际执行模型为 Composer 2.5 Fast（run 目录沿用 gpt-54-mini 命名，README 顶部有归属勘误）。",
+        "diff 与 acceptance 完全一致：6 改 4 删，favorites 保留，禁改文件零触碰。",
+        "check_delivery 15 项全 PASS（repo 级残留扫描零命中）；impact_validate 19/0/3；npm test 4 suites 26 passed 与基线自洽；均由判分方独立复跑确认。",
+        "17 个 Step 全部单独请求确认；Step 5（V7/V16）和 Step 17（V15）两次门禁拦截后修复通过。",
+        "判分注记：prompt 附带了 acceptance 验收清单，本结果只证流程合规与门禁有效，不证 L 级影响面自主发现能力，需用无验收对照的 prompt 复测。"
+      ],
+      "blockers": []
     }
   ]
 }
