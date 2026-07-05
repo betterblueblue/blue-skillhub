@@ -133,7 +133,7 @@
 >
 > 确认执行 `Step N: [操作名称]`？请回复：`确认 Step N` / `跳过 Step N` / 其他指令
 
-- `确认 Step N` → 执行 → 跑 profile 的 `commands.build` + `commands.test`（验证命令必须来自项目证据，不得套用 `mvn`/`npm test`/`go test` 等占位命令）→ 通过记 V2 → 写执行记录 + 更新 `_active-state.md` → 下一步
+- `确认 Step N` → 执行 → 跑 profile 的 `commands.build` + `commands.test`（验证命令必须来自项目证据，不得使用 `mvn`/`npm test`/`go test` 等占位命令）→ 通过记 V2 → 写执行记录 + 更新 `_active-state.md` → 下一步
 - `跳过 Step N` → 更新 `_active-state.md` 为跳过，下一步
 - 其他 → 等待指令
 
@@ -153,7 +153,7 @@
 
 ### 验证命令来源与 V2/V3 映射（强制）
 
-验证命令必须来自项目证据：只有在发现 `pom.xml`/`mvnw`/`build.gradle`/`package.json`/`go.mod`/`pyproject.toml`/测试配置等真实入口后，才能写具体编译、测试或运行命令。找不到时写"V2/V3 不可用/需补证据"，不得套用 `mvn`、`npm test`、`go test` 等占位命令。
+验证命令必须来自项目证据：只有在发现 `pom.xml`/`mvnw`/`build.gradle`/`package.json`/`go.mod`/`pyproject.toml`/测试配置等真实入口后，才能写具体编译、测试或运行命令。找不到时写"V2/V3 不可用/需补证据"，不得使用 `mvn`、`npm test`、`go test` 等占位命令。
 
 验证等级映射：
 
@@ -291,7 +291,7 @@
 
 ## 维护注意
 
-- 强制规则检查点（拦截清单 10 条、必须确认、DB 写禁生产）在 SKILL.md 强制规则有浓缩镜像。
+- 强制规则检查点（拦截清单 10 条、必须确认、DB 写禁生产）在 SKILL.md 强制规则有浓缩版。
 - 本文件详细规则的修改不影响强制规则，但反过来——改强制规则必须同步改本文件对应段。
 - 跨平台差异（时间戳、路径、shell）见 `references/cross-platform-notes.md`，不在本文件重复。
 - 栈/DB 专属规则由 `profiles/` 和 `db-adapters/` 注入，不在本文件重复。
