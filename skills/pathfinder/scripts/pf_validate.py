@@ -8,14 +8,15 @@ Checks:
   V4: Section [13] has at least 1 non-empty entry (header-only match, no false
       positives from nav lines mentioning 【13】)
   V5: Mermaid solid-arrow source nodes are mentioned in body text
-  V6: Facts JSON files (scan.json/git.json) content is non-empty, consistent,
-      and matches actual project structure on disk
+  V6: Facts JSON files (scan.json/git.json) schema/content is non-empty,
+      consistent, and matches actual project structure on disk
   V7: Section [14] code style observation exists and has substantive content
       (not just a title; default output, not optional)
   V8: Evidence paths do not mix a relative prefix with a Windows absolute path
       (for example: ruoyi-admin/E:/repo/file.java)
   V9: Map header commit hash matches git.json head_short (N-D)
   V10: Credibility tag density (min 5 tags, FAIL) + fix-suggestion keywords (WARN, N-E)
+  V11: facts/map recorded HEAD still matches current on-disk HEAD
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass, 1 = fail (any FAIL item).
@@ -29,6 +30,7 @@ import argparse
 import json
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -241,10 +243,52 @@ def check_mermaid_consistency(text: str) -> list[str]:
 
 # --- V6: Facts file content validation ---
 
+FACTS_SCHEMA_VERSION = 1
+
+
+def _check_facts_schema(
+    data: dict,
+    filename: str,
+    expected_generator: str,
+    repo_root: str,
+) -> list[str]:
+    """Validate shared facts metadata required for traceability."""
+    errors: list[str] = []
+
+    if data.get("schema_version") != FACTS_SCHEMA_VERSION:
+        errors.append(
+            f"V6: {filename} schema_version must be {FACTS_SCHEMA_VERSION} "
+            f"(got {data.get('schema_version')!r})"
+        )
+    if data.get("generator") != expected_generator:
+        errors.append(
+            f"V6: {filename} generator must be {expected_generator} "
+            f"(got {data.get('generator')!r})"
+        )
+
+    source_path = data.get("source_path")
+    if not isinstance(source_path, str) or not source_path:
+        errors.append(f"V6: {filename} source_path is missing or empty")
+    elif os.path.isabs(source_path):
+        norm_source = os.path.normcase(os.path.abspath(source_path))
+        norm_repo = os.path.normcase(os.path.abspath(repo_root))
+        if norm_source != norm_repo:
+            errors.append(
+                f"V6: {filename} source_path ({source_path}) does not match "
+                f"--repo-root ({repo_root})"
+            )
+
+    observed_at = data.get("observed_at")
+    if not isinstance(observed_at, str) or not observed_at:
+        errors.append(f"V6: {filename} observed_at is missing or empty")
+
+    return errors
+
 def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
     """V6: Validate facts JSON files content. Returns (errors, warnings).
 
     Checks change-impact/_project-map/facts/scan.json and git.json for:
+      - both facts files follow schema_version=1
       - scan.json file_count > 0
       - scan.json dir_tree contains root '/' and has > 1 entry
       - scan.json dir_tree entries correspond to actual directories on disk
@@ -277,6 +321,7 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
         try:
             with open(scan_path, "r", encoding="utf-8") as f:
                 scan = json.load(f)
+            errors.extend(_check_facts_schema(scan, "scan.json", "pf_scan.py", repo_root))
             file_count = scan.get("file_count", 0)
             if not isinstance(file_count, int) or file_count <= 0:
                 errors.append(
@@ -331,6 +376,7 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
         try:
             with open(git_path, "r", encoding="utf-8") as f:
                 git = json.load(f)
+            errors.extend(_check_facts_schema(git, "git.json", "pf_git.py", repo_root))
             is_git = git.get("is_git_repo", False)
             is_independent = git.get("is_independent_repo", False)
             # Only check head_short for independent git repos
@@ -509,6 +555,78 @@ def check_commit_crosscheck(text: str, repo_root: str) -> list[str]:
     return errors
 
 
+# --- V11: Current Git HEAD freshness check ---
+
+def _run_git_head(repo_root: str) -> str | None:
+    """Return current short HEAD, or None when git is unavailable/not a repo."""
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
+def check_current_head_freshness(text: str, repo_root: str) -> tuple[list[str], list[str]]:
+    """V11: git.json/map header must match current HEAD for independent repos."""
+    errors: list[str] = []
+    warnings: list[str] = []
+
+    git_path = os.path.join(
+        repo_root, "change-impact", "_project-map", "facts", "git.json"
+    )
+    if not os.path.isfile(git_path):
+        return errors, warnings  # V6 handles missing git.json
+
+    try:
+        with open(git_path, "r", encoding="utf-8") as f:
+            git = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return errors, warnings  # V6 handles corrupt git.json
+
+    if not git.get("is_independent_repo", False):
+        return errors, warnings
+
+    facts_head = (git.get("head_short") or "").lower()
+    if not facts_head:
+        return errors, warnings  # V6 handles null head_short
+
+    current_head = _run_git_head(repo_root)
+    if not current_head:
+        warnings.append(
+            "V11: cannot read current git HEAD; skipped freshness check "
+            "(V6/V9 still validate facts and map consistency)"
+        )
+        return errors, warnings
+
+    current_head = current_head.lower()
+    if facts_head != current_head and not facts_head.startswith(current_head) and not current_head.startswith(facts_head):
+        errors.append(
+            f"V11: git.json head_short '{facts_head}' does not match current "
+            f"HEAD '{current_head}' — facts/map are stale; rerun pf_git.py and "
+            "refresh _project-map.md"
+        )
+        return errors, warnings
+
+    m = RE_BASED_ON_COMMIT.search(text)
+    if m:
+        map_commit = m.group(1).lower()
+        if map_commit != current_head and not map_commit.startswith(current_head) and not current_head.startswith(map_commit):
+            errors.append(
+                f"V11: map header commit '{map_commit}' does not match current "
+                f"HEAD '{current_head}' — refresh the map before using it"
+            )
+
+    return errors, warnings
+
+
 # --- V10: Credibility tag density + fix-suggestion keywords (N-E) ---
 
 RE_VERIFIED_TAG = re.compile(r"【已核实")
@@ -638,6 +756,13 @@ def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]
     warnings.extend(v10_warnings)
     if not v10_errors:
         passes.append("V10: credibility tags sufficient")
+
+    # V11
+    v11_errors, v11_warnings = check_current_head_freshness(text, repo_root)
+    fails.extend(v11_errors)
+    warnings.extend(v11_warnings)
+    if not v11_errors and not v11_warnings:
+        passes.append("V11: facts/map match current git HEAD or freshness check not needed")
 
     return passes, fails, warnings
 

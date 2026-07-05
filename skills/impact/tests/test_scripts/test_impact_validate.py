@@ -1417,5 +1417,46 @@ class TestV21ProvenanceTags(unittest.TestCase):
                         f"Expected V21 no-facts WARN/PASS, got: {v21}")
 
 
+def _v22_lines(stdout: str) -> list[str]:
+    return [l for l in stdout.splitlines() if "V22:" in l]
+
+
+class TestV22PathfinderConsumption(unittest.TestCase):
+    """V22: Existing Pathfinder maps must have an auditable consumption record."""
+
+    def test_map_exists_without_consumption_record_fails(self):
+        ctx = (
+            "# Context Pack\n\n"
+            "## 1. 变更意图\n\n"
+            "- 项目地图状态：新鲜 — 地图 commit：`abc1234` / 当前 HEAD：`abc1234`\n\n"
+            "## 7. 已确认事实\n\n"
+            "- updateUserById 默认不含 password — 来源：`src/services/user.service.ts:92` 【代码推断: src/services/user.service.ts:92】\n"
+        )
+        td, rd = _make_repo(context_pack=ctx)
+        code, out = _run_validator(td, rd)
+        v22 = _v22_lines(out)
+        self.assertEqual(code, 1, f"Missing map consumption record should FAIL, got {code}\n{out}")
+        self.assertTrue(any("no Pathfinder" in l for l in v22), f"Expected V22 FAIL, got: {v22}")
+
+    def test_map_exists_with_consumption_record_passes(self):
+        ctx = (
+            "# Context Pack\n\n"
+            "## 1. 变更意图\n\n"
+            "- 项目地图状态：新鲜 — 地图 commit：`abc1234` / 当前 HEAD：`abc1234`\n\n"
+            "## 3. 分层上下文\n\n"
+            "### Pathfinder 地图消费记录\n\n"
+            "| 地图事实 / 章节 | 处理方式 | Impact 复核证据 | 结论 |\n"
+            "|---|---|---|---|\n"
+            "| 地图【8】构建运行测试 | 重新验证 | `package.json:7` | 使用 npm test 作为候选验证入口 |\n\n"
+            "## 7. 已确认事实\n\n"
+            "- updateUserById 默认不含 password — 来源：`src/services/user.service.ts:92` 【代码推断: src/services/user.service.ts:92】\n"
+        )
+        td, rd = _make_repo(context_pack=ctx)
+        code, out = _run_validator(td, rd)
+        v22 = _v22_lines(out)
+        self.assertEqual(code, 0, f"Map consumption record should pass, got {code}\n{out}")
+        self.assertTrue(any("consumption record" in l for l in v22), f"Expected V22 PASS, got: {v22}")
+
+
 if __name__ == "__main__":
     unittest.main()

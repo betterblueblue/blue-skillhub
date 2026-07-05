@@ -27,6 +27,7 @@ Checks:
   V19: High-risk DDL crosscheck (DDL keywords require high-risk checklist)      — FAIL
   V20: Step confirmation field (every Step must have 用户确认 with Step number)  — FAIL
   V21: Provenance tags (§7 facts must have 【用户确认】/【代码推断】/【用户委托默认】) — FAIL
+  V22: Pathfinder map consumption record (when map exists, record used/rechecked/rejected facts) — FAIL
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -2102,6 +2103,74 @@ def check_source_tags(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
 
 
 # ===========================================================================
+# V22: Pathfinder map consumption record — when a map exists, context-pack
+#      must record which Pathfinder facts were used, rechecked, or rejected.
+# ===========================================================================
+
+RE_MAP_STATUS = re.compile(r"项目地图状态[：:]\s*(.+)")
+NO_MAP_MARKERS = ("无地图", "不存在", "未发现")
+MAP_CONSUMPTION_ACTIONS = ("采用", "重新验证", "重验", "未采用", "过期", "待验证")
+
+
+def check_pathfinder_consumption(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V22: Require auditable Pathfinder map consumption when map exists."""
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    ctx_file = req_dir / "000-context-pack.md"
+    if not ctx_file.exists():
+        return passes, fails, warns  # V1 handles missing file
+
+    ctx_text = ctx_file.read_text(encoding="utf-8")
+    status_match = RE_MAP_STATUS.search(ctx_text)
+    if not status_match:
+        warns.append(
+            "V22: 000-context-pack.md missing 项目地图状态 field — "
+            "cannot tell whether Pathfinder map was checked"
+        )
+        return passes, fails, warns
+
+    status = status_match.group(1).strip()
+    if any(marker in status for marker in NO_MAP_MARKERS):
+        passes.append("V22: Pathfinder map absent; consumption record not required")
+        return passes, fails, warns
+
+    section = _extract_section_text(
+        ctx_text,
+        ["Pathfinder 地图消费记录", "地图消费记录"],
+    )
+    if not section:
+        fails.append(
+            "V22: 项目地图状态 indicates a map exists, but "
+            "000-context-pack.md has no Pathfinder 地图消费记录 section"
+        )
+        return passes, fails, warns
+
+    rows: list[str] = []
+    for line in section.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        if "---" in stripped or "地图事实" in stripped or "[地图" in stripped:
+            continue
+        if any(action in stripped for action in MAP_CONSUMPTION_ACTIONS):
+            rows.append(stripped)
+
+    if not rows:
+        fails.append(
+            "V22: Pathfinder 地图消费记录 has no substantive rows — "
+            "record at least one map fact as 采用 / 重新验证 / 未采用 / 过期"
+        )
+    else:
+        passes.append(
+            f"V22: Pathfinder map consumption record has {len(rows)} auditable row(s)"
+        )
+
+    return passes, fails, warns
+
+
+# ===========================================================================
 # Main
 # ===========================================================================
 
@@ -2279,6 +2348,12 @@ def main():
 
     # V21: Provenance tags
     p, f, w = check_source_tags(req_dir)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V22: Pathfinder map consumption record
+    p, f, w = check_pathfinder_consumption(req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

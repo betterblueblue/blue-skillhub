@@ -126,6 +126,8 @@
 >
 > **_active-state.md 的「最近验证」节必须填入实际运行的脚本命令和结果，不得写 N/A 或「未执行」。** 只读分析阶段也必须运行验证脚本——脚本只读检查文件内容，不修改项目代码。
 >
+> **定级确认不等于写文档授权。** Phase 3.5 的 light/full 确认只选择输出档位；真正写入 `000/010/020/030/040/_active-state.md` 前,必须单独提出 Phase 4 文档写入 Step,列出写入对象、验证命令和回滚方式,并等待当前对话中的 `确认 Step N`。
+>
 > **Phase 4 文档写入和 Phase 5 源码写入必须拆成不同 Step。** Phase 4 的确认范围只能覆盖文档产出、`impact_validate.py` 校验和进入执行前检查；不得同时覆盖源码、测试、配置、DDL/DML 或外部系统写入。需要改代码时，先完成本文档校验，再生成 `060-preflight.md`，然后单独请求源码写入 Step 的 `确认 Step N`。如果 `060-preflight.md` 还不存在，下一步只能是生成/更新执行前检查和 `_active-state.md`，不得提前提出源码、测试、配置、DDL/DML 或外部系统写入 Step。
 
 运行 `python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|full> --repo-root <项目根目录>` 完成输出验证。
@@ -149,6 +151,11 @@
 | Phase 5 记录完整性 | V15 | FAIL，源码/测试/配置写入 Step 未列出 `090-execution-record.md` 和 `_active-state.md` 则阻止提交；Git 中已有源码/测试/配置 diff 但缺执行记录、缺源码写入 Step，或有源码类路径未被执行记录覆盖时也阻止提交 |
 | `_active-state.md` Step 状态一致性 | V16 | FAIL，状态头、Step 台账或恢复备注互相矛盾则阻止提交 |
 | 任务验收冒烟检查 | V17 | FAIL，发现明显半截实现时阻止提交；当前覆盖 route meta `label` 已改但同对象 `title` 仍停留旧展示文案的场景 |
+| 验证证据 | V18 | FAIL，`_active-state.md` 最近验证结果必须是实际 validator 输出，且 failed 为 0 |
+| 高风险 DDL 交叉检查 | V19 | FAIL，执行记录中出现 DDL/DML 高风险关键词时必须有高风险清单和决策依据 |
+| Step 确认字段 | V20 | FAIL，执行记录中每个 Step 必须有带 Step 编号的用户确认字段，或明确写未确认 |
+| 已确认事实来源标签 | V21 | FAIL，`000-context-pack.md` §7 每条事实必须有 `【用户确认】` / `【代码推断】` / `【用户委托默认】` 标签 |
+| Pathfinder 地图消费记录 | V22 | FAIL，项目地图存在时，`000-context-pack.md` 必须记录采用、重新验证、未采用或过期的地图事实 |
 
 V7 判档合理性检查包含三个子检查：
 - **全量词覆盖检查（FAIL）**：用户原话出现全量词（每次/所有/全部/任何/一律/每个）时，产出必须包含覆盖范围分析（覆盖范围/缺口）。缺失则 FAIL，阻止提交。

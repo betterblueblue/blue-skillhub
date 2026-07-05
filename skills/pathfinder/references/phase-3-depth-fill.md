@@ -159,15 +159,18 @@
 
 闸门规则见 SKILL.md 硬性规则 #8：Phase 4 写入前必须运行 `python skills/pathfinder/scripts/pf_validate.py change-impact/_project-map.md --repo-root <project-root>` 且 exit code = 0。
 
-原自检的 5 项检查已由闸门脚本的 V1-V8 覆盖：
+原自检的 5 项检查已由闸门脚本的 V1-V11 覆盖：
 - V1: 行号真实性（替代原 #1）
 - V2: 凭证未泄露（替代原 #2）
 - V3: SVG 安全（替代原 #5）
 - V4: 未覆盖项非空（替代原 #3）
 - V5: Mermaid 实线一致性（替代原 #4）
-- V6: facts 文件内容校验（scan.json file_count > 0、dir_tree 含根目录且条目 > 1、dir_tree 条目对应磁盘真实目录、file_count 与磁盘实际文件数比值在 0.3-3.0 范围内；git.json head_short 非 null、toplevel 与 --repo-root 一致）。facts 文件缺失时报 FAIL（两个都缺失或只缺一个都报 FAIL；两个都缺失时附「先跑 Phase 1.5」提示）；内容不合理时 FAIL。
+- V6: facts schema 与内容校验（schema_version/generator/source_path/observed_at、scan.json file_count > 0、dir_tree 含根目录且条目 > 1、dir_tree 条目对应磁盘真实目录、file_count 与磁盘实际文件数比值在 0.3-3.0 范围内；git.json head_short 非 null、toplevel 与 --repo-root 一致）。facts 文件缺失时报 FAIL（两个都缺失或只缺一个都报 FAIL；两个都缺失时附「先跑 Phase 1.5」提示）；内容不合理时 FAIL。
 - V7: 【14】代码风格观察节存在且有实质性内容（≥2 条），缺失或空壳均 FAIL。
 - V8: 证据路径格式检查，禁止 `模块名/E:/...` 这类相对前缀混入 Windows 绝对路径的错误引用。
+- V9: 地图头部 `基于 commit` 与 git.json 的 `head_short` 一致。
+- V10: 可信度标签密度不足时报 FAIL；疑似修复建议词时报 WARN。
+- V11: 独立 Git 仓库中，git.json/map 记录的 HEAD 必须匹配当前 HEAD；不一致时报 FAIL，提示重跑 facts 并刷新地图。
 
 > 设计理由：模型自查（Phase 4.5）是循环的——编造行号的模型可能在自检环节继续出错。脚本检查是外部进程，exit code ≠ 0 时无法绕过，不受模型是否诚实的影响。
 

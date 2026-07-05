@@ -5,11 +5,11 @@
 ## 当前结论
 
 ```text
-pathfinder = 陌生项目全项目级只读认知地图,产出 change-impact/_project-map.md 供 impact 家族当 L1 导航。
+pathfinder = 陌生项目全项目级认知地图,项目本体只读,产出 change-impact/_project-map.md 和 facts 供 impact 家族当 L1 导航。
 ```
 
 边界：
-- 100% 只读、只描述不开药方。
+- 项目本体只读、只描述不开药方；只写 Pathfinder 自己管理的地图和 facts 文件。
 - 地图是导航图不是权威源:【推断】项 impact 接过去须重新取证。
 
 2026-06-25 T04 完成 v4.1 L1 全量回归（runner: Composer 2.5, judge: GLM-5.2）：3 case 均分 100.0，0 P0 / 0 P1，契约全 PASS，`pf_validate.py` 均 6 PASS / 0 FAIL。基线 P1（P3D 信任契约头写父 commit）修复无回归。code graph MCP 降级为 Read/Grep/Glob 扫描，地图如实标注 `status: unavailable`，不影响质量。

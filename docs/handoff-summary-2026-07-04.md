@@ -4,7 +4,7 @@
 
 **日期:** 2026-07-04
 
-**状态:** 阶段性总结，供接力参考（2026-07-05 更新：README 发布润色 + 中文表述打磨）
+**状态:** 当前接力总结，供后续参考（2026-07-05 更新：README 发布润色 + 中文表述打磨 + v5.8 P0 加固）
 
 ---
 
@@ -45,6 +45,7 @@
 
 *   `/skills/impact/README.md`
 *   `/skills/pathfinder/README.md`
+*   `/docs/skill-iteration-backlog.md`
 *   `/eval/real-projects/README.md`
 *   当前文件：`/docs/handoff-summary-2026-07-04.md`
 
@@ -400,5 +401,52 @@ Composer 2.5 Fast 分析题批次结果（8 个）：
 | 文件 | 改动内容 |
 |------|----------|
 | `README.md`（主） | 开场从"这是我的 AI 工具箱"改为产品定位："给用开源模型在现有系统上做有风险变更的人，配的工头和安检门"。ImpactRadar 段加"核心产品"前缀 + D19 门禁修复率证据。Pathfinder 段加"Impact 的导航输入"前缀 + 防编造独有价值。"赛道很挤"改为"能做项目摸底的工具已经不少" |
-| `skills/impact/README.md` | 顶部加定位段（工头和安检门 + 18 项门禁 + check_delivery.py）。新增"真实交付评测：门禁修复率证据"小节，用四行表格概括 D19/D20 的首轮拦截 → 修复循环 → 终态，附"错得响亮、修得回来"实锤。"靶向提问"→"有针对性地提问"、"防诱导教练词"→"防诱导提示语"、"三道 fixture 内验证全绿都拦不住的东西"→"fixture 内验证全绿也漏掉的问题" |
+| `skills/impact/README.md` | 顶部加定位段（工头和安检门 + 自动化门禁 + check_delivery.py）。新增"真实交付评测：门禁修复率证据"小节，用四行表格概括 D19/D20 的首轮拦截 → 修复循环 → 终态，附"错得响亮、修得回来"实锤。"靶向提问"→"有针对性地提问"、"防诱导教练词"→"防诱导提示语"、"三道 fixture 内验证全绿都拦不住的东西"→"fixture 内验证全绿也漏掉的问题" |
 | `skills/pathfinder/README.md` | 顶部加定位段（Impact 导航输入 + 防幻觉摸底 + 防编造独有价值）。"不裁剪广度"→"不缩减覆盖面"、"端到端串通"→"端到端走通"、"留接缝以后可挂接"→"预留了接口以后可以接"、"显式进未覆盖项"→"明确写进未覆盖项"、"关闭了…缺口"→"补上了…的缺口" |
+
+## 十、v5.8 P0 加固与后续迭代入口（2026-07-05）
+
+基于新的产品定位（已有项目需求迭代、弱模型门禁补强、用户友好澄清），完成了一轮 P0 加固。原则是：能脚本验证的直接脚本化；需要真实日志判断的先放 backlog，不急着加重流程。
+
+### 10.1 已落地的 P0
+
+| 项 | 落地位置 | 作用 |
+|----|----------|------|
+| Pathfinder facts schema 固定 | `skills/pathfinder/references/facts-schema.md`、`pf_scan.py`、`pf_git.py`、`pf_validate.py` V6 | facts 现在有 `schema_version`、`generator`、`source_path`、`observed_at`，旧格式会被 V6 拦住 |
+| Pathfinder 地图过期检查 | `pf_validate.py` V9/V11 | V9 检查地图 commit 与 git.json 一致；V11 检查 facts/map 记录的 HEAD 是否仍等于当前磁盘 HEAD |
+| Impact 记录 Pathfinder 消费情况 | `templates/000-context-pack.md`、`phase-2-context-discovery.md`、`impact_validate.py` V22 | 有地图时必须记录采用、重新验证、未采用或过期的地图事实，不能只写"已读取地图" |
+| Phase 4 文档授权口径 | `skills/impact/SKILL.md`、`references/phase-4-output.md` | light/full 定级确认不等于写文档授权；Phase 4 写文档也必须单独 Step 确认 |
+| 收尾使用记录 | `skills/pathfinder/SKILL.md`、`skills/impact/SKILL.md`、主 README | Pathfinder / Impact 收尾时在最终回复自动追加简短使用记录，默认不写文件 |
+
+### 10.2 当前版本状态
+
+- `impact_validate.py` 现有 V1-V22，其中 V22 是 Pathfinder 地图消费记录门禁。
+- `pf_validate.py` 现有 V1-V11，其中 V6 检查 facts schema，V11 检查当前 HEAD 新鲜度。
+- Codex skill 元数据已合规：移除非标准 `disable-model-invocation` frontmatter，新增 `agents/openai.yaml`，通过 `allow_implicit_invocation: false` 保持手动触发优先。
+- Pathfinder 边界已统一为：项目本体只读；只写 Pathfinder 自己管理的地图和 facts 文件。
+- Impact / Pathfinder 都会在最终回复给出使用记录；是否保存成日志文件仍需后续单独设计授权规则。
+
+### 10.3 P1 / P2 后续入口
+
+后续优化统一看 `docs/skill-iteration-backlog.md`：
+
+- P1 等真实使用日志触发后再做：核心模块漏扫、推断写成事实、语义验收不足、light/full 判档偏差、Step 确认体验摩擦。
+- P2 产品化后做：跨客户端安装检查、小型真实项目矩阵、失败样本库、使用记录归档机制、评分卡趋势。
+- 更新规则：先写证据再改规则；新增门禁最好来自至少 3 个同类日志，或 1 个明确 P0/P1 失败。
+
+### 10.4 验证结果
+
+本轮未跑真实项目大复测，只做脚本、模板、文档和单测层验证：
+
+```text
+quick_validate pathfinder: Skill is valid!
+quick_validate impact: Skill is valid!
+pytest: 79 passed
+git diff --check: passed
+```
+
+### 10.5 给后续 agent 的注意事项
+
+- 不要把历史验证记录里的旧说法全部改成当前口径；历史原文保留，只改当前索引、README、SKILL.md 和模板。
+- 不要默认把使用记录写入文件。落盘日志属于 P2，需要另行设计保存路径和授权规则。
+- 不要为了追求 S 级一次性加重所有流程。先收集使用日志，再把重复出现的问题脚本化。

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Pathfinder"
+  short_description: "为陌生项目生成结构总览、运行入口、风险线索和导航地图"
+  default_prompt: "Use $pathfinder to map this unfamiliar project before making changes."
+
+policy:
+  allow_implicit_invocation: false
