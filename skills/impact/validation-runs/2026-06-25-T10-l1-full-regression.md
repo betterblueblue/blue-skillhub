@@ -48,7 +48,7 @@
 | p_level 新增 P0/P1 | 0 例 |
 | base 分下降 | 0 例（所有 case 均高于基线） |
 
-**⚠ runner_model 混杂**：基线 runner 为 opus-4-8，本轮为 Composer 2.5。分数提升不能直接归因 skill 改进，但红线检查（契约/P0/P1）是模型无关的硬底线。
+**⚠ runner_model 混杂**：基线 runner 为 opus-4-8，本轮为 Composer 2.5。分数提升不能直接归因 skill 改进，但红线检查（契约/P0/P1）是不受模型影响的硬底线。
 
 ## 路线图优先级完成情况
 
