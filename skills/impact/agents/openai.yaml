@@ -1,0 +1,7 @@
+interface:
+  display_name: "Impact"
+  short_description: "评估既有系统变更影响、风险边界和受监督实施步骤"
+  default_prompt: "Use $impact to assess this existing-system change before implementation."
+
+policy:
+  allow_implicit_invocation: false

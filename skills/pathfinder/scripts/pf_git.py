@@ -21,6 +21,7 @@ import re
 import subprocess
 import sys
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 
 HOTSPOT_LIMIT = 10
@@ -116,6 +117,10 @@ def main():
 
     if not is_git:
         result = {
+            "schema_version": 1,
+            "generator": "pf_git.py",
+            "source_path": str(root.resolve()).replace("\\", "/"),
+            "observed_at": datetime.now(timezone.utc).isoformat(),
             "is_git_repo": False,
             "is_independent_repo": False,
             "toplevel": None,
@@ -144,6 +149,10 @@ def main():
         modules = extract_modules(hotspots)
 
     result = {
+        "schema_version": 1,
+        "generator": "pf_git.py",
+        "source_path": str(root.resolve()).replace("\\", "/"),
+        "observed_at": datetime.now(timezone.utc).isoformat(),
         "is_git_repo": True,
         "is_independent_repo": is_independent,
         "toplevel": toplevel.replace("\\", "/") if toplevel else None,

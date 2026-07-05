@@ -17,6 +17,7 @@ import json
 import os
 import sys
 from collections import Counter
+from datetime import datetime, timezone
 from pathlib import Path
 
 # --- Config ---
@@ -140,6 +141,10 @@ def main():
     budget_tier = classify_budget(file_count)
 
     result = {
+        "schema_version": 1,
+        "generator": "pf_scan.py",
+        "source_path": str(root.resolve()).replace("\\", "/"),
+        "observed_at": datetime.now(timezone.utc).isoformat(),
         "file_count": file_count,
         "file_ext_counts": dict(ext_counter.most_common(TOP_EXT)),
         "dir_tree": dir_tree,

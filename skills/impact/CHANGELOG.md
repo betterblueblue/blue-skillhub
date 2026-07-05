@@ -486,6 +486,23 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 
 - `python -m pytest skills/impact/tests/test_scripts/test_impact_validate.py -q`：34 项通过
 
+### v5.8（Codex 元数据合规 + Pathfinder 消费记录）
+
+这轮围绕“已有项目迭代 + 弱模型门禁 + 用户友好澄清”的定位做 P0 补强，不做真实项目大复跑。
+
+**改了什么**
+
+- 移除非标准 `disable-model-invocation` frontmatter，新增 `agents/openai.yaml`，通过 `allow_implicit_invocation: false` 保持手动触发优先
+- 明确 Phase 3.5 的 light/full 定级确认不等于 Phase 4 写文档授权；写 `000/010/020/030/040/_active-state.md` 前必须另起文档写入 Step
+- 新增最终回复里的简短使用记录，默认只输出在对话里，不自动写文件，不替代 `_active-state.md` 或 `090-execution-record.md`
+- `000-context-pack.md` 新增「Pathfinder 地图消费记录」，要求记录采用、重新验证、未采用或过期的地图事实
+- `impact_validate.py` 新增 V22（FAIL）：项目地图存在时，缺少实质性的 Pathfinder 地图消费记录则阻止提交
+
+**验证**
+
+- `quick_validate.py skills/impact`：Skill is valid
+- `python -m pytest skills/pathfinder/tests/test_scripts/test_pathfinder_scripts.py skills/impact/tests/test_scripts/test_impact_validate.py`：79 项通过
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。

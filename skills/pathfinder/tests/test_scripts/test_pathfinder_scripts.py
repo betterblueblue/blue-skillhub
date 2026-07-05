@@ -29,6 +29,45 @@ def _run_script(script: Path, args: list[str], stdin_data: str = "") -> tuple[in
     return r.returncode, r.stdout, r.stderr
 
 
+def _scan_facts(repo_root: str, file_count: int = 1, dir_tree: list[str] | None = None) -> dict:
+    """Build schema-compliant scan.json test data."""
+    return {
+        "schema_version": 1,
+        "generator": "pf_scan.py",
+        "source_path": Path(repo_root).resolve().as_posix(),
+        "observed_at": "2026-07-05T00:00:00+00:00",
+        "file_count": file_count,
+        "file_ext_counts": {".py": file_count},
+        "dir_tree": dir_tree if dir_tree is not None else ["/", "src/"],
+        "manifest_files": [],
+        "budget_tier": "小仓",
+    }
+
+
+def _git_facts(
+    repo_root: str,
+    *,
+    is_git_repo: bool = False,
+    is_independent_repo: bool = False,
+    head_short: str | None = None,
+) -> dict:
+    """Build schema-compliant git.json test data."""
+    return {
+        "schema_version": 1,
+        "generator": "pf_git.py",
+        "source_path": Path(repo_root).resolve().as_posix(),
+        "observed_at": "2026-07-05T00:00:00+00:00",
+        "is_git_repo": is_git_repo,
+        "is_independent_repo": is_independent_repo,
+        "toplevel": Path(repo_root).resolve().as_posix() if is_git_repo else None,
+        "head_short": head_short,
+        "head_full": head_short,
+        "branch": "main" if is_git_repo else None,
+        "hotspots": [],
+        "recent_commit_modules": [],
+    }
+
+
 # ─── pf_scan.py tests ─────────────────────────────────────────────
 
 class TestPfScan(unittest.TestCase):
@@ -38,6 +77,9 @@ class TestPfScan(unittest.TestCase):
         code, out, _ = _run_script(PF_SCAN, [str(SCRIPTS_DIR)])
         self.assertEqual(code, 0)
         data = json.loads(out)
+        self.assertEqual(data["schema_version"], 1)
+        self.assertEqual(data["generator"], "pf_scan.py")
+        self.assertIn("source_path", data)
         self.assertEqual(data["file_count"], 3)
         self.assertIn(".py", data["file_ext_counts"])
         self.assertEqual(data["budget_tier"], "小仓")
@@ -93,6 +135,9 @@ class TestPfGit(unittest.TestCase):
         code, out, _ = _run_script(PF_GIT, [root])
         self.assertEqual(code, 0)
         data = json.loads(out)
+        self.assertEqual(data["schema_version"], 1)
+        self.assertEqual(data["generator"], "pf_git.py")
+        self.assertIn("source_path", data)
         self.assertTrue(data["is_git_repo"])
         self.assertTrue(data["is_independent_repo"])
         self.assertIsNotNone(data["head_short"])
@@ -137,14 +182,9 @@ class TestPfValidate(unittest.TestCase):
             facts_dir = os.path.join(repo_root, "change-impact", "_project-map", "facts")
             os.makedirs(facts_dir, exist_ok=True)
             with open(os.path.join(facts_dir, "scan.json"), "w") as f:
-                json.dump({"file_count": 1, "dir_tree": ["/", "src/"]}, f)
+                json.dump(_scan_facts(repo_root), f)
             with open(os.path.join(facts_dir, "git.json"), "w") as f:
-                json.dump({
-                    "is_git_repo": False,
-                    "is_independent_repo": False,
-                    "head_short": None,
-                    "toplevel": repo_root.replace("\\", "/"),
-                }, f)
+                json.dump(_git_facts(repo_root), f)
         path = os.path.join(repo_root, "_project-map.md")
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
@@ -290,14 +330,9 @@ class TestPfValidate(unittest.TestCase):
             facts_dir = os.path.join(td, "change-impact", "_project-map", "facts")
             os.makedirs(facts_dir)
             with open(os.path.join(facts_dir, "scan.json"), "w") as f:
-                json.dump({"file_count": 1, "dir_tree": ["/", "src/"]}, f)
+                json.dump(_scan_facts(td), f)
             with open(os.path.join(facts_dir, "git.json"), "w") as f:
-                json.dump({
-                    "is_git_repo": False,
-                    "is_independent_repo": False,
-                    "head_short": None,
-                    "toplevel": td.replace("\\", "/"),
-                }, f)
+                json.dump(_git_facts(td), f)
             map_content = """# Test Map
 ## 【13】没挖深的部分
 | 未深入模块 | 为什么 | 扩展入口 |
@@ -342,14 +377,9 @@ class TestPfValidate(unittest.TestCase):
             facts_dir = os.path.join(td, "change-impact", "_project-map", "facts")
             os.makedirs(facts_dir)
             with open(os.path.join(facts_dir, "scan.json"), "w") as f:
-                json.dump({"file_count": 0, "dir_tree": ["/"]}, f)
+                json.dump(_scan_facts(td, file_count=0, dir_tree=["/"]), f)
             with open(os.path.join(facts_dir, "git.json"), "w") as f:
-                json.dump({
-                    "is_git_repo": True,
-                    "is_independent_repo": True,
-                    "head_short": None,
-                    "toplevel": td.replace("\\", "/"),
-                }, f)
+                json.dump(_git_facts(td, is_git_repo=True, is_independent_repo=True), f)
             map_content = """# Test Map
 ## 【13】没挖深的部分
 | 未深入模块 | 为什么 | 扩展入口 |
@@ -367,6 +397,38 @@ class TestPfValidate(unittest.TestCase):
             self.assertIn("V6: scan.json file_count is 0", out)
             self.assertIn("V6: git.json head_short is null/empty", out)
 
+    def test_v6_legacy_facts_schema_fails(self):
+        """V6: legacy facts without schema metadata should FAIL."""
+        with tempfile.TemporaryDirectory() as td:
+            os.makedirs(os.path.join(td, "src"))
+            facts_dir = os.path.join(td, "change-impact", "_project-map", "facts")
+            os.makedirs(facts_dir)
+            with open(os.path.join(facts_dir, "scan.json"), "w") as f:
+                json.dump({"file_count": 1, "dir_tree": ["/", "src/"]}, f)
+            with open(os.path.join(facts_dir, "git.json"), "w") as f:
+                json.dump({
+                    "is_git_repo": False,
+                    "is_independent_repo": False,
+                    "head_short": None,
+                    "toplevel": None,
+                }, f)
+
+            map_content = """# Test Map
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | snake_case | src | 【推断: 待验证】 |
+"""
+            path = self._make_map(map_content, td)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 1, f"Legacy facts should fail:\n{out}")
+            self.assertIn("schema_version", out)
+
     def test_v6_good_facts_passes(self):
         """V6: facts with correct content should PASS."""
         with tempfile.TemporaryDirectory() as td:
@@ -383,14 +445,9 @@ class TestPfValidate(unittest.TestCase):
             os.makedirs(facts_dir)
             # _count_files_quick skips change-impact dir; actual count = 1 (map) + 4 (src) = 5
             with open(os.path.join(facts_dir, "scan.json"), "w") as f:
-                json.dump({"file_count": 5, "dir_tree": ["/", "src/"]}, f)
+                json.dump(_scan_facts(td, file_count=5), f)
             with open(os.path.join(facts_dir, "git.json"), "w") as f:
-                json.dump({
-                    "is_git_repo": True,
-                    "is_independent_repo": True,
-                    "head_short": "346d60f",
-                    "toplevel": td.replace("\\", "/"),
-                }, f)
+                json.dump(_git_facts(td), f)
             map_content = """# Test Map
 
 生成时间: 2026-07-04   基于 commit: 346d60f   预算档位: 小仓
@@ -521,14 +578,17 @@ some content
             facts_dir = os.path.join(td, "change-impact", "_project-map", "facts")
             os.makedirs(facts_dir)
             with open(os.path.join(facts_dir, "scan.json"), "w") as f:
-                json.dump({"file_count": 2, "dir_tree": ["/", "src/"]}, f)
+                json.dump(_scan_facts(td, file_count=2), f)
             with open(os.path.join(facts_dir, "git.json"), "w") as f:
-                json.dump({
-                    "is_git_repo": True,
-                    "is_independent_repo": True,
-                    "head_short": "abc1234",
-                    "toplevel": td.replace("\\", "/"),
-                }, f)
+                json.dump(
+                    _git_facts(
+                        td,
+                        is_git_repo=True,
+                        is_independent_repo=True,
+                        head_short="abc1234",
+                    ),
+                    f,
+                )
 
             map_content = """# Test Map
 
@@ -560,14 +620,17 @@ some content
             facts_dir = os.path.join(td, "change-impact", "_project-map", "facts")
             os.makedirs(facts_dir)
             with open(os.path.join(facts_dir, "scan.json"), "w") as f:
-                json.dump({"file_count": 2, "dir_tree": ["/", "src/"]}, f)
+                json.dump(_scan_facts(td, file_count=2), f)
             with open(os.path.join(facts_dir, "git.json"), "w") as f:
-                json.dump({
-                    "is_git_repo": True,
-                    "is_independent_repo": True,
-                    "head_short": "abc1234",
-                    "toplevel": td.replace("\\", "/"),
-                }, f)
+                json.dump(
+                    _git_facts(
+                        td,
+                        is_git_repo=True,
+                        is_independent_repo=True,
+                        head_short="abc1234",
+                    ),
+                    f,
+                )
 
             map_content = """# Test Map
 
@@ -592,6 +655,78 @@ some content
             code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
             self.assertEqual(code, 0, f"Commit match should pass:\n{out}")
             self.assertIn("V9:", out)
+
+    def test_v11_current_head_mismatch_fails(self):
+        """V11: stale facts/map that match each other but not current HEAD should FAIL."""
+        with tempfile.TemporaryDirectory() as td:
+            def git(args: list[str]) -> subprocess.CompletedProcess:
+                return subprocess.run(
+                    ["git"] + args,
+                    cwd=td,
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+
+            if git(["--version"]).returncode != 0:
+                raise unittest.SkipTest("git is not available")
+
+            self.assertEqual(git(["init"]).returncode, 0)
+            os.makedirs(os.path.join(td, "src"))
+            app_path = os.path.join(td, "src", "app.py")
+            with open(app_path, "w", encoding="utf-8") as f:
+                f.write("print('v1')\n")
+            self.assertEqual(git(["add", "."]).returncode, 0)
+            commit1 = git(["-c", "user.email=a@example.com", "-c", "user.name=A", "commit", "-m", "v1"])
+            if commit1.returncode != 0:
+                raise unittest.SkipTest(f"git commit failed: {commit1.stderr}")
+            head1 = git(["rev-parse", "--short", "HEAD"]).stdout.strip()
+
+            with open(app_path, "w", encoding="utf-8") as f:
+                f.write("print('v2')\n")
+            self.assertEqual(git(["add", "."]).returncode, 0)
+            commit2 = git(["-c", "user.email=a@example.com", "-c", "user.name=A", "commit", "-m", "v2"])
+            if commit2.returncode != 0:
+                raise unittest.SkipTest(f"git second commit failed: {commit2.stderr}")
+
+            facts_dir = os.path.join(td, "change-impact", "_project-map", "facts")
+            os.makedirs(facts_dir)
+            with open(os.path.join(facts_dir, "scan.json"), "w") as f:
+                json.dump(_scan_facts(td, file_count=2), f)
+            with open(os.path.join(facts_dir, "git.json"), "w") as f:
+                json.dump(
+                    _git_facts(
+                        td,
+                        is_git_repo=True,
+                        is_independent_repo=True,
+                        head_short=head1,
+                    ),
+                    f,
+                )
+
+            map_content = f"""# Test Map
+
+生成时间: 2026-07-04   基于 commit: {head1}   预算档位: 小仓
+关注重点: 无
+
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| test | reason | 「再挖 test」 |
+
+## 【14】代码风格观察
+| 观察项 | 现状 | 证据 | 可信度 |
+|--------|------|------|--------|
+| 命名 | snake_case | src/app.py | 【已核实: src/app.py:1】 |
+| 格式 | 统一 | src/app.py | 【已核实: src/app.py:1】 |
+| 风格 | 一致 | src/app.py | 【已核实: src/app.py:1】 |
+| 间距 | 4空格 | src/app.py | 【已核实: src/app.py:1】 |
+| 引号 | 单引号 | src/app.py | 【已核实: src/app.py:1】 |
+"""
+            path = self._make_map(map_content, td)
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 1, f"Stale HEAD should fail:\n{out}")
+            self.assertIn("V11:", out)
 
     def test_v10_fix_suggestion_warns(self):
         """V10: Fix-suggestion keywords should WARN (not FAIL).
