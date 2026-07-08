@@ -18,7 +18,7 @@
 | 未确认 | `[缺失证据/工具不可用/需业务决策]` | `[影响]` |
 | 不采用的推断 | `[猜测来源]` | `[为何不能作为事实]` |
 
-> Context Pack 摘要见 `change-impact/{需求名称}/000-context-pack.md`，不在本文档重复。
+> Context Pack 摘要见 `change-impact/{YYYY-MM-DD}-{NNN}-{需求名称}/000-context-pack.md`，不在本文档重复。
 
 ## 3. 变更明细
 

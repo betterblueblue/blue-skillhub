@@ -10,7 +10,7 @@
 - 当前分支 / commit：[记录]
 - Git 审计状态：[Git 正常 / 非 Git 项目 / Git 不可用]
 - 替代审计方式：[before/after 摘要 / 文件 hash / 备份路径 / 不适用]
-- 恢复状态文件：`change-impact/[需求名称]/_active-state.md` [已创建 / 未创建 / 用户拒绝]
+- 恢复状态文件：`change-impact/[YYYY-MM-DD]-[NNN]-[需求名称]/_active-state.md` [已创建 / 未创建 / 用户拒绝]
 - 执行人：[记录]
 - 执行窗口：[记录]
 - 回滚负责人：[记录]

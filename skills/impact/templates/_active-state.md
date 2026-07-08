@@ -11,7 +11,7 @@
   - 绝对路径：[如 E:\projects\ruoyi-vue]
   - 判定方式：[git-rev-parse / user-specified / pom-dot-xml / build-dot-gradle / package-dot-json / inferred-from-cwd / other]
   - 验证时间：[真实系统时间 ISO 8601]
-- 需求目录：`change-impact/[需求名称]/`
+- 需求目录：`change-impact/[YYYY-MM-DD]-[NNN]-[需求名称]/`
 - 当前阶段：[Phase 2 / Phase 2.5 / Phase 3 / Phase 3.5 / Phase 4 / Phase 5 / 阻塞 / 完成]
 - 模式：[light / full / 未定级]
 - Phase 3 状态：[未执行 / 进行中 / 已完成 / 快速通道跳过]

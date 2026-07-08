@@ -34,8 +34,8 @@ Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
 
 Usage:
     python skills/impact/scripts/impact_validate.py <需求目录> [--mode light|full] [--repo-root DIR]
-    python skills/impact/scripts/impact_validate.py change-impact/B3/ --mode full
-    python skills/impact/scripts/impact_validate.py change-impact/B1/ --mode light --repo-root /path/to/project
+    python skills/impact/scripts/impact_validate.py change-impact/2026-07-08-001-B3/ --mode full
+    python skills/impact/scripts/impact_validate.py change-impact/2026-07-08-001-B1/ --mode light --repo-root /path/to/project
 """
 
 import argparse
@@ -2181,7 +2181,7 @@ def main():
     )
     parser.add_argument(
         "req_dir",
-        help="Path to requirement directory (e.g., change-impact/B3/)",
+        help="Path to requirement directory (e.g., change-impact/2026-07-08-001-B3/)",
     )
     parser.add_argument(
         "--mode",

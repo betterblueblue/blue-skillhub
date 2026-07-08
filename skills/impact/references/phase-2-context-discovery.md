@@ -184,7 +184,7 @@
 
 背景分析是 Phase 2 的必需产物，用于让后续 agent 拿到刚好够用、刚好相关、可解释的上下文。
 
-先在对话中输出背景分析草案；只有进入 Phase 4 且用户确认写文档后，才写入 `change-impact/{需求名称}/000-context-pack.md`。
+先在对话中输出背景分析草案；只有进入 Phase 4 且用户确认写文档后，才写入 `change-impact/{YYYY-MM-DD}-{NNN}-{需求名称}/000-context-pack.md`。
 
 ### 分层探索顺序
 

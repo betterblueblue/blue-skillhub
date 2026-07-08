@@ -52,7 +52,7 @@
 
 任务从 blocked、长时间等待、上下文压缩、线程恢复或用户延迟确认后继续时，不得直接写文件。必须先完成恢复检查：
 
-1. 读取 `change-impact/{需求名称}/_active-state.md`（若存在）、`030-implementation.md` 或 `040-light.md`、`060-preflight.md`、`090-execution-record.md`。
+1. 读取 `change-impact/{YYYY-MM-DD}-{NNN}-{需求名称}/_active-state.md`（若存在）、`030-implementation.md` 或 `040-light.md`、`060-preflight.md`、`090-execution-record.md`。
 2. 复述当前 pending Step 的编号、目标和计划修改对象。
 3. 重新只读检查目标文件/对象当前状态，确认 Step 仍适用。
 4. 检查是否出现新的冲突、用户改动、同类改动已完成或风险升级。
@@ -69,7 +69,7 @@
 
 ### 创建和更新触发
 
-- 用户确认写入本需求目录的第一份文档后，创建 `change-impact/{需求名称}/_active-state.md`。
+- 用户确认写入本需求目录的第一份文档后，创建 `change-impact/{YYYY-MM-DD}-{NNN}-{需求名称}/_active-state.md`。
 - 每次写入或更新 `000-context-pack.md`、`010-requirements.md`、`020-design.md`、`030-implementation.md`、`040-light.md`、`060-preflight.md`、`090-execution-record.md` 后，更新文档状态。
 - 每次准备询问 `确认 Step N` 前，先把 `pending_step`、写入对象、回滚方式、验证方式和 `confirmation_required: true` 写入 `_active-state.md`。
 - 每次 Step 成功、失败、跳过、阻塞、验证等级变化或 V1-only 计数变化后，立即更新 `_active-state.md`。
@@ -77,7 +77,7 @@
 
 ### 写入边界
 
-- `_active-state.md` 只能写在当前需求目录：`change-impact/{需求名称}/_active-state.md`。
+- `_active-state.md` 只能写在当前需求目录：`change-impact/{YYYY-MM-DD}-{NNN}-{需求名称}/_active-state.md`。
 - 只有用户已确认写入该需求目录后，才可自动维护 `_active-state.md`；只读分析阶段不得偷偷落盘。
 - `_active-state.md` 的自动维护只覆盖流程状态，不授权修改源码、SQL、配置、测试、外部系统，也不能替代 `确认 Step N`。
 - 若用户拒绝写执行记录或状态文件，可以继续执行已确认的业务写操作，但最终回复必须标注"恢复状态未写，本轮不可安全自动恢复"。
@@ -93,7 +93,7 @@
 
 默认形态：**生成脚本，不直接执行**——
 
-1. DDL/DML 写成 SQL 脚本（或 migration 文件）落入 `change-impact/{需求名称}/050-validation/`
+1. DDL/DML 写成 SQL 脚本（或 migration 文件）落入 `change-impact/{YYYY-MM-DD}-{NNN}-{需求名称}/050-validation/`
 2. 同时生成对应回滚脚本
 3. 输出人工执行步骤，由用户或 DBA 在外部执行
 
@@ -143,7 +143,7 @@
 
 ## 验证方案（必须有，按类型选形态）
 
-在 `change-impact/{需求名称}/050-validation/` 必须生成：
+在 `change-impact/{YYYY-MM-DD}-{NNN}-{需求名称}/050-validation/` 必须生成：
 
 - 涉及 **UI 流程** → Playwright E2E 脚本（正向用例 + 错误用例）
 - 涉及 **API** → curl/httpie/REST Client 脚本或集成测试
@@ -271,7 +271,7 @@
 
 时间戳必须来自真实系统命令输出，不得由模型自行编写（**跨平台命令见 `references/cross-platform-notes.md`**）。
 
-每步追加写入 `change-impact/{需求名称}/090-execution-record.md`（不覆盖历史），格式见 `templates/090-execution-record.md`：
+每步追加写入 `change-impact/{YYYY-MM-DD}-{NNN}-{需求名称}/090-execution-record.md`（不覆盖历史），格式见 `templates/090-execution-record.md`：
 
 ```
 ## [YYYY-MM-DD HH:MM:SS] Step N: <名称>
