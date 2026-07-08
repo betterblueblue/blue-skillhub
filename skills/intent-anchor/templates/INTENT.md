@@ -2,9 +2,10 @@
 
 <!--
   本文件由 intent-anchor skill 生成。
+  存放路径：intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md
   后续所有 skill（brainstorm / to-prd / to-issues / goal）必须先读本文件。
   每个阶段切换时，对照 templates/stage-gate-check.md 检查是否漂移。
-  本文件是项目的"宪法"，不得在没有用户确认的情况下修改。
+  本文件是意图锚点，不得在没有用户确认的情况下修改。
 -->
 
 ## 1. 一句话意图

@@ -17,7 +17,7 @@
 - 阶段：{brainstorm / PRD / 架构 / issue / 开发完成}
 - 产出文件：{文件路径}
 - 检查日期：{日期}
-- INTENT.md 路径：{路径}
+- INTENT.md 路径：intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md
 
 ## 1. 意图引用检查
 
