@@ -3,7 +3,7 @@
 intent_validate.py — INTENT.md 完整性校验
 
 用法：
-  python intent_validate.py <INTENT.md路径>
+  python intent_validate.py intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md
 
 检查项：
   V1: 文件存在且非空
@@ -216,7 +216,7 @@ def validate(content: str) -> list[tuple[str, str, str]]:
 
 def main():
     if len(sys.argv) < 2:
-        print("用法: python intent_validate.py <INTENT.md路径>")
+        print("用法: python intent_validate.py intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md")
         sys.exit(1)
 
     intent_path = Path(sys.argv[1])
