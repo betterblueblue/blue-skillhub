@@ -29,6 +29,7 @@
 ```powershell
 Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
+Copy-Item "E:\agent\blue-skillhub\skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
 ```
 
 Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路径见 [docs/install-and-verify-checklist.md](docs/install-and-verify-checklist.md)。
@@ -100,6 +101,20 @@ v3.4 之后补了长期目标模式、接口返回检查清单、V0-V3 验证等
 经过 V1-V10 共 10 轮盲测（3 个模型 × 6 个真实场景 × 有/无 skill 对照 = 100+ 份产出），skill 的核心价值可以归纳为：把模糊需求变成显式假设（V7 验证）、苏格拉底式提问不替用户拍板但自主推断代码事实（代码可推断项不问用户，业务决策项才问）、结构化保障（回滚方案、验证步骤、方法名预检始终做到）、防御性检查（refreshToken TTL 同步等独有发现）、安全检查（逐步确认、写入边界、高风险拦截，弱模型也绕不过）。当前版本 v5.8。2026-06-28 先做了一轮 5 模型端到端对比（Composer 2.5、Kimi K2.6、GLM-5.1、Step 3.7 Flash、GLM-5.2），选定 Composer 2.5 和 Step 3.7 Flash 作为性价比优化目标后，又做了 R1-R7 共 7 轮 Skill 模板优化验证（O1-O18 共 18 项优化措施），涵盖全局影响检查表 V10 脚本检查、Prisma ORM 异常行为参考、`_active-state.md` 存在性检查、§6/§3.2 标题防改名、弱引导下强制规则（context-pack 必产出、Phase 4 必跑验证脚本）、读路径 SQL 判 light 规则、脚本路径澄清、`_active-state.md` 模板结构强制、Phase 4/5 分步门禁 V13、源码写入前置检查门禁 V14、源码 Step 执行记录/状态文件门禁 V15（v5.6 起还会检查每个源码类 Git diff 是否被执行记录覆盖，v5.7 起 FAIL 文案包含具体修复步骤）、`_active-state.md` 状态一致性门禁 V16，以及任务验收冒烟检查 V17。2026-07-03 真实 Phase 5 复测发现 Composer 2.5 会出现“validator 全绿但代码少改一半”的情况，v5.6 已把 route meta `label/title` 半截改动转成脚本级 FAIL。v5.8 新增 Codex skill 元数据合规、Phase 4 写文档单独 Step 确认、收尾使用记录和 Pathfinder 地图消费记录 V22。`impact_validate.py` 现有 V1-V22 共 22 项自动化检查。详细数据见 [skills/impact/README.md](skills/impact/README.md)。
 
 当前还接入了可选 code graph MCP 作为结构化定义/引用候选入口，以及 `change-impact/{需求名称}/_active-state.md` 作为跨会话恢复状态文件。`_active-state.md` 只记录 pending Step、文档状态和未确认项，不授权源码/SQL/配置/测试写入，也不能替代当前对话里的 `确认 Step N`。Claude Code 可选启用 `.claude/hooks/impact-write-gate.*`，把 Step 确认补强成工具执行前检查。
+
+### IntentAnchor 意图锚定
+
+[skills/intent-anchor/](skills/intent-anchor/)
+
+**开发之前的意图保险栓。** Pathfinder 管看懂项目、Impact 管控执行，IntentAnchor 管的是更前面一步——你还没写 PRD、还没拆 issue 的时候，把模糊意图变成一份结构化的 INTENT.md，防止后续阶段（brainstorm → PRD → issue → 开发）偏离原始意图。
+
+核心方法论是**三重锚定**：不问用户“你要什么”（人答不了抽象问题），而是问三个具体的——“有没有类似的东西？指给我看”（类比锚定）、“你现在怎么解决？最烦什么？”（反面锚定）、“假设做好了，你第一次打开它会先干什么？”（场景锚定）。至少完成 2/3 种，合并能力清单交用户标记。
+
+它还做了**语义自检**（S1-S5）：不只检查文件格式，还要求 agent 重读源系统文件对比能力清单有没有遗漏、每条“保留”项有没有用户确认、三重锚定是不是真的做了。每步必须产出中间结果表格，不能一句话带过。产出后跑 `intent_validate.py`（9 项检查）校验完整性。
+
+跟 Impact 的分工：IntentAnchor 防的是“规划偏离意图”（开发前），Impact 防的是“执行偏离规格”（开发中）。两者参考了相同的设计理念但独立运作，不需要配合使用。
+
+这个 skill 诞生于一次失败复盘：用户走了一条看起来很规范的工作流（聊需求 → brainstorm → to-prd → to-issues → goal），每个环节执行质量都很高，但最后做出来的东西跟想要的不是一个东西——意图在阶段传递中逐级蒸发了。详细设计见 [skills/intent-anchor/README.md](skills/intent-anchor/README.md)。
 
 ### VL 识图
 
@@ -280,5 +295,6 @@ blue-skillhub/
 └── skills/
     ├── pathfinder/
     ├── impact/
+    ├── intent-anchor/
     └── vl-vision/
 ```
