@@ -116,7 +116,7 @@
 
 ## 6. E2E / 验证脚本
 
-脚本路径：`change-impact/{需求名称}/050-validation/`
+脚本路径：`change-impact/{YYYY-MM-DD}-{NNN}-{需求名称}/050-validation/`
 
 [脚本内容或生成说明]
 
@@ -130,7 +130,7 @@
 
 ## 8. 跨会话恢复状态
 
-状态文件写入 `change-impact/{需求名称}/_active-state.md`，格式参照 `templates/_active-state.md`。它只记录当前 Phase、pending Step、文档确认状态、验证等级、未确认项和恢复检查结果，不构成任何写操作授权。
+状态文件写入 `change-impact/{YYYY-MM-DD}-{NNN}-{需求名称}/_active-state.md`，格式参照 `templates/_active-state.md`。它只记录当前 Phase、pending Step、文档确认状态、验证等级、未确认项和恢复检查结果，不构成任何写操作授权。
 
 恢复时必须先读 `_active-state.md`、本实施文档、`060-preflight.md` 和 `090-execution-record.md`，再复核磁盘状态并重新要求当前对话中的 `确认 Step N`。
 

@@ -16,8 +16,8 @@
 - 执行窗口：
 - 回滚负责人：
 - 关联文档：[light / requirements / design / implementation]
-- 关联恢复状态：`change-impact/[需求名称]/_active-state.md`
-- 关联执行记录：`change-impact/[需求名称]/090-execution-record.md`
+- 关联恢复状态：`change-impact/[YYYY-MM-DD]-[NNN]-[需求名称]/_active-state.md`
+- 关联执行记录：`change-impact/[YYYY-MM-DD]-[NNN]-[需求名称]/090-execution-record.md`
 
 ## 执行前核对
 
