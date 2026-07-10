@@ -56,6 +56,12 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。完整安装路
 
 ## 里面有什么
 
+### Prompt 工具箱
+
+[prompt/](prompt/)
+
+可以直接复制给 AI coding agent 的实用 Prompt，适合不需要完整 skill、但希望把常见协作要求说清楚的场景。目前收录[跨会话交接](prompt/session-handoff.md)、[卡住时重新梳理](prompt/stuck-reassessment.md)和[生成独立验收指令](prompt/independent-review-request.md)：分别用于保存跨会话上下文、停止无依据试错，以及把完整验收任务一次性交给新会话或其他 agent。
+
 ### 律刃
 
 [claudecode行为规范/ruleblade/](claudecode行为规范/ruleblade/)
