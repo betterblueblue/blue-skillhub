@@ -1,30 +1,32 @@
-# Fixtures 来源与版本
+# 测试项目来源与版本
 
-每个 scenario 引用一个真实开源项目作为 fixture。
+ImpactRadar 的 L0 场景会引用固定版本的真实开源项目。固定 commit 是测试的一部分，不能在运行前随意更新。
 
-## 当前 fixtures
+## 当前项目
 
 | 项目 | URL | Commit | 用途 |
 |------|-----|--------|------|
-| RuoYi-Vue | https://github.com/yangzongzhuan/RuoYi-Vue | 41720e624c5a668c7d3777835e4c87095a7a1dfd | impact 3 个场景 |
+| RuoYi-Vue | https://github.com/yangzongzhuan/RuoYi-Vue | 41720e624c5a668c7d3777835e4c87095a7a1dfd | ImpactRadar 3 个场景 |
 
 ## 设置步骤
 
 ```bash
 # 在仓库根目录
 mkdir -p test-projects
-git clone --depth 1 https://github.com/yangzongzhuan/RuoYi-Vue.git test-projects/ruoyi-vue
+git clone https://github.com/yangzongzhuan/RuoYi-Vue.git test-projects/ruoyi-vue
+git -C test-projects/ruoyi-vue checkout 41720e624c5a668c7d3777835e4c87095a7a1dfd
 git -C test-projects/ruoyi-vue rev-parse HEAD
-# 期望: 41720e624c5a668c7d3777835e4c87095a7a1dfd
+# 期望：41720e624c5a668c7d3777835e4c87095a7a1dfd
 ```
 
 ## 何时需要更新
 
-- 跑 scenario 发现 fixture 已变更（commit 漂移）
-- 新增 scenario 引用更新的代码位置
+- 准备增加依赖上游新代码的场景。
+- 上游仓库的旧 commit 已无法获取。
+- 决定整体升级测试基线，并愿意同步检查所有文件路径和预期内容。
 
 ## 注意事项
 
-- fixture 不进 git（`test-projects/` 在 `.gitignore` 或临时目录）
-- commit 哈希锁定避免上游变化导致 scenario 失效
-- 跑 scenario 前可手动 `git -C test-projects/<fixture> pull` 验证仍可用
+- 测试项目不提交到本仓库，`test-projects/` 由 `.gitignore` 排除。
+- 运行场景前先核对 HEAD，不要执行 `git pull`。拉取最新代码会改变固定版本，使路径和预期内容失效。
+- 如需评估上游新版，请复制一份新的测试目录；确认所有场景仍成立后，再更新 commit 和相关 JSON。

@@ -1,31 +1,33 @@
-# Not ACE Exploration
+# Not ACE 上下文检索实验
 
-这个目录记录一次围绕 [Not ACE](https://not-ace.ame.rip/) 的上下文检索与 coding agent benchmark 探索。
+这个目录记录了 2026 年 6 月针对 [Not ACE](https://not-ace.ame.rip/) 的一轮上下文检索实验。实验关注的是它能否帮助 AI 编码助手更快找到相关代码，而不是把它当作 `rg` 的替代品。
 
-核心问题不是“Not ACE 能不能替代 `rg`”，而是：
+主要验证三个问题：
 
-- 它是否能在自然语言 / 产品语言描述下更快找到上下文入口。
-- 它对中等能力模型，例如 Claude Code + Minimax M3，是否能提升真实任务中的上下文发现稳定性。
-- 它和常规工具链，尤其是 `rg` / `git` / framework verification，应该如何组合。
+- 用户只用产品语言描述问题时，它能否更快找出可能相关的代码。
+- 在 Claude Code + MiniMax M3 等参测组合中，它能否让查找结果更稳定。
+- 它应该怎样与 `rg`、`git` 和框架自身的注册规则配合。
 
 ## 目录
 
-- [timeline.md](timeline.md): 本轮探索时间线与关键决策。
-- [retrieval-benchmarks.md](retrieval-benchmarks.md): V1/V2 检索型 benchmark 设计、结果与结论。
-- [agent-benchmarks.md](agent-benchmarks.md): V3/V3.1 agent 型 benchmark 设计、结果与结论。
-- [next-steps.md](next-steps.md): 下一轮实验建议。
+- [实验时间线](timeline.md)：本轮实验的关键决策和顺序。
+- [检索测试](retrieval-benchmarks.md)：V1/V2 的设计、结果与结论。
+- [AI 任务测试](agent-benchmarks.md)：V3/V3.1 的设计、结果与结论。
+- [后续建议](next-steps.md)：下一轮值得继续验证的问题。
 
 ## 安全边界
 
 本目录只保存可复盘的实验设计、指标和结论，不保存：
 
 - Not ACE API Token。
-- Claude / Codex 原始 debug log。
+- Claude 或 Codex 的原始调试日志。
 - 大体量样本仓库副本。
-- 可能包含命令行参数、环境变量或账号信息的 transcript 原文。
+- 可能包含命令行参数、环境变量或账号信息的完整对话记录。
 
-原始实验工作区位于本机 `E:\agent\not-ace-benchmark`。如需继续实验，应优先在该目录复制、清洗和评分，再把稳定结论同步回本目录。
+原始实验工作区当时位于 `E:\agent\not-ace-benchmark`。这个路径只对实验机器有效；继续实验时，应先在独立工作区清理敏感信息并完成评分，再把可以公开复查的结论同步到这里。
 
 ## 一句话结论
 
-Not ACE 更像一个有价值的语义上下文入口，而不是完整替代 `rg` 的 Context Engine。它对 exact symbol 场景提升有限，但在产品语言、语义入口和较弱模型的第一步定向上有明显价值；最佳用法是 Not ACE 先召回候选链路，`rg` / `git` / 框架约定再验证注册点、边界文件和测试入口。
+Not ACE 适合先按语义找出可能相关的文件，再由 `rg`、`git` 和框架约定核实定义、注册位置、边界文件和测试入口。对于已经知道精确符号名的任务，它带来的帮助有限。
+
+以上结论只对应这轮实验使用的模型版本、样本和接入方式，不代表所有项目都能得到同样结果。

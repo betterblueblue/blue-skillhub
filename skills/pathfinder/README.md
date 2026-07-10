@@ -1,276 +1,259 @@
-# Pathfinder — 陌生项目结构总览 Skill
+# Pathfinder：陌生项目摸底
 
-Impact 的导航输入 + 防幻觉摸底。能做项目摸底的工具已经不少（codegraph MCP、IDE 代码库索引都在做），Pathfinder 真正独有的是防编造：每条结论强制标可信度标签（`【已核实: 证据】`/`【推断: 待验证】`）、非 Git 归属纪律、未覆盖项诚实声明。这些不是"摸底"价值，是"防编造"价值。
+Pathfinder 用于快速看懂一个不熟悉的现有项目。它只读查看源码、配置、Git 信息和可用的数据库结构，生成一份带证据的项目地图，不修改业务代码，也不提供具体改法。
 
-## 这个 Skill 是干什么的
+项目地图保存在 `change-impact/_project-map.md`。它可以单独使用，也可以交给 ImpactRadar，帮助后者更快定位本次变更可能涉及的文件。
 
-面向**刚接手、还不熟悉**的现有项目,通过只读发现建一份**全项目级项目结构总览**:技术栈、核心功能、架构分层、关键入口、数据模型概览、构建/运行/测试、风险区域、权限模型、典型主流程、文档入口。
+## 与其他核心工具的分工
 
-地图输出到 `change-impact/_project-map.md`,作为 `impact` 的 **L1 项目地图**导航上下文。地图中的【14】代码风格观察节还为 impact 的项目级风格规范（`_style-rules.md`）提供机器观察补充。
+| 工具 | 解决的问题 |
+|---|---|
+| 律刃 RuleBlade | AI 编码助手平时应该怎样判断、修改和验证 |
+| Pathfinder | 这个陌生项目由哪些部分组成，入口和风险在哪里 |
+| ImpactRadar | 某次具体改动会影响什么，以及怎样分步骤实施 |
 
-它不是从 0 到 1 的生成器,也不做具体变更的影响分析(那是 impact 系列的事)。它只回答一件事:**"这个项目是什么样的?"**
+Pathfinder 不是 ImpactRadar 的强制前置步骤。没有项目地图时，ImpactRadar 仍会从源码开始分析。
 
-## 工具箱定位:判断 / 认知 / 改动
+## 什么时候使用
 
-- **律刃(RuleBlade)** 约束 AI 的**判断** — 少猜、说人话。
-- **Pathfinder(领航,本技能)** 帮 AI **看懂**陌生项目。
-- **ImpactRadar(impact)** 约束 AI 的**改动** — 不乱动、按步骤、必确认。
+| 场景 | 是否适合 |
+|---|---|
+| 刚接手一个陌生项目 | 适合，先了解技术栈、模块、入口和运行方式 |
+| 外包或旧项目交接 | 适合，可以先找出关键功能、权限和风险区域 |
+| 准备修改系统，但还不知道从哪里查 | 适合，先生成地图，再进入 ImpactRadar |
+| 已经熟悉项目，只想查某个函数 | 不需要，直接搜索更快 |
+| 只有一个新产品想法，还没有代码 | 不适合，可以先使用 IntentAnchor |
+| 已经明确要改什么，需要影响分析 | 直接使用 ImpactRadar |
 
-先摸清项目再动手。Pathfinder 是 impact 的可选**加速器**,不是前置必跑项 —— 没有地图时 impact 完全照旧。
+默认入口为手动 `/pathfinder`。`agents/openai.yaml` 中的 `allow_implicit_invocation: false` 会避免普通项目问题自动触发完整摸底流程。
 
-## ⚠ 模型敏感性（输出质量强依赖执行模型）
+## 项目地图包含什么
 
-本技能输出质量**高度依赖执行它的模型**。2026-06-14 控制变量实验实测:同一份 Pathfinder skill 跑 RuoYi-Vue,在 **Opus 4.8** 上两轮均 **99.5/100**;在弱执行者上单轮塌到 **61/100**(契约 C1 证据 + C3 凭证双 FAIL——行号造假、默认密码明文、缺核心节、推断画实线)。这种波动没法完全消除,只能靠强模型加人工复核来降低风险。
+地图会记录：
 
-- **强模型(Opus / 同级)**:近满分,基本无脑可用。
-- **弱模型(Sonnet / Haiku / 更弱)**:输出可能缺未覆盖项节、漏脱敏、把推断当成已核实、行号不精确。**务必人工复核**,尤其凭证脱敏与【已核实】证据的行号。
+- 技术栈、构建工具、运行命令和测试入口。
+- 核心功能、模块边界和关键入口。
+- 主要数据模型、API、权限与认证方式。
+- 一条具有代表性的业务流程。
+- 最近活跃的代码区域和需要注意的风险。
+- 项目当前实际采用的代码风格。
+- 没有深入查看或暂时无法确认的部分。
 
-详见 eval 控制变量实验(`eval/runs/2026-06-14-pathfinder-control/`)。
+地图是某个时间点的快照，头部会记录 Git HEAD 和扫描范围。项目继续变化后，需要刷新或重新生成。
 
-## 核心能力
+## 怎样避免把猜测写成事实
 
-- **FACTS 层（Phase 1.5，必做不可跳过）** — 运行 `pf_scan.py` + `pf_git.py` 产出确定性事实 JSON（文件数/扩展名分布/目录树/清单文件 + Git HEAD/hotspots），填入地图【0】【2】节；facts 文件带 `schema_version`、`generator`、`source_path`、`observed_at`，这是 Script Gate 的前置输入，缺一不可，跳过会导致 V6 报 FAIL（两个都缺失或只缺一个都报 FAIL）、地图无法写入
-- **认证机制识别 + 鉴权字段一致性自检** — 填写【10】权限/认证模型后必做：Step 0 先识别认证机制类型（JWT/Session/API Key/OAuth/无认证），再读认证链路源码 + 读鉴权链路源码，交叉比对发现字段缺失类安全 bug
-- **写入前脚本检查（Script Gate，替代 Phase 4.5 自检）** — 写入 `_project-map.md` 前必须运行 `pf_validate.py`，11 项检查（V1 行号真实性、V2 凭证脱敏、V3 SVG 安全、V4 未覆盖项非空、V5 Mermaid 一致性、V6 facts schema/内容校验、V7 【14】代码风格观察节存在、V8 证据路径格式、V9 地图 commit 与 facts 一致、V10 可信度标签密度、V11 当前 HEAD 新鲜度），exit code ≠ 0 禁止写入
-- **全景广度优先** — 所有核心模块都上地图，关注重点只决定哪片挖更深，不缩减覆盖面
-- **按项目大小调整扫描深度** — 先统计项目大小定预算，大仓不硬扫；没挖深的明确写进未覆盖项，用户可「再挖 X」续扫
-- **可信度** — 每条结论标【已核实: 证据】或【推断: 待验证】，直接对接 impact 的「已确认/未确认」二分
-- **概览头部** — 记录 git HEAD（防过期）、关注重点（解释深浅）、覆盖范围（显式声明未覆盖项）
-- **典型主流程** — 只 trace 一条代表性请求，端到端走通，"读懂项目"最有用的一节
-- **可选结构索引辅助** — 如果 code graph / repo-map MCP 已可读，优先用它找入口、依赖边和核心节点，再用 Read/Grep 核实；索引过期/截断/需写项目缓存时退回到普通扫描
-- **架构可视化** — 三张 Mermaid 文本图（架构/模块图、数据模型 ER 图、主流程图），一眼掌握全局；实线=已核实关系、虚线=推断关系，图也按可信度规则标实线/虚线
-- **项目本体只读 + 只描述不给修复建议** — 不改项目源码、配置和数据，只写 Pathfinder 自己管理的地图和 facts 文件，不给"该怎么改"的建议
-- **代码风格观察（【14】默认产出节）** — 按默认观察轴列表逐轴观察项目实际写法（naming/layering/orm/exception/logging/api_response/DI），只记录"是什么"（如"Controller 统一返回 R<T>"），不写"该怎样"（如"必须返回 R<T>"）。产出供 impact 消费，与用户自写的 `_style-rules.md`（规范性）互补。超大仓或预算耗尽时可跳过，但必须在【13】说明原因
-- **栈无关通用版** — 自带轻量清单文件栈探测，不依赖 impact 的 profiles，预留了接口以后可以接
+Pathfinder 的重点不是画一张漂亮的目录图，而是让每条结论都能区分“已经确认”和“仍需验证”。
 
-## 什么时候用
+### 可信度标签
 
-**适合:**
+- `【已核实: 证据】`：已经从文件、命令或只读查询中确认。
+- `【推断: 待验证】`：根据现有信息推测，但证据还不够。
 
-| 场景 | 原因 |
-|------|------|
-| 刚接手一个不熟的项目 | 先建整体认知再谈动手 |
-| 接外包 / 老项目交接 | 快速摸清技术栈、核心功能、风险区域 |
-| 动 impact 之前想先预读上下文 | 输出地图给 impact 当 L1 导航 |
-| "这项目是干嘛的 / 怎么跑起来 / 哪里危险" | 一次只读扫描回答全景问题 |
+没有深入查看的内容必须写进地图的【13】节，不能用“已完成全面分析”掩盖遗漏。Mermaid 图也遵守同一规则：实线只表示已核实关系，虚线表示推断关系。
 
-**不适合:**
+### facts 文件
 
-| 场景 | 更应该用 |
-|------|----------|
-| 已经熟悉项目、要做具体变更影响分析 | `/impact` |
-| 从 0 到 1 搭新系统 | 架构设计 / 脚手架生成 |
-| 只想找某个具体文件/函数 | 直接 grep / 搜索 |
+Phase 1.5 会运行：
 
-## 触发方式
-
-默认通过 `agents/openai.yaml` 设置 `allow_implicit_invocation: false`，入口优先保持为手动 `/pathfinder`。
-
-## 地图更新策略
-
-地图是项目某一时刻的快照,项目会往前走,地图会过期。更新地图有三个入口,适用场景不同:
-
-### 三个入口
-
-| 入口 | 说什么 | 语义 | 动作 |
-|------|--------|------|------|
-| 扩展深度 | 「再挖 X 模块」 | X 之前没挖深,信息对但不够深 | 只增量追加,旧内容保留 |
-| 刷新事实 | 「刷新地图」/「刷新 X 模块」 | 项目变了,已有信息可能过期 | 重跑 facts 比对差异,定位受影响节,重新取证覆盖旧内容 |
-| 全量重跑 | 直接 `/pathfinder` | 地图太老或不确定哪些变了 | 走 Phase 0-4 完整流程,覆盖旧文件 |
-
-### 什么时候用哪个
-
-**扩展深度** — 地图产出时某个模块只提了一笔(在未覆盖项里),后来想挖深。项目本身没变,只是想看得更细。
-
-**刷新事实** — 这是新增的能力,解决"项目变了地图没跟着变"的问题。有两个触发时机:
-
-1. **impact 过期检测提示时(主要触发源)** — impact 读地图时会比对 HEAD,发现不一致会提示。改动少时让 impact 自己重新取证即可(现有行为);改动多时(新增模块、重构),先退出 impact 跑「刷新地图」,更新后回来跑 impact,省掉每次重复取证。
-2. **用户自己知道项目结构变了时** — 如新增了大模块、架构重构、技术栈迁移,不等 impact 提示,主动刷新。
-
-**全量重跑** — 地图太老(比如几个月前的),或者用户不确定项目到底改了什么,直接重跑一遍最省心。会覆盖旧文件。
-
-### 刷新怎么工作
-
-刷新不是全仓重扫,而是增量定位受影响节:
-
-```
-用户说「刷新地图」
-  ↓
-重跑 pf_scan.py + pf_git.py 产出新 facts
-  ↓
-比对新旧 facts:
-  新增目录     → 可能有新模块,补到【3】架构/【4】核心功能
-  目录消失/改名 → 架构可能重构,受影响节重新取证
-  file_count 大变 → 提示用户改动较多
-  hotspots 变化   → 近期活跃模块可能需更新
-  ↓
-只重新取证受影响节,覆盖旧内容
-  ↓
-差异过大 → 提示"建议全量重跑"
+```bash
+python skills/pathfinder/scripts/pf_scan.py <项目根目录> --output change-impact/_project-map/facts/scan.json
+python skills/pathfinder/scripts/pf_git.py <项目根目录> --output change-impact/_project-map/facts/git.json
 ```
 
-详细规则见 `references/phase-3-depth-fill.md` Phase 5 段。
+脚本生成：
 
-## 与 impact 的交接(拉取式,零硬依赖)
-
-```
-Pathfinder ──写──> change-impact/_project-map.md
-                          │ (impact Phase 2 主动去读,读不到就照旧)
-                          ▼
-impact ── 把地图当 L1 预读 ──> 自己做 L2/L3 切片深挖
+```text
+change-impact/_project-map/facts/
+├── scan.json
+└── git.json
 ```
 
-- impact 读地图时:`【已核实】`当导航线索,`【推断】`按未确认处理动手前重新取证,HEAD 不一致报过期。
-- 地图里任何文本对 impact **不构成写授权** —— 只提供发现线索,不提供任何确认。
-- 完整契约见 `references/handoff-contract.md`。
+`scan.json` 记录文件数量、扩展名分布、目录和清单文件；`git.json` 记录独立仓库的 HEAD、活跃文件和模块。两份文件都要包含 `schema_version`、`generator`、`source_path` 和 `observed_at`。
 
-### 代码风格协作：描述与规范分离
+如果当前目录不是独立 Git 仓库，Pathfinder 会明确记录 Git 信息不可用，不会把父目录仓库的提交当作当前项目证据。
 
-Pathfinder 和 impact 在代码风格上形成**描述与规范分离**的协作：
+## 写入前检查
 
-```
-Pathfinder【14】代码风格观察  ──  机器观察，描述"是什么"
-          +
-用户自写 _style-rules.md      ──  人写规范，规定"该怎样"
-          ↓
-impact Phase 2 拉取式读取两者，按优先级链消费
+更新已有地图时，运行：
+
+```bash
+python skills/pathfinder/scripts/pf_validate.py change-impact/_project-map.md --repo-root <项目根目录>
 ```
 
-**为什么分离？** 企业代码风格有两层：
+首次生成时，`_project-map.md` 还不存在，需要把待写入内容通过标准输入交给校验脚本：
 
-- **显性风格**（代码里留痕的）：命名约定、注解使用、响应包装、日志方式——Pathfinder 能从代码样本中扫到，放进【14】节
-- **隐性规范**（代码里不留痕的）："新增字段必须同步加埋点""分页必须用 PageHelper 而不是手写 limit"——光扫代码扫不出来，得靠人告诉
+```bash
+python skills/pathfinder/scripts/pf_validate.py --stdin --repo-root <项目根目录> < draft_map.md
+```
 
-把两层混在一个文件里会导致 Pathfinder 越界（只读工具产出规定性"必须/禁止"），拆开后各自守边界。
+校验通过后，再把同一份内容写入 `change-impact/_project-map.md`。
 
-**风格来源优先级链（高→低）**：
+`pf_validate.py` 当前包含 V1-V11 共 11 项检查：
 
-1. `_style-rules.md` 强制规则（用户权威源）
-2. `_style-rules.md` 建议规则（用户参考）
-3. `_project-map.md` 【14】风格观察（机器观察补充）
-4. profile `style_axes`（栈级通用提示）
-5. 运行时从 git diff 读取（最后补充）
+| 编号 | 检查内容 |
+|---|---|
+| V1 | 地图引用的 `file:line` 是否真实存在 |
+| V2 | 是否可能泄露密码、密钥或连接信息 |
+| V3 | 是否写入不允许的 SVG，架构图应使用 Mermaid |
+| V4 | 【13】未深入部分是否有实际内容 |
+| V5 | Mermaid 实线关系的来源节点是否在正文中有依据 |
+| V6 | `scan.json` 和 `git.json` 的格式、来源和内容是否合理 |
+| V7 | 【14】代码风格观察是否存在并有实际内容 |
+| V8 | 证据路径是否错误混合了相对路径和 Windows 绝对路径 |
+| V9 | 地图头部 commit 是否与 `git.json` 一致 |
+| V10 | 可信度标签数量是否足够，是否越界给出修复建议 |
+| V11 | facts 和地图记录的 HEAD 是否仍与当前仓库一致 |
 
-### 渐进积累：用户不写也能用
+V2 中部分凭证特征只能提示 WARN，其余关键结构问题会返回非零退出码。检查失败时不能把地图当作完成产物。
 
-**为什么不让用户提前写全？** 因为用户不知道该写什么。让一个人凭空列一张"我们的代码风格规范"清单，大部分人列不全——隐性规范是"遇到才想得起来"的东西。没人会无缘无故想到"新增字段必须同步加埋点"这条规则，只有当 AI 真的忘了加埋点、用户在 review 时发现"你怎么没加埋点"的那一刻，这条规范才会浮现。所以提前让用户写一份完整的风格规范，既不现实也不高效。
+## 扫描范围怎样确定
 
-**改成遇到才问。** 风格规则不需要提前写全。用户没有 `_style-rules.md` 时，impact 退回现有行为（profile `style_axes` + 运行时从代码确认），不报错。在实际变更中，impact 的 Phase 3 会检测风格分歧——当实施计划的代码风格与【14】观察到的现状不一致时，触发追问：
+Pathfinder 会先统计项目大小，再决定每个模块查看多深。项目越大，越需要优先保证核心模块都有基本说明，而不是只把一个模块挖得很深。
 
-> "现有 Controller 统一返回 R<T>（证据：`UserController.java:23`）。你这次新增的接口没有用这个包装。这是故意的，还是应该统一？"
+默认过程：
 
-用户回答"应该统一"后，这条规则经 `确认 Step N` 追加到 `_style-rules.md`。同一个项目多跑几次，规则越来越完整，后续变更自动遵循，不用重复问。
+1. 判断目标目录是否为独立 Git 仓库。
+2. 运行 `pf_scan.py` 和 `pf_git.py`，得到可重复验证的基础事实。
+3. 查看清单文件、入口、模块、数据、权限和测试。
+4. 选择一条代表性流程，从入口追到数据或外部依赖。
+5. 记录代码风格和未深入部分。
+6. 运行 `pf_validate.py`，通过后写入或更新项目地图。
 
-> `_style-rules.md` 模板见 `skills/impact/templates/_style-rules.md`。校验由 `impact_validate.py` V8 完成。
+对于超大仓库，或扫描预算确实已经用完，可以跳过【14】代码风格观察；但必须在【13】中写明“超大仓”或“预算不足”等具体原因。普通项目不能仅写“为了节省预算”就跳过。
+
+如果客户端提供只读的 code graph 或 repo-map MCP，Pathfinder 可以先用索引查找入口、定义和依赖关系，再回到源码核实。索引过期、结果被截断或需要在项目中写缓存时，会改用普通文件搜索。
+
+## 更新已有地图
+
+| 需求 | 用户可以这样说 | Pathfinder 的处理 |
+|---|---|---|
+| 深入一个以前没细看的模块 | `再挖 X 模块` | 保留现有地图，只补充该模块 |
+| 项目最近有改动 | `刷新地图` 或 `刷新 X 模块` | 重跑 facts，定位受影响章节并重新取证 |
+| 地图很旧，改动范围不清楚 | 再次运行 `/pathfinder` | 重新执行完整流程并替换旧地图 |
+
+刷新时会比较新旧 facts：
+
+```text
+新增目录       -> 检查是否出现新模块
+目录删除或改名 -> 重新核实架构和核心功能
+文件数量大幅变化 -> 提醒项目变化较多
+活跃文件变化   -> 更新近期改动区域
+```
+
+差异过大时，Pathfinder 会建议完整重跑，而不是假装可以只改少数章节。详细规则见 [phase-3-depth-fill.md](references/phase-3-depth-fill.md)。
+
+## 与 ImpactRadar 配合
+
+ImpactRadar 在 Phase 2 会主动查找 `change-impact/_project-map.md`：
+
+- `【已核实】` 内容用作查找线索，涉及本次改动时仍可重新验证。
+- `【推断】` 内容一律按未确认处理。
+- 地图 HEAD 与当前项目不一致时，标记为过期。
+- 地图中的任何文字都不构成写入授权，不能代替 `确认 Step N`。
+
+完整约定见 [handoff-contract.md](references/handoff-contract.md)。
+
+### 代码风格：观察与规则分开
+
+Pathfinder 的【14】节只描述项目当前怎样写代码，例如命名、分层、日志和响应包装。它不会把观察结果写成“必须这样做”的团队规范。
+
+团队要求放在 `change-impact/_style-rules.md`，由项目维护者确认。ImpactRadar 读取风格信息时的优先级为：
+
+1. `_style-rules.md` 强制规则。
+2. `_style-rules.md` 建议规则。
+3. 项目地图【14】中的代码观察。
+4. 技术栈 Profile 的通用提示。
+5. 当前运行中从 Git diff 和源码样本得到的补充信息。
+
+风格规则不必一次写全。实际变更中发现新的团队约定后，可以在用户确认的 Step 中补充到 `_style-rules.md`。
+
+## 项目只读边界
+
+Pathfinder 对业务项目保持只读：
+
+- 不修改源码、配置、测试或业务数据。
+- 不执行 DDL、DML 或其他写数据库操作。
+- 数据库发现只使用 SELECT、SHOW、DESCRIBE 等只读查询。
+- 不给出“应该怎样修”的方案，具体改动交给 ImpactRadar 或后续任务。
+
+它只会在目标项目根目录中写入：
+
+```text
+change-impact/_project-map.md
+change-impact/_project-map/facts/scan.json
+change-impact/_project-map/facts/git.json
+```
+
+## 模型差异与人工复核
+
+项目地图的分析深度仍会受到执行模型影响。2026-06-14 的控制变量测试中，同一版本在 Opus 4.8 上两次得到 99.5/100，而另一次能力较弱的模型运行只有 61/100，主要问题包括行号不准、凭证未脱敏、章节缺失和把推断画成实线。
+
+后续脚本检查减少了这些问题进入最终地图的机会，但无法判断所有语义结论是否正确。使用地图前仍应重点复核：
+
+- `【已核实】` 后面的文件和行号。
+- 权限、认证和默认账号信息是否脱敏。
+- 没有深入查看的模块是否写进【13】。
+- Mermaid 实线是否真的有正文证据。
+
+历史模型测试只代表当时的模型版本和样本，不应理解为长期排名。
+
+## 测试
+
+Pathfinder 使用三层测试：
+
+| 层 | 入口 | 当前范围 |
+|---|---|---|
+| L0 | `bash skills/pathfinder/tests/run.sh` | 3 个场景 JSON，以及 `test_pathfinder_scripts.py` 的脚本行为测试 |
+| L1 | `bash eval/run-l1.sh pathfinder` | 当前 `eval/cases/pathfinder/` 下的 6 个用例 |
+| L2 | 人工抽查 | 地图是否有用、证据是否可靠、未覆盖项是否诚实 |
+
+当前基线仍来自 2026-06-14 的 P1、P2、P3D 三个用例，平均基础分为 97.7/100。基线与当前用例数量不同，比较时不能把新增用例直接算作基线下降。详见 [pathfinder.json](../../eval/baselines/pathfinder.json)。
+
+真实运行记录见 [validation-runs/INDEX.md](validation-runs/INDEX.md)，统一测评说明见 [docs/skill-eval](../../docs/skill-eval/)。
+
+### 测试副本必须隔离
+
+每个模型、每个场景都必须从原始测试项目复制新的物理副本。只删除 `change-impact/` 后复用旧目录，仍可能留下地图、缓存或其他运行产物，导致后续模型看到上一轮答案。
+
+副本命名建议：
+
+```text
+<project>-<model>-<scenario>
+```
+
+完整要求见 [真实项目测试手册](../../eval/real-projects/runbook.md)。
 
 ## 目录结构
 
-```
+```text
 pathfinder/
-├── SKILL.md                      # 核心规则(硬性规则子集 + Phase 概览 + 章节结构 + 索引)
-├── README.md                     # 本文件
-├── references/                   # 详细执行规则(按需加载)
-│   ├── phase-1-sizing.md         # 体量测量 + 预算分档 + 超大仓处理
-│   ├── phase-2-explore-domains.md # 5 路并行 explore 子 agent 设计 + 降级策略
-│   ├── phase-3-depth-fill.md     # 各节深挖方法 + 主流程 trace + 扩展 + 认证-鉴权自检
-│   ├── stack-detection.md        # 通用栈探测:清单文件 → 栈/构建/测试映射
-│   ├── handoff-contract.md       # 与 impact 协作约定 + L1 接口
-│   ├── cross-platform-notes.md   # 跨平台差异(时间戳/HEAD/体量命令/路径)
-│   ├── facts-schema.md           # facts/scan.json 与 facts/git.json 字段契约
-│   └── review-checklist.md       # 地图质量检查清单(给人看的检查 / 给 Agent 用的检查 / 自动检查)
-├── scripts/                      # 脚本（Phase 1.5 facts 产出 + Phase 4 Script Gate）
-│   ├── pf_scan.py                # 项目体量扫描(文件数/扩展名/目录树/清单)
-│   ├── pf_git.py                 # Git 元数据提取(HEAD/hotspots/modules)
-│   └── pf_validate.py            # 闸门验证(V1-V11: 行号/凭证/SVG/未覆盖项/Mermaid/facts/风格节/commit/可信度/HEAD)
+├── agents/openai.yaml
+├── SKILL.md
+├── README.md
+├── references/
+│   ├── phase-1-sizing.md
+│   ├── phase-2-explore-domains.md
+│   ├── phase-3-depth-fill.md
+│   ├── stack-detection.md
+│   ├── handoff-contract.md
+│   ├── facts-schema.md
+│   ├── cross-platform-notes.md
+│   └── review-checklist.md
+├── scripts/
+│   ├── pf_scan.py
+│   ├── pf_git.py
+│   └── pf_validate.py
 ├── code-graph-adapters/
-│   └── generic-mcp.md            # 可选只读结构索引 / code graph MCP 规则
+│   └── generic-mcp.md
 ├── templates/
-│   └── project-map.md            # _project-map.md 章节模板(15 核心 + 3 可选,含【14】代码风格观察)
-├── tests/                        # 测试（gitignore，本地保留）
-│   ├── run.sh                    # L0 静态自洽运行器
-│   ├── lib/validate.sh           # 共享验证函数库
-│   ├── scenarios/                # JSON scenario spec
-│   ├── test_scripts/             # 脚本单元测试
-│   └── fixtures/                 # 测试 fixture（含降级陷阱）
-└── validation-runs/              # 验证记录
+│   └── project-map.md
+├── tests/
+│   ├── run.sh
+│   ├── scenarios/
+│   └── test_scripts/
+└── validation-runs/
+    └── INDEX.md
 ```
 
-## 测评体系
-
-Pathfinder 已接入统一测评体系（[docs/skill-eval/](../../docs/skill-eval/)），使用**专属 9 维 rubric**（与 impact 同构但不同维）：
-
-| 维度 | 分 | 验收点 |
-|---|---:|---|
-| 1. 只读安全（红线） | 15 | 0 改源码、0 写 SQL |
-| 2. 证据标签准确 | 20 | 【已核实】可验真；【推断】没被当成事实 |
-| 3. 未覆盖项诚实 | 12 | 显式列「未深入」；不伪装全覆盖 |
-| 4. 凭证脱敏 | 10 | 含风险区域节的默认值也脱敏 |
-| 5. 概览头部 | 10 | 时间/HEAD 来自真实命令 |
-| 6. Mermaid 图信任纪律 | 8 | 实线=已核实、虚线=推断 |
-| 7. 章节完整 + 体量分档 | 10 | 核心节齐、分档合理 |
-| 8. 降级正确 | 8 | 非 Git/无 DB 正确降级不编造 |
-| 9. 协作约定 | 7 | 地图可被 impact 当 L1 |
-
-三层检测：
-
-- **L0 静态自洽**（每次改动必跑）：`bash skills/pathfinder/tests/run.sh` — 3 个 scenario（go-admin 正向 + ruoyi 正向 + 降级陷阱 fixture）+ 共享契约检查 + `pf_validate.py` 脚本单元测试
-- **L1 行为契约**（release 前跑）：`bash eval/run-l1.sh pathfinder` — 3 个 case（P1/P2/P3D），subagent 扮用户跑完整流程
-- **L2 人审深度**（里程碑抽样）：主观维度（地图导航价值、未覆盖项诚实度）人工复核
-
-当前基线来自 2026-06-14（3 case，平均基础分 97.7 / 100，0 P0，kimi-k2.7-code）。P3D 得分 98/100，4 个降级陷阱全正确处理。红线机制同 impact——任何契约 PASS→FAIL 或维度掉档≥3 阻断发布。基线详情见 [eval/baselines/pathfinder.json](../../eval/baselines/pathfinder.json)。
-
-验证记录见 [validation-runs/INDEX.md](validation-runs/INDEX.md)：T01/T02 首轮与二轮验证，**T03 V3 端到端交接实跑 PASS（pathfinder→impact，5/5 契约检查，handoff_value=high）**——补上了「V3 未实跑」的缺口。
-
-### 盲测验证
-
-6 个真实开发场景盲测经 v1-v3 三轮复跑（逐步验证 FACTS 层强制性、认证-鉴权自检等改进项），最终在 v4 干净环境复测中稳定：引入 DeepSeek-V4-Flash、修复环境污染（`pf_scan.py` 的 `SKIP_DIRS` 加入 `change-impact`）后，Composer 2.5、Step 3.7 Flash、DeepSeek-V4-Flash 三模型在 pathfinder 场景均 PASS——facts 产出正确、认证-鉴权自检完整。期间还补强了 `pf_validate.py` V6（facts 文件缺失的 FAIL/WARN 判定、toplevel 大小写比较、facts 内容合理性校验）。
-
-v1-v3 逐步复跑细节见 `eval/runs/blind-2026-06-24-v3-{composer25,step37flash}/` 和 [docs/skill-improvement-2026-06-24.md](../../docs/archive/2026-06/skill-improvement-2026-06-24.md)。
-
-### 模型选型（v4 干净环境实测）
-
-v4 干净环境下三模型在 pathfinder 场景表现对等，均可胜任摸底任务。完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。
-
-| 模型 | pathfinder 评级 | 说明 |
-|------|:---:|------|
-| Composer 2.5 | ✅ 生产级 | facts 正确 + 认证-鉴权自检完整 + 跨文件安全 bug 发现能力最强 |
-| Step 3.7 Flash | ✅ 可用 | v4 修复了 facts 产出（v3 FAIL→PASS）；行号精度极高 |
-| DeepSeek-V4-Flash | ✅ 可用 | 首次参与即正确产出 facts + 完整认证-鉴权自检 |
-
-盲测评审见 `eval/runs/blind-2026-06-24-v4-{composer25,step37flash,deepseek-v4-flash}/`，最终结论见 [eval/runs/BLIND-TEST-FINAL-CONCLUSION.md](../../eval/runs/BLIND-TEST-FINAL-CONCLUSION.md)，完整改进过程见 [docs/skill-improvement-2026-06-24.md](../../docs/archive/2026-06/skill-improvement-2026-06-24.md)。
-
-### e2e 优化验证（2026-06-28）
-
-2026-06-28 的 5 模型端到端对比（Composer 2.5、Kimi K2.6、GLM-5.1、Step 3.7 Flash、GLM-5.2）中，Pathfinder 作为 Task 1 摸底任务首先执行。5 个模型在 Pathfinder 上均表现稳定，全部通过硬性门禁（G1-G4 全 PASS）和 Script Gate（7/7）。其中 Kimi K2.6 是唯一在 Pathfinder 上触发 G3 事实编造的模型（将 PostgreSQL 说成 SQLite、将 camelCase 说成 Kebab-case），其余 4 个模型事实零错误。
-
-后续针对 Composer 2.5 和 Step 3.7 Flash 做了 R1-R7 共 7 轮 Skill 模板优化验证（R1-R3 在 Node/Express/Prisma 栈，R4-R7 换到 Java/Spring Boot/MyBatis 栈 + 弱引导 prompt）。Pathfinder 模板本身无变更，七轮产出一致：
-
-| 检查维度 | 检查项数 | Composer 2.5 七轮 | Step 3.7 Flash 七轮 |
-|---------|---------|------------------|-------------------|
-| 文件存在性 | 4 | 4×7 全通过 | 4×7 全通过 |
-| 章节完整性 | 4 | 4×7 全通过 | 4×7 全通过 |
-| 事实准确性 | 6 | 6×7 全通过 | 6×7 全通过 |
-| Script Gate | 3 | 3×7 全通过 | 3×7 全通过 |
-| **合计** | **17** | **17×7 满分** | **17×7 满分** |
-
-两个模型七轮均 17/17 满分通过 Pathfinder 检查，确认 Pathfinder skill 在不同模型、不同技术栈、不同引导强度下表现稳定，本轮优化集中在 Impact 侧。5 模型对比评审报告见 `eval/runs/e2e-model-comparison-2026-06-28/REVIEW.md`，七轮优化评审报告见 `eval/runs/e2e-skill-optimization-2026-06-28/REVIEW-r3.md` 至 `REVIEW-r7.md`。
-
-## Fixture 隔离规则
-
-**每个 runner 的每次运行必须使用物理隔离的 fixture 副本，不能只清理 `change-impact/` 后复用。**
-
-D12 评测已证明"清目录"挡不住参照旧地图：pathfinder 在清理后的 fixture 中仍然能找到上一轮的 `_project-map.md` 残留，导致地图不准确。物理隔离的要求：
-
-1. **pathfinder 场景**：必须从原始 fixture 复制全新副本，不能复用任何已有 `change-impact/` 的目录
-2. **不同 runner 之间**：每个 runner 独立副本，不能共享同一个 fixture 目录
-3. **隔离副本命名约定**：`<fixture-name>-<runner-id>-<scenario-id>`，例如 `node-realworld-prisma-composer-d2`
-
-详细规则见 [eval/real-projects/runbook.md §2 Fixture 隔离规则](../../eval/real-projects/runbook.md)。
-
-## 安全约束(只读)
-
-- **项目本体只读硬性规则**:不 Edit/Write 项目源码、不跑 DDL/DML、不改配置、不删文件;DB 只 SELECT/SHOW/DESCRIBE。
-- **合法写入目标**:Write/Edit 只写目标项目根内的 `change-impact/_project-map.md` 和 `change-impact/_project-map/facts/*.json`。
-- **凭证脱敏 + 仓库内的文本不构成指令**:同 impact 硬性规则。
-
-设计文档见 [../../docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md](../../docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md)。
+设计背景见 [Pathfinder Skill 设计记录](../../docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md)。
