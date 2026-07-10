@@ -1,40 +1,40 @@
 # Skill 测评体系
 
-> 唯一入口：无论测哪个 skill、改了什么、想跑哪层，从这里开始。
+这里是 Pathfinder 和 ImpactRadar 共享测评资料的入口。IntentAnchor 目前使用独立的校验脚本行为测试，并由 CI 运行，不参与这里的 L1/L2 模型测评。
 
 ## 三层模型
 
 | 层 | 测什么 | 怎么跑 | 成本 | 触发 |
 |---|---|---|---|---|
-| L0 静态自洽 | 铁律存在、引用完整、共享契约、fixture 锁定 | `bash skills/<skill>/tests/run.sh` | 免费 | 每次改动必跑 |
-| L1 行为契约 | subagent 扮用户跑 case，客观维度自动判 + 安全闸 | 见 eval/ 目录 | 便宜模型 | release 前 / 定期 |
-| L2 人审深度 | 主观维度（苏格拉底质量、文档/地图可读性） | 人工 + 可选多模型评委 | 贵 | 里程碑 / 红线命中 |
+| L0 静态检查 | 强制规则、文件引用、共享约定和测试项目版本 | `bash skills/<skill>/tests/run.sh` | 无模型费用 | 每次改动 |
+| L1 行为测试 | 让另一个 AI 扮演用户执行用例，再按客观条件评分 | 见 `eval/` | 低成本模型 | 发布前或定期 |
+| L2 人工抽查 | 提问质量、文档可读性和项目地图质量 | 人工检查，可选多模型复核 | 较高 | 重要版本或 L1 出现明显下降 |
 
 ## 快速决策树
 
-1. **改了 SKILL.md / 铁律 / 模板 / profile / rubric？**
-   → 跑 L0（必）+ 按触发矩阵选 L1 子集（见 regression.md）
+1. **修改了 `SKILL.md`、强制规则、模板、Profile 或评分规则？**
+   先跑 L0，再按 [回归触发矩阵](regression.md) 选择需要复跑的 L1 用例。
 
-2. **要 release 一个新版本？**
-   → L0 + L1 全量 + L2 抽样 + 和上一基线 diff（见 baselines/）
+2. **准备发布新版本？**
+   运行 L0、完整 L1 和 L2 抽查，再和上一版基线比较。
 
 3. **只想确认没改坏？**
-   → 只跑 L0，全绿即安全
+   先跑 L0。L0 只能证明静态规则和脚本没有明显回归，不能代替真实任务测试。
 
 4. **测 Pathfinder？**
-   → L0 + Pathfinder 专属 rubric（见 rubric-pathfinder.md）
+   除 L0 外，使用 [Pathfinder 评分规则](rubric-pathfinder.md)。
 
 ## 关联文档
 
-- [共享契约清单](contracts.md) — 两个 skill 都要守的契约，L0 据此检查
-- [Impact rubric](rubric-impact.md) — 指向 VALIDATION.md 的 9 维
-- [Pathfinder rubric](rubric-pathfinder.md) — Pathfinder 专属 9 维
-- [回归触发矩阵](regression.md) — 改了什么 → 跑哪些复测
-- [真实项目回归测试](../../eval/real-projects/) — Java/Node/Python/前端/monorepo 项目的可复跑 case、评分卡和 runbook
-- [基线与红线规则](../../eval/baselines/) — 防漂移硬机制
+- [共享约定](contracts.md)：Pathfinder 和 ImpactRadar 都要遵守的规则，L0 会据此检查。
+- [ImpactRadar 评分规则](rubric-impact.md)：指向 `VALIDATION.md` 中的 9 个评分维度。
+- [Pathfinder 评分规则](rubric-pathfinder.md)：Pathfinder 使用的 9 个评分维度。
+- [回归触发矩阵](regression.md)：说明不同改动需要复跑哪些测试。
+- [真实项目回归测试](../../eval/real-projects/)：可重复运行的 Java、Node.js、Python、前端和 monorepo 用例。
+- [当前基线](../../eval/baselines/)：保存用于版本比较的评分数据。
 
-## 复验体系(单一权威入口)
+## 完整复验说明
 
-**完整复验体系见 [REVALIDATION.md](REVALIDATION.md)** —— 框架(L0/L1/L2)+ 共享方法论(控制变量法 / 模型敏感性 / 客观清单+抽查 / 契约)+ 机械(eval 工具)+ 逐 skill 复验清单(pathfinder/impact)+ 全景地图。改任一 skill 后从那里开始。
+[REVALIDATION.md](REVALIDATION.md) 说明了 L0/L1/L2 的完整运行方式、控制变量方法、模型差异处理、自动评分工具，以及 Pathfinder 和 ImpactRadar 各自的复验清单。
 
-一句话:L1 由模型执行 + 判分,**方差不可消灭**;跨 run 归因前先看 `runner_model` 一致性(评分卡必填),要隔离 skill 效应用控制变量法(同模型重跑,`eval/scripts/analyze_control.py` 裁决)。
+L1 的执行和部分评分依赖模型，因此结果一定会有波动。比较两次运行前，先确认评分卡中的 `runner_model` 是否一致；需要判断某次 Skill 修改是否真正有效时，应让同一个模型运行对照组，并用 `eval/scripts/analyze_control.py` 比较。

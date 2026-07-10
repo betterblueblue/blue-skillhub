@@ -1,53 +1,42 @@
-# L1 定向回归说明
+# L1 专项回归记录
 
-> Skill 协议改进后的定向回归，验证三条改进链路没破坏现有能力。
-> 跑分模型：Composer 2.5 / Step 3.7 Flash
-> 评审模型：GLM-5.2
+这个目录记录 2026-06-24 至 2026-06-28 期间的几轮专项回归。它是历史批次说明，不是当前 L1 的统一入口；当前用例定义在 `eval/cases/impact/` 和 `eval/cases/pathfinder/`，运行方法见 [Skill 测评体系](../../../docs/skill-eval/)。
 
 ## 为什么需要这套回归
 
-`docs/archive/2026-06/skill-improvement-2026-06-24.md` 实施了 5 个改进项（P1-A/P1-B/I1-A/I2-A/IP1-A），改了 pathfinder/impact 两个 skill 的协议。需要回归测试确认改进没破坏既有能力。
+[2026-06-24 改进记录](../../../docs/archive/2026-06/skill-improvement-2026-06-24.md) 包含 P1-A、P1-B、I1-A、I2-A 和 IP1-A 共 5 项修改，涉及 Pathfinder 与 ImpactRadar。专项回归用于确认这些修改没有破坏原有能力。
 
 ## 和盲测（blind/）的区别
 
 | | 盲测（blind/） | L1 回归（本目录） |
 |---|---|---|
-| case 来源 | B1-B6，真实开发场景，不预设答案 | L1 case 中的 P1/R1/F1，有 expected 答案 |
+| 用例来源 | B1-B6，真实开发场景，不预设答案 | L1 中的 P1/R1/F1，带有 `expected` 验收条件 |
 | 用途 | 验证 5 个改进项是否修复了盲测暴露的问题（有改进前后对比） | 验证改进没破坏既有能力（无改进前后同模型对比） |
-| 能否说"分数下降" | 能——同模型改进前后跑同 case | 不能——基线是 kimi/opus，不是这两个模型 |
-| 评审标准 | JUDGE-RUBRIC.md | L1 case 的 expected 字段（must_hit_files、iron_rules、trap_for） |
+| 能否判断分数变化 | 可以，同一个模型在修改前后运行相同用例 | 不可以，历史基线使用 kimi/opus，与本批模型不同 |
+| 评分依据 | `JUDGE-RUBRIC.md` | 用例的 `expected` 字段 |
 
-**L1 回归是盲测的补充**：盲测是主验证（干净的前后对比），L1 回归确认改进没破坏盲测没覆盖的 case 类型。L1 回归分数不要和 `eval/baselines/` 里的基线直接比——基线 runner 是 kimi/opus，不是 Composer/Step。
+L1 专项回归是盲测的补充。盲测负责比较修改前后的变化，专项回归负责检查其他类型的用例是否仍然正常。由于执行模型不同，这批分数不能直接和 `eval/baselines/` 中的 kimi/opus 基线比较。
 
-## Case 选择和覆盖链路
+## 用例选择与改进对应关系
 
-从 L1 全部 13 个 case 中选 3 个，每个对应一条改进链路：
+首批测试从当时的 13 个 L1 用例中选择 3 个，每个对应一组改进：
 
-| Case | skill | 对应改进 | 为什么选这个 case |
+| 用例 | Skill | 对应改进 | 选择原因 |
 |------|-------|---------|------------------|
 | P1 | pathfinder | P1-A + P1-B | go-admin 是独立 Git 仓库 + 有 DB，能触发 P1-A 的 facts 校验；有 casbin + JWT auth 流程，能触发 P1-B 的认证-鉴权字段一致性自检 |
 | R1 | impact | I1-A + I2-A | full 模式，会生成 `030-implementation.md`，能触发 I1-A 方法名存在性验证 + I2-A 被调方法异常行为确认 |
 | F1 | impact | IP1-A | full 模式，有 context-pack 的"暂不纳入范围"环节，能触发 IP1-A 用户场景覆盖验证 |
 
-## 执行方式
+## 评分方法
 
-和盲测一样：每个模型复制对应 prompt，粘贴发给模型即可。
-
-| 模型 | prompt 文件 | 产出目录前缀 |
-|------|------------|-------------|
-| Composer 2.5 | `PROMPT-composer25-regression.md` | `l1-regression-composer25/` |
-| Step 3.7 Flash | `PROMPT-step37flash-regression.md` | `l1-regression-step37flash/` |
-
-## 跑完后
-
-把两个 `l1-regression-<model>/` 目录的产出位置告诉我，我（GLM-5.2）按 L1 case 的 `expected` 字段逐条核实：
+每次运行都按 L1 用例中的 `expected` 字段逐项检查：
 
 - `must_hit_files`：预期命中的文件是否找到
-- `iron_rules_must_hold`：预期守住的铁律是否守住
+- `iron_rules_must_hold`：要求遵守的强制规则是否全部满足
 - `forbidden_claims`：预期不出现的错误论断是否出现
 - `trap_for`：预设的坑是否踩中
 
-产出评分卡写入 `eval/runs/l1-regression-<date>-<model>/`。
+评分卡写入 `eval/runs/l1-regression-<date>-<model>/`。评审模型与执行模型应分开记录，避免把执行结果和评审意见混在一起。
 
 ## 评审重点（对应改进项）
 
@@ -59,21 +48,21 @@
 | R1 | `030-implementation.md` 中的方法名是否经 grep 验证存在；对已有方法的调用是否确认了异常行为 |
 | F1 | context-pack 的"暂不纳入范围"是否做了用户场景覆盖验证；排除文件是否附 trace 证据 |
 
-## 合并后全量回归（2026-06-26）
+## Impact 合并后全量回归（2026-06-26）
 
-impact-pro 合并到 impact 后的全量回归，11 个 case 全部用单一 `/impact` skill 跑，走完整 Phase 1-5。
+`impact-pro` 合并到 ImpactRadar 后，当时的 11 个用例统一使用 `/impact`，并完整运行 Phase 1-5。
 
-| 模型 | prompt 文件 | 产出目录前缀 | run 目录 |
+| 模型 | Prompt 文件 | 产出目录前缀 | 运行记录目录 |
 |------|------------|-------------|---------|
 | Composer 2.5 | `PROMPT-composer25-merge-regression.md` | `l1-regression-2026-06-26/` | `eval/runs/2026-06-26-impact@3b3148b/` |
 
 评审模型：GLM-5.2。详细方案见 `eval/runs/2026-06-26-impact@3b3148b/README.md`。
 
-## 风格契约 + Pathfinder 刷新 L1 case（2026-06-28）
+## 风格规则与 Pathfinder 刷新测试（2026-06-28）
 
-新增 2 个 L1 case，覆盖两大新功能的行​​为契约：
+这一批新增 S1 和 P4 两个 L1 用例：
 
-| Case | Skill | 测试目标 | setup 要求 |
+| 用例 | Skill | 测试目标 | 准备要求 |
 |------|-------|---------|-----------|
 | S1 | impact | 风格契约：用户要求 `System.out.println`，但 `_style-rules.md` 有 grep 强制规则禁用 | 运行前在项目 `change-impact/` 下创建 `_style-rules.md`（1 条 grep 强制规则 + 2 条建议规则） |
 | P4 | pathfinder | 扩展深度刷新：已有地图后再挖 casbin 权限模块 | 先运行 P1 生成初始地图，再运行 P4 的 prompt |
@@ -94,13 +83,10 @@ impact-pro 合并到 impact 后的全量回归，11 个 case 全部用单一 `/i
 
 ## 目录结构
 
-```
+```text
 eval/cases/l1-regression/
-├── README.md                              # 本文件
-├── PROMPT-composer25-regression.md        # Composer 2.5 定向回归 prompt（v4.1）
-├── PROMPT-step37flash-regression.md       # Step 3.7 Flash 定向回归 prompt（v4.1）
-├── PROMPT-composer25-full-regression.md   # Composer 2.5 全量回归 prompt（v4.1，13 case × 3 skill）
-└── PROMPT-composer25-merge-regression.md  # Composer 2.5 合并后回归 prompt（11 case × 1 skill + Phase 5）
+├── README.md
+└── PROMPT-composer25-merge-regression.md  # 2026-06-26 合并后回归 Prompt
 ```
 
-L1 case 原始定义在 `eval/cases/{pathfinder,impact}/`，本目录只放批量执行的 prompt。
+早期的模型专用 Prompt 已不在本目录。当前仓库有 16 个 ImpactRadar 用例和 6 个 Pathfinder 用例，均以 `eval/cases/{impact,pathfinder}/*.json` 为准。

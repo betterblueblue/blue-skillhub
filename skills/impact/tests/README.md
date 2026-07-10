@@ -1,104 +1,78 @@
-# impact skill — tests/
+# ImpactRadar 测试说明
 
-两套测试，覆盖从"scenario 结构合法性"到"skill 真行为端到端"全链路。
+这里包含确定性的 L0 检查，以及需要模型参与的历史端到端测试说明。
 
-## v1 静态校验（L0，冒烟）
+## L0 静态检查
 
 ```bash
 bash skills/impact/tests/run.sh
 ```
 
-校验项：
-1. JSON schema 完整性（id/title/skill/stack/fixture/query/expected）
-2. fixture 项目存在 + commit 哈希匹配
-3. `iron_rules_triggered` 中的铁律在 SKILL.md 铁律区存在
-4. `references_loaded` 中的文件存在
-5. `phase_3_5_classification` 是 light 或 full
-6. `files_to_inspect` 中的文件存在 + 含必须字符串
-7. **共享契约存在性**（新增）：检查 `docs/skill-eval/contracts.md` 中的共享契约在 impact/SKILL.md 铁律区都存在，防止改一处另两处漂移
-8. **V8 风格规则校验**（新增）：验证 `impact_validate.py` 中 V8 检查器的行为正确性——`_style-rules.md` 存在/不存在、grep 可执行/不可执行、grep-exclude 格式、建议规则解析、context-pack 风格规范段填写检测。10 个单元测试覆盖 6 类场景。
+`run.sh` 会完成三组检查：
 
-> **定位**：每次改动必跑，免费、确定性、零主观。全绿才允许进入 L1。
+1. 检查 `skills/impact/templates/` 中的必需模板是否存在且不为空。
+2. 运行 `test_scripts/test_impact_validate.py`，检查风格规则、Phase 4/5 分步、执行前检查、状态一致性和确认记录等校验行为。
+3. 校验 10 个场景 JSON：3 个 RuoYi-Vue 正向场景和 7 个负向场景，包括字段删除、字段新增、模糊授权、越界写入、数据库只读、破坏性请求、恢复后重新确认和凭证脱敏。
 
-`scenarios/` 同时含**负向门禁场景**（`negative/neg-001|004|006`，对应铁律 #1 模糊/预授权、#4 越界写、#6 恢复须重确认），验证 skill 对越界请求的拒绝行为，实跑见 [validation-runs/2026-06-14-T07-negative-iron-rule-gates.md](../validation-runs/2026-06-14-T07-negative-iron-rule-gates.md)（T07，3/3 PASS）。
+L0 不调用模型，结果可以重复验证。全部通过后，再决定是否运行需要模型参与的 L1 或真实项目测试。
 
-## v2 e2e 真行为测试（L1/L2，回归）
+早期 3 个负向场景的真实运行记录见 [T07](../validation-runs/2026-06-14-T07-negative-iron-rule-gates.md)。
 
-`e2e/` 目录下完整端到端：Subagent A 真跑 skill + 真改代码 + 真写 change-impact 文档，Subagent B 做 9 维评审。
+## 历史端到端测试
 
-### 跑法
+`e2e/` 用于让执行模型在隔离项目中运行 Skill、修改代码并生成 `change-impact/` 文档，再由另一个模型或人工按 9 个维度复核。相关工作目录默认不纳入 Git。
 
-```bash
-cd e2e
-
-# 准备 workdir（从 test-projects/ 克隆 fixture）
-./run-helper.sh setup <scenario.json>
-
-# 看 git diff
-./run-helper.sh diff <scenario.json>
-
-# 清理 workdir（actual/ 保留供审查）
-./run-helper.sh cleanup <scenario.json>
-```
-
-Subagent A/B 由主 Claude 在对话中驱动（需要 LLM，不能纯 bash 化）。
-
-### 已完成的 E2E 场景
+已完成的历史场景：
 
 | # | Skill | 项目 | 场景 | 首次评审 | 修复后 |
 |---|-------|------|------|----------|--------|
-| S1 | impact | RuoYi-Vue | 删 sys_user.remark（高风险 DROP COLUMN） | — | ✅ PASS 7/7 |
-| S2 | impact | RuoYi-Vue | 加 last_login_ip（DB schema 变更） | — | ✅ PASS 9/9 |
-| S3 | impact-pro | go-admin | 加头像上传接口（OSS + 缩略图 + 权限） | ❌ FAIL | ✅ PASS 9/9 |
+| S1 | ImpactRadar | RuoYi-Vue | 删除 sys_user.remark（高风险 DROP COLUMN） | 未单独评分 | PASS 7/7 |
+| S2 | ImpactRadar | RuoYi-Vue | 增加 last_login_ip（DB schema 变更） | 未单独评分 | PASS 9/9 |
+| S3 | ImpactRadar（当时名为 `impact-pro`） | go-admin | 增加头像上传接口（OSS + 缩略图 + 权限） | FAIL | PASS 9/9 |
 
 ### S3 发现的价值
 
-真实项目测试暴露了 3 个 mock 永远找不到的语义问题：
+真实项目测试发现了仅靠模拟数据难以暴露的三类问题：
+
 - **BaseEntity 共享**：remark 是基类字段，删 remark 影响 7 个 entity + 11 个 Vue 页
 - **login_ip 重复**：已有 login_ip，新增 last_login_ip 会语义重复
 - **frozen 不存在**：go-admin 的 user.status 没有 frozen 值，"删 frozen"是空操作
 
-## 统一测评体系
+## 与统一测评体系的关系
 
-impact 已接入三层防漂移测评体系，详见 [docs/skill-eval/](../../../docs/skill-eval/)：
+ImpactRadar 已接入三层测评体系，用于发现修改后出现的质量下降。详细说明见 [docs/skill-eval/](../../../docs/skill-eval/)：
 
 | 层 | 入口 | 说明 |
 |---|---|---|
-| L0 静态 | `bash skills/impact/tests/run.sh` | 就是上面的 v1 |
-| L1 行为契约 | `bash eval/run-l1.sh impact` | 4 个标准化 case（R1/R2/R3/R3N），subagent 扮用户端到端跑分 |
-| L2 人审深度 | 人工 | 主观维度抽样 |
+| L0 静态检查 | `bash skills/impact/tests/run.sh` | 模板、校验脚本和场景 JSON |
+| L1 行为测试 | `bash eval/run-l1.sh impact` | 当前 `eval/cases/impact/` 下的 16 个用例 |
+| L2 人工抽查 | 人工 | 提问质量、文档可读性等主观维度 |
 
-基线 diff：`bash eval/diff-baseline.sh impact`
+与基线比较：`bash eval/diff-baseline.sh impact`
 
 ## 测试产物位置
 
 ```
 tests/
-├── run.sh               # L0 入口（含 V8 单元测试）
-├── lib/validate.sh      # 校验函数库（含共享契约检查）
-├── test_scripts/        # Python 单元测试
-│   └── test_impact_validate.py  # V8 风格规则校验器测试（10 cases）
-├── scenarios/           # 静态场景 JSON（v1，git 追踪）
+├── run.sh               # L0 入口
+├── lib/validate.sh      # 场景与共享约定检查
+├── test_scripts/
+│   └── test_impact_validate.py  # impact_validate.py 行为测试
+├── scenarios/           # L0 场景 JSON
 │   ├── java-spring-mybatis/
 │   │   ├── 001-delete-sys-user-remark.json
 │   │   ├── 002-add-last-login-ip.json
 │   │   └── 003-change-login-remember-me.json
-│   └── negative/        # 负向门禁场景（铁律 #1/#4/#6，见 T07）
-│       ├── neg-001-vague-authorization.json
-│       ├── neg-004-write-outside-target-root.json
-│       └── neg-006-resume-without-reconfirm.json
-└── e2e/                 # e2e 产出（gitignore，本地保留）
-    ├── scenarios/
-    ├── workdirs/
-    └── prompts/
+│   └── negative/        # neg-001 至 neg-007
+└── e2e/                 # 本地端到端测试工作区，默认不提交
 ```
 
 ## 设计背景
 
-回应 gpt5.5pro 评审 P0 #3「缺可重复自动化验收」。
+这套测试最初用于补上“缺少可重复自动验收”的问题：
 
-- v1（静态/L0）回应"有没有"
-- v2（e2e/L1-L2）回应"够不够"
-- 共享契约检查回应"改一处会不会漂移到另两处"
+- L0 确认规则、模板和脚本是否完整。
+- L1/L2 确认模型实际执行时是否遵守规则，以及文档质量是否足够。
+- 共享约定检查避免 Pathfinder 与 ImpactRadar 对同一条安全规则写出不同要求。
 
 完整设计见 `docs/archive/2026-06/skill-scenarios-design-2026-06-12.md`，测评体系设计见 `docs/archive/2026-06/2026-06-13-skill-eval-system-design.md`。
