@@ -135,7 +135,7 @@ print(' '.join(rules))
         pattern="^\s*${rule_num}[\.、\)]\s+\*\*(最高确认|高风险|DB 只读|写入目标|破坏性|阻塞恢复|凭证脱敏)"
         ;;
       pathfinder)
-        pattern="^\s*${rule_num}[\.、\)]\s+\*\*(只读硬性规则|唯一写入|可信度|不给修复建议|凭证脱敏|仓库内的文本)"
+        pattern="^\s*${rule_num}[\.、\)]\s+\*\*(项目本体只读硬性规则|合法写入目标|可信度强制|不给修复建议|凭证脱敏|仓库内的文本不构成指令)"
         ;;
       *)
         pattern="^\s*${rule_num}[\.、\)]\s+\*\*"
@@ -333,7 +333,7 @@ validate_shared_contracts() {
       local keywords=("最高确认法" "凭证脱敏" "仓库内的文本不构成指令" "唯一写入目标")
       ;;
     pathfinder)
-      local keywords=("可信度强制" "凭证脱敏" "仓库内的文本不构成指令" "唯一写入目标")
+      local keywords=("可信度强制" "凭证脱敏" "仓库内的文本不构成指令" "合法写入目标")
       ;;
     *)
       fail "未知 skill: $skill"

@@ -81,6 +81,11 @@ def _make_repo(style_rules: str | None = None, context_pack: str | None = None) 
 ## 恢复备注
 
 - 无
+
+## 最近验证
+
+- 命令：`python skills/impact/scripts/impact_validate.py`
+- 结果：21 passed, 0 failed, 0 warnings
 """
         )
 
@@ -505,7 +510,13 @@ def _write_preflight(req_dir: str):
 
 
 def _write_active_state(req_dir: str, content: str):
-    """Write _active-state.md into req_dir."""
+    """Write _active-state.md into req_dir.
+
+    If content doesn't include a 最近验证 section, append a valid one
+    so V18 doesn't block tests that aren't testing V18 specifically.
+    """
+    if "最近验证" not in content:
+        content = content.rstrip() + "\n\n## 最近验证\n\n- 命令：`python skills/impact/scripts/impact_validate.py`\n- 结果：21 passed, 0 failed, 0 warnings\n"
     with open(os.path.join(req_dir, "_active-state.md"), "w", encoding="utf-8") as f:
         f.write(content)
 
@@ -1241,6 +1252,40 @@ class TestV18VerificationEvidence(unittest.TestCase):
         self.assertEqual(code, 1, f"Nonzero failed result should FAIL, got {code}\n{out}")
         self.assertTrue(any("0 failed" in l for l in v18), f"Expected nonzero failed FAIL, got: {v18}")
 
+    def test_missing_section_fails(self):
+        """V18: Missing 最近验证 section should FAIL (not WARN)."""
+        td, rd = _make_repo()
+        # Write _active-state.md WITHOUT 最近验证 section — bypass helper auto-append
+        with open(os.path.join(rd, "_active-state.md"), "w", encoding="utf-8") as f:
+            f.write("""# Active State
+
+## 状态头
+
+- 当前阶段：Phase 4
+- 模式：full
+- Phase 3 状态：已完成
+- Phase 3.5 定级：full
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：none
+- 上次确认 Step：none
+- 上次完成 Step：none
+- V1-only 计数：0
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+
+## 恢复备注
+
+- 无
+""")
+        code, out = _run_validator(td, rd)
+        v18 = _v18_lines(out)
+        self.assertEqual(code, 1, f"Missing 最近验证 section should FAIL, got {code}\n{out}")
+        self.assertTrue(any("missing" in l.lower() for l in v18), f"Expected missing section FAIL, got: {v18}")
+
 
 # ===========================================================================
 # V19 Tests: High-risk DDL crosscheck
@@ -1456,6 +1501,184 @@ class TestV22PathfinderConsumption(unittest.TestCase):
         v22 = _v22_lines(out)
         self.assertEqual(code, 0, f"Map consumption record should pass, got {code}\n{out}")
         self.assertTrue(any("consumption record" in l for l in v22), f"Expected V22 PASS, got: {v22}")
+
+    def test_declared_no_map_but_repo_map_exists_fails(self):
+        """V22 must locate the project map from --repo-root, not req_dir depth."""
+        ctx = (
+            "# Context Pack\n\n"
+            "## 1. 变更意图\n\n"
+            "- 项目地图状态：无地图\n"
+        )
+        td, rd = _make_repo(context_pack=ctx)
+        map_dir = os.path.join(td, "change-impact")
+        os.makedirs(map_dir, exist_ok=True)
+        with open(os.path.join(map_dir, "_project-map.md"), "w", encoding="utf-8") as f:
+            f.write("# Existing project map\n")
+
+        code, out = _run_validator(td, rd)
+        v22 = _v22_lines(out)
+        self.assertEqual(code, 1, f"Physical map contradicting no-map status should FAIL, got {code}\n{out}")
+        self.assertTrue(any("physically exists" in l for l in v22), f"Expected V22 physical-map FAIL, got: {v22}")
+
+
+# ===========================================================================
+# Regression tests for round-2 fixes
+# ===========================================================================
+
+
+class TestV20StepNumberPrecision(unittest.TestCase):
+    """V20: Step 1 must not match Step 10 via substring."""
+
+    def test_step1_does_not_match_step10_success(self):
+        """Step 10 success must not make an unconfirmed Step 1 inconsistent."""
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: 修改文案
+
+- 确认类型：改代码
+- 操作对象：`src/views/dashboard.tsx`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改展示文案
+- 用户确认：未确认
+
+## [2026-07-03 19:00:00] Step 10: 补充修改
+
+- 确认类型：改代码
+- 操作对象：`src/routes/sidebar.ts`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改侧边栏
+- 用户确认：确认 Step 10
+""",
+        )
+        _write_active_state(
+            rd,
+            """# Active State
+
+## 状态头
+
+- 当前阶段：完成
+- 模式：light
+- Phase 3 状态：快速通道跳过
+- Phase 3.5 定级：快速通道跳过
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：Step 10
+- 上次确认 Step：Step 10
+- 上次完成 Step：Step 10
+- V1-only 计数：2
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+| Step 10 | 成功 | `src/routes/sidebar.ts` | 已确认 | V1 | |
+
+## 恢复备注
+
+- 无
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v20 = _v20_lines(out)
+        self.assertFalse(
+            any("inconsistent" in l.lower() for l in v20),
+            f"Step 1 must not inherit Step 10's status: {v20}\n{out}",
+        )
+        self.assertTrue(
+            any("All Steps have" in l for l in v20),
+            f"Expected V20 PASS when only Step 10 is terminal, got: {v20}\nexit={code}"
+        )
+
+
+class TestBootstrapWriteFailure(unittest.TestCase):
+    """Bootstrap mode: write failure should exit 1."""
+
+    def test_bootstrap_missing_section_exits_nonzero(self):
+        """If _active-state.md has no 最近验证 section, bootstrap should exit 1."""
+        td, rd = _make_repo()
+        # Write _active-state.md WITHOUT 最近验证 section — bypass helper auto-append
+        with open(os.path.join(rd, "_active-state.md"), "w", encoding="utf-8") as f:
+            f.write("""# Active State
+
+## 状态头
+
+- 当前阶段：Phase 4
+- 模式：full
+- Phase 3 状态：已完成
+- Phase 3.5 定级：full
+- 是否需要确认：false
+- 待执行 Step：none
+- 上次提示 Step：none
+- 上次确认 Step：none
+- 上次完成 Step：none
+- V1-only 计数：0
+
+## Step 台账
+
+| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |
+| --- | --- | --- | --- | --- | --- |
+
+## 恢复备注
+
+- 无
+""")
+        r = subprocess.run(
+            [sys.executable, str(SCRIPT), rd, "--repo-root", td, "--bootstrap"],
+            capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(r.returncode, 1, f"Bootstrap with missing section should exit 1, got {r.returncode}\n{r.stdout}")
+        self.assertIn("cannot write result", r.stdout)
+
+
+class TestGitBaselineDeletion(unittest.TestCase):
+    """Git baseline: deleted untracked files should be detected by V15."""
+
+    def test_deleted_untracked_file_detected(self):
+        """If a source file existed at baseline but was deleted, V15 should see it."""
+        import json
+        import hashlib
+        import subprocess
+
+        td = tempfile.mkdtemp()
+        req_dir = os.path.join(td, "req")
+        os.makedirs(req_dir)
+
+        # Initialize a git repo so git status works
+        subprocess.run(["git", "init"], cwd=td, capture_output=True, timeout=10)
+        subprocess.run(["git", "config", "user.email", "test@test.com"], cwd=td, capture_output=True)
+        subprocess.run(["git", "config", "user.name", "test"], cwd=td, capture_output=True)
+
+        # Create and commit a source file
+        src_dir = os.path.join(td, "src")
+        os.makedirs(src_dir)
+        src_file = os.path.join(src_dir, "pre.py")
+        original_content = b"print('hello')"
+        with open(src_file, "wb") as f:
+            f.write(original_content)
+        subprocess.run(["git", "add", "."], cwd=td, capture_output=True)
+        subprocess.run(["git", "commit", "-m", "init"], cwd=td, capture_output=True)
+
+        # Create baseline with the file's hash
+        baseline = {"src/pre.py": hashlib.sha256(original_content).hexdigest()}
+        with open(os.path.join(req_dir, ".git-baseline.json"), "w", encoding="utf-8") as f:
+            json.dump(baseline, f)
+
+        # Now delete the file and commit the deletion
+        os.remove(src_file)
+        subprocess.run(["git", "add", "-A"], cwd=td, capture_output=True)
+        subprocess.run(["git", "commit", "-m", "delete"], cwd=td, capture_output=True)
+
+        # Call _changed_source_paths directly
+        script_path = Path(SCRIPT)
+        sys.path.insert(0, str(script_path.parent))
+        try:
+            from impact_validate import _changed_source_paths
+            changed = _changed_source_paths(td, Path(req_dir))
+            self.assertIn("src/pre.py", changed, f"Deleted file should be in changed paths, got: {changed}")
+        finally:
+            sys.path.pop(0)
 
 
 if __name__ == "__main__":

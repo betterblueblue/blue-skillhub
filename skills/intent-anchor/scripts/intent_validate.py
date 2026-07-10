@@ -7,7 +7,7 @@ intent_validate.py — INTENT.md 完整性校验
 
 检查项：
   V1: 文件存在且非空
-  V2: 包含全部 10 个必需章节
+  V2: 包含全部 11 个必需章节
   V3: 能力清单非空且每条有标记和决策
   V4: 不可妥协项 3-5 条且每条在能力清单里标记为"保留"
   V5: "放弃"项有明确说明（不是空）
@@ -53,6 +53,15 @@ DRIFT_PATTERNS = [
 MIN_COVERAGE = 60.0
 
 
+def _normalize_name(name: str) -> str:
+    """Normalize a capability name for cross-checking.
+
+    Strips whitespace, backticks, and converts to lowercase for
+    case-insensitive comparison.
+    """
+    return name.strip().strip("`").lower().strip()
+
+
 def validate(content: str) -> list[tuple[str, str, str]]:
     """返回 (检查项, 结果, 说明) 列表。结果为 PASS / FAIL / WARN。"""
     results: list[tuple[str, str, str]] = []
@@ -68,7 +77,7 @@ def validate(content: str) -> list[tuple[str, str, str]]:
     if missing:
         results.append(("V2", "FAIL", f"缺少章节: {', '.join(missing)}"))
     else:
-        results.append(("V2", "PASS", "全部 10 个章节存在"))
+        results.append(("V2", "PASS", "全部 11 个章节存在"))
 
     # V3: 能力清单
     # 先提取第 4 节内容，避免误匹配其他章节的表格
@@ -83,12 +92,15 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         results.append(("V3", "FAIL", "能力清单为空或格式不对"))
     else:
         # 检查每行是否有标记和决策
+        VALID_DECISIONS = {"保留", "推迟", "放弃"}
         missing_mark = []
         for i, row in enumerate(cap_rows, 1):
             if "👍" not in row and "❌" not in row and "🤔" not in row:
                 missing_mark.append(f"第{i}行缺标记")
-            if "保留" not in row and "推迟" not in row and "放弃" not in row:
-                missing_mark.append(f"第{i}行缺决策")
+            cols = [c.strip() for c in row.split("|")]
+            decision = cols[6] if len(cols) >= 7 else ""
+            if decision not in VALID_DECISIONS:
+                missing_mark.append(f"第{i}行决策列非法（'{decision}'，必须是保留/推迟/放弃之一）")
         if missing_mark:
             results.append(("V3", "FAIL", f"能力清单问题: {'; '.join(missing_mark)}"))
         else:
@@ -101,17 +113,49 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         results.append(("V4", "FAIL", "找不到不可妥协项章节"))
     else:
         # 数编号项（1. 2. 3. 等）
-        cs_items = re.findall(r"^\d+\.\s+\S", cs_section.group(1), re.MULTILINE)
+        cs_items_raw = re.findall(r"^\d+\.\s+(.+)$", cs_section.group(1), re.MULTILINE)
+        cs_items = [item.strip() for item in cs_items_raw if item.strip()]
         if len(cs_items) < 3:
             results.append(("V4", "FAIL", f"不可妥协项只有 {len(cs_items)} 条，至少需要 3 条"))
         elif len(cs_items) > 5:
             results.append(("V4", "WARN", f"不可妥协项有 {len(cs_items)} 条，建议 3-5 条"))
         else:
-            results.append(("V4", "PASS", f"不可妥协项 {len(cs_items)} 条"))
+            # 交叉校验：每条不可妥协项必须对应 §4 中决策列为"保留"的能力
+            if cap_rows:
+                retained_names = set()
+                for row in cap_rows:
+                    cols = [c.strip() for c in row.split("|")]
+                    # Table format: | # | 能力 | 描述 | 来源 | 标记 | 决策 |
+                    # cols[0]="", cols[1]=#, cols[2]=能力, cols[6]=决策
+                    decision = cols[6] if len(cols) >= 7 else ""
+                    if decision == "保留":
+                        name = cols[2].strip() if len(cols) >= 3 else ""
+                        if name:
+                            retained_names.add(_normalize_name(name))
+                unmatched = [
+                    item for item in cs_items
+                    if _normalize_name(item) not in retained_names
+                ]
+                if unmatched:
+                    results.append(("V4", "FAIL",
+                        f"不可妥协项不在能力清单的保留项中: {'; '.join(unmatched[:3])}"))
+                else:
+                    results.append(("V4", "PASS", f"不可妥协项 {len(cs_items)} 条，均已交叉校验"))
+            else:
+                results.append(("V4", "PASS", f"不可妥协项 {len(cs_items)} 条（无法交叉校验：能力清单为空）"))
 
     # V5: 放弃项检查
-    # 找决策为"放弃"的行
-    abandon_rows = [r for r in cap_rows if "放弃" in r]
+    # 找决策列为"放弃"的行（精确匹配 cols[6]）
+    abandon_names: list[str] = []
+    abandon_rows = []
+    for r in cap_rows:
+        cols = [c.strip() for c in r.split("|")]
+        decision = cols[6] if len(cols) >= 7 else ""
+        if decision == "放弃":
+            abandon_rows.append(r)
+            name = cols[2].strip() if len(cols) >= 3 else ""
+            if name:
+                abandon_names.append(name)
     if abandon_rows:
         # 检查可推迟项章节是否有对应说明
         defer_section = re.search(r"## 6\. 可推迟项(.*?)## 7\.", content, re.DOTALL)
@@ -138,11 +182,28 @@ def validate(content: str) -> list[tuple[str, str, str]]:
                 results.append(("V6", "FAIL", f"有 {len(abandon_rows)} 条放弃项，但覆盖率章节只有 {len(abandon_report_rows)} 条报告记录"))
             else:
                 # 检查每条报告是否有用户确认标记
-                unconfirmed = [r for r in abandon_report_rows if "✅" not in r and "❌" not in r]
+                unconfirmed = [r for r in abandon_report_rows if "✅" not in r]
                 if unconfirmed:
-                    results.append(("V6", "FAIL", f"有 {len(unconfirmed)} 条放弃项报告缺少用户确认标记（✅/❌）"))
+                    results.append(("V6", "FAIL", f"有 {len(unconfirmed)} 条放弃项报告缺少用户确认标记（✅）"))
                 else:
-                    results.append(("V6", "PASS", f"全部 {len(abandon_rows)} 条放弃项已逐条报告且有用户确认"))
+                    # 交叉校验：报告行中的能力名称是否对应 §4 中标为"放弃"的项
+                    report_names = set()
+                    for r in abandon_report_rows:
+                        cols = [c.strip() for c in r.split("|")]
+                        # Table: | # | 能力 | 不可妥协项? | 用户确认 | 确认内容 |
+                        # cols[2] = 能力名称
+                        name = cols[2].strip() if len(cols) >= 3 else ""
+                        if name:
+                            report_names.add(_normalize_name(name))
+                    missing_names = [
+                        n for n in abandon_names
+                        if _normalize_name(n) not in report_names
+                    ]
+                    if missing_names:
+                        results.append(("V6", "FAIL",
+                            f"放弃项报告缺少对应能力名称: {'; '.join(missing_names[:3])}"))
+                    else:
+                        results.append(("V6", "PASS", f"全部 {len(abandon_rows)} 条放弃项已逐条报告且有用户确认"))
         else:
             results.append(("V6", "PASS", "无放弃项"))
 

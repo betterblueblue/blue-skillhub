@@ -410,9 +410,20 @@ def check_facts_content(repo_root: str) -> tuple[list[str], list[str]]:
 
 
 def _count_files_quick(root: str) -> int:
-    """Full file count using pf_scan.py skip logic (no depth limit)."""
-    count = 0
+    """Full file count using pf_scan.py logic (git ls-files preferred)."""
     root_path = Path(root)
+    # Prefer git ls-files for consistency with pf_scan.py
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root_path), "ls-files", "--cached", "--others", "--exclude-standard"],
+            capture_output=True, text=True, timeout=15, check=False,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return len(result.stdout.strip().splitlines())
+    except (OSError, subprocess.SubprocessError):
+        pass
+    # Fallback: os.walk
+    count = 0
     for dirpath, dirnames, filenames in os.walk(root_path):
         dirnames[:] = [
             d for d in dirnames if d not in SKIP_DIRS and not d.startswith(".")
@@ -427,13 +438,30 @@ def _count_files_quick(root: str) -> int:
 RE_SECTION_14_HEADER = re.compile(r"^##\s.*(?:【14】|代码风格观察)", re.I)
 
 
-def check_section_14(text: str) -> list[str]:
+def _read_budget_tier(repo_root: str) -> str:
+    """Read budget_tier from scan.json."""
+    scan_path = os.path.join(
+        repo_root, "change-impact", "_project-map", "facts", "scan.json"
+    )
+    if not os.path.isfile(scan_path):
+        return ""
+    try:
+        with open(scan_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get("budget_tier", "")
+    except (json.JSONDecodeError, OSError):
+        return ""
+
+
+def check_section_14(text: str, repo_root: str = "") -> tuple[list[str], list[str]]:
     """V7: Section [14] must exist and have substantive content.
 
     - Missing entirely → FAIL (default output, not optional)
     - Exists but empty shell (title only, no observations) → FAIL
     - Only super-large repos or budget exhaustion may skip,
       and must note the reason in [13].
+
+    Returns (errors, warnings).
     """
     lines = text.splitlines()
     in_section = False
@@ -450,11 +478,53 @@ def check_section_14(text: str) -> list[str]:
             section_lines.append(stripped)
 
     if not in_section:
+        # Check if §13 declares a skip with justification
+        skip_declared = False
+        skip_line = ""
+        in_section_13 = False
+        for line in lines:
+            if not in_section_13:
+                if RE_SECTION_13_HEADER.search(line):
+                    in_section_13 = True
+                continue
+            if re.match(r"^##\s", line):
+                break
+            if "跳过" in line and "14" in line:
+                skip_declared = True
+                skip_line = line
+                break
+        if skip_declared:
+            # Verify skip is justified: budget_tier must be "超大仓"
+            # or skip reason must mention budget exhaustion
+            budget_tier = _read_budget_tier(repo_root) if repo_root else ""
+            budget_exhausted = any(
+                kw in skip_line for kw in (
+                    "预算耗尽", "预算不足", "预算用尽", "预算已尽",
+                    "预算上限", "达到上限", "超出预算",
+                    "budget exhaust", "budget exceeded", "budget depleted",
+                    "out of budget", "budget limit",
+                )
+            )
+            if budget_tier == "超大仓" or budget_exhausted:
+                warnings = [
+                    f"V7: Section 【14】代码风格观察 not found, but 【13】 declares skip "
+                    f"(budget_tier={budget_tier or 'unknown'}) — "
+                    "acceptable for super-large repos or budget exhaustion"
+                ]
+                return [], warnings
+            else:
+                errors = [
+                    f"V7: Section 【14】代码风格观察 not found, and 【13】 skip is "
+                    f"not justified (budget_tier={budget_tier or 'unknown'}, "
+                    "skip reason does not mention budget exhaustion). "
+                    "Either add §14 or justify the skip with budget exhaustion."
+                ]
+                return errors, []
         return [
             "V7: Section 【14】代码风格观察 not found — this section is now default output. "
             "Only super-large repos or budget exhaustion may skip it, "
             "and must note the reason in 【13】."
-        ]
+        ], []
 
     # Check for substantive content: at least 2 non-header/non-boilerplate lines
     # (table data rows, observation entries, sampling source declarations)
@@ -466,8 +536,8 @@ def check_section_14(text: str) -> list[str]:
         return [
             "V7: Section 【14】代码风格观察 exists but appears empty — "
             "need observation entries with evidence, not just a title."
-        ]
-    return []
+        ], []
+    return [], []
 
 
 # --- V8: Evidence path sanity ---
@@ -503,34 +573,38 @@ def check_evidence_path_sanity(text: str) -> list[str]:
 RE_BASED_ON_COMMIT = re.compile(r"基于\s*commit[：:]\s*[`]*(\w+)", re.I)
 
 
-def check_commit_crosscheck(text: str, repo_root: str) -> list[str]:
+def check_commit_crosscheck(text: str, repo_root: str, refresh_mode: bool = False) -> tuple[list[str], list[str]]:
     """V9: Map header commit hash must match git.json head_short.
 
     Prevents models from copying a stale or fabricated commit hash into
     the map header. Reads git.json's head_short and compares with the
     map's '基于 commit:' field. Only checks for independent Git repos.
+
+    In refresh_mode, downgrades to WARN since the map header is expected
+    to be stale during the refresh process.
     """
     errors: list[str] = []
+    warnings: list[str] = []
 
     git_path = os.path.join(
         repo_root, "change-impact", "_project-map", "facts", "git.json"
     )
     if not os.path.isfile(git_path):
-        return errors  # V6 handles missing git.json
+        return errors, warnings  # V6 handles missing git.json
 
     try:
         with open(git_path, "r", encoding="utf-8") as f:
             git = json.load(f)
     except (json.JSONDecodeError, OSError):
-        return errors  # V6 handles corrupt git.json
+        return errors, warnings  # V6 handles corrupt git.json
 
     is_independent = git.get("is_independent_repo", False)
     if not is_independent:
-        return errors  # Non-Git or non-independent: no crosscheck needed
+        return errors, warnings  # Non-Git or non-independent: no crosscheck needed
 
     head_short = git.get("head_short")
     if not head_short:
-        return errors  # V6 handles null head_short
+        return errors, warnings  # V6 handles null head_short
 
     # Extract commit from map header
     m = RE_BASED_ON_COMMIT.search(text)
@@ -539,20 +613,24 @@ def check_commit_crosscheck(text: str, repo_root: str) -> list[str]:
             "V9: Map header missing '基于 commit:' field — "
             "must include the git HEAD hash for independent Git repos"
         )
-        return errors
+        return errors, warnings
 
     map_commit = m.group(1).lower()
     git_commit = head_short.lower()
 
     # Check if one is a prefix of the other (short hash vs full hash)
     if map_commit != git_commit and not map_commit.startswith(git_commit) and not git_commit.startswith(map_commit):
-        errors.append(
+        msg = (
             f"V9: Map header commit '{map_commit}' does not match "
             f"git.json head_short '{git_commit}' — map may be stale or "
             f"commit hash was fabricated"
         )
+        if refresh_mode:
+            warnings.append(msg + " (WARN: refresh mode — update map header after refreshing content)")
+        else:
+            errors.append(msg)
 
-    return errors
+    return errors, warnings
 
 
 # --- V11: Current Git HEAD freshness check ---
@@ -574,8 +652,12 @@ def _run_git_head(repo_root: str) -> str | None:
     return result.stdout.strip() or None
 
 
-def check_current_head_freshness(text: str, repo_root: str) -> tuple[list[str], list[str]]:
-    """V11: git.json/map header must match current HEAD for independent repos."""
+def check_current_head_freshness(text: str, repo_root: str, refresh_mode: bool = False) -> tuple[list[str], list[str]]:
+    """V11: git.json/map header must match current HEAD for independent repos.
+
+    In refresh_mode, downgrades to WARN since facts/map are expected to
+    be stale during the refresh process.
+    """
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -608,21 +690,29 @@ def check_current_head_freshness(text: str, repo_root: str) -> tuple[list[str], 
 
     current_head = current_head.lower()
     if facts_head != current_head and not facts_head.startswith(current_head) and not current_head.startswith(facts_head):
-        errors.append(
+        msg = (
             f"V11: git.json head_short '{facts_head}' does not match current "
             f"HEAD '{current_head}' — facts/map are stale; rerun pf_git.py and "
             "refresh _project-map.md"
         )
+        if refresh_mode:
+            warnings.append(msg + " (WARN: refresh mode — rerun pf_git.py to update facts)")
+        else:
+            errors.append(msg)
         return errors, warnings
 
     m = RE_BASED_ON_COMMIT.search(text)
     if m:
         map_commit = m.group(1).lower()
         if map_commit != current_head and not map_commit.startswith(current_head) and not current_head.startswith(map_commit):
-            errors.append(
+            msg = (
                 f"V11: map header commit '{map_commit}' does not match current "
                 f"HEAD '{current_head}' — refresh the map before using it"
             )
+            if refresh_mode:
+                warnings.append(msg + " (WARN: refresh mode — update map header after refreshing content)")
+            else:
+                errors.append(msg)
 
     return errors, warnings
 
@@ -681,11 +771,11 @@ def check_credibility_and_suggestions(text: str) -> tuple[list[str], list[str]]:
 
 # --- Main ---
 
-def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]]:
+def validate(text: str, repo_root: str, refresh_mode: bool = False) -> tuple[list[str], list[str], list[str]]:
     """Run all checks. Returns (passes, fails, warnings)."""
-    passes = []
-    fails = []
-    warnings = []
+    passes: list[str] = []
+    fails: list[str] = []
+    warnings: list[str] = []
 
     # V1
     v1_errors = check_line_numbers(text, repo_root)
@@ -730,9 +820,11 @@ def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]
         passes.append("V6: facts file content validated")
 
     # V7
-    v7_errors = check_section_14(text)
+    v7_errors, v7_warnings = check_section_14(text, repo_root)
     if v7_errors:
         fails.extend(v7_errors)
+    elif v7_warnings:
+        warnings.extend(v7_warnings)
     else:
         passes.append("V7: section [14] code style observation exists")
 
@@ -744,10 +836,10 @@ def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]
         passes.append("V8: evidence path format sane")
 
     # V9
-    v9_errors = check_commit_crosscheck(text, repo_root)
-    if v9_errors:
-        fails.extend(v9_errors)
-    else:
+    v9_errors, v9_warnings = check_commit_crosscheck(text, repo_root, refresh_mode)
+    fails.extend(v9_errors)
+    warnings.extend(v9_warnings)
+    if not v9_errors and not v9_warnings:
         passes.append("V9: map header commit matches git.json")
 
     # V10
@@ -758,7 +850,7 @@ def validate(text: str, repo_root: str) -> tuple[list[str], list[str], list[str]
         passes.append("V10: credibility tags sufficient")
 
     # V11
-    v11_errors, v11_warnings = check_current_head_freshness(text, repo_root)
+    v11_errors, v11_warnings = check_current_head_freshness(text, repo_root, refresh_mode)
     fails.extend(v11_errors)
     warnings.extend(v11_warnings)
     if not v11_errors and not v11_warnings:
@@ -772,6 +864,7 @@ def main():
     parser.add_argument("map_file", nargs="?", help="Path to _project-map.md")
     parser.add_argument("--stdin", action="store_true", help="Read map from stdin")
     parser.add_argument("--repo-root", default=".", help="Project root directory (for V1 file checks)")
+    parser.add_argument("--refresh", action="store_true", help="Refresh mode: V9/V11 downgrade to WARN")
     args = parser.parse_args()
 
     if args.stdin:
@@ -788,7 +881,7 @@ def main():
         sys.exit(1)
 
     repo_root = os.path.abspath(args.repo_root)
-    passes, fails, warnings = validate(text, repo_root)
+    passes, fails, warnings = validate(text, repo_root, refresh_mode=args.refresh)
 
     for p in passes:
         print(f"PASS: {p}")

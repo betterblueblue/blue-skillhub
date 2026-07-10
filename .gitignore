@@ -4,8 +4,13 @@ __pycache__/
 node_modules/
 mcps/
 
+# === blue-interview skill（待开源，暂不入库）===
+skills/blue-interview/
+
 # === 测试产物（e2e fixtures + 克隆项目）===
 skills/*/tests/
+!skills/intent-anchor/tests/
+!skills/intent-anchor/tests/test_intent_validate.py
 test-projects/
 
 # === 控制变量实验临时产物(skill 提取 / 跑出的 map)===

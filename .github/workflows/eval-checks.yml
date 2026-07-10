@@ -39,3 +39,51 @@ jobs:
 
       - name: Run delivery checker tests
         run: python -m unittest discover -s eval/real-projects/tests -p "test_*.py"
+
+      - name: Install CI dependencies
+        run: pip install pyyaml pytest
+
+      - name: Run IntentAnchor validator tests
+        run: python skills/intent-anchor/tests/test_intent_validate.py
+
+      - name: Run tests/run.sh scripts
+        run: |
+          for dir in skills/*/tests; do
+            if [ -f "$dir/run.sh" ]; then
+              echo "Running $dir/run.sh"
+              bash "$dir/run.sh" || exit 1
+            fi
+          done
+
+      - name: Check template sync
+        run: python scripts/sync_templates.py --check
+
+      - name: Validate skill metadata
+        run: |
+          python - <<'PY'
+          import re, sys, yaml
+          from pathlib import Path
+          errors = []
+          for skill_md in sorted(Path("skills").rglob("SKILL.md")):
+              text = skill_md.read_text(encoding="utf-8")
+              if not text.startswith("---"):
+                  errors.append(f"{skill_md}: missing frontmatter")
+                  continue
+              end = text.find("---", 3)
+              if end == -1:
+                  errors.append(f"{skill_md}: unclosed frontmatter")
+                  continue
+              try:
+                  meta = yaml.safe_load(text[3:end])
+              except Exception as e:
+                  errors.append(f"{skill_md}: invalid YAML: {e}")
+                  continue
+              for field in ("name", "description", "allowed-tools"):
+                  if field not in meta:
+                      errors.append(f"{skill_md}: missing '{field}' in frontmatter")
+          if errors:
+              for e in errors:
+                  print(f"ERROR: {e}")
+              sys.exit(1)
+          print("All skill metadata valid")
+          PY
