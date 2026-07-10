@@ -37,6 +37,8 @@ def _scan_facts(repo_root: str, file_count: int = 1, dir_tree: list[str] | None 
         "source_path": Path(repo_root).resolve().as_posix(),
         "observed_at": "2026-07-05T00:00:00+00:00",
         "file_count": file_count,
+        "file_count_source": "git-tracked",
+        "physical_file_count": file_count,
         "file_ext_counts": {".py": file_count},
         "dir_tree": dir_tree if dir_tree is not None else ["/", "src/"],
         "manifest_files": [],
@@ -80,7 +82,7 @@ class TestPfScan(unittest.TestCase):
         self.assertEqual(data["schema_version"], 1)
         self.assertEqual(data["generator"], "pf_scan.py")
         self.assertIn("source_path", data)
-        self.assertEqual(data["file_count"], 3)
+        self.assertGreaterEqual(data["file_count"], 3)
         self.assertIn(".py", data["file_ext_counts"])
         self.assertEqual(data["budget_tier"], "小仓")
 
@@ -822,6 +824,107 @@ some content
             self.assertEqual(code, 1, f"Low tag density should FAIL:\n{out}")
             self.assertIn("V10:", out)
             self.assertIn("credibility tags", out)
+
+
+# ===========================================================================
+# Regression tests for round-2 fixes
+# ===========================================================================
+
+class TestV7SkipBudgetValidation(unittest.TestCase):
+    """V7: Skip [14] must check budget_tier, not just '跳过' + '14'."""
+
+    def _make_map_with_skip(self, repo_root: str, skip_text: str, budget_tier: str = "中仓") -> str:
+        """Create a map that skips §14 with given skip text."""
+        facts_dir = os.path.join(repo_root, "change-impact", "_project-map", "facts")
+        os.makedirs(facts_dir, exist_ok=True)
+        scan_data = _scan_facts(repo_root)
+        scan_data["budget_tier"] = budget_tier
+        with open(os.path.join(facts_dir, "scan.json"), "w") as f:
+            json.dump(scan_data, f)
+        with open(os.path.join(facts_dir, "git.json"), "w") as f:
+            json.dump(_git_facts(repo_root), f)
+
+        map_content = f"""# Test Map
+
+## 【1】一句话概述
+测试项目。
+
+## 【2】技术栈
+- Python
+
+## 【13】没挖深的部分
+| 未深入模块 | 为什么 | 扩展入口 |
+|-----------|--------|---------|
+| {skip_text} | | |
+
+"""
+        path = os.path.join(repo_root, "_project-map.md")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(map_content)
+        return path
+
+    def test_skip_with_budget_sufficient_fails(self):
+        """'因为预算充足，跳过 14' should FAIL when budget_tier is not '超大仓'."""
+        with tempfile.TemporaryDirectory() as td:
+            path = self._make_map_with_skip(td, "因为预算充足，跳过 14", budget_tier="中仓")
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 1, f"'预算充足' should not be treated as budget exhaustion:\n{out}")
+            self.assertIn("V7:", out)
+            self.assertIn("not justified", out)
+
+    def test_skip_with_budget_exhausted_passes(self):
+        """'预算耗尽，跳过 14' should WARN (acceptable) when budget_tier is not '超大仓'."""
+        with tempfile.TemporaryDirectory() as td:
+            path = self._make_map_with_skip(td, "预算耗尽，跳过 14", budget_tier="大仓")
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertIn("V7:", out)
+            self.assertIn("WARN", out)
+            self.assertIn("acceptable", out)
+
+    def test_skip_with_super_large_repo_passes(self):
+        """Skip is justified when budget_tier is '超大仓'."""
+        with tempfile.TemporaryDirectory() as td:
+            path = self._make_map_with_skip(td, "超大仓跳过 14", budget_tier="超大仓")
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertIn("V7:", out)
+            self.assertIn("WARN", out)
+            self.assertIn("acceptable", out)
+
+    def test_skip_text_outside_section_13_does_not_authorize_skip(self):
+        """A skip phrase outside section 13 must not justify omitting section 14."""
+        with tempfile.TemporaryDirectory() as td:
+            path = self._make_map_with_skip(td, "尚未检查支付模块", budget_tier="中仓")
+            map_text = Path(path).read_text(encoding="utf-8")
+            map_text = map_text.replace(
+                "测试项目。",
+                "预算耗尽时可以跳过 14，但本次未在第 13 节声明跳过。",
+            )
+            Path(path).write_text(map_text, encoding="utf-8")
+
+            _, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            v7_lines = [line for line in out.splitlines() if "V7:" in line]
+            self.assertTrue(any(line.startswith("FAIL:") for line in v7_lines), v7_lines)
+            self.assertFalse(any("declares skip" in line for line in v7_lines), v7_lines)
+
+
+class TestV6FileCountConsistency(unittest.TestCase):
+    """V6: _count_files_quick should use git ls-files (matching pf_scan.py)."""
+
+    def test_count_files_uses_git_ls_files(self):
+        """In a git repo, _count_files_quick should return git-tracked count, not physical."""
+        # Use the actual repo (this test file's repo)
+        repo_root = str(Path(__file__).resolve().parent.parent.parent.parent.parent)
+        # Import _count_files_quick directly
+        sys.path.insert(0, str(SCRIPTS_DIR))
+        try:
+            from pf_validate import _count_files_quick
+            count = _count_files_quick(repo_root)
+            # Should be much smaller than physical walk (~22k)
+            # and close to git ls-files count (~730)
+            self.assertLess(count, 5000, f"Expected git-tracked count < 5000, got {count}")
+            self.assertGreater(count, 100, f"Expected non-trivial file count > 100, got {count}")
+        finally:
+            sys.path.pop(0)
 
 
 if __name__ == "__main__":

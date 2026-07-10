@@ -5,9 +5,9 @@
 
 ## 文档产出规则
 
-- **context-pack** → `templates/000-context-pack.md`，light 和 full 模式均必产出。写入前必须获得用户确认（批量执行模式下自行假设并标注 `[假设]`）。context-pack 必须包含"关键链路追踪"节，对错误处理链、中间件管线、数据流路径、配置依赖做追踪分析，识别二级影响——避免流程化检查漏掉错误处理链和中间件管线里的副作用
+- **context-pack** → `templates/000-context-pack.md`，light 和 full 模式均必产出。写入前必须获得用户确认。context-pack 必须包含"关键链路追踪"节，对错误处理链、中间件管线、数据流路径、配置依赖做追踪分析，识别二级影响——避免流程化检查漏掉错误处理链和中间件管线里的副作用
 - **light** → `templates/040-light.md`，一页输出，确认后进入 Phase 5 执行前检查。light 模式必须完成"关键链路深度检查"（见模板），不跳过错误处理链、中间件管线和配置依赖的兼容性扫描。**light 模式不做方法级验证（§3.2 API 方法验证表仅 full 模式产出）**——light 的方法级风险由"关键链路深度检查"兜底：如果变更邻域调用了已有方法，关键链路检查必须覆盖该调用的异常行为
-- **full** → `templates/010-requirements.md` → `020-design.md` → `030-implementation.md`，**每份确认后再出下一份**。提交 010 确认时，如果"模糊点处理清单"中有 `[假设]` 条目，必须单独列出请用户逐条确认/修正/拒绝
+- **full** → `templates/010-requirements.md` → `020-design.md` → `030-implementation.md`，四份文档 + 状态文件批量确认。提交 010 确认时，如果"模糊点处理清单"中有 `[假设]` 条目，必须单独列出请用户逐条确认/修正/拒绝
 - **active-state** → `templates/_active-state.md`，在本需求目录第一次写入文档时创建；之后每次文档状态、pending Step、执行结果、验证等级或阻塞项变化都更新。该文件只能写在当前需求目录内，不能替代任何确认。
 
 ## 需求文档内容边界（010-requirements.md，生成后自检）
@@ -131,6 +131,8 @@
 > **Phase 4 文档写入和 Phase 5 源码写入必须拆成不同 Step。** Phase 4 的确认范围只能覆盖文档产出、`impact_validate.py` 校验和进入执行前检查；不得同时覆盖源码、测试、配置、DDL/DML 或外部系统写入。需要改代码时，先完成本文档校验，再生成 `060-preflight.md`，然后单独请求源码写入 Step 的 `确认 Step N`。如果 `060-preflight.md` 还不存在，下一步只能是生成/更新执行前检查和 `_active-state.md`，不得提前提出源码、测试、配置、DDL/DML 或外部系统写入 Step。
 
 运行 `python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|full> --repo-root <项目根目录>` 完成输出验证。
+
+> **首次运行（鸡生蛋问题）**：V18 要求 `_active-state.md` 的「最近验证」节填入实际 validator 输出，但首次运行时该节还是模板占位值，必然 FAIL。解决方法：首次运行加 `--bootstrap` 参数——`python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|full> --repo-root <项目根目录> --bootstrap`。`--bootstrap` 模式跳过 V18 检查，其他检查全部通过后自动将真实结果写入 `_active-state.md`。之后不带 `--bootstrap` 重新运行一次确认 V18 也通过。
 
 | 检查项 | 编号 | 失败动作 |
 |--------|------|---------|

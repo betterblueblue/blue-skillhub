@@ -15,6 +15,7 @@ If PROJECT_ROOT is omitted, uses current working directory.
 
 import json
 import os
+import subprocess
 import sys
 from collections import Counter
 from datetime import datetime, timezone
@@ -48,12 +49,52 @@ def _should_skip_dir(name: str) -> bool:
     return name in SKIP_DIRS or name.startswith(".")
 
 
-def scan_files(root: Path) -> tuple[Counter, int]:
-    """Walk project, return (ext_counter, total_file_count)."""
-    ext_counter: Counter = Counter()
+def _git_ls_files(root: Path) -> list[str] | None:
+    """Return git-tracked + untracked-but-not-ignored files, or None if not a git repo.
+
+    Uses 'git ls-files --cached --others --exclude-standard' which:
+    - Includes all tracked files (--cached)
+    - Includes untracked files not in .gitignore (--others --exclude-standard)
+    - Excludes files listed in .gitignore
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "--cached", "--others", "--exclude-standard"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    return [line.strip() for line in result.stdout.splitlines() if line.strip()]
+
+
+def scan_files(root: Path) -> tuple[Counter, int, int, str]:
+    """Walk project, return (ext_counter, tracked_file_count, physical_file_count, source).
+
+    For Git repos, uses git ls-files for an accurate count that respects .gitignore.
+    Falls back to os.walk for non-Git projects.
+    """
+    git_files = _git_ls_files(root)
+    if git_files is not None and len(git_files) > 0:
+        # Git repo with tracked files: use git ls-files for accurate count
+        ext_counter: Counter = Counter()
+        for f in git_files:
+            ext = Path(f).suffix.lower()
+            if ext:
+                ext_counter[ext] += 1
+            else:
+                ext_counter["<no-ext>"] += 1
+        physical_count = _physical_file_count(root)
+        return ext_counter, len(git_files), physical_count, "git-tracked"
+
+    # Non-Git or git-ignored directory: fall back to os.walk
+    ext_counter = Counter()
     total = 0
     for dirpath, dirnames, filenames in os.walk(root):
-        # Prune skipped dirs in-place
         dirnames[:] = [d for d in dirnames if not _should_skip_dir(d)]
         for f in filenames:
             total += 1
@@ -62,7 +103,19 @@ def scan_files(root: Path) -> tuple[Counter, int]:
                 ext_counter[ext] += 1
             else:
                 ext_counter["<no-ext>"] += 1
-    return ext_counter, total
+    source = "git-tracked" if git_files is not None else "physical"
+    if total == 0 and git_files is not None:
+        source = "physical"  # git returned empty, using physical fallback
+    return ext_counter, total, total, source
+
+
+def _physical_file_count(root: Path) -> int:
+    """Count physical files using os.walk (for cross-checking)."""
+    count = 0
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if not _should_skip_dir(d)]
+        count += len(filenames)
+    return count
 
 
 def scan_dir_tree(root: Path) -> list[str]:
@@ -87,13 +140,25 @@ def scan_dir_tree(root: Path) -> list[str]:
 
 
 def find_manifests(root: Path) -> list[str]:
-    """Find project manifest files in root (depth 0-1)."""
+    """Find project manifest files from git file list or os.walk.
+
+    For Git repos, filters the git ls-files output for manifest filenames,
+    finding manifests at any depth. For non-Git repos, walks the directory tree.
+    """
+    git_files = _git_ls_files(root)
+    if git_files is not None:
+        found = []
+        for f in git_files:
+            fname = os.path.basename(f).lower()
+            if fname in MANIFEST_NAMES:
+                found.append(f.replace("\\", "/"))
+            elif fname.endswith(".csproj") or fname.endswith(".sln"):
+                found.append(f.replace("\\", "/"))
+        return sorted(set(found))
+
+    # Non-Git fallback: walk the tree
     found = []
     for dirpath, dirnames, filenames in os.walk(root):
-        depth = len(Path(dirpath).relative_to(root).parts)
-        if depth > 1:
-            dirnames.clear()
-            continue
         dirnames[:] = [d for d in dirnames if not _should_skip_dir(d)]
         for f in filenames:
             fname = f.lower()
@@ -108,10 +173,7 @@ def classify_budget(file_count: int) -> str:
     """Classify project size for context budget allocation.
 
     Returns Chinese tier names matching phase-1-sizing.md's 4-tier system
-    (小仓/中仓/大仓/超大仓). Thresholds match phase-1-sizing.md, but actual
-    file count may be higher because pf_scan counts all physical files via
-    os.walk (including untracked), while phase-1-sizing.md uses git ls-files
-    (tracked only).
+    (小仓/中仓/大仓/超大仓). Thresholds match phase-1-sizing.md.
     """
     if file_count < 200:
         return "小仓"
@@ -135,7 +197,7 @@ def main():
         print(f"Error: {root} is not a directory", file=sys.stderr)
         sys.exit(1)
 
-    ext_counter, file_count = scan_files(root)
+    ext_counter, file_count, physical_count, file_count_source = scan_files(root)
     dir_tree = scan_dir_tree(root)
     manifests = find_manifests(root)
     budget_tier = classify_budget(file_count)
@@ -146,6 +208,8 @@ def main():
         "source_path": str(root.resolve()).replace("\\", "/"),
         "observed_at": datetime.now(timezone.utc).isoformat(),
         "file_count": file_count,
+        "file_count_source": file_count_source,
+        "physical_file_count": physical_count,
         "file_ext_counts": dict(ext_counter.most_common(TOP_EXT)),
         "dir_tree": dir_tree,
         "manifest_files": manifests,

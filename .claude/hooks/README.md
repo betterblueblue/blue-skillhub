@@ -1,6 +1,6 @@
 # impact write gate hook
 
-Optional Claude Code `PreToolUse` hook for impact / impact-pro Phase 5.
+Recommended `PreToolUse` hook for impact / impact-pro Phase 5. Enables write protection that text validators cannot provide.
 
 It adds a settings-layer check before write tools run:
 
@@ -25,6 +25,12 @@ automatically.
 
 Then place an empty `.impact-protected` file at the target project root you want
 to guard.
+
+> **Why recommended:** Without this hook, V20/V18 etc. "event truthfulness" checks
+> rely solely on prompt constraints. Weaker models may bypass `确认 Step N` and
+> write files anyway. The hook intercepts write operations before they execute,
+> checking the real user message in the conversation transcript — something text
+> validators structurally cannot do.
 
 ## Cross-platform commands
 

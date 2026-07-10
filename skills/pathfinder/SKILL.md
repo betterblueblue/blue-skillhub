@@ -1,7 +1,7 @@
 ---
 name: pathfinder
 description: 面向刚接手的陌生项目做全项目级「项目结构总览」——技术栈、核心功能、架构分层、入口、数据模型概览、构建运行测试、风险区域、权限模型、典型主流程、文档入口。项目本体只读,只描述现状不给修复建议;仅允许写入目标项目根内的 change-impact/_project-map.md 和 change-impact/_project-map/facts/*.json,供 impact 作为 L1 导航上下文(拉取式 + 可信度)。Use when 用户刚拿到/接手一个不熟悉的项目想先整体摸底、问"这项目是干嘛的/技术栈是什么/核心功能有哪些/架构怎么分层"、要在动手改之前先建项目认知、或显式说 'pathfinder'、'领航'、'项目认知'、'摸底'、'通读项目' 时。不用于已熟悉项目的具体变更影响分析(那走 impact),也不用于从 0 到 1 搭建新系统。
-allowed-tools: Read, Grep, Glob, Bash, Write, Edit, mcp__dbhub__search_objects, mcp__database__describeTable, mcp__database__listTables, mcp__database__query, mcp__dbhub__execute_sql
+allowed-tools: Read, Grep, Glob, Bash, Write, Edit, mcp__dbhub__search_objects, mcp__database__describeTable, mcp__database__listTables
 ---
 
 > **MCP 能力说明**：工具能力以运行时探测为准,不以厂商或工具名假设。本技能全程只读——凡能执行任意 SQL 的工具(`execute_sql`/`query`)一律只用于 SELECT/SHOW/DESCRIBE/INFORMATION_SCHEMA 发现,绝不写。只有表结构类工具(`describeTable`)时走受限发现;都没有时降级（保留）纯代码搜索,数据模型节标【推断】。

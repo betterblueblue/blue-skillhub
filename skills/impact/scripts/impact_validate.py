@@ -39,6 +39,8 @@ Usage:
 """
 
 import argparse
+import hashlib
+import json
 import os
 import random
 import re
@@ -1431,12 +1433,13 @@ RE_EXECUTION_RECORD_REF = re.compile(r"090-execution-record\.md", re.I)
 RE_ACTIVE_STATE_REF = re.compile(r"_active-state\.md", re.I)
 
 
-def _changed_source_paths(repo_root: str) -> list[str]:
+def _changed_source_paths(repo_root: str, req_dir: Path | None = None) -> list[str]:
     """Return changed source/test/config-like paths from git status.
 
-    This is intentionally best-effort: non-Git projects keep the old text-only
-    V15 behavior, while Git projects can catch a source diff that exists before
-    an execution record is written.
+    If req_dir contains a .git-baseline.json, uses per-file content hashes
+    to distinguish pre-existing dirty files from Impact's incremental changes.
+    A file that was already dirty at baseline time AND has the same content
+    is treated as pre-existing (not counted as Impact's change).
     """
     try:
         result = subprocess.run(
@@ -1452,7 +1455,18 @@ def _changed_source_paths(repo_root: str) -> list[str]:
     if result.returncode != 0:
         return []
 
+    # Load baseline hashes if available
+    baseline: dict[str, str | None] = {}
+    if req_dir is not None:
+        baseline_path = req_dir / ".git-baseline.json"
+        if baseline_path.exists():
+            try:
+                baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                pass
+
     changed: list[str] = []
+    current_paths: set[str] = set()
     for raw_line in result.stdout.splitlines():
         if len(raw_line) < 4:
             continue
@@ -1462,8 +1476,35 @@ def _changed_source_paths(repo_root: str) -> list[str]:
         path = path.strip('"').replace("\\", "/")
         if path.startswith("change-impact/") or path.startswith(".git/"):
             continue
+        current_paths.add(path)
         if RE_SOURCE_WRITE_TARGET.search(path):
+            # If baseline exists, check if this is a pre-existing change
+            if path in baseline:
+                full_path = os.path.join(repo_root, path.replace("/", os.sep))
+                try:
+                    with open(full_path, "rb") as f:
+                        current_hash = hashlib.sha256(f.read()).hexdigest()
+                except (OSError, IOError):
+                    current_hash = None
+                if baseline[path] == current_hash:
+                    # Same content as baseline → pre-existing, skip
+                    continue
+                # Different content → Impact modified this file, include it
             changed.append(path)
+
+    # Check for deleted files: baseline paths that are source files but no
+    # longer appear in git status (untracked files that were deleted won't
+    # show up in git status at all)
+    if baseline:
+        for bl_path in baseline:
+            if bl_path in current_paths:
+                continue  # Still tracked in git status
+            if not RE_SOURCE_WRITE_TARGET.search(bl_path):
+                continue  # Not a source file
+            full_path = os.path.join(repo_root, bl_path.replace("/", os.sep))
+            if not os.path.exists(full_path):
+                changed.append(bl_path)
+
     return changed
 
 
@@ -1493,7 +1534,7 @@ def check_phase5_record_state(req_dir: Path, repo_root: str) -> tuple[list[str],
     warns: list[str] = []
 
     record_file = req_dir / "090-execution-record.md"
-    changed_paths = _changed_source_paths(repo_root)
+    changed_paths = _changed_source_paths(repo_root, req_dir)
     if not record_file.exists():
         if changed_paths:
             fails.append(
@@ -1649,13 +1690,13 @@ def _partial_route_text_updates(repo_root: str, changed_paths: list[str]) -> lis
     return findings
 
 
-def check_task_acceptance_smoke(repo_root: str) -> tuple[list[str], list[str], list[str]]:
+def check_task_acceptance_smoke(repo_root: str, req_dir: Path = None) -> tuple[list[str], list[str], list[str]]:
     """V17: Catch obvious partial implementation of route display text changes."""
     passes: list[str] = []
     fails: list[str] = []
     warns: list[str] = []
 
-    changed_paths = _changed_source_paths(repo_root)
+    changed_paths = _changed_source_paths(repo_root, req_dir)
     if not changed_paths:
         passes.append("V17: No source/test/config git changes — no task-specific acceptance smoke needed")
         return passes, fails, warns
@@ -1863,7 +1904,14 @@ def check_verification_evidence(req_dir: Path) -> tuple[list[str], list[str], li
     state_text = state_file.read_text(encoding="utf-8")
     section = _extract_section_text(state_text, ["最近验证"])
     if not section:
-        warns.append("V18: _active-state.md missing 最近验证 section")
+        fails.append(
+            "V18: _active-state.md missing 最近验证 section — "
+            "must include the section with actual validator output.\n"
+            "  修复步骤:\n"
+            "  1. 确保 _active-state.md 从模板创建（模板包含 最近验证 节）\n"
+            "  2. 运行 impact_validate.py --bootstrap 自动写入验证结果\n"
+            "  3. 或手动添加 ## 最近验证 节，填入实际 validator 输出"
+        )
         return passes, fails, warns
 
     # Check 结果 field
@@ -1997,6 +2045,10 @@ def check_step_confirmation(req_dir: Path) -> tuple[list[str], list[str], list[s
     Extends V15's check beyond source-write Steps to ALL Steps. Each Step
     must include a 用户确认 field that references a specific Step number
     (e.g., '确认 Step 3') or explicitly says '未确认'.
+
+    Also cross-checks _active-state.md Step 台账: if a Step's status is
+    '成功' or '已执行' but 用户确认 says '未确认', that's an inconsistency
+    that should FAIL (the Step was supposedly completed but never confirmed).
     """
     passes: list[str] = []
     fails: list[str] = []
@@ -2014,9 +2066,27 @@ def check_step_confirmation(req_dir: Path) -> tuple[list[str], list[str], list[s
         passes.append("V20: No Step sections in execution record")
         return passes, fails, warns
 
+    # Parse _active-state.md Step 台账 for consistency check
+    state_file = req_dir / "_active-state.md"
+    step_table_status: dict[str, str] = {}  # step_num -> status
+    if state_file.exists():
+        state_text = state_file.read_text(encoding="utf-8")
+        for m in re.finditer(
+            r"\|\s*Step\s*(\d+)\s*\|([^|]+)\|([^|]*)\|([^|]*)\|([^|]*)\|",
+            state_text,
+        ):
+            step_num = m.group(1).strip()
+            status = m.group(2).strip()
+            step_table_status[step_num] = status
+
     missing: list[str] = []
+    inconsistent: list[str] = []
     for section in sections:
         title = section.splitlines()[0].strip() if section else "unknown"
+        # Extract step number from title (e.g., "Step 1: ..." → "1")
+        step_num_match = re.search(r"Step\s+(\d+)", title, re.I)
+        step_num = step_num_match.group(1) if step_num_match else None
+
         confirm_match = RE_USER_CONFIRM_FIELD.search(section)
         if not confirm_match:
             missing.append(title)
@@ -2025,13 +2095,29 @@ def check_step_confirmation(req_dir: Path) -> tuple[list[str], list[str], list[s
             if not re.search(r"Step\s*\d+|未确认", confirm_val, re.I):
                 missing.append(f"{title} (确认值缺 Step 编号: {confirm_val[:40]})")
 
+            # Cross-check with Step 台账: if status is terminal but confirm is 未确认
+            if step_num and step_num in step_table_status:
+                status = step_table_status[step_num]
+                if _is_terminal_status(status) and "未确认" in confirm_val:
+                    inconsistent.append(
+                        f"{title} (台账状态='{status}' but 用户确认='未确认')"
+                    )
+
     if missing:
         fails.append(
             "V20: Steps missing 用户确认 field with Step number — "
             f"offending: {'; '.join(missing[:3])}"
         )
-    else:
-        passes.append("V20: All Steps have 用户确认 field with Step number")
+    if inconsistent:
+        fails.append(
+            "V20: Step confirmation inconsistent with Step 台账 — "
+            f"offending: {'; '.join(inconsistent[:3])}"
+        )
+    if not missing and not inconsistent:
+        passes.append(
+            "V20: All Steps have 用户确认 field with Step number"
+            + (" (台账一致性已验证)" if step_table_status else "")
+        )
 
     return passes, fails, warns
 
@@ -2112,7 +2198,7 @@ NO_MAP_MARKERS = ("无地图", "不存在", "未发现")
 MAP_CONSUMPTION_ACTIONS = ("采用", "重新验证", "重验", "未采用", "过期", "待验证")
 
 
-def check_pathfinder_consumption(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+def check_pathfinder_consumption(req_dir: Path, repo_root: str) -> tuple[list[str], list[str], list[str]]:
     """V22: Require auditable Pathfinder map consumption when map exists."""
     passes: list[str] = []
     fails: list[str] = []
@@ -2133,6 +2219,14 @@ def check_pathfinder_consumption(req_dir: Path) -> tuple[list[str], list[str], l
 
     status = status_match.group(1).strip()
     if any(marker in status for marker in NO_MAP_MARKERS):
+        # Physical check: if status says "no map" but _project-map.md exists, FAIL
+        map_file = Path(repo_root) / "change-impact" / "_project-map.md"
+        if map_file.is_file():
+            fails.append(
+                "V22: 项目地图状态 says 'no map' but change-impact/_project-map.md "
+                "physically exists — either update the status or remove the file"
+            )
+            return passes, fails, warns
         passes.append("V22: Pathfinder map absent; consumption record not required")
         return passes, fails, warns
 
@@ -2170,6 +2264,48 @@ def check_pathfinder_consumption(req_dir: Path) -> tuple[list[str], list[str], l
     return passes, fails, warns
 
 
+def _bootstrap_write_result(req_dir: Path, n_pass: int, n_fail: int, n_warn: int) -> bool:
+    """Write the validator result into _active-state.md 最近验证 section.
+
+    Used in --bootstrap mode to solve the chicken-and-egg problem:
+    V18 requires a real validator result in the file, but the first run
+    can't have one yet.
+
+    Returns True if the result was written successfully, False otherwise.
+    """
+    state_file = req_dir / "_active-state.md"
+    if not state_file.exists():
+        print(f"bootstrap: _active-state.md not found, cannot write result")
+        return False
+
+    text = state_file.read_text(encoding="utf-8")
+    result_str = f"{n_pass} passed, {n_fail} failed, {n_warn} warnings"
+
+    # Try to update the 结果 field in 最近验证 section
+    result_pattern = re.compile(
+        r"(最近验证.*?结果[：:]\s*)(.+?)(\s*$)",
+        re.MULTILINE | re.DOTALL,
+    )
+    if result_pattern.search(text):
+        new_text = result_pattern.sub(rf"\g<1>{result_str}\g<3>", text)
+    elif "## 最近验证" in text:
+        # Section header exists but no 结果 field — append after header
+        new_text = re.sub(
+            r"(## 最近验证)",
+            rf"\1\n- 结果：{result_str}",
+            text,
+            count=1,
+        )
+    else:
+        # No 最近验证 section at all — cannot write
+        print(f"bootstrap: _active-state.md has no '最近验证' section, cannot write result")
+        return False
+
+    state_file.write_text(new_text, encoding="utf-8")
+    print(f"bootstrap: wrote verification result to {state_file}: {result_str}")
+    return True
+
+
 # ===========================================================================
 # Main
 # ===========================================================================
@@ -2199,6 +2335,13 @@ def main():
         type=int,
         default=None,
         help="Random seed for V6 sampling (for reproducibility)",
+    )
+    parser.add_argument(
+        "--bootstrap",
+        action="store_true",
+        default=False,
+        help="Skip V18 check; if all other checks pass, write result into "
+        "_active-state.md automatically (solves chicken-and-egg problem)",
     )
     args = parser.parse_args()
 
@@ -2323,16 +2466,19 @@ def main():
     all_warns.extend(w)
 
     # V17: Task acceptance smoke check
-    p, f, w = check_task_acceptance_smoke(repo_root)
+    p, f, w = check_task_acceptance_smoke(repo_root, req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)
 
-    # V18: Verification evidence
-    p, f, w = check_verification_evidence(req_dir)
-    all_passes.extend(p)
-    all_fails.extend(f)
-    all_warns.extend(w)
+    # V18: Verification evidence (skipped in --bootstrap mode)
+    if args.bootstrap:
+        all_passes.append("V18: skipped (--bootstrap mode)")
+    else:
+        p, f, w = check_verification_evidence(req_dir)
+        all_passes.extend(p)
+        all_fails.extend(f)
+        all_warns.extend(w)
 
     # V19: High-risk DDL crosscheck
     p, f, w = check_high_risk_ddl_crosscheck(req_dir)
@@ -2353,7 +2499,7 @@ def main():
     all_warns.extend(w)
 
     # V22: Pathfinder map consumption record
-    p, f, w = check_pathfinder_consumption(req_dir)
+    p, f, w = check_pathfinder_consumption(req_dir, repo_root)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)
@@ -2376,6 +2522,12 @@ def main():
         print("\nFAIL items must be fixed before submitting to user.")
     if all_warns:
         print("WARN items should be communicated to user during confirmation.")
+
+    # Bootstrap mode: if no other fails, write the result into _active-state.md
+    if args.bootstrap and not all_fails:
+        if not _bootstrap_write_result(req_dir, len(all_passes), len(all_fails), len(all_warns)):
+            print("bootstrap: failed to write verification result — exiting with error")
+            sys.exit(1)
 
     sys.exit(1 if all_fails else 0)
 

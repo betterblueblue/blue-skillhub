@@ -226,7 +226,7 @@
 - 扩展和刷新都用 Edit 增量改 `change-impact/_project-map.md`,不整文件重写(全量重跑除外)。
 - 两者都守预算: 按档位上限,挖不完的留在未覆盖项。
 - 两者都刷新概览头部的生成时间 + commit + 覆盖度声明。
-- 刷新前先运行 Script Gate(`pf_validate.py`)确认旧地图格式合法;刷新后重新运行 Script Gate 确认新内容合法。
+- 刷新前先运行 Script Gate(`pf_validate.py --refresh`)确认旧地图格式合法；刷新后重新运行 Script Gate(不带 `--refresh`)确认新内容合法。`--refresh` 模式下 V9/V11 降级为 WARN，不会因为旧 HEAD 阻止刷新流程。
 
 ## 维护注意
 
