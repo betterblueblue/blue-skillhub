@@ -1,223 +1,233 @@
 #!/usr/bin/env python3
-"""Tests for intent_validate.py.
+"""Behavior tests for intent_validate.py.
 
-Run: python -m pytest skills/intent-anchor/tests/test_intent_validate.py -v
-     or: python skills/intent-anchor/tests/test_intent_validate.py
+Run:
+  python -m pytest skills/intent-anchor/tests/test_intent_validate.py -v
+  python skills/intent-anchor/tests/test_intent_validate.py
 """
 
+from __future__ import annotations
+
+import re
 import sys
-import tempfile
 import unittest
 from pathlib import Path
 
-SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "intent_validate.py"
 
-# Import validate function directly
-sys.path.insert(0, str(SCRIPT.parent))
+SKILL_DIR = Path(__file__).resolve().parent.parent
+SCRIPT_DIR = SKILL_DIR / "scripts"
+FIXTURE = Path(__file__).resolve().parent / "fixtures" / "valid-intent.md"
+
+sys.path.insert(0, str(SCRIPT_DIR))
 try:
-    from intent_validate import validate
+    from intent_validate import _path_error, validate
 finally:
     sys.path.pop(0)
 
 
-VALID_CAP_ROWS = """| # | 能力 | 描述 | 来源 | 标记 | 决策 |
-|---|------|------|------|------|------|
-| 1 | 用户认证 | 登录注册 | 类比 | 👍 | 保留 |
-| 2 | 权限管理 | RBAC控制 | 类比 | 👍 | 保留 |
-| 3 | 审计日志 | 操作记录 | 类比 | 👍 | 保留 |
-| 4 | 数据导出 | 导出CSV | 反面 | ❌ | 放弃 |
-| 5 | 通知系统 | 邮件通知 | 场景 | 🤔 | 推迟 |
-"""
+def _valid_content() -> str:
+    return FIXTURE.read_text(encoding="utf-8")
 
-VALID_INTENT_BODY = f"""
-## 1. 一句话意图
-做一个用户管理系统
 
-## 2. 场景类型
-内部工具
+def _result(content: str, check_id: str) -> tuple[str, str, str]:
+    matches = [item for item in validate(content) if item[0] == check_id]
+    if len(matches) != 1:
+        raise AssertionError(f"Expected one {check_id} result, got {matches}")
+    return matches[0]
 
-## 3. 源系统或类比物
-| 名称 | 路径/链接 | 说明 |
-|------|----------|------|
-| 参考 | /path | 参考 |
 
-## 4. 完整能力清单
-{VALID_CAP_ROWS}
+def _replace_section(content: str, heading: str, body: str) -> str:
+    pattern = rf"^{re.escape(heading)}\s*$\n?.*?(?=^##\s+\d+\.\s|\Z)"
+    replacement = f"{heading}\n\n{body.rstrip()}\n\n"
+    updated, count = re.subn(
+        pattern,
+        lambda _match: replacement,
+        content,
+        count=1,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    if count != 1:
+        raise AssertionError(f"Could not replace section {heading}")
+    return updated
 
-## 5. 不可妥协项
 
-1. 用户认证
-2. 权限管理
-3. 审计日志
+def _replace_subsection(content: str, heading: str, body: str) -> str:
+    pattern = rf"^###\s+{re.escape(heading)}\s*$\n?.*?(?=^###\s+|^##\s+|\Z)"
+    replacement = f"### {heading}\n\n{body.rstrip()}\n\n"
+    updated, count = re.subn(
+        pattern,
+        lambda _match: replacement,
+        content,
+        count=1,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    if count != 1:
+        raise AssertionError(f"Could not replace subsection {heading}")
+    return updated
 
-## 6. 可推迟项
 
-| 能力 | 推迟原因 | 预计何时做 |
-|------|----------|-----------|
-| 通知系统 | Phase 2 | 后续 |
+class TestValidFixture(unittest.TestCase):
+    def test_current_fixture_passes_all_checks(self):
+        results = validate(_valid_content())
+        self.assertEqual(9, len(results))
+        self.assertTrue(
+            all(status == "PASS" for _check_id, status, _message in results),
+            results,
+        )
 
-## 7. 漂移模式检查
+    def test_valid_fixture_has_no_percentage_gate(self):
+        content = _valid_content()
+        self.assertNotIn("%", content)
+        self.assertEqual("PASS", _result(content, "V6")[1])
 
-| 模式 | 是否命中 | 说明 |
-|------|---------|------|
-| D1 重新发明 | ✅ | |
-| D2 砍到无关 | ✅ | |
-| D3 降级代替 | ✅ | |
-| D4 单循环锁定 | ✅ | |
-| D5 沉默输出 | ✅ | |
-| D6 不追求吃核心 | ✅ | |
-| D7 上下文蒸发 | ✅ | |
-| D8/D9 源系统/类比物蒸发 | ✅ | |
 
-## 8. 覆盖率
+class TestDecisionContract(unittest.TestCase):
+    def test_pending_capability_blocks_handoff(self):
+        content = _valid_content().replace(
+            "| C01 | 生成交接记录 | 会话结束前整理任务、进度、阻塞和下一步 | E01、E02 | 保留 | 用户明确确认 |",
+            "| C01 | 生成交接记录 | 会话结束前整理任务、进度、阻塞和下一步 | E01、E02 | 待确认 | 模型建议（未确认） |",
+        )
+        result = _result(content, "V3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("仍待确认", result[2])
 
-```
-保留：3 条
-推迟：1 条
-放弃：1 条
-总计：5 条
+    def test_delegated_model_cannot_abandon_capability(self):
+        content = _valid_content().replace(
+            "| C03 | 自动发送通知 | 交接完成后向外部聊天工具发消息 | E01 | 放弃 | 用户明确确认 |",
+            "| C03 | 自动发送通知 | 交接完成后向外部聊天工具发消息 | E01 | 放弃 | 用户授权模型决定 |",
+        )
+        result = _result(content, "V3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("只能保留或推迟", result[2])
 
-放弃项逐条报告：
-| # | 能力 | 不可妥协项? | 用户确认 | 确认内容 |
-|---|------|------------|---------|---------|
-| 1 | 数据导出 | 否 | ✅ | 用户说不需要 |
-```
+    def test_unknown_evidence_id_fails(self):
+        content = _valid_content().replace("| E01、E02 | 保留 |", "| E99 | 保留 |", 1)
+        result = _result(content, "V3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("不存在的证据", result[2])
 
-## 9. 用户确认记录
 
-| 日期 | 确认内容 |
-|------|---------|
-| 2026-07-10 | 确认能力清单 |
+class TestNonNegotiableItems(unittest.TestCase):
+    def test_zero_non_negotiable_items_is_valid_when_user_confirmed(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 5. 不可妥协项",
+            "无不可妥协项。用户明确确认：“没有必须绝对保留的能力”。",
+        )
+        content = _replace_subsection(
+            content,
+            "S3 不可妥协项",
+            "无不可妥协项。用户明确确认：“没有必须绝对保留的能力”。",
+        )
+        self.assertEqual("PASS", _result(content, "V4")[1])
+        self.assertEqual("PASS", _result(content, "V9")[1])
 
-## 10. 语义自检结果
+    def test_non_negotiable_item_must_reference_retained_capability(self):
+        content = _valid_content().replace(
+            "| C01 | 没有交接记录就无法解决跨会话丢失问题 |",
+            "| C02 | 没有交接记录就无法解决跨会话丢失问题 |",
+            1,
+        )
+        result = _result(content, "V4")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("不是保留能力", result[2])
 
-### S1 源系统完整性
+
+class TestScopeAndStatistics(unittest.TestCase):
+    def test_missing_deferred_row_fails(self):
+        content = _valid_content().replace(
+            "| C02 | 自动归档旧记录 | 第一版先验证交接内容是否有用 | 历史文件开始影响查找时 |\n",
+            "",
+            1,
+        )
+        result = _result(content, "V5")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("推迟项 ID 不一致", result[2])
+
+    def test_wrong_decision_counts_fail(self):
+        content = _valid_content().replace("| 保留 | 1 |", "| 保留 | 2 |", 1)
+        result = _result(content, "V6")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("决策统计不一致", result[2])
+
+
+class TestDriftAndConfirmation(unittest.TestCase):
+    def test_drift_status_cannot_use_ambiguous_icon(self):
+        content = _valid_content().replace(
+            "| D1 未确认新增 | 未命中 | 三项能力都能追溯到 E01 或 E02 |",
+            "| D1 未确认新增 | ✅ | 三项能力都能追溯到 E01 或 E02 |",
+            1,
+        )
+        result = _result(content, "V7")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("状态非法", result[2])
+
+    def test_partial_confirmation_is_not_full_document_confirmation(self):
+        content = _valid_content().replace(
+            "| 2026-07-11 | INTENT.md 全文 | 用户明确确认 |",
+            "| 2026-07-11 | 能力清单 | 用户明确确认 |",
+            1,
+        )
+        result = _result(content, "V8")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("全文", result[2])
+
+    def test_continue_only_is_not_confirmation(self):
+        content = _valid_content().replace(
+            "“确认这份 INTENT.md。”",
+            "“继续”",
+            1,
+        )
+        result = _result(content, "V8")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("全文", result[2])
+
+
+class TestSemanticReviewEvidence(unittest.TestCase):
+    def test_one_line_self_checks_do_not_pass(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 10. 语义复核记录",
+            """### S1 证据覆盖
 已检查
 
-### S2 确认可追溯性
+### S2 决策来源
 已检查
 
 ### S3 不可妥协项
 已检查
 
-### S4 锚定真实性
+### S4 锚定充分性与冲突
 已检查
 
-### S5 漂移自检
-已检查
-
-## 11. 三重锚定原始记录
-原始记录
-"""
-
-
-def _make_intent(cap_rows: str = VALID_CAP_ROWS, cs_items: str = "1. 用户认证\n2. 权限管理\n3. 审计日志") -> str:
-    """Build a complete INTENT.md with customizable capability rows and 不可妥协项."""
-    default_cs = "1. 用户认证\n2. 权限管理\n3. 审计日志"
-    body = VALID_INTENT_BODY.replace(VALID_CAP_ROWS, cap_rows).replace(default_cs, cs_items)
-    return f"""# Intent
-
-{body}"""
-
-
-class TestV3DecisionColumnValidation(unittest.TestCase):
-    """V3: Decision column must be exactly one of {'保留', '推迟', '放弃'}."""
-
-    def test_invalid_decision_fails(self):
-        """Decision column with '不保留' should FAIL V3."""
-        bad_rows = """| # | 能力 | 描述 | 来源 | 标记 | 决策 |
-|---|------|------|------|------|------|
-| 1 | 用户认证 | 登录注册 | 类比 | 👍 | 不保留 |
-| 2 | 权限管理 | RBAC控制 | 类比 | 👍 | 保留 |
-| 3 | 数据导出 | 导出CSV | 反面 | ❌ | 放弃 |
-| 4 | 通知系统 | 邮件通知 | 场景 | 🤔 | 推迟 |
-"""
-        content = _make_intent(cap_rows=bad_rows)
-        results = validate(content)
-        v3 = [r for r in results if r[0] == "V3"]
-        self.assertEqual(v3[0][1], "FAIL", f"Expected V3 FAIL for '不保留', got: {v3}")
-        self.assertIn("非法", v3[0][2])
-
-    def test_empty_decision_fails(self):
-        """Empty decision column should FAIL V3."""
-        bad_rows = """| # | 能力 | 描述 | 来源 | 标记 | 决策 |
-|---|------|------|------|------|------|
-| 1 | 用户认证 | 登录注册 | 类比 | 👍 | |
-| 2 | 权限管理 | RBAC控制 | 类比 | 👍 | 保留 |
-| 3 | 数据导出 | 导出CSV | 反面 | ❌ | 放弃 |
-| 4 | 通知系统 | 邮件通知 | 场景 | 🤔 | 推迟 |
-"""
-        content = _make_intent(cap_rows=bad_rows)
-        results = validate(content)
-        v3 = [r for r in results if r[0] == "V3"]
-        self.assertEqual(v3[0][1], "FAIL", f"Expected V3 FAIL for empty decision, got: {v3}")
-
-    def test_valid_decisions_pass(self):
-        """All valid decisions should PASS V3."""
-        content = _make_intent()
-        results = validate(content)
-        v3 = [r for r in results if r[0] == "V3"]
-        self.assertEqual(v3[0][1], "PASS", f"Expected V3 PASS, got: {v3}")
-
-
-class TestV4RetainedCrossCheck(unittest.TestCase):
-    """V4: 不可妥协项 must match capabilities with decision == '保留'."""
-
-    def test_non_retained_name_fails(self):
-        """不可妥协项 referencing a '放弃' capability should FAIL V4."""
-        # 权限管理 is marked 放弃, not 保留
-        bad_rows = """| # | 能力 | 描述 | 来源 | 标记 | 决策 |
-|---|------|------|------|------|------|
-| 1 | 用户认证 | 登录注册 | 类比 | 👍 | 保留 |
-| 2 | 权限管理 | RBAC控制 | 类比 | 👍 | 放弃 |
-| 3 | 审计日志 | 操作记录 | 类比 | 👍 | 保留 |
-| 4 | 数据导出 | 导出CSV | 反面 | ❌ | 放弃 |
-| 5 | 通知系统 | 邮件通知 | 场景 | 🤔 | 推迟 |
-"""
-        content = _make_intent(cap_rows=bad_rows, cs_items="1. 用户认证\n2. 权限管理\n3. 审计日志")
-        results = validate(content)
-        v4 = [r for r in results if r[0] == "V4"]
-        self.assertEqual(v4[0][1], "FAIL", f"Expected V4 FAIL for non-retained item, got: {v4}")
-
-    def test_retained_name_passes(self):
-        """不可妥协项 referencing '保留' capabilities should PASS V4."""
-        content = _make_intent()
-        results = validate(content)
-        v4 = [r for r in results if r[0] == "V4"]
-        self.assertEqual(v4[0][1], "PASS", f"Expected V4 PASS, got: {v4}")
-
-
-class TestV6AbandonNameCrossCheck(unittest.TestCase):
-    """V6: Abandon report rows must contain capability names from §4 '放弃' items."""
-
-    def test_wrong_name_in_report_fails(self):
-        """Report rows with unrelated capability names should FAIL V6."""
-        # Replace the report to use a name that's not in §4 放弃 items
-        content = _make_intent()
-        content = content.replace(
-            "| 1 | 数据导出 | 否 | ✅ | 用户说不需要 |",
-            "| 1 | 完全无关的能力 | 否 | ✅ | 用户说不需要 |",
+### S5 漂移复核
+已检查""",
         )
-        results = validate(content)
-        v6 = [r for r in results if r[0] == "V6"]
-        self.assertEqual(v6[0][1], "FAIL", f"Expected V6 FAIL for wrong name, got: {v6}")
+        result = _result(content, "V9")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("S1", result[2])
 
-    def test_correct_name_in_report_passes(self):
-        """Report rows with matching capability names should PASS V6."""
-        content = _make_intent()
-        results = validate(content)
-        v6 = [r for r in results if r[0] == "V6"]
-        self.assertEqual(v6[0][1], "PASS", f"Expected V6 PASS, got: {v6}")
-
-    def test_rejected_confirmation_fails(self):
-        """A matching abandon report marked with X must still FAIL V6."""
-        content = _make_intent().replace(
-            "| 1 | 数据导出 | 否 | ✅ | 用户说不需要 |",
-            "| 1 | 数据导出 | 否 | ❌ | 用户尚未确认 |",
+    def test_s2_must_match_capability_decision_source(self):
+        content = _valid_content().replace(
+            "| C02 | 推迟 | 用户授权模型决定 | “归档功能你决定，第一版简单点。” |",
+            "| C02 | 推迟 | 用户明确确认 | “归档功能你决定，第一版简单点。” |",
+            1,
         )
-        results = validate(content)
-        v6 = [r for r in results if r[0] == "V6"]
-        self.assertEqual(v6[0][1], "FAIL", f"Expected V6 FAIL for rejected confirmation, got: {v6}")
+        result = _result(content, "V9")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("S2", result[2])
+
+
+class TestOutputPath(unittest.TestCase):
+    def test_valid_output_path(self):
+        path = Path("project/intent-anchor/2026-07-11-001-跨会话交接.md")
+        self.assertIsNone(_path_error(path))
+
+    def test_latest_or_root_file_is_not_accepted_as_output_path(self):
+        self.assertIsNotNone(_path_error(Path("INTENT.md")))
+        self.assertIsNotNone(
+            _path_error(Path("project/intent-anchor/latest.md"))
+        )
 
 
 if __name__ == "__main__":

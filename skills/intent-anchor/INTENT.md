@@ -1,6 +1,8 @@
 # INTENT.md — intent-anchor skill 意图锚定
 
 <!--
+  历史记录说明：本文件记录 intent-anchor 设计初期的一次自我验证，
+  沿用当时的模板和字段，不是当前格式的标准样本，也不要求通过当前校验器。
   本文件由 intent-anchor skill 的设计者用该 skill 自身的方法论产出。
   这是一次自我验证：如果方法论跑不通，这份文件就会暴露问题。
   锚定来源：CatPaw 会话 transcript + 一个实际项目复盘 + impact skill 设计参考
