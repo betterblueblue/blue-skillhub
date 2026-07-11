@@ -17,6 +17,9 @@ flowchart TD
 
     B --> B1["需求模糊：IntentAnchor"]
     B --> B2["目标明确、方案不明：开源项目调研"]
+    B1 --> B3["进入开发：Superpowers 或 Skills for Real Engineers"]
+    B2 --> B3
+    B3 -.-> B4["可选：Ponytail 强化简单优先"]
 
     C --> C1["项目陌生：Pathfinder"]
     C --> C2["项目熟悉：ImpactRadar"]
@@ -39,6 +42,7 @@ flowchart TD
 |---|---|---|
 | 只有一个模糊想法，还说不清给谁用、解决什么问题 | 用 [IntentAnchor](skills/intent-anchor/) 把目标、取舍和不可妥协项写进 `INTENT.md` | 目标明确后，决定是直接开发，还是先调研开源项目 |
 | 已经知道要做什么，但不确定架构和技术路线 | 用 [开工前调研开源项目](prompt/open-source-project-research.md) 比较真正相似的项目 | 看过证据并确认方案后再开始开发 |
+| 方向和方案已经明确，准备从零实现完整产品 | 完整流程选 [Superpowers](https://github.com/obra/superpowers)，按需组合选 [Skills for Real Engineers](https://github.com/mattpocock/skills) | 如果模型仍然常把简单需求做复杂，可以再用 [Ponytail](https://github.com/DietrichGebert/ponytail) 强化“简单优先” |
 | 刚接手一个陌生仓库，不知道入口和模块关系 | 用 [Pathfinder](skills/pathfinder/) 只读摸清项目 | 有具体改动时进入 ImpactRadar |
 | 已经熟悉项目，准备新增功能、修 Bug 或重构 | 用 [ImpactRadar](skills/impact/) 分析影响并逐步实施 | 完成后做独立验收和提交前整理 |
 | 开发中途需求变了，新旧说法可能混在一起 | 用 [需求变更对账](prompt/requirement-change-reconciliation.md) 找出当前仍然有效的要求 | 目标变了就回到 IntentAnchor；只是改动范围变化就回到 ImpactRadar |
@@ -57,13 +61,43 @@ flowchart TD
 
 下面是最常见的搭配，不要求每次把所有工具都走一遍。
 
-- **从模糊想法开始做新项目**：律刃 → IntentAnchor → 需要时调研开源项目 → 开发 → 独立验收 → 提交前整理。
+- **从模糊想法开始做新项目**：律刃 → IntentAnchor → 需要时调研开源项目 → 选择 Superpowers 或 Skills for Real Engineers 进入开发 → 独立验收 → 提交前整理。担心 AI 把简单需求做复杂时，可以在开发阶段搭配 Ponytail。
 - **接手陌生项目并准备修改**：律刃 → Pathfinder → 需求仍然模糊时使用 IntentAnchor → ImpactRadar → 独立验收 → 提交前整理。
 - **熟悉项目中的明确改动**：律刃 → ImpactRadar → 验证 → 独立验收或提交前整理。不必为了流程完整强行运行 Pathfinder。
 - **开发中途需求改变**：先暂停修改 → 需求变更对账 → 目标变化时回到 IntentAnchor，改动范围变化时回到 ImpactRadar。
 - **问题久攻不下**：卡住时重新梳理 → 有新线索就做一次针对性验证 → 仍无新方向时生成找外援材料并换模型。
 - **跨会话继续工作**：旧会话生成 `HANDOFF.md` → 新会话读取并核对现场；没有交接文档时，改用无交接恢复现场。
 - **实现完成准备交付**：如果 diff 已经说不清，先整理改动；如果改动范围清楚，先独立验收。验收发现问题就返回实现环节，最终提交前再检查一次工作区。
+
+## 从零开始开发
+
+Blue SkillHub 目前没有提供一套从设计、计划一路执行到完整实现的 0→1 开发流程。IntentAnchor 负责先把方向说清楚，“开工前调研开源项目”负责在技术路线不确定时查找依据；方向和方案确认以后，可以继续使用下面这些第三方工具。
+
+### Superpowers：希望一套流程带着项目往前走
+
+[Superpowers](https://github.com/obra/superpowers) 覆盖需求澄清、设计确认、实施计划、TDD、多个 agent 分工开发和复核，适合不想自己编排每一个开发环节的人。
+
+可以先把 `INTENT.md` 和开源调研结果交给它，再由它负责设计、计划和实现。已经用 IntentAnchor 把需求问清楚时，不必再同时运行两套内容相近的需求访谈。
+
+### Skills for Real Engineers：只拿当前需要的工具
+
+[Skills for Real Engineers](https://github.com/mattpocock/skills) 提供 `grill-with-docs`、`to-spec`、`to-tickets`、`implement`、`tdd`、`code-review` 等可以单独选择和组合的 Skill，适合希望自己掌控开发节奏的人。
+
+已经用 IntentAnchor 明确需求时，可以从规格整理、任务拆分或实现环节接上。`grill-with-docs` 和 IntentAnchor 都会深入追问需求，通常选择一个作为主要入口即可。
+
+### Ponytail：把“简单优先”变成一套检查顺序
+
+[Ponytail](https://github.com/DietrichGebert/ponytail) 会在写代码前依次检查：这个功能是否真的需要、项目里是否已经有实现、标准库或平台是否已经提供。只有前面的办法都不合适时，才编写满足需求所需的代码。
+
+这个方向与律刃的“简单优先”一致，但三者解决问题的位置不同：
+
+- **律刃**规定通用编码行为：不增加需求之外的功能、抽象和配置，只改必须改的内容。
+- **ImpactRadar**用于已有系统变更：该改的调用方、接口、数据和测试不能漏，不相关的地方不要顺手改。
+- **Ponytail**把实现前的取舍变成固定顺序：先复用现有代码、标准库和平台能力，最后才新增最少的代码。
+
+因此，Ponytail 不是用来补上 Blue SkillHub 完全缺失的能力，而是对“简单优先”的一种外部强化。模型已经能稳定遵守律刃时，没有必要为了工具齐全再叠加；模型仍然习惯重新造轮子或过度设计时，再考虑搭配使用。它不能代替需求确认、设计、测试、安全和验收。
+
+这三个项目都由各自作者独立维护，不属于 Blue SkillHub。具体支持哪些 AI 客户端、怎样安装以及当前版本能力，请以上游仓库的最新说明为准。
 
 ## 三个核心 Skill 怎么分工
 
@@ -75,7 +109,7 @@ flowchart TD
 | **Pathfinder** | 刚接手一个不熟悉的现有项目 | 只读梳理技术栈、模块、入口、数据和风险区域，产出项目地图 |
 | **ImpactRadar** | 准备修改已有系统 | 分析改动会影响哪些代码、接口、数据和测试，并按步骤执行 |
 
-这套工具不负责一键搭建完整系统。对于 0→1 项目，IntentAnchor 先帮你把方向说清楚；面对已有代码时，可以用 Pathfinder 摸清项目，再由 ImpactRadar 分析并执行改动。
+这套工具不负责一键搭建完整系统。对于 0→1 项目，IntentAnchor 先帮你把方向说清楚，后续实现可以参考上面的第三方工具；面对已有代码时，可以用 Pathfinder 摸清项目，再由 ImpactRadar 分析并执行改动。
 
 ImpactRadar 会根据任务风险选择流程。简单改动使用 `light` 模式，只保留必要检查；复杂或高风险改动使用 `full` 模式，补齐需求、设计、实施和验证文档。
 
