@@ -29,6 +29,7 @@
 - [共享约定](contracts.md)：Pathfinder 和 ImpactRadar 都要遵守的规则，L0 会据此检查。
 - [ImpactRadar 评分规则](rubric-impact.md)：指向 `VALIDATION.md` 中的 9 个评分维度。
 - [Pathfinder 评分规则](rubric-pathfinder.md)：Pathfinder 使用的 9 个评分维度。
+- [经验进入核心规则的条件](rule-promotion.md)：说明真实使用经验满足什么条件后，才能修改核心规则或门禁。
 - [回归触发矩阵](regression.md)：说明不同改动需要复跑哪些测试。
 - [真实项目回归测试](../../eval/real-projects/)：可重复运行的 Java、Node.js、Python、前端和 monorepo 用例。
 - [当前基线](../../eval/baselines/)：保存用于版本比较的评分数据。
