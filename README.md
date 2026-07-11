@@ -75,6 +75,7 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方
 
 这里放的不是大而全的流程，而是遇到某个具体麻烦时，可以直接发给 AI 的指令：
 
+- [开工前调研开源项目](prompt/open-source-project-research.md)：脑子里已经有个项目想法，但不想让 AI 凭空搭架子：先找几个真正做过类似事情的开源项目，看清哪些值得借、哪些坑别踩，再拿方案回来确认。
 - [跨会话交接](prompt/session-handoff.md)：今天做到这里，明天还要接着干：把目标、进度、卡点和踩过的坑写进 `HANDOFF.md`，下次不用从头解释。
 - [无交接恢复现场](prompt/workspace-recovery.md)：上个会话突然没了，又没来得及交接：从 Git、diff 和项目文件里尽量还原做到哪一步。
 - [卡住时重新梳理](prompt/stuck-reassessment.md)：同一个报错越改越乱：先停手，分清事实和猜测，只做一个最能缩小范围的验证。
@@ -82,6 +83,8 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方
 - [需求变更对账](prompt/requirement-change-reconciliation.md)：需求前后改了几轮，怕新旧说法一起执行：重新整理当前有效要求，并找出已经过时的实现。
 - [提交前整理改动](prompt/pre-commit-cleanup.md)：准备提交，却发现 diff 里什么都有：把正式修改、调试残留和用户原有改动分开，再决定怎样清理和暂存。
 - [生成独立验收指令](prompt/independent-review-request.md)：实现会话说“已经完成”还不够：生成一份完整验收指令，交给新会话按原始需求从头核实。
+
+使用“开工前调研开源项目”时，把 Prompt 里的占位内容换成项目想法，或者填入现有 `INTENT.md` 的路径，再整段发给能够访问 GitHub 的 AI。它会先交付项目对比和实现方案；你确认方案前，不会创建项目或写代码。想法还很模糊时，先用 IntentAnchor 把“要做什么”说清楚，再进入开源调研。
 
 ### 律刃
 
