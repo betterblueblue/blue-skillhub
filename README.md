@@ -74,7 +74,11 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方
 这里收录可以直接发给 AI 编码助手的实用 Prompt，适合不需要完整 Skill、但又想把要求说清楚的场景：
 
 - [跨会话交接](prompt/session-handoff.md)：为下一次会话生成 `HANDOFF.md`。
+- [无交接恢复现场](prompt/workspace-recovery.md)：会话意外中断且没有交接文档时，根据 Git 状态、diff 和项目文件恢复当前进度。
 - [卡住时重新梳理](prompt/stuck-reassessment.md)：暂停反复尝试，先整理已有证据，再选出下一步最值得做的验证。
+- [找外援排障](prompt/expert-escalation.md)：当前模型久未解决问题时，整理复现方式、尝试记录和工作区状态，直接交给其他模型继续排查和修复。
+- [需求变更对账](prompt/requirement-change-reconciliation.md)：需求在开发中多次变化时，整理当前有效要求、已经失效的旧要求和对现有代码的影响。
+- [提交前整理改动](prompt/pre-commit-cleanup.md)：提交前区分正式修改、调试残留、用户原有改动和不应提交的文件，再决定怎样清理和暂存。
 - [生成独立验收指令](prompt/independent-review-request.md)：把原始需求、实际改动和验证结果整理成一段完整指令，直接交给新会话复核。
 
 ### 律刃
