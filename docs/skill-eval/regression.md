@@ -4,7 +4,7 @@
 
 ## 适用范围
 
-`skills/{impact,pathfinder}` 的 SKILL.md / templates / references / profiles / db-adapters / VALIDATION / README / validation-runs。
+本协议的 RG0-RG3 和 `validation-runs` 记录适用于 `skills/{impact,pathfinder}` 的 SKILL.md / templates / references / profiles / db-adapters / VALIDATION / README / validation-runs。IntentAnchor 同样遵守 `rule-promotion.md` 的候选受理条件，但行为修改继续运行自己的 validator 测试和 CI；在纳入统一 RG 测评前，不把这些测试写成 RG1-RG3 已通过。
 
 纯错别字、链接修正、排版等不改变行为边界的修改，只跑 RG0。
 
@@ -17,6 +17,7 @@
 3. **真实 agent 复测是关键闸门**：涉及弱模型、长会话、Step 确认、写操作闭环、负向场景时，补真实 Claude Code / MiniMax M3 或等价 agent 对话记录。
 4. **自动只读，写操作隔离**：只读检查自动跑；写测试项目的动作在隔离副本或临时 fixture 执行。
 5. **结果必须归档**：每轮复测写 `validation-runs/` + 更新 `INDEX.md`。
+6. **先有失败证据再修规则**：行为修改必须关联 `RC-NNN` 候选，并保留修改前会失败的测试、fixture 或真实产物。受理条件见 [经验进入核心规则的条件](rule-promotion.md)。
 
 ## 触发矩阵
 
@@ -139,11 +140,12 @@ skills/{impact|pathfinder}/validation-runs/YYYY-MM-DD-Txx-短名称.md
 
 ## 后续优化默认动作
 
-只要出现"优化 impact/pathfinder 规则/模板/profile/adapter"任务，默认：
+只要出现“优化核心 Skill 的规则、模板、profile、adapter 或 validator”任务，默认：
 
-1. 判断修改类型，选 RG0-RG3 回归包。
-2. 修改前记录预期影响面。
-3. 修改后跑 RG0。
-4. 按触发矩阵补 RG1/RG2/RG3。
-5. 写 validation record + 更新 index。
-6. 最终回复说明：跑了哪些复测、哪些没跑、原因、是否有 P0/P1。
+1. 按 `rule-promotion.md` 核对候选编号、原始证据和受理条件。
+2. 判断修改类型：Pathfinder / ImpactRadar 选择 RG0-RG3 回归包；IntentAnchor 选择对应的 validator 行为测试和 CI 检查。
+3. 修改前保留能够失败的测试、fixture 或真实产物，并记录预期影响面。
+4. 修改后确认同一用例转为通过，再跑 RG0。
+5. 按触发矩阵补 RG1/RG2/RG3。
+6. 写 validation record + 更新 index，并把候选状态更新为 `verified` 或说明未通过原因。
+7. 最终回复说明：关联的候选编号、跑了哪些复测、哪些没跑、原因、是否有 P0/P1。
