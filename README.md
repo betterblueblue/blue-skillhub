@@ -71,15 +71,15 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方
 
 [prompt/](prompt/)
 
-这里收录可以直接发给 AI 编码助手的实用 Prompt，适合不需要完整 Skill、但又想把要求说清楚的场景：
+这里放的不是大而全的流程，而是遇到某个具体麻烦时，可以直接发给 AI 的指令：
 
-- [跨会话交接](prompt/session-handoff.md)：为下一次会话生成 `HANDOFF.md`。
-- [无交接恢复现场](prompt/workspace-recovery.md)：会话意外中断且没有交接文档时，根据 Git 状态、diff 和项目文件恢复当前进度。
-- [卡住时重新梳理](prompt/stuck-reassessment.md)：暂停反复尝试，先整理已有证据，再选出下一步最值得做的验证。
-- [找外援排障](prompt/expert-escalation.md)：当前模型久未解决问题时，整理复现方式、尝试记录和工作区状态，直接交给其他模型继续排查和修复。
-- [需求变更对账](prompt/requirement-change-reconciliation.md)：需求在开发中多次变化时，整理当前有效要求、已经失效的旧要求和对现有代码的影响。
-- [提交前整理改动](prompt/pre-commit-cleanup.md)：提交前区分正式修改、调试残留、用户原有改动和不应提交的文件，再决定怎样清理和暂存。
-- [生成独立验收指令](prompt/independent-review-request.md)：把原始需求、实际改动和验证结果整理成一段完整指令，直接交给新会话复核。
+- [跨会话交接](prompt/session-handoff.md)：今天做到这里，明天还要接着干：把目标、进度、卡点和踩过的坑写进 `HANDOFF.md`，下次不用从头解释。
+- [无交接恢复现场](prompt/workspace-recovery.md)：上个会话突然没了，又没来得及交接：从 Git、diff 和项目文件里尽量还原做到哪一步。
+- [卡住时重新梳理](prompt/stuck-reassessment.md)：同一个报错越改越乱：先停手，分清事实和猜测，只做一个最能缩小范围的验证。
+- [找外援排障](prompt/expert-escalation.md)：当前模型绕了几轮仍没解出来：把复现方法、失败尝试和代码现场整理好，交给更擅长的模型直接接手。
+- [需求变更对账](prompt/requirement-change-reconciliation.md)：需求前后改了几轮，怕新旧说法一起执行：重新整理当前有效要求，并找出已经过时的实现。
+- [提交前整理改动](prompt/pre-commit-cleanup.md)：准备提交，却发现 diff 里什么都有：把正式修改、调试残留和用户原有改动分开，再决定怎样清理和暂存。
+- [生成独立验收指令](prompt/independent-review-request.md)：实现会话说“已经完成”还不够：生成一份完整验收指令，交给新会话按原始需求从头核实。
 
 ### 律刃
 
