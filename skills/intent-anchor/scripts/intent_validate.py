@@ -105,7 +105,7 @@ def _has_placeholder(value: str) -> bool:
 def _looks_like_full_confirmation(value: str) -> bool:
     return bool(
         re.search(
-            r"确认|同意|没问题|可以写入|可以保存|\bOK\b",
+            r"确认|同意|接受|没问题|可以写入|可以保存|\bOK\b",
             value,
             re.IGNORECASE,
         )

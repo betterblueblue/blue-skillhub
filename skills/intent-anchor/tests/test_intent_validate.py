@@ -100,6 +100,22 @@ class TestDecisionContract(unittest.TestCase):
         self.assertEqual("FAIL", result[1])
         self.assertIn("只能保留或推迟", result[2])
 
+    def test_unconfirmed_suggestion_cannot_be_recorded_as_deferred(self):
+        content = _valid_content().replace(
+            "| C02 | 自动归档旧记录 | 定期移动已经完成的历史交接文件 | E02 | 推迟 | 用户授权模型决定 |",
+            "| C02 | 自动归档旧记录 | 定期移动已经完成的历史交接文件 | E02 | 推迟 | 模型建议（未确认） |",
+        )
+        result = _result(content, "V3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("尚未确认", result[2])
+
+    def test_explicit_user_choice_can_be_recorded_as_deferred(self):
+        content = _valid_content().replace(
+            "| C02 | 自动归档旧记录 | 定期移动已经完成的历史交接文件 | E02 | 推迟 | 用户授权模型决定 |",
+            "| C02 | 自动归档旧记录 | 定期移动已经完成的历史交接文件 | E02 | 推迟 | 用户明确确认 |",
+        )
+        self.assertEqual("PASS", _result(content, "V3")[1])
+
     def test_unknown_evidence_id_fails(self):
         content = _valid_content().replace("| E01、E02 | 保留 |", "| E99 | 保留 |", 1)
         result = _result(content, "V3")
@@ -181,6 +197,14 @@ class TestDriftAndConfirmation(unittest.TestCase):
         result = _result(content, "V8")
         self.assertEqual("FAIL", result[1])
         self.assertIn("全文", result[2])
+
+    def test_accept_is_full_document_confirmation(self):
+        content = _valid_content().replace(
+            "“确认这份 INTENT.md。”",
+            "“接受”",
+            1,
+        )
+        self.assertEqual("PASS", _result(content, "V8")[1])
 
 
 class TestSemanticReviewEvidence(unittest.TestCase):
