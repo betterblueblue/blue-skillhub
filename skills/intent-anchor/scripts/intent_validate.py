@@ -6,14 +6,16 @@
 
 检查项：
   V1: 文件非空
-  V2: 11 个必需章节齐全
+  V2: 13 个必需章节齐全
   V3: 能力、证据、决策和决策来源关系合法，且没有待确认项
   V4: 不可妥协项引用保留能力，并有用户明确确认；允许为空
   V5: 推迟和放弃清单与能力决策一致
   V6: 决策统计与能力清单一致，未决问题为空
   V7: 7 个通用漂移模式均使用明确状态并留下说明
   V8: 存在针对 INTENT.md 全文的用户明确确认记录
-  V9: S1-S5 具有规定的证据结构，并与能力和漂移记录交叉一致
+  V9: S1-S7 具有规定的证据结构，并与能力和漂移记录交叉一致
+  V10: 设计标准节存在；有素材时记录了路径和用户确认，无素材时记录用户确认“没有”
+  V11: 术语表节存在；有术语时记录了人话翻译和界面文案，无术语时明确写“无”
 
 本脚本不能验证文件引用是否真实、模型推导是否合理，也不能证明内容
 符合用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -39,6 +41,8 @@ REQUIRED_SECTIONS = [
     "## 9. 用户确认记录",
     "## 10. 语义复核记录",
     "## 11. 锚定原始记录",
+    "## 12. 设计标准",
+    "## 13. 术语表",
 ]
 
 DRIFT_PATTERNS = [
@@ -200,7 +204,7 @@ def validate(content: str) -> list[tuple[str, str, str]]:
     if missing:
         results.append(("V2", "FAIL", f"缺少章节：{', '.join(missing)}"))
     else:
-        results.append(("V2", "PASS", "全部 11 个章节存在"))
+        results.append(("V2", "PASS", "全部 13 个章节存在"))
 
     capabilities, capability_errors = _parse_capabilities(content)
     if capability_errors:
@@ -383,6 +387,8 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         "S3 不可妥协项",
         "S4 锚定充分性与冲突",
         "S5 漂移复核",
+        "S6 设计标准",
+        "S7 术语标记",
     ]
     audit_parts = {heading: _subsection(audit_section, heading) for heading in audit_headings}
     for heading, part in audit_parts.items():
@@ -469,10 +475,80 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         if s5_records != drift_records:
             audit_errors.append("S5 没有逐项复核第 7 节的漂移状态")
 
+        s6_part = audit_parts["S6 设计标准"]
+        s6_rows = _table_rows(s6_part, "\u8bbe\u8ba1\u7d20\u6750 ID")
+        if s6_rows:
+            for index, row in enumerate(s6_rows, 1):
+                if len(row) != 5:
+                    audit_errors.append(f"S6 第 {index} 行应有 5 列")
+                    continue
+                d_id, dtype, path, scope, confirm = row
+                if any(_has_placeholder(v) for v in row):
+                    audit_errors.append(f"S6 {d_id} 仍含模板占位符")
+                if not dtype or not path or not scope or not confirm:
+                    audit_errors.append(f"S6 {d_id} 缺少类型、路径、验收范围或用户确认")
+        elif not re.search(r"\u65e0\u8bbe\u8ba1\u6807\u51c6\u7d20\u6750.+\u7528\u6237\u660e\u786e\u786e\u8ba4", s6_part):
+            audit_errors.append("S6 没有设计素材时，必须记录用户明确确认“没有”")
+
+        s7_part = audit_parts["S7 \u672f\u8bed\u6807\u8bb0"]
+        s7_rows = _table_rows(s7_part, "\u539f\u59cb\u672f\u8bed")
+        if s7_rows:
+            for index, row in enumerate(s7_rows, 1):
+                if len(row) != 4:
+                    audit_errors.append(f"S7 第 {index} 行应有 4 列")
+                    continue
+                term, translation, ui_text, cap_refs = row
+                if any(_has_placeholder(v) for v in row):
+                    audit_errors.append(f"S7 “{term}”仍含模板占位符")
+                if not translation or not ui_text:
+                    audit_errors.append(f"S7 “{term}”缺少人话翻译或界面文案")
+        elif not re.search(r"\u65e0\u672f\u8bed\u9700\u8981\u7ffb\u8bd1", s7_part):
+            audit_errors.append("S7 没有术语时，必须明确写“无术语需要翻译”")
+
     if audit_errors:
         results.append(("V9", "FAIL", "；".join(audit_errors)))
     else:
-        results.append(("V9", "PASS", "S1-S5 结构化复核记录齐全并与正文一致"))
+        results.append(("V9", "PASS", "S1-S7 结构化复核记录齐全并与正文一致"))
+
+    design_section = _section(content, "## 12. 设计标准")
+    design_errors: list[str] = []
+    design_rows = _table_rows(design_section, "\u8bbe\u8ba1\u7d20\u6750 ID")
+    if design_rows:
+        for index, row in enumerate(design_rows, 1):
+            if len(row) != 5:
+                design_errors.append(f"设计标准第 {index} 行应有 5 列")
+                continue
+            d_id, dtype, path, scope, confirm = row
+            if any(_has_placeholder(v) for v in row):
+                design_errors.append(f"设计标准 {d_id} 仍含模板占位符")
+            if not dtype or not path or not scope or not confirm:
+                design_errors.append(f"设计标准 {d_id} 缺少类型、路径、验收范围或用户确认")
+    elif not re.search(r"\u65e0\u8bbe\u8ba1\u6807\u51c6\u7d20\u6750.+\u7528\u6237\u660e\u786e\u786e\u8ba4", design_section):
+        design_errors.append("没有设计素材时，必须记录用户明确确认“没有”")
+    if design_errors:
+        results.append(("V10", "FAIL", "；".join(design_errors)))
+    else:
+        results.append(("V10", "PASS", "设计标准节存在且有用户确认"))
+
+    terminology_section = _section(content, "## 13. 术语表")
+    terminology_errors: list[str] = []
+    terminology_rows = _table_rows(terminology_section, "\u539f\u59cb\u672f\u8bed")
+    if terminology_rows:
+        for index, row in enumerate(terminology_rows, 1):
+            if len(row) != 4:
+                terminology_errors.append(f"术语表第 {index} 行应有 4 列")
+                continue
+            term, translation, ui_text, cap_refs = row
+            if any(_has_placeholder(v) for v in row):
+                terminology_errors.append(f"术语“{term}”仍含模板占位符")
+            if not translation or not ui_text:
+                terminology_errors.append(f"术语“{term}”缺少人话翻译或界面文案")
+    elif not re.search(r"\u65e0\u672f\u8bed\u9700\u8981\u7ffb\u8bd1", terminology_section):
+        terminology_errors.append("没有术语时，必须明确写“无术语需要翻译”")
+    if terminology_errors:
+        results.append(("V11", "FAIL", "；".join(terminology_errors)))
+    else:
+        results.append(("V11", "PASS", "术语表节存在且格式正确"))
 
     return results
 

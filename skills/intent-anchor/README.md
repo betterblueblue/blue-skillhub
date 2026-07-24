@@ -80,10 +80,12 @@ Phase 2.5：语义复核
   S3 不可妥协项
   S4 锚定充分性与冲突
   S5 漂移复核
+  S6 设计标准
+  S7 术语标记
         ↓
 Phase 3：确认并写入
   先在对话中展示完整草稿，用户确认全文后才写文件
-  运行 9 项结构与交叉引用检查
+  运行 11 项结构与交叉引用检查
         ↓
 Phase 4：交接
   提供带真实文件路径的 Prompt，由用户传给下一会话
@@ -111,12 +113,12 @@ intent-anchor/
 ├── references/
 │   ├── anchoring-methods.md          ← 三种锚定方法和决策规则
 │   ├── drift-patterns.md             ← 7 种通用漂移模式
-│   └── semantic-audit.md             ← S1-S5 语义复核规则
+│   └── semantic-audit.md             ← S1-S7 语义复核规则
 ├── templates/
 │   ├── INTENT.md                     ← 当前输出模板
 │   └── stage-gate-check.md           ← 可选人工检查表
 ├── scripts/
-│   └── intent_validate.py            ← 9 项结构与交叉引用检查
+│   └── intent_validate.py            ← 11 项结构与交叉引用检查
 └── tests/
     ├── fixtures/valid-intent.md       ← 当前契约的有效样本
     └── test_intent_validate.py        ← 行为回归测试

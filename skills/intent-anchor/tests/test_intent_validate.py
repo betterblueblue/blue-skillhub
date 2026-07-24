@@ -69,7 +69,7 @@ def _replace_subsection(content: str, heading: str, body: str) -> str:
 class TestValidFixture(unittest.TestCase):
     def test_current_fixture_passes_all_checks(self):
         results = validate(_valid_content())
-        self.assertEqual(9, len(results))
+        self.assertEqual(11, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -225,6 +225,12 @@ class TestSemanticReviewEvidence(unittest.TestCase):
 已检查
 
 ### S5 漂移复核
+已检查
+
+### S6 设计标准
+已检查
+
+### S7 术语标记
 已检查""",
         )
         result = _result(content, "V9")
@@ -240,6 +246,75 @@ class TestSemanticReviewEvidence(unittest.TestCase):
         result = _result(content, "V9")
         self.assertEqual("FAIL", result[1])
         self.assertIn("S2", result[2])
+
+
+class TestDesignStandards(unittest.TestCase):
+    def test_missing_design_section_fails(self):
+        content = _valid_content().replace("## 12. 设计标准", "## 12. X")
+        result = _result(content, "V2")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("设计标准", result[2])
+
+    def test_design_standard_without_user_confirmation_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 12. 设计标准",
+            "| 设计素材 ID | 类型 | 路径 | 验收范围 | 用户确认 |\n"
+            "|---|---|---|---|---|\n"
+            "| D01 | 可点原型 | prototype/admin | 管理端 | |",
+        )
+        result = _result(content, "V10")
+        self.assertEqual("FAIL", result[1])
+
+    def test_design_standard_with_placeholder_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 12. 设计标准",
+            "| 设计素材 ID | 类型 | 路径 | 验收范围 | 用户确认 |\n"
+            "|---|---|---|---|---|\n"
+            "| D01 | 可点原型 | {路径} | 管理端 | 确认 |",
+        )
+        result = _result(content, "V10")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("占位符", result[2])
+
+    def test_explicit_no_design_material_passes(self):
+        self.assertEqual("PASS", _result(_valid_content(), "V10")[1])
+
+
+class TestTerminology(unittest.TestCase):
+    def test_missing_terminology_section_fails(self):
+        content = _valid_content().replace("## 13. 术语表", "## 13. X")
+        result = _result(content, "V2")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("术语表", result[2])
+
+    def test_terminology_without_translation_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 13. 术语表",
+            "| 原始术语 | 人话翻译 | 用于界面的文案 | 出现在能力 ID |\n"
+            "|---|---|---|---|\n"
+            "| 金刚区 | | 首页入口 | C01 |",
+        )
+        result = _result(content, "V11")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("人话翻译", result[2])
+
+    def test_terminology_without_ui_text_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 13. 术语表",
+            "| 原始术语 | 人话翻译 | 用于界面的文案 | 出现在能力 ID |\n"
+            "|---|---|---|---|\n"
+            "| 金刚区 | 首页入口图标网格 | | C01 |",
+        )
+        result = _result(content, "V11")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("界面文案", result[2])
+
+    def test_explicit_no_terminology_passes(self):
+        self.assertEqual("PASS", _result(_valid_content(), "V11")[1])
 
 
 class TestOutputPath(unittest.TestCase):
