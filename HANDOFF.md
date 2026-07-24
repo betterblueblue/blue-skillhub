@@ -1,7 +1,7 @@
 # 交接文档
 
 > 写给完全没有上下文的新会话。最近更新：2026-07-24。
-> 本文档覆盖四个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、blue-interview 优化（部分完成，待补测）。
+> 本文档覆盖五个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、blue-interview 优化（部分完成，待补测）。
 
 ---
 
@@ -169,13 +169,17 @@ skills/intent-issues/
 ### 完整链路
 
 ```text
-intent-anchor → INTENT.md（意图、能力、验收路径、设计标准、术语表）
+intent-anchor → intent.md（意图、能力、验收路径、设计标准、术语表、性能/安全要求）
     ↓ 强制输入
-intent-prd → PRD.md（原生引用能力表和验收路径，Acceptance Criteria 用 Given/When/Then 结构）
+intent-prd → prd.md（原生引用能力表和验收路径，Acceptance Criteria 用 Given/When/Then 结构）
     ↓ 强制输入
-intent-issues → 工单（自动引用路径编号，自动检查覆盖）
-    ↓
-开发完成 → 最终复核（逐条验收路径端到端走通）
+intent-issues → issues.md（自动引用路径编号，自动检查覆盖）
+    ↓ 强制输入
+intent-dev → dev-record.md（TDD 循环，每条 Then 按实际运行结果判定验证等级）
+    ↓ 强制输入
+intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 条件性验证 + 漂移复核）
+
+所有产物统一存放在目标项目的 `intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/` 目录下。
 ```
 
 ### git 状态
@@ -243,6 +247,67 @@ intent-verify 的 Phase 5 标题、正文、交接 prompt、verify-record 模板
 已提交为 `a11f12d`，已推送到远程。基线：`783d263`。
 
 文档修复 `388d3fb`：SKILL.md 和 README.md 中 3 处 S1-S8 → S1-S10（强制规则 #4、Phase 2.5 标题、文件结构注释），已推送。
+
+---
+
+## 任务 A4：README 同步与输出目录/命名统一（已完成）
+
+### 背景
+
+任务 A3 完成后，intent-dev 和 intent-verify 两个新 skill 未被主 README.md 记录，IntentAnchor 的检查项数量和语义复核范围仍停留在旧版。同时，各 skill 的输出产物分散在 5 个独立目录（intent-anchor/、prd/、issues/、dev/、verify/），文件命名也不一致。
+
+### 改了什么（4 个 commit）
+
+**commit `024c06b`：README.md 同步更新**
+
+- Mermaid 流程图 B3 节点加入 IntentDev → IntentVerify
+- 场景表、常用完整路线、从零开始开发 intro 补全链路
+- 3 分钟上手安装命令加 intent-dev 和 intent-verify
+- IntentAnchor 段：S1-S8 → S1-S10、12 → 14 项检查
+- IntentIssues 段：5 → 7 项检查
+- 新增 IntentDev 和 IntentVerify 小节（4 项和 6 项检查）
+- 目录速览加 intent-dev/ 和 intent-verify/
+
+**commit `36b4ba0`：输出产物统一大写命名**
+
+- 模板文件重命名：dev-record.md → DEV-RECORD.md，verify-record.md → VERIFY-RECORD.md
+- 所有 SKILL.md、validate.py、README.md、fixture 中的产物名引用改为大写
+- fixture 文件名保持小写（与 valid-intent.md、valid-prd.md 一致）
+
+**commit `2167a6e`：输出目录统一到 intent-chain/{链路目录}/**
+
+- 从 5 个独立目录（intent-anchor/、prd/、issues/、dev/、verify/）合并到 1 个父目录 `intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/`
+- 下游 skill 不再独立计算日期序号路径，从输入文件路径推导链路目录
+- 涉及 21 个文件：SKILL.md × 5、validate.py × 5、README.md × 5、模板 × 3、fixture × 2、主 README × 1
+
+**commit `6e45539`：输出产物文件名统一小写**
+
+- 产物文件名从大写改回小写：intent.md、prd.md、issues.md、dev-record.md、verify-record.md
+- 涉及 20 个文件，271 处替换
+- 测试 243 passed
+
+### 最终结构
+
+```
+intent-chain/
+├── 2026-07-24-001-团队进度助手/
+│   ├── intent.md
+│   ├── prd.md
+│   ├── issues.md
+│   ├── dev-record.md
+│   └── verify-record.md
+└── 2026-07-25-001-另一个产品/
+    └── ...
+```
+
+### 验证状态
+
+- `python -m pytest skills/ -q` → 243 passed, 5 subtests passed
+- grep 确认全文不再有大写的 INTENT.md / PRD.md / ISSUES.md / DEV-RECORD.md / VERIFY-RECORD.md 引用（fixture 文件名除外）
+
+### git 状态
+
+四个 commit 均已推送：`024c06b` → `36b4ba0` → `2167a6e` → `6e45539`。基线：`a11f12d`。
 
 ---
 
@@ -316,6 +381,13 @@ intent-verify 的 Phase 5 标题、正文、交接 prompt、verify-record 模板
   - 中间踩坑：中文弯引号被替换为 ASCII 直引号导致 Python 语法错误，批量修复 5 处后通过
   - 文档修复 388d3fb：3 处 S1-S8 → S1-S10，已推送
   - 独立验收 25 项检查全部通过
+
+任务 A4（已提交 024c06b → 36b4ba0 → 2167a6e → 6e45539，已推送）：README 同步与输出目录/命名统一。
+  - README.md 补全 intent-dev/intent-verify，更新检查项数量
+  - 输出目录从 5 个独立目录合并到 intent-chain/{链路目录}/
+  - 产物文件名统一小写：intent.md / prd.md / issues.md / dev-record.md / verify-record.md
+  - 下游 skill 从输入文件路径推导链路目录，不再独立计算日期序号
+  - 243 passed
 
 任务 B（待补测）：blue-interview P1/P2/P3/P8/P9 已落地，P3 试跑通过，P1/P2/P8/P9 待补测。
   skill 被 .gitignore 忽略，不入库。未经同意禁止修改。
