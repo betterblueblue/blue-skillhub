@@ -60,7 +60,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
    - **User stories covered**：对应的 User Story 编号和能力 ID
 3. 如果设计标准存在，涉及界面的工单 Acceptance criteria 必须包含"对照 {设计文件} 结构一致"。
 4. 如果术语表存在，涉及界面的工单必须要求使用术语表中的界面文案。
-5. 按依赖顺序排列（阻塞者在前）。
+5. 如果 INTENT.md 有性能要求（第 15 节），涉及的工单 Acceptance criteria 必须引用性能要求 ID（如 `[PF01]`）。
+6. 如果 INTENT.md 有安全要求（第 16 节），涉及的工单 Acceptance criteria 必须引用安全要求 ID（如 `[SF01]`）。
+7. 按依赖顺序排列（阻塞者在前）。
 
 输出：工单列表草案。
 
@@ -82,7 +84,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 2. 运行：
 
    ```bash
-   python "{intent-issues skill 目录}/scripts/issues_validate.py" "{issues 路径}" "{intent.md 路径}"
+   python "{intent-issues skill 目录}/scripts/issues_validate.py" "{issues 路径}" "{intent.md 路径}" "{prd 路径}"
    ```
 
 3. 修复结构问题后重新运行。若有验收路径未被覆盖，补充工单或请用户确认放弃。
@@ -104,9 +106,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. **INTENT.md 和 PRD 必须存在且通过校验**。
 2. **每条验收路径至少被一个工单覆盖**：未被覆盖的不得跳过。
 3. **工单的 Acceptance criteria 必须引用验收路径编号**，并用 Given/When/Then 结构拆解验收条件。
-4. **设计标准和术语表约束必须传递到工单**。
+4. **设计标准、术语表、性能和安全要求约束必须传递到工单**。性能要求引用 PF 编号，安全要求引用 SF 编号。
 5. **先确认再写文件**。
-6. **结构校验必须通过**。
+6. **结构校验必须通过**：写入后运行 `issues_validate.py`（需传入 issues.md、intent.md 和 prd.md 三个路径），校验器会交叉检查验收路径、保留能力、设计标准、术语表、性能和安全要求是否与 INTENT.md 一致，以及 PRD 的 Then/And 条件是否被工单覆盖。
 
 ## 工单必需段落
 
@@ -137,7 +139,8 @@ Intent-Issues 能够：
 
 - 从 PRD 原生推导工单，按垂直切片拆分。
 - 自动检查验收路径和保留能力的覆盖情况。
-- 把设计标准和术语表约束传递到工单。
+- 把设计标准、术语表、性能和安全要求约束传递到工单。
+- 交叉检查 PRD 中每条验收路径的 Then/And 条件是否被工单覆盖。
 
 Intent-Issues 做不到：
 

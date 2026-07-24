@@ -31,6 +31,8 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 | 第 12 节设计标准 | Implementation Decisions > Design Standards |
 | 第 13 节术语表 | Implementation Decisions > Terminology Constraints |
 | 第 14 节验收路径 | Acceptance Criteria |
+| 第 15 节性能要求 | Implementation Decisions > Performance Requirements |
+| 第 16 节安全要求 | Implementation Decisions > Security Requirements |
 | 第 6 节推迟/放弃 | Out of Scope |
 
 ## 工作流程
@@ -51,7 +53,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
    - **Problem Statement**：从第 1 节一句话意图推导，用用户视角描述问题。
    - **Solution**：从第 4 节保留能力和第 5 节不可妥协项推导，描述解决方案。
    - **User Stories**：每个保留能力至少对应一个 story，格式 `As a <角色>, I want <功能>, so that <收益>`。story 末尾标注对应能力 ID（如 `[C01]`）。
-   - **Implementation Decisions**：技术决策。如果有设计标准，在 Design Standards 子节列出文件路径和验收范围。如果有术语表，在 Terminology Constraints 子节列出界面文案约束。
+   - **Implementation Decisions**：技术决策。如果有设计标准，在 Design Standards 子节列出文件路径和验收范围。如果有术语表，在 Terminology Constraints 子节列出界面文案约束。如果有性能要求（第 15 节），在 Performance Requirements 子节逐条列出要求 ID、要求和对应能力。如果有安全要求（第 16 节），在 Security Requirements 子节逐条列出要求 ID、要求和对应能力。
    - **Acceptance Criteria**：从第 14 节验收路径推导。每条路径用 Given/When/Then 结构描述验收条件：Given 是前置条件（操作前系统状态），When 是触发操作，Then 是可判定的预期结果（每条能回答是/否）。每条路径对应一个 `### {路径 ID}: {路径名称}` 场景块。
    - **Testing Decisions**：测试策略，说明测什么、用什么缝、参考已有测试。
    - **Out of Scope**：从第 6 节推迟和放弃项推导，逐项列出并标注原因。
@@ -93,9 +95,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. **INTENT.md 必须存在且通过校验**：不通过则不生成 PRD。
 2. **每个保留能力至少对应一个 User Story**：不得遗漏。
 3. **每条验收路径必须出现在 Acceptance Criteria 中**：不得跳过。使用 Given/When/Then 结构描述。
-4. **设计标准和术语表必须引用**：如果 INTENT.md 有对应内容，PRD 必须引用。
+4. **设计标准、术语表、性能和安全要求必须引用**：如果 INTENT.md 有对应内容，PRD 必须引用。性能要求引用要求 ID（如 PF01），安全要求引用要求 ID（如 SF01）。
 5. **先确认再写文件**：在对话中展示完整草稿，得到明确确认后才写入。
-6. **结构校验必须通过**：写入后运行 `prd_validate.py`。
+6. **结构校验必须通过**：写入后运行 `prd_validate.py`（需传入 prd.md 和 intent.md 两个路径），校验器会交叉检查保留能力 ID、验收路径 ID、设计标准、术语表、性能和安全要求是否与 INTENT.md 一致。
 
 ## PRD 必需章节
 
@@ -105,6 +107,8 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 4. Implementation Decisions
    - Design Standards（如果有）
    - Terminology Constraints（如果有）
+   - Performance Requirements（如果有）
+   - Security Requirements（如果有）
 5. Acceptance Criteria
 6. Testing Decisions
 7. Out of Scope

@@ -29,7 +29,7 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 
 ## 校验
 
-`issues_validate.py` 运行 7 项检查：
+`issues_validate.py` 运行 10 项检查：
 
 | 检查项 | 检查内容 |
 |---|---|
@@ -40,9 +40,12 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 | V5 | Coverage Verification 包含三个子节且与 INTENT.md 一致 |
 | V6 | INTENT.md 有设计标准时，至少一个工单 Acceptance criteria 包含"对照" |
 | V7 | INTENT.md 有术语表时，至少一个工单 Acceptance criteria 引用了术语 |
+| V8 | INTENT.md 有性能要求时，所有性能要求 ID 被工单引用 |
+| V9 | INTENT.md 有安全要求时，所有安全要求 ID 被工单引用 |
+| V10 | PRD 中每条验收路径的 Then/And 条件被工单覆盖 |
 
 ```bash
-python skills/intent-issues/scripts/issues_validate.py intent-chain/{链路目录}/issues.md intent-chain/{链路目录}/intent.md
+python skills/intent-issues/scripts/issues_validate.py intent-chain/{链路目录}/issues.md intent-chain/{链路目录}/intent.md intent-chain/{链路目录}/prd.md
 ```
 
 ## 文件结构
@@ -54,7 +57,7 @@ intent-issues/
 ├── templates/
 │   └── issue-template.md             ← 工单模板
 ├── scripts/
-│   └── issues_validate.py            ← 7 项结构与交叉引用检查
+│   └── issues_validate.py            ← 10 项结构与交叉引用检查
 └── tests/
     ├── fixtures/valid-issues.md       ← 有效样本
     └── test_issues_validate.py        ← 行为回归测试
@@ -66,7 +69,8 @@ Intent-Issues 能够：
 
 - 从 PRD 原生推导工单，按垂直切片拆分。
 - 自动检查验收路径和保留能力的覆盖情况。
-- 把设计标准和术语表约束传递到工单。
+- 把设计标准、术语表、性能和安全要求约束传递到工单。
+- 交叉检查 PRD 中每条验收路径的 Then/And 条件是否被工单覆盖。
 
 Intent-Issues 做不到：
 

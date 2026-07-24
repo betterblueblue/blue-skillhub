@@ -8,7 +8,7 @@
   V1: 文件非空
   V2: 每个工单有开发记录段（含 TDD 过程、验证结果、工单状态）
   V3: 每条 Then 有验证等级（V1/V2），V2 必须附命令输出
-  V4: 标 done 的工单：所有 Then >= V2
+  V4: 标 done 的工单：所有 Then >= V2（用户确认 V1 标 done 除外）
 
 本脚本不能验证命令输出是否真实，也不能证明开发产物符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -53,6 +53,11 @@ def _parse_issue_headings(issues_content: str) -> list[str]:
         m.group(0)
         for m in re.finditer(r"^##\s+Issue\s+\d+:\s*.+$", issues_content, re.MULTILINE)
     ]
+
+
+def _parse_issue_numbers(content: str) -> set[str]:
+    """从内容中提取所有 Issue 编号。"""
+    return {m.group(1) for m in re.finditer(r"^##\s+Issue\s+(\d+):", content, re.MULTILINE)}
 
 
 def _parse_then_lines(issue_content: str) -> list[tuple[str, str, str]]:
@@ -126,6 +131,12 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
             v2_errors.append(
                 f"工单文件有 {issues_count} 个工单，DEV-RECORD 只记录了 {dev_issue_count} 个"
             )
+        # 检查 Issue 编号是否匹配
+        dev_issue_nums = _parse_issue_numbers(dev_content)
+        issues_issue_nums = _parse_issue_numbers(issues_content)
+        missing_issues = issues_issue_nums - dev_issue_nums
+        if missing_issues:
+            v2_errors.append(f"DEV-RECORD 缺少工单: Issue {sorted(missing_issues)}")
         for issue in dev_issues:
             heading_match = ISSUE_HEADING_RE.search(issue)
             issue_num = heading_match.group(1) if heading_match else "?"
@@ -167,21 +178,25 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
     else:
         results.append(("V3", "PASS", f"共 {total_thens} 条 Then/And，均有验证等级和证据"))
 
-    # V4: 标 done 的工单：所有 Then >= V2
+    # V4: 标 done 的工单：所有 Then >= V2（用户确认 V1 标 done 除外）
     v4_errors: list[str] = []
     for issue in dev_issues:
         heading_match = ISSUE_HEADING_RE.search(issue)
         issue_label = heading_match.group(0) if heading_match else "未知工单"
         status = _parse_issue_status(issue)
         if status and "done" in status.lower():
+            user_confirmed_v1 = "用户确认 V1 标 done" in status
             then_lines = _parse_then_lines(issue)
             for check, text, level in then_lines:
                 if check != "x":
                     v4_errors.append(f"{issue_label} 标 done 但有未通过项: {text[:50]}")
                 elif level and level != "V2":
-                    v4_errors.append(
-                        f"{issue_label} 标 done 但条目仅为 {level}（需 V2）: {text[:50]}"
-                    )
+                    if level == "V1" and user_confirmed_v1:
+                        pass
+                    else:
+                        v4_errors.append(
+                            f"{issue_label} 标 done 但条目仅为 {level}（需 V2）: {text[:50]}"
+                        )
     if v4_errors:
         results.append(("V4", "FAIL", "; ".join(v4_errors)))
     else:
@@ -190,7 +205,15 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
             for issue in dev_issues
             if (status := _parse_issue_status(issue)) and "done" in status.lower()
         )
-        results.append(("V4", "PASS", f"{done_count} 个工单标 done，所有条目均达 V2"))
+        v1_confirmed = any(
+            "用户确认 V1 标 done" in (status or "")
+            for issue in dev_issues
+            if (status := _parse_issue_status(issue)) and "done" in status.lower()
+        )
+        if v1_confirmed:
+            results.append(("V4", "PASS", f"{done_count} 个工单标 done（含用户确认 V1 标 done）"))
+        else:
+            results.append(("V4", "PASS", f"{done_count} 个工单标 done，所有条目均达 V2"))
 
     return results
 

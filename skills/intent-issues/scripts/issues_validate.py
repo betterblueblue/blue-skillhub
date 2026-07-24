@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Issues 文件结构与 INTENT.md 交叉引用校验。
+"""Issues 文件结构与 INTENT.md、PRD 交叉引用校验。
 
 用法：
-  python issues_validate.py /path/to/intent-chain/{链路目录}/issues.md /path/to/intent-chain/{链路目录}/intent.md
+  python issues_validate.py /path/to/intent-chain/{链路目录}/issues.md /path/to/intent-chain/{链路目录}/intent.md /path/to/intent-chain/{链路目录}/prd.md
 
 检查项：
   V1: 文件非空
@@ -12,6 +12,9 @@
   V5: Coverage Verification 节存在且包含三个子节
   V6: INTENT.md 有设计标准时，至少一个工单的 Acceptance criteria 包含"对照"（交叉检查 INTENT.md）
   V7: INTENT.md 有术语表时，至少一个工单的 Acceptance criteria 引用了术语表中的术语（交叉检查 INTENT.md）
+  V8: INTENT.md 有性能要求时，所有性能要求 ID 被至少一个工单引用（交叉检查 INTENT.md）
+  V9: INTENT.md 有安全要求时，所有安全要求 ID 被至少一个工单引用（交叉检查 INTENT.md）
+  V10: PRD 中每条验收路径的 Then/And 条件数量不少于工单中对应路径的条目数（交叉检查 PRD）
 
 本脚本不能验证工单的技术可行性，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -39,7 +42,16 @@ COVERAGE_SUBSECTIONS = [
 
 CAPABILITY_ID_RE = re.compile(r"C\d{2,}")
 PATH_ID_RE = re.compile(r"P\d{2,}")
+PERF_ID_RE = re.compile(r"PF\d{2,}")
+SECURITY_ID_RE = re.compile(r"SF\d{2,}")
 ISSUE_HEADING_RE = re.compile(r"^##\s+Issue\s+\d+", re.MULTILINE)
+
+# PRD Acceptance Criteria 中的 Then/And 行
+PRD_THEN_RE = re.compile(r"^\s*-\s*\*\*Then\*\*\s*(.+)$", re.MULTILINE)
+PRD_AND_RE = re.compile(r"^\s*-\s*\*\*And\*\*\s*(.+)$", re.MULTILINE)
+# Issues Acceptance criteria 中的 Then/And 行
+ISSUE_THEN_RE = re.compile(r"^\s*-\s*\[.\]\s*Then:\s*(.+)$", re.MULTILINE)
+ISSUE_AND_RE = re.compile(r"^\s*-\s*\[.\]\s*And:\s*(.+)$", re.MULTILINE)
 
 
 def _section(content: str, heading: str) -> str:
@@ -108,6 +120,20 @@ def _parse_acceptance_paths(intent_content: str) -> set[str]:
     return {row[0] for row in rows if len(row) >= 1 and PATH_ID_RE.fullmatch(row[0])}
 
 
+def _parse_perf_requirements(intent_content: str) -> set[str]:
+    """从 INTENT.md 第 15 节提取性能要求 ID。"""
+    section = _section(intent_content, "## 15. 性能要求")
+    rows = _table_rows(section, "要求 ID")
+    return {row[0] for row in rows if len(row) >= 1 and PERF_ID_RE.fullmatch(row[0])}
+
+
+def _parse_security_requirements(intent_content: str) -> set[str]:
+    """从 INTENT.md 第 16 节提取安全要求 ID。"""
+    section = _section(intent_content, "## 16. 安全要求")
+    rows = _table_rows(section, "要求 ID")
+    return {row[0] for row in rows if len(row) >= 1 and SECURITY_ID_RE.fullmatch(row[0])}
+
+
 def _split_issues(content: str) -> list[str]:
     """按 ## Issue N: 标题 拆分工单段落。"""
     issue_starts = [(m.start(), m.end()) for m in ISSUE_HEADING_RE.finditer(content)]
@@ -124,7 +150,43 @@ def _split_issues(content: str) -> list[str]:
     return issues
 
 
-def validate(issues_content: str, intent_content: str) -> list[tuple[str, str, str]]:
+def _count_prd_thens_per_path(prd_content: str) -> dict[str, int]:
+    """从 PRD 的 Acceptance Criteria 中统计每条路径的 Then/And 条目数。"""
+    criteria_section = _section(prd_content, "## Acceptance Criteria")
+    result: dict[str, int] = {}
+    # 按 ### P01: ... 拆分
+    path_blocks = re.split(r"(?=^###\s+P\d{2,})", criteria_section, flags=re.MULTILINE)
+    for block in path_blocks:
+        path_match = PATH_ID_RE.match(block.strip())
+        if not path_match:
+            continue
+        path_id = path_match.group(0)
+        then_count = len(PRD_THEN_RE.findall(block)) + len(PRD_AND_RE.findall(block))
+        if then_count > 0:
+            result[path_id] = then_count
+    return result
+
+
+def _count_issue_thens_per_path(issues: list[str]) -> dict[str, int]:
+    """从工单的 Acceptance criteria 中统计每条路径的 Then/And 条目数。"""
+    result: dict[str, int] = {}
+    for issue in issues:
+        criteria_match = re.search(
+            r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+            issue,
+            re.MULTILINE | re.DOTALL,
+        )
+        if not criteria_match:
+            continue
+        criteria_text = criteria_match.group(1)
+        path_ids = PATH_ID_RE.findall(criteria_text)
+        then_count = len(ISSUE_THEN_RE.findall(criteria_text)) + len(ISSUE_AND_RE.findall(criteria_text))
+        for pid in set(path_ids):
+            result[pid] = result.get(pid, 0) + then_count
+    return result
+
+
+def validate(issues_content: str, intent_content: str, prd_content: str = "") -> list[tuple[str, str, str]]:
     """返回 (检查项, 结果, 说明)。"""
     results: list[tuple[str, str, str]] = []
 
@@ -153,6 +215,8 @@ def validate(issues_content: str, intent_content: str) -> list[tuple[str, str, s
     # 解析 INTENT.md
     retained_caps = _parse_retained_capabilities(intent_content)
     acceptance_paths = _parse_acceptance_paths(intent_content)
+    perf_ids = _parse_perf_requirements(intent_content)
+    security_ids = _parse_security_requirements(intent_content)
 
     # V3: 验收路径覆盖
     found_paths: set[str] = set()
@@ -277,16 +341,73 @@ def validate(issues_content: str, intent_content: str) -> list[tuple[str, str, s
     else:
         results.append(("V7", "PASS", "INTENT.md 无术语表，不适用"))
 
+    # V8: 性能要求传递检查
+    if perf_ids:
+        found_perf: set[str] = set()
+        for issue in issues:
+            criteria_match = re.search(
+                r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+                issue,
+                re.MULTILINE | re.DOTALL,
+            )
+            if criteria_match:
+                found_perf.update(PERF_ID_RE.findall(criteria_match.group(1)))
+        missing_perf = perf_ids - found_perf
+        if missing_perf:
+            results.append(("V8", "FAIL", f"性能要求未被任何工单引用: {sorted(missing_perf)}"))
+        else:
+            results.append(("V8", "PASS", f"全部 {len(perf_ids)} 个性能要求被工单引用"))
+    else:
+        results.append(("V8", "PASS", "INTENT.md 无性能要求，不适用"))
+
+    # V9: 安全要求传递检查
+    if security_ids:
+        found_sec: set[str] = set()
+        for issue in issues:
+            criteria_match = re.search(
+                r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+                issue,
+                re.MULTILINE | re.DOTALL,
+            )
+            if criteria_match:
+                found_sec.update(SECURITY_ID_RE.findall(criteria_match.group(1)))
+        missing_sec = security_ids - found_sec
+        if missing_sec:
+            results.append(("V9", "FAIL", f"安全要求未被任何工单引用: {sorted(missing_sec)}"))
+        else:
+            results.append(("V9", "PASS", f"全部 {len(security_ids)} 个安全要求被工单引用"))
+    else:
+        results.append(("V9", "PASS", "INTENT.md 无安全要求，不适用"))
+
+    # V10: PRD Then 覆盖检查
+    if prd_content:
+        prd_then_counts = _count_prd_thens_per_path(prd_content)
+        issue_then_counts = _count_issue_thens_per_path(issues)
+        v10_errors: list[str] = []
+        for path_id, prd_count in prd_then_counts.items():
+            issue_count = issue_then_counts.get(path_id, 0)
+            if issue_count < prd_count:
+                v10_errors.append(
+                    f"路径 {path_id} 在 PRD 中有 {prd_count} 条 Then/And，但工单中只有 {issue_count} 条"
+                )
+        if v10_errors:
+            results.append(("V10", "FAIL", "; ".join(v10_errors)))
+        else:
+            results.append(("V10", "PASS", "PRD 中所有验收路径的 Then/And 条件被工单覆盖"))
+    else:
+        results.append(("V10", "PASS", "未提供 PRD，跳过 Then 覆盖检查"))
+
     return results
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
-        print("用法: python issues_validate.py /path/to/intent-chain/{链路目录}/issues.md /path/to/intent-chain/{链路目录}/intent.md")
+    if len(sys.argv) < 3:
+        print("用法: python issues_validate.py /path/to/intent-chain/{链路目录}/issues.md /path/to/intent-chain/{链路目录}/intent.md [/path/to/intent-chain/{链路目录}/prd.md]")
         return 1
 
     issues_path = Path(sys.argv[1])
     intent_path = Path(sys.argv[2])
+    prd_path = Path(sys.argv[3]) if len(sys.argv) >= 4 else None
 
     if not issues_path.exists():
         print(f"FAIL: Issues 文件不存在: {issues_path}")
@@ -297,11 +418,14 @@ def main() -> int:
 
     issues_content = issues_path.read_text(encoding="utf-8")
     intent_content = intent_path.read_text(encoding="utf-8")
-    results = validate(issues_content, intent_content)
+    prd_content = prd_path.read_text(encoding="utf-8") if prd_path and prd_path.exists() else ""
+    results = validate(issues_content, intent_content, prd_content)
 
     print(f"\n{'=' * 60}")
     print(f"Issues 校验结果: {issues_path}")
     print(f"INTENT.md: {intent_path}")
+    if prd_path:
+        print(f"PRD: {prd_path}")
     print(f"{'=' * 60}\n")
 
     fail_count = 0

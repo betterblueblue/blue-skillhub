@@ -96,6 +96,13 @@ class TestIssueRecords(unittest.TestCase):
         result = _result(content, _issues_content(), "V2")
         self.assertEqual("FAIL", result[1])
 
+    def test_missing_issue_number_fails(self):
+        """DEV-RECORD 缺少工单文件中的某个 Issue 编号时 V2 失败。"""
+        content = _dev_content().replace("## Issue 1:", "## Issue 2:")
+        result = _result(content, _issues_content(), "V2")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("缺少工单", result[2])
+
 
 class TestThenVerificationLevel(unittest.TestCase):
     def test_no_then_lines_fails(self):
@@ -139,6 +146,18 @@ class TestDoneRequiresV2(unittest.TestCase):
         result = _result(content, _issues_content(), "V4")
         self.assertEqual("FAIL", result[1])
         self.assertIn("V1", result[2])
+
+    def test_done_with_v1_and_user_confirmation_passes(self):
+        """用户确认 V1 标 done 时，V1 条目允许标 done。"""
+        content = _dev_content().replace(
+            "- [x] Then: 记录文件存在 — V2，命令 `npm test` 输出: 4 passed",
+            "- [x] Then: 记录文件存在 — V1，代码审查: src/handoff.js L23",
+        ).replace(
+            "- 状态：done",
+            "- 状态：done（用户确认 V1 标 done）",
+        )
+        result = _result(content, _issues_content(), "V4")
+        self.assertEqual("PASS", result[1])
 
     def test_done_with_unchecked_then_fails(self):
         content = _dev_content().replace(

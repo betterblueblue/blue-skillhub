@@ -13,6 +13,8 @@
   V6: INTENT.md 有术语表时，PRD 引用了术语约束
   V7: Intent Verification 包含三个子节且有表格结构
   V8: 每条验收路径使用 Given/When/Then 结构描述验收条件
+  V9: INTENT.md 有性能要求时，PRD 引用了性能要求 ID（交叉检查 INTENT.md）
+  V10: INTENT.md 有安全要求时，PRD 引用了安全要求 ID（交叉检查 INTENT.md）
 
 本脚本不能验证 PRD 的技术方案是否合理，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -132,6 +134,24 @@ def _parse_non_negotiables(intent_content: str) -> set[str]:
     section = _section(intent_content, "## 5. 不可妥协项")
     rows = _table_rows(section, "能力 ID")
     return {row[0] for row in rows if len(row) >= 1 and CAPABILITY_ID_RE.fullmatch(row[0])}
+
+
+PERF_ID_RE = re.compile(r"PF\d{2,}")
+SECURITY_ID_RE = re.compile(r"SF\d{2,}")
+
+
+def _parse_perf_requirements(intent_content: str) -> set[str]:
+    """从 INTENT.md 第 15 节提取性能要求 ID。"""
+    section = _section(intent_content, "## 15. 性能要求")
+    rows = _table_rows(section, "要求 ID")
+    return {row[0] for row in rows if len(row) >= 1 and PERF_ID_RE.fullmatch(row[0])}
+
+
+def _parse_security_requirements(intent_content: str) -> set[str]:
+    """从 INTENT.md 第 16 节提取安全要求 ID。"""
+    section = _section(intent_content, "## 16. 安全要求")
+    rows = _table_rows(section, "要求 ID")
+    return {row[0] for row in rows if len(row) >= 1 and SECURITY_ID_RE.fullmatch(row[0])}
 
 
 def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]]:
@@ -279,6 +299,38 @@ def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]
         results.append(("V8", "FAIL", "; ".join(gwt_errors)))
     else:
         results.append(("V8", "PASS", f"全部 {len(acceptance_paths)} 条验收路径使用 Given/When/Then 结构"))
+
+    # V9: 性能要求引用检查
+    perf_ids = _parse_perf_requirements(intent_content)
+    if perf_ids:
+        perf_section = _subsection(impl_section, "Performance Requirements")
+        if not perf_section:
+            results.append(("V9", "FAIL", "INTENT.md 有性能要求但 PRD 缺少 Performance Requirements 子节"))
+        else:
+            found_perf = set(PERF_ID_RE.findall(perf_section))
+            missing_perf = perf_ids - found_perf
+            if missing_perf:
+                results.append(("V9", "FAIL", f"PRD 未引用性能要求: {sorted(missing_perf)}"))
+            else:
+                results.append(("V9", "PASS", f"引用了 {len(perf_ids)} 个性能要求"))
+    else:
+        results.append(("V9", "PASS", "INTENT.md 无性能要求，不适用"))
+
+    # V10: 安全要求引用检查
+    security_ids = _parse_security_requirements(intent_content)
+    if security_ids:
+        sec_section = _subsection(impl_section, "Security Requirements")
+        if not sec_section:
+            results.append(("V10", "FAIL", "INTENT.md 有安全要求但 PRD 缺少 Security Requirements 子节"))
+        else:
+            found_sec = set(SECURITY_ID_RE.findall(sec_section))
+            missing_sec = security_ids - found_sec
+            if missing_sec:
+                results.append(("V10", "FAIL", f"PRD 未引用安全要求: {sorted(missing_sec)}"))
+            else:
+                results.append(("V10", "PASS", f"引用了 {len(security_ids)} 个安全要求"))
+    else:
+        results.append(("V10", "PASS", "INTENT.md 无安全要求，不适用"))
 
     return results
 

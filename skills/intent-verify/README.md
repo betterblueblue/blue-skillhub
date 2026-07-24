@@ -34,19 +34,20 @@ intent-dev 完成了每个工单的开发和工单级验证（零件合格），
 
 ## 校验
 
-`verify_validate.py` 运行 6 项检查：
+`verify_validate.py` 运行 7 项检查：
 
 | 检查项 | 检查内容 |
 |---|---|
 | V1 | 文件非空 |
-| V2 | 有回归验证段（全量测试命令和结果） |
+| V2 | 有回归验证段（全量测试命令和结果，结果必须为通过或不适用） |
 | V3 | 每条验收路径有 Given/When/Then 和验证方式 |
-| V4 | 每条路径有 V3 证据 |
+| V4 | 每条路径所有 Then 已勾选且达到 V3 |
 | V5 | 有条件性验证段（性能验证和安全验证，不适用也要标注） |
-| V6 | 最终复核完整（回归汇总、保留能力、验收路径、条件性汇总、漂移复核、结论） |
+| V6 | 最终复核完整（回归汇总、保留能力、验收路径含 Then 全通过、条件性汇总、漂移复核、结论） |
+| V7 | 与 INTENT.md 交叉校验（路径 ID、保留能力 ID、性能/安全结论一致） |
 
 ```bash
-python skills/intent-verify/scripts/verify_validate.py intent-chain/{链路目录}/verify-record.md
+python skills/intent-verify/scripts/verify_validate.py intent-chain/{链路目录}/verify-record.md intent-chain/{链路目录}/intent.md
 ```
 
 ## 文件结构
@@ -58,10 +59,11 @@ intent-verify/
 ├── templates/
 │   └── verify-record.md              ← 验收记录模板
 ├── scripts/
-│   └── verify_validate.py            ← 6 项结构检查
+│   └── verify_validate.py            ← 7 项结构检查与交叉校验
 └── tests/
     ├── fixtures/
-    │   └── valid-verify-record.md    ← 有效样本
+    │   ├── valid-verify-record.md    ← 有效样本
+    │   └── valid-intent.md           ← 交叉校验用的 INTENT.md 样本
     └── test_verify_validate.py       ← 行为回归测试
 ```
 
@@ -74,11 +76,11 @@ Intent-Verify 能够：
 - 按 INTENT.md 的性能和安全要求做条件性验证。
 - 核对保留能力是否都有实现或验证证据。
 - 检查 7 种漂移模式是否命中。
-- 通过校验器检查 verify-record 的结构完整性。
+- 通过校验器检查 verify-record 的结构完整性，并与 INTENT.md 交叉校验路径 ID、保留能力 ID 和性能/安全结论。
 
 Intent-Verify 做不到：
 
 - 代替用户开发代码或测试。
 - 自动生成 E2E 测试脚本（可以运行已有的，不能自己写）。
 - 重新验工单的验收标准（那是 intent-dev 的事）。
-- 强制用户修复未通过项（只报告结果，不阻止交付）。
+- 强制用户修复未通过项（只报告结果，不阻止交付）。但校验器会拒绝结构不合规的 verify-record.md。
