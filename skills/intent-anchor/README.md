@@ -135,7 +135,7 @@ intent-anchor/
 ├── references/
 │   ├── anchoring-methods.md          ← 三种锚定方法和决策规则
 │   ├── drift-patterns.md             ← 7 种通用漂移模式
-│   └── semantic-audit.md             ← S1-S8 语义复核规则
+│   └── semantic-audit.md             ← S1-S10 语义复核规则
 ├── templates/
 │   ├── INTENT.md                     ← 当前输出模板
 │   └── 阶段核对表.md                 ← 可选人工检查表
