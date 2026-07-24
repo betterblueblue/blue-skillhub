@@ -13,7 +13,7 @@
    M skills/intent-anchor/references/semantic-audit.md
    M skills/intent-anchor/scripts/intent_validate.py
    M skills/intent-anchor/templates/INTENT.md
-   M skills/intent-anchor/templates/stage-gate-check.md
+   M skills/intent-anchor/templates/阶段核对表.md
    M skills/intent-anchor/tests/fixtures/valid-intent.md
    M skills/intent-anchor/tests/test_intent_validate.py
   ?? HANDOFF.md
@@ -76,7 +76,7 @@
    - `SKILL.md`：Phase 2 加第 7、8 步（识别设计标准、标记术语），Phase 2.5 表格加 S6/S7 行并更新描述文字从 S1-S5 改为 S1-S7，强制规则第 4 条同步修改，Phase 4 交接 prompt 加设计标准和术语要求，必需章节列表加第 12、13 节。
    - `templates/INTENT.md`：加第 12 节（设计标准）和第 13 节（术语表）。
    - `references/semantic-audit.md`：加 S6（设计标准审查）和 S7（术语标记审查），执行要求从 S1-S5 改为 S1-S7。
-   - `templates/stage-gate-check.md`：brainstorm/PRD、任务拆分、开发完成三个阶段各加设计标准和术语检查项。
+   - `templates/阶段核对表.md`：brainstorm/PRD、任务拆分、开发完成三个阶段各加设计标准和术语检查项。
    - `scripts/intent_validate.py`：REQUIRED_SECTIONS 加第 12、13 节，V2 PASS 消息改为"全部 13 个章节存在"，V9 审查范围扩展到 S1-S7，新增 V10（设计标准校验）和 V11（术语表校验）。
    - `tests/fixtures/valid-intent.md`：加第 12、13 节和 S6/S7 复核记录。
    - `tests/test_intent_validate.py`：期望检查数从 9 改为 11，S5 后面加 S6/S7，新增 `TestDesignStandards` 和 `TestTerminology` 两个测试类。
@@ -117,7 +117,7 @@
 - **C6**：`SKILL.md` 必需章节列表是否包含第 12（设计标准）和第 13（术语表）节。
 - **C7**：`templates/INTENT.md` 是否新增第 12 节（设计标准表格，含设计素材 ID、类型、路径、验收范围、用户确认）和第 13 节（术语表表格，含原始术语、人话翻译、用于界面的文案、出现在能力 ID）。
 - **C8**：`references/semantic-audit.md` 是否新增 S6（设计标准）和 S7（术语标记）的完整规则定义，包括有素材/无素材和有术语/无术语两种情况的处理方式，以及执行要求从 S1-S5 更新为 S1-S7。
-- **C9**：`templates/stage-gate-check.md` 是否在 brainstorm/PRD、任务拆分、开发完成三个阶段各增加了设计标准和术语的检查项。
+- **C9**：`templates/阶段核对表.md` 是否在 brainstorm/PRD、任务拆分、开发完成三个阶段各增加了设计标准和术语的检查项。
 - **C10**：`scripts/intent_validate.py` 的 REQUIRED_SECTIONS 是否包含"## 12. 设计标准"和"## 13. 术语表"，V2 PASS 消息是否更新为"全部 13 个章节存在"。
 - **C11**：`scripts/intent_validate.py` 的 audit_headings 是否包含"S6 设计标准"和"S7 术语标记"，V9 PASS 消息是否更新为"S1-S7"。
 - **C12**：`scripts/intent_validate.py` 是否新增 V10（设计标准校验：有素材时检查 5 列完整且无占位符，无素材时检查用户确认"没有"）和 V11（术语表校验：有术语时检查 4 列完整且无占位符，无术语时检查"无术语需要翻译"）。

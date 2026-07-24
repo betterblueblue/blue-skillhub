@@ -69,7 +69,7 @@ def _replace_subsection(content: str, heading: str, body: str) -> str:
 class TestValidFixture(unittest.TestCase):
     def test_current_fixture_passes_all_checks(self):
         results = validate(_valid_content())
-        self.assertEqual(12, len(results))
+        self.assertEqual(14, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -234,6 +234,12 @@ class TestSemanticReviewEvidence(unittest.TestCase):
 已检查
 
 ### S8 验收路径
+已检查
+
+### S9 性能要求
+已检查
+
+### S10 安全要求
 已检查""",
         )
         result = _result(content, "V9")
@@ -378,6 +384,88 @@ class TestAcceptancePaths(unittest.TestCase):
         )
         self.assertEqual("PASS", _result(content, "V12")[1])
         self.assertEqual("PASS", _result(content, "V9")[1])
+
+
+class TestPerformanceRequirements(unittest.TestCase):
+    def test_missing_perf_section_fails(self):
+        content = _valid_content().replace("## 15. 性能要求", "## 15. X")
+        result = _result(content, "V2")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("性能要求", result[2])
+
+    def test_perf_with_placeholder_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 15. 性能要求",
+            "| 要求 ID | 性能要求 | 对应能力 | 用户确认 |\n"
+            "|---|---|---|---|\n"
+            "| PF01 | {要求内容} | C01 | 确认 |",
+        )
+        result = _result(content, "V13")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("占位符", result[2])
+
+    def test_perf_without_user_confirmation_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 15. 性能要求",
+            "| 要求 ID | 性能要求 | 对应能力 | 用户确认 |\n"
+            "|---|---|---|---|\n"
+            "| PF01 | 响应时间 < 200ms | C01 | |",
+        )
+        result = _result(content, "V13")
+        self.assertEqual("FAIL", result[1])
+
+    def test_explicit_no_perf_requirement_passes(self):
+        self.assertEqual("PASS", _result(_valid_content(), "V13")[1])
+
+
+class TestSecurityRequirements(unittest.TestCase):
+    def test_missing_security_section_fails(self):
+        content = _valid_content().replace("## 16. 安全要求", "## 16. X")
+        result = _result(content, "V2")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("安全要求", result[2])
+
+    def test_security_with_placeholder_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 16. 安全要求",
+            "| 要求 ID | 安全要求 | 对应能力 | 用户确认 |\n"
+            "|---|---|---|---|\n"
+            "| SF01 | {要求内容} | C01 | 确认 |",
+        )
+        result = _result(content, "V14")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("占位符", result[2])
+
+    def test_security_without_user_confirmation_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 16. 安全要求",
+            "| 要求 ID | 安全要求 | 对应能力 | 用户确认 |\n"
+            "|---|---|---|---|\n"
+            "| SF01 | 密码加密存储 | C01 | |",
+        )
+        result = _result(content, "V14")
+        self.assertEqual("FAIL", result[1])
+
+    def test_explicit_no_security_requirement_passes(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 16. 安全要求",
+            "无安全要求。用户明确确认：\u201c没有安全要求\u201d。",
+        )
+        content = _replace_subsection(
+            content,
+            "S10 安全要求",
+            "无安全要求。用户明确确认：\u201c没有安全要求\u201d。",
+        )
+        self.assertEqual("PASS", _result(content, "V14")[1])
+        self.assertEqual("PASS", _result(content, "V9")[1])
+
+    def test_valid_security_requirement_passes(self):
+        self.assertEqual("PASS", _result(_valid_content(), "V14")[1])
 
 
 class TestOutputPath(unittest.TestCase):

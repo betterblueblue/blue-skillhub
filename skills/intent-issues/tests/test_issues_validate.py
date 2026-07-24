@@ -43,7 +43,7 @@ def _result(issues: str, intent: str, check_id: str) -> tuple[str, str, str]:
 class TestValidFixture(unittest.TestCase):
     def test_valid_issues_passes_all_checks(self):
         results = validate(_issues_content(), _intent_content())
-        self.assertEqual(5, len(results))
+        self.assertEqual(7, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -137,6 +137,102 @@ class TestCoverageVerification(unittest.TestCase):
     def test_valid_coverage_passes(self):
         result = _result(_issues_content(), _intent_content(), "V5")
         self.assertEqual("PASS", result[1])
+
+
+class TestDesignStandardsPropagation(unittest.TestCase):
+    """V6: INTENT.md 有设计标准时，工单 Acceptance criteria 必须包含"对照"。"""
+
+    _DESIGN_SECTION = (
+        "| D01 | 可点原型 | prototype/screens/main.html | 首页和交接记录页 | \"按原型做\" |"
+    )
+
+    _DESIGN_IN_CRITERIA = (
+        '- [ ] 对照 prototype/screens/main.html 结构一致'
+    )
+
+    def test_no_design_standards_passes(self):
+        result = _result(_issues_content(), _intent_content(), "V6")
+        self.assertEqual("PASS", result[1])
+        self.assertIn("不适用", result[2])
+
+    def test_design_standards_propagated_passes(self):
+        intent = _intent_content().replace(
+            '无设计标准素材。用户明确确认：“没有设计素材，不作为验收基线”。',
+            self._DESIGN_SECTION,
+        )
+        # 替换两处（第 12 节和 S6 复核记录）
+        intent = intent.replace(
+            '无设计标准素材。用户明确确认：“没有设计素材，不作为验收基线”。',
+            self._DESIGN_SECTION,
+        )
+        issues = _issues_content().replace(
+            '- [ ] And: 记录包含下一步',
+            '- [ ] And: 记录包含下一步\n' + self._DESIGN_IN_CRITERIA,
+        )
+        result = _result(issues, intent, "V6")
+        self.assertEqual("PASS", result[1])
+
+    def test_design_standards_not_propagated_fails(self):
+        intent = _intent_content().replace(
+            '无设计标准素材。用户明确确认：“没有设计素材，不作为验收基线”。',
+            self._DESIGN_SECTION,
+        )
+        intent = intent.replace(
+            '无设计标准素材。用户明确确认：“没有设计素材，不作为验收基线”。',
+            self._DESIGN_SECTION,
+        )
+        # 工单不包含"对照"，应 FAIL
+        result = _result(_issues_content(), intent, "V6")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("对照", result[2])
+
+
+class TestTerminologyPropagation(unittest.TestCase):
+    """V7: INTENT.md 有术语表时，工单必须引用术语表中的术语。"""
+
+    _TERM_SECTION = (
+        '| 进度快照 | 会话进度保存文件 | 进度快照 | C01 |'
+    )
+
+    _TERM_IN_CRITERIA = (
+        '- [ ] 界面文案使用术语表中的“进度快照”'
+    )
+
+    def test_no_terminology_passes(self):
+        result = _result(_issues_content(), _intent_content(), "V7")
+        self.assertEqual("PASS", result[1])
+        self.assertIn("不适用", result[2])
+
+    def test_terminology_propagated_passes(self):
+        intent = _intent_content().replace(
+            '无术语需要翻译。',
+            self._TERM_SECTION,
+        )
+        # 替换两处（第 13 节和 S7 复核记录）
+        intent = intent.replace(
+            '无术语需要翻译。',
+            self._TERM_SECTION,
+        )
+        issues = _issues_content().replace(
+            '- [ ] And: 记录包含下一步',
+            '- [ ] And: 记录包含下一步\n' + self._TERM_IN_CRITERIA,
+        )
+        result = _result(issues, intent, "V7")
+        self.assertEqual("PASS", result[1])
+
+    def test_terminology_not_propagated_fails(self):
+        intent = _intent_content().replace(
+            '无术语需要翻译。',
+            self._TERM_SECTION,
+        )
+        intent = intent.replace(
+            '无术语需要翻译。',
+            self._TERM_SECTION,
+        )
+        # 工单不引用任何术语，应 FAIL
+        result = _result(_issues_content(), intent, "V7")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("术语", result[2])
 
 
 if __name__ == "__main__":

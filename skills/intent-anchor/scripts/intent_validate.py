@@ -6,17 +6,19 @@
 
 检查项：
   V1: 文件非空
-  V2: 14 个必需章节齐全
+  V2: 16 个必需章节齐全
   V3: 能力、证据、决策和决策来源关系合法，且没有待确认项
   V4: 不可妥协项引用保留能力，并有用户明确确认；允许为空
   V5: 推迟和放弃清单与能力决策一致
   V6: 决策统计与能力清单一致，未决问题为空
   V7: 7 个通用漂移模式均使用明确状态并留下说明
   V8: 存在针对 INTENT.md 全文的用户明确确认记录
-  V9: S1-S8 具有规定的证据结构，并与能力和漂移记录交叉一致
-  V10: 设计标准节存在；有素材时记录了路径和用户确认，无素材时记录用户确认“没有”
-  V11: 术语表节存在；有术语时记录了人话翻译和界面文案，无术语时明确写“无”
-  V12: 验收路径节存在；有路径时记录了入口、步骤和预期结果，无路径时记录用户确认“没有”
+  V9: S1-S10 具有规定的证据结构，并与能力和漂移记录交叉一致
+  V10: 设计标准节存在；有素材时记录了路径和用户确认，无素材时记录用户确认"没有"
+  V11: 术语表节存在；有术语时记录了人话翻译和界面文案，无术语时明确写"无"
+  V12: 验收路径节存在；有路径时记录了入口、步骤和预期结果，无路径时记录用户确认"没有"
+  V13: 性能要求节存在；有要求时记录了要求和用户确认，无要求时记录用户确认"没有"
+  V14: 安全要求节存在；有要求时记录了要求和用户确认，无要求时记录用户确认"没有"
 
 本脚本不能验证文件引用是否真实、模型推导是否合理，也不能证明内容
 符合用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -45,6 +47,8 @@ REQUIRED_SECTIONS = [
     "## 12. 设计标准",
     "## 13. 术语表",
     "## 14. 验收路径",
+    "## 15. 性能要求",
+    "## 16. 安全要求",
 ]
 
 DRIFT_PATTERNS = [
@@ -207,7 +211,7 @@ def validate(content: str) -> list[tuple[str, str, str]]:
     if missing:
         results.append(("V2", "FAIL", f"缺少章节：{', '.join(missing)}"))
     else:
-        results.append(("V2", "PASS", "全部 14 个章节存在"))
+        results.append(("V2", "PASS", "全部 16 个章节存在"))
 
     capabilities, capability_errors = _parse_capabilities(content)
     if capability_errors:
@@ -393,6 +397,8 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         "S6 设计标准",
         "S7 术语标记",
         "S8 验收路径",
+        "S9 性能要求",
+        "S10 安全要求",
     ]
     audit_parts = {heading: _subsection(audit_section, heading) for heading in audit_headings}
     for heading, part in audit_parts.items():
@@ -524,10 +530,40 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         elif not re.search(r"无验收路径.+用户明确确认", s8_part):
             audit_errors.append("S8 没有验收路径时，必须记录用户明确确认“没有”")
 
+        s9_part = audit_parts["S9 性能要求"]
+        s9_rows = _table_rows(s9_part, "要求 ID")
+        if s9_rows:
+            for index, row in enumerate(s9_rows, 1):
+                if len(row) != 4:
+                    audit_errors.append(f"S9 第 {index} 行应有 4 列")
+                    continue
+                pf_id, requirement, cap_refs, confirm = row
+                if any(_has_placeholder(v) for v in row):
+                    audit_errors.append(f"S9 {pf_id} 仍含模板占位符")
+                if not requirement or not confirm:
+                    audit_errors.append(f"S9 {pf_id} 缺少要求内容或用户确认")
+        elif not re.search(r"无性能要求.+用户明确确认", s9_part):
+            audit_errors.append("S9 没有性能要求时，必须记录用户明确确认“没有”")
+
+        s10_part = audit_parts["S10 安全要求"]
+        s10_rows = _table_rows(s10_part, "要求 ID")
+        if s10_rows:
+            for index, row in enumerate(s10_rows, 1):
+                if len(row) != 4:
+                    audit_errors.append(f"S10 第 {index} 行应有 4 列")
+                    continue
+                sf_id, requirement, cap_refs, confirm = row
+                if any(_has_placeholder(v) for v in row):
+                    audit_errors.append(f"S10 {sf_id} 仍含模板占位符")
+                if not requirement or not confirm:
+                    audit_errors.append(f"S10 {sf_id} 缺少要求内容或用户确认")
+        elif not re.search(r"无安全要求.+用户明确确认", s10_part):
+            audit_errors.append("S10 没有安全要求时，必须记录用户明确确认“没有”")
+
     if audit_errors:
         results.append(("V9", "FAIL", "；".join(audit_errors)))
     else:
-        results.append(("V9", "PASS", "S1-S8 结构化复核记录齐全并与正文一致"))
+        results.append(("V9", "PASS", "S1-S10 结构化复核记录齐全并与正文一致"))
 
     design_section = _section(content, "## 12. 设计标准")
     design_errors: list[str] = []
@@ -597,6 +633,46 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         results.append(("V12", "FAIL", "；".join(acceptance_errors)))
     else:
         results.append(("V12", "PASS", "验收路径节存在且格式正确"))
+
+    perf_section = _section(content, "## 15. 性能要求")
+    perf_errors: list[str] = []
+    perf_rows = _table_rows(perf_section, "要求 ID")
+    if perf_rows:
+        for index, row in enumerate(perf_rows, 1):
+            if len(row) != 4:
+                perf_errors.append(f"性能要求第 {index} 行应有 4 列")
+                continue
+            pf_id, requirement, cap_refs, confirm = row
+            if any(_has_placeholder(v) for v in row):
+                perf_errors.append(f"性能要求 {pf_id} 仍含模板占位符")
+            if not requirement or not confirm:
+                perf_errors.append(f"性能要求 {pf_id} 缺少要求内容或用户确认")
+    elif not re.search(r"无性能要求.+用户明确确认", perf_section):
+        perf_errors.append("没有性能要求时，必须记录用户明确确认“没有”")
+    if perf_errors:
+        results.append(("V13", "FAIL", "；".join(perf_errors)))
+    else:
+        results.append(("V13", "PASS", "性能要求节存在且有用户确认"))
+
+    security_section = _section(content, "## 16. 安全要求")
+    security_errors: list[str] = []
+    security_rows = _table_rows(security_section, "要求 ID")
+    if security_rows:
+        for index, row in enumerate(security_rows, 1):
+            if len(row) != 4:
+                security_errors.append(f"安全要求第 {index} 行应有 4 列")
+                continue
+            sf_id, requirement, cap_refs, confirm = row
+            if any(_has_placeholder(v) for v in row):
+                security_errors.append(f"安全要求 {sf_id} 仍含模板占位符")
+            if not requirement or not confirm:
+                security_errors.append(f"安全要求 {sf_id} 缺少要求内容或用户确认")
+    elif not re.search(r"无安全要求.+用户明确确认", security_section):
+        security_errors.append("没有安全要求时，必须记录用户明确确认“没有”")
+    if security_errors:
+        results.append(("V14", "FAIL", "；".join(security_errors)))
+    else:
+        results.append(("V14", "PASS", "安全要求节存在且有用户确认"))
 
     return results
 
