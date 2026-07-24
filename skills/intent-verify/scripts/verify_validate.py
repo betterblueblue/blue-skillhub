@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""verify-record.md 结构校验。
+"""VERIFY-RECORD.md 结构校验。
 
 用法：
-  python verify_validate.py /path/to/verify/verify-record.md
+  python verify_validate.py /path/to/verify/VERIFY-RECORD.md
 
 检查项：
   V1: 文件非空
@@ -226,20 +226,20 @@ def validate(verify_content: str) -> list[tuple[str, str, str]]:
 
 def main() -> int:
     if len(sys.argv) != 2:
-        print("用法: python verify_validate.py /path/to/verify/verify-record.md")
+        print("用法: python verify_validate.py /path/to/verify/VERIFY-RECORD.md")
         return 1
 
     verify_path = Path(sys.argv[1])
 
     if not verify_path.exists():
-        print(f"FAIL: verify-record 文件不存在: {verify_path}")
+        print(f"FAIL: VERIFY-RECORD 文件不存在: {verify_path}")
         return 1
 
     verify_content = verify_path.read_text(encoding="utf-8")
     results = validate(verify_content)
 
     print(f"\n{'=' * 60}")
-    print(f"verify-record 校验结果: {verify_path}")
+    print(f"VERIFY-RECORD 校验结果: {verify_path}")
     print(f"{'=' * 60}\n")
 
     fail_count = 0

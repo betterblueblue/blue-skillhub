@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""dev-record.md 结构与工单文件交叉引用校验。
+"""DEV-RECORD.md 结构与工单文件交叉引用校验。
 
 用法：
-  python dev_validate.py /path/to/dev/dev-record.md /path/to/issues.md
+  python dev_validate.py /path/to/dev/DEV-RECORD.md /path/to/ISSUES.md
 
 检查项：
   V1: 文件非空
@@ -117,14 +117,14 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
 
     # V2: 每个工单有开发记录段（含 TDD 过程、验证结果、工单状态）
     if not dev_issues:
-        results.append(("V2", "FAIL", "dev-record 中未找到工单开发记录"))
+        results.append(("V2", "FAIL", "DEV-RECORD 中未找到工单开发记录"))
     else:
         dev_issue_count = len(dev_issues)
         issues_count = len(issues_headings)
         v2_errors: list[str] = []
         if dev_issue_count < issues_count:
             v2_errors.append(
-                f"工单文件有 {issues_count} 个工单，dev-record 只记录了 {dev_issue_count} 个"
+                f"工单文件有 {issues_count} 个工单，DEV-RECORD 只记录了 {dev_issue_count} 个"
             )
         for issue in dev_issues:
             heading_match = ISSUE_HEADING_RE.search(issue)
@@ -197,14 +197,14 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print("用法: python dev_validate.py /path/to/dev/dev-record.md /path/to/issues.md")
+        print("用法: python dev_validate.py /path/to/dev/DEV-RECORD.md /path/to/ISSUES.md")
         return 1
 
     dev_path = Path(sys.argv[1])
     issues_path = Path(sys.argv[2])
 
     if not dev_path.exists():
-        print(f"FAIL: dev-record 文件不存在: {dev_path}")
+        print(f"FAIL: DEV-RECORD 文件不存在: {dev_path}")
         return 1
     if not issues_path.exists():
         print(f"FAIL: 工单文件不存在: {issues_path}")
@@ -215,7 +215,7 @@ def main() -> int:
     results = validate(dev_content, issues_content)
 
     print(f"\n{'=' * 60}")
-    print(f"dev-record 校验结果: {dev_path}")
+    print(f"DEV-RECORD 校验结果: {dev_path}")
     print(f"工单文件: {issues_path}")
     print(f"{'=' * 60}\n")
 

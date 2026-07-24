@@ -226,7 +226,7 @@ intent-verify 的 Phase 5 标题、正文、交接 prompt、verify-record 模板
 | `intent-anchor/templates/阶段核对表.md` | 从 `stage-gate-check.md` 重命名（内容不变） |
 | `intent-verify/SKILL.md` | Phase 5 标题、正文、交接 prompt 中 Stage Gate Check → 最终复核 |
 | `intent-verify/scripts/verify_validate.py` | GATE_HEADING 常量和所有 V6 消息改名 |
-| `intent-verify/templates/verify-record.md` | 章节标题和注释改名 |
+| `intent-verify/templates/VERIFY-RECORD.md` | 章节标题和注释改名 |
 | `intent-verify/README.md` | 描述和检查项表格改名 |
 | `intent-verify/tests/fixtures/valid-verify-record.md` | 章节标题改名 |
 | `intent-verify/tests/test_verify_validate.py` | 测试类名 TestStageGateCheck → TestFinalReview，断言文案改名 |

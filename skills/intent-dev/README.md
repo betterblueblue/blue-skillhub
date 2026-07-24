@@ -58,7 +58,7 @@ Intent-Dev 解决这两个问题：
 | V4 | 标 done 的工单：所有 Then >= V2 |
 
 ```bash
-python skills/intent-dev/scripts/dev_validate.py dev/dev-record.md issues/issues.md
+python skills/intent-dev/scripts/dev_validate.py dev/DEV-RECORD.md issues/ISSUES.md
 ```
 
 ## 文件结构
@@ -68,7 +68,7 @@ intent-dev/
 ├── SKILL.md
 ├── README.md
 ├── templates/
-│   └── dev-record.md                 ← 开发执行记录模板
+│   └── DEV-RECORD.md                 ← 开发执行记录模板
 ├── scripts/
 │   └── dev_validate.py               ← 4 项结构与交叉引用检查
 └── tests/

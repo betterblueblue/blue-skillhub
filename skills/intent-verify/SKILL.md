@@ -25,7 +25,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. 必须存在通过 `intent_validate.py` 校验的 `INTENT.md`。
 2. 必须存在通过 `prd_validate.py` 校验的 `PRD`。
 3. 必须存在通过 `issues_validate.py` 校验的工单文件。
-4. 必须存在通过 `dev_validate.py` 校验的 `dev-record.md`。
+4. 必须存在通过 `dev_validate.py` 校验的 `DEV-RECORD.md`。
 5. dev-record 中所有工单必须标 done。
 6. 五者缺一不可。
 
@@ -43,12 +43,12 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 ### Phase 1：前置检查
 
-1. 确认 INTENT.md、PRD、工单文件和 dev-record 路径。
+1. 确认 INTENT.md、PRD、工单文件和 DEV-RECORD 路径。
 2. 读取四者全文。
 3. 运行 `intent_validate.py`、`prd_validate.py`、`issues_validate.py` 和 `dev_validate.py` 确认通过。任一 FAIL 则停止。
-4. 确认 dev-record 中所有工单标 done。有未完成工单则停止。
-5. 计算候选 verify-record 路径：`verify/{YYYY-MM-DD}-{NNN}-{产品名称}.md`。不创建目录、不写文件。
-6. 如果 verify-record 已存在（跨会话恢复），读取现有记录，复述当前进度。
+4. 确认 DEV-RECORD 中所有工单标 done。有未完成工单则停止。
+5. 计算候选 VERIFY-RECORD 路径：`verify/{YYYY-MM-DD}-{NNN}-{产品名称}.md`。不创建目录、不写文件。
+6. 如果 VERIFY-RECORD 已存在（跨会话恢复），读取现有记录，复述当前进度。
 
 输出：确认后的文件路径、验收路径清单和当前进度。
 
@@ -102,16 +102,16 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 ### Phase 5：最终复核
 
 1. **回归验证结果**：汇总 Phase 2 的结果。
-2. **保留能力逐项核对**：按 INTENT.md 第 4 节的保留能力列表，逐项检查是否有实现或验证证据。来源是 dev-record 和 Phase 3 的验证结果。
+2. **保留能力逐项核对**：按 INTENT.md 第 4 节的保留能力列表，逐项检查是否有实现或验证证据。来源是 DEV-RECORD 和 Phase 3 的验证结果。
 3. **验收路径逐条验证**：汇总 Phase 3 的结果，每条路径标 V3 和证据。
 4. **条件性验证结果**：汇总 Phase 4 的性能和安全验证结果。
 5. **漂移复核**：按 INTENT.md 第 7 节的 7 种漂移模式，检查是否有能力被静默降级、遗漏或重新加入。
 6. **设计标准核对**：如果 INTENT.md 第 12 节有设计标准，检查 UI 是否对照设计文件通过。
 7. 在对话中展示完整的最终复核结果。
-8. 用户确认后，将结果写入 verify-record.md。
-9. 运行 `verify_validate.py` 确认 verify-record 结构通过。
+8. 用户确认后，将结果写入 VERIFY-RECORD.md。
+9. 运行 `verify_validate.py` 确认 VERIFY-RECORD 结构通过。
 
-输出：通过校验的 verify-record.md。
+输出：通过校验的 VERIFY-RECORD.md。
 
 ### Phase 6：交接
 
@@ -127,7 +127,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 ## 强制规则
 
 1. **五个前置文件必须存在且通过校验**：不通过则不进入验收。
-2. **dev-record 中所有工单必须标 done**：有未完成工单则停止。
+2. **DEV-RECORD 中所有工单必须标 done**：有未完成工单则停止。
 3. **必须跑全量测试**：有测试命令就必须跑，不能跳过。没有测试命令才标不适用。
 4. **每条验收路径必须有 V3 证据**：实际走通的结果，不能只写"应该没问题"。
 5. **性能/安全要求有则必验**：INTENT.md 或 PRD 中写了性能或安全要求就必须验证，不能跳过。
@@ -136,9 +136,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 8. **先确认再写文件**：在对话中展示结果草稿，得到确认后才写入。
 9. **结构校验必须通过**：写入后运行 `verify_validate.py`。
 
-## verify-record.md 必需章节
+## VERIFY-RECORD.md 必需章节
 
-1. 验收概述（产品名称、前置文件路径、验收路径总数、dev-record 路径）
+1. 验收概述（产品名称、前置文件路径、验收路径总数、DEV-RECORD 路径）
 2. 回归验证结果
    - 全量测试命令
    - 输出摘要
