@@ -2,7 +2,7 @@
 """Issues 文件结构与 INTENT.md 交叉引用校验。
 
 用法：
-  python issues_validate.py /path/to/ISSUES.md /path/to/intent-anchor/INTENT.md
+  python issues_validate.py /path/to/intent-chain/{链路目录}/ISSUES.md /path/to/intent-chain/{链路目录}/INTENT.md
 
 检查项：
   V1: 文件非空
@@ -282,7 +282,7 @@ def validate(issues_content: str, intent_content: str) -> list[tuple[str, str, s
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print("用法: python issues_validate.py /path/to/ISSUES.md /path/to/intent-anchor/INTENT.md")
+        print("用法: python issues_validate.py /path/to/intent-chain/{链路目录}/ISSUES.md /path/to/intent-chain/{链路目录}/INTENT.md")
         return 1
 
     issues_path = Path(sys.argv[1])

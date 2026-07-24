@@ -47,7 +47,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 2. 读取四者全文。
 3. 运行 `intent_validate.py`、`prd_validate.py`、`issues_validate.py` 和 `dev_validate.py` 确认通过。任一 FAIL 则停止。
 4. 确认 DEV-RECORD 中所有工单标 done。有未完成工单则停止。
-5. 计算候选 VERIFY-RECORD 路径：`verify/{YYYY-MM-DD}-{NNN}-{产品名称}.md`。不创建目录、不写文件。
+5. 从输入文件路径推导链路目录，VERIFY-RECORD 写入同一目录下的 `VERIFY-RECORD.md`。不创建目录、不写文件。
 6. 如果 VERIFY-RECORD 已存在（跨会话恢复），读取现有记录，复述当前进度。
 
 输出：确认后的文件路径、验收路径清单和当前进度。
@@ -118,7 +118,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 给用户以下提示：
 
 ```text
-验收完成。verify/{实际文件名}.md 记录了端到端验收结果和最终复核结论。
+验收完成。intent-chain/{链路目录}/VERIFY-RECORD.md 记录了端到端验收结果和最终复核结论。
 
 如果后续需要变更，使用 impact 做影响分析。
 如果需要新增功能，从 intent-anchor 重新开始。
@@ -164,11 +164,10 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 最终文件放在目标项目根目录：
 
 ```text
-verify/{YYYY-MM-DD}-{NNN}-{产品名称}.md
+intent-chain/{链路目录}/VERIFY-RECORD.md
 ```
 
-- 日期使用生成当天的实际日期。
-- `NNN` 是当日三位序号。
+- 链路目录由 intent-anchor 创建，VERIFY-RECORD 写入同一目录。
 - 同一产品的修订覆盖原文件。
 
 ## 能力边界

@@ -90,13 +90,13 @@ allowed-tools: Read, Grep, Glob, Write, Bash, WebSearch, WebFetch
 最终文件放在目标项目根目录：
 
 ```text
-intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md
+intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/INTENT.md
 ```
 
 - 日期使用生成当天的实际日期。
 - `NNN` 是当日三位序号。
 - 同一意图的修订覆盖原文件；独立意图使用新序号。
-- Phase 1 只能计算候选路径，不创建目录。全文确认后才创建 `intent-anchor/`。
+- Phase 1 只能计算候选路径，不创建目录。全文确认后才创建 `intent-chain/{链路目录}/`。
 
 ## 工作流程
 
@@ -153,7 +153,7 @@ intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md
 5. 运行：
 
    ```bash
-   python "{intent-anchor skill 目录}/scripts/intent_validate.py" "{目标项目根目录}/intent-anchor/{实际文件名}.md"
+   python "{intent-anchor skill 目录}/scripts/intent_validate.py" "{目标项目根目录}/intent-chain/{链路目录}/INTENT.md"
    ```
 
 6. 修复结构问题后重新运行。若修复改变了能力、证据、决策或用户原话，之前的全文确认立即失效，必须展示更新后的全文并重新确认。
@@ -166,9 +166,9 @@ intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md
 给用户以下可直接传给下一会话的 Prompt，并替换真实路径：
 
 ```text
-先读 intent-anchor/{实际文件名}.md，再完成接下来的 [PRD / 任务拆分 / 开发]。
+先读 intent-chain/{链路目录}/INTENT.md，再完成接下来的 [PRD / 任务拆分 / 开发]。
 
-生成 PRD 用 intent-prd，拆工单用 intent-issues——它们会原生读取 INTENT.md，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
+生成 PRD 用 intent-prd（写入同一链路目录下的 PRD.md），拆工单用 intent-issues（写入同一链路目录下的 ISSUES.md）——它们会原生读取 INTENT.md，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
 
 只把“保留”的能力作为目标范围；“推迟”和“放弃”的能力不能悄悄加回来。
 

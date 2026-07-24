@@ -113,7 +113,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 3. 运行 `intent_validate.py`、`prd_validate.py` 和 `issues_validate.py` 确认通过。任一 FAIL 则停止。
 4. **探索目标项目根目录**，按"验证命令来源"节的步骤查找构建/测试配置文件，从文件内容中提取实际命令。找不到配置文件则问用户。
 5. 确定构建命令和测试命令。用户确认没有测试环境则标"V2 不可用，工单无法标 done"。
-6. 计算候选 DEV-RECORD 路径：`dev/{YYYY-MM-DD}-{NNN}-{产品名称}.md`。不创建目录、不写文件。
+6. 从输入文件路径推导链路目录，DEV-RECORD 写入同一目录下的 `DEV-RECORD.md`。不创建目录、不写文件。
 7. 如果 DEV-RECORD 已存在（跨会话恢复），读取现有记录，复述当前进度。
 
 输出：确认后的文件路径、工单清单、构建/测试命令和当前进度。
@@ -155,13 +155,13 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 4. 给用户以下提示：
 
 ```text
-开发阶段完成。dev/{实际文件名}.md 记录了每个工单的 TDD 过程和验证结果。
+开发阶段完成。intent-chain/{链路目录}/DEV-RECORD.md 记录了每个工单的 TDD 过程和验证结果。
 
 下一步：使用 intent-verify 做端到端验收。提供以下文件：
-- intent-anchor/{INTENT.md 文件名}.md
-- prd/{PRD 文件名}.md
-- issues/{工单文件名}.md
-- dev/{DEV-RECORD 文件名}.md
+- intent-chain/{链路目录}/INTENT.md
+- intent-chain/{链路目录}/PRD.md
+- intent-chain/{链路目录}/ISSUES.md
+- intent-chain/{链路目录}/DEV-RECORD.md
 ```
 
 ## 强制规则
@@ -196,11 +196,10 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 最终文件放在目标项目根目录：
 
 ```text
-dev/{YYYY-MM-DD}-{NNN}-{产品名称}.md
+intent-chain/{链路目录}/DEV-RECORD.md
 ```
 
-- 日期使用生成当天的实际日期。
-- `NNN` 是当日三位序号。
+- 链路目录由 intent-anchor 创建，DEV-RECORD 写入同一目录。
 - 同一产品的修订覆盖原文件。
 
 ## 能力边界

@@ -40,9 +40,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. 确认 INTENT.md 路径。路径不明时询问用户，不自动选择"最新一份"。
 2. 读取 INTENT.md 全文。
 3. 运行 `intent_validate.py` 确认通过。FAIL 则停止，提示用户先修正 INTENT.md。
-4. 计算候选 PRD 路径：`prd/{YYYY-MM-DD}-{NNN}-{产品名称}.md`。不创建目录、不写文件。
+4. 从 INTENT.md 路径推导链路目录（INTENT.md 的父目录），PRD 写入同一目录下的 `PRD.md`。不创建目录、不写文件。
 
-输出：确认后的 INTENT.md 路径和候选 PRD 路径。
+输出：确认后的 INTENT.md 路径和候选 PRD 路径（同一链路目录下）。
 
 ### Phase 2：生成 PRD
 
@@ -63,7 +63,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 ### Phase 3：确认并写入
 
 1. 在回复中展示完整草稿。
-2. 用户确认全文后，创建 `prd/` 目录并写入候选路径。
+2. 用户确认全文后，将 PRD 写入链路目录下的 `PRD.md`（链路目录已由 intent-anchor 创建）。
 3. 运行：
 
    ```bash
@@ -79,9 +79,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 给用户以下可直接传给下一会话的 Prompt，并替换真实路径：
 
 ```text
-先读 prd/{实际文件名}.md 和 intent-anchor/{INTENT.md 文件名}.md，再完成任务拆分。
+先读 intent-chain/{链路目录}/PRD.md 和 INTENT.md，再完成任务拆分。
 
-拆工单用 intent-issues——它会原生读取 INTENT.md 和 PRD，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
+拆工单用 intent-issues（写入同一链路目录下的 ISSUES.md）——它会原生读取 INTENT.md 和 PRD，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
 
 只把 User Stories 中标注的能力作为开发范围。
 
@@ -118,11 +118,10 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 最终文件放在目标项目根目录：
 
 ```text
-prd/{YYYY-MM-DD}-{NNN}-{产品名称}.md
+intent-chain/{链路目录}/PRD.md
 ```
 
-- 日期使用生成当天的实际日期。
-- `NNN` 是当日三位序号。
+- 链路目录由 intent-anchor 创建，PRD 写入同一目录。
 - 同一产品的修订覆盖原文件。
 
 ## 能力边界

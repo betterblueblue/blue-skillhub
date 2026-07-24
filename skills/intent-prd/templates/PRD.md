@@ -2,7 +2,7 @@
 
 <!--
   本文件由 intent-prd skill 生成。
-  前置文件：intent-anchor/{INTENT.md 文件名}
+  前置文件：intent-chain/{链路目录}/INTENT.md
   生成日期：{日期}
   PRD 不是自动执行授权，用户确认后才能进入任务拆分。
 -->

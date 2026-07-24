@@ -2,7 +2,7 @@
 """INTENT.md 结构与交叉引用校验。
 
 用法：
-  python intent_validate.py /path/to/project/intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md
+  python intent_validate.py /path/to/intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/INTENT.md
 
 检查项：
   V1: 文件非空
@@ -687,7 +687,7 @@ def _path_error(intent_path: Path) -> str | None:
 
 def main() -> int:
     if len(sys.argv) != 2:
-        print("用法: python intent_validate.py /path/to/project/intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md")
+        print("用法: python intent_validate.py /path/to/intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/INTENT.md")
         return 1
 
     intent_path = Path(sys.argv[1])

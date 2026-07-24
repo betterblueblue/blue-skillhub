@@ -2,7 +2,7 @@
 
 <!--
   本文件由 intent-verify skill 生成。
-  前置文件：intent-anchor/{INTENT.md 文件名}、prd/{PRD 文件名}、issues/{工单文件名}、dev/{dev-record 文件名}
+  前置文件：intent-chain/{链路目录}/INTENT.md、PRD.md、ISSUES.md、DEV-RECORD.md
   生成日期：{日期}
   所有工单开发完成后，先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端验证，最后做条件性验证和最终复核。
 -->
@@ -10,10 +10,10 @@
 ## 验收概述
 
 - 产品名称：{产品名称}
-- INTENT.md：intent-anchor/{文件名}.md
-- PRD：prd/{文件名}.md
-- 工单文件：issues/{文件名}.md
-- dev-record：dev/{文件名}.md
+- INTENT.md：intent-chain/{链路目录}/INTENT.md
+- PRD：intent-chain/{链路目录}/PRD.md
+- 工单文件：intent-chain/{链路目录}/ISSUES.md
+- DEV-RECORD：intent-chain/{链路目录}/DEV-RECORD.md
 - 验收路径总数：{N}
 
 ---
