@@ -43,7 +43,7 @@ def _result(issues: str, intent: str, check_id: str) -> tuple[str, str, str]:
 class TestValidFixture(unittest.TestCase):
     def test_valid_issues_passes_all_checks(self):
         results = validate(_issues_content(), _intent_content())
-        self.assertEqual(7, len(results))
+        self.assertEqual(10, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,

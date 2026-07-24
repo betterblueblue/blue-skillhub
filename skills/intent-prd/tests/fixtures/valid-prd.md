@@ -25,6 +25,12 @@
 
 无术语约束。
 
+### Security Requirements
+
+| 要求 ID | 安全要求 | 对应能力 |
+|---|---|---|
+| SF01 | 交接记录不包含敏感信息（密码、token 等） | C01 |
+
 ## Acceptance Criteria
 
 ### P01: 生成并查看交接记录
@@ -37,6 +43,7 @@
 - **And** 记录包含任务列表
 - **And** 记录包含进度和阻塞项
 - **And** 记录包含下一步
+- **And** 记录不包含敏感信息 [SF01]
 
 ## Testing Decisions
 

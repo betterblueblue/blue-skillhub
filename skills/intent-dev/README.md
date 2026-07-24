@@ -53,9 +53,9 @@ Intent-Dev 解决这两个问题：
 | 检查项 | 检查内容 |
 |---|---|
 | V1 | 文件非空 |
-| V2 | 每个工单有开发记录段（含 TDD 过程、验证结果、工单状态） |
+| V2 | 每个工单有开发记录段（含 TDD 过程、验证结果、工单状态），且工单编号与 issues.md 一致 |
 | V3 | 每条 Then 有验证等级，V2 必须附命令输出 |
-| V4 | 标 done 的工单：所有 Then >= V2 |
+| V4 | 标 done 的工单：所有 Then >= V2（用户确认 V1 标 done 除外） |
 
 ```bash
 python skills/intent-dev/scripts/dev_validate.py intent-chain/{链路目录}/dev-record.md intent-chain/{链路目录}/issues.md

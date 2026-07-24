@@ -28,8 +28,12 @@ def _content() -> str:
     return (FIXTURE_DIR / "valid-verify-record.md").read_text(encoding="utf-8")
 
 
+def _intent() -> str:
+    return (FIXTURE_DIR / "valid-intent.md").read_text(encoding="utf-8")
+
+
 def _result(content: str, check_id: str) -> tuple[str, str, str]:
-    matches = [item for item in validate(content) if item[0] == check_id]
+    matches = [item for item in validate(content, _intent()) if item[0] == check_id]
     if len(matches) != 1:
         raise AssertionError(f"Expected one {check_id} result, got {matches}")
     return matches[0]
@@ -37,8 +41,8 @@ def _result(content: str, check_id: str) -> tuple[str, str, str]:
 
 class TestValidFixture(unittest.TestCase):
     def test_valid_verify_record_passes_all_checks(self):
-        results = validate(_content())
-        self.assertEqual(6, len(results))
+        results = validate(_content(), _intent())
+        self.assertEqual(7, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -47,7 +51,7 @@ class TestValidFixture(unittest.TestCase):
 
 class TestNonEmpty(unittest.TestCase):
     def test_empty_file_fails(self):
-        results = validate("")
+        results = validate("", _intent())
         self.assertEqual("FAIL", results[0][1])
 
 
@@ -63,6 +67,12 @@ class TestRegressionSection(unittest.TestCase):
         result = _result(content, "V2")
         self.assertEqual("FAIL", result[1])
         self.assertIn("全量测试命令", result[2])
+
+    def test_regression_result_not_passing_fails(self):
+        content = _content().replace("- 结果：通过", "- 结果：未通过")
+        result = _result(content, "V2")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("未通过", result[2])
 
     def test_valid_regression_passes(self):
         result = _result(_content(), "V2")
@@ -109,11 +119,30 @@ class TestPathRecords(unittest.TestCase):
 
 
 class TestV3Evidence(unittest.TestCase):
-    def test_no_v3_evidence_fails(self):
-        content = _content().replace("V3", "V2")
+    def test_unchecked_then_fails(self):
+        content = _content().replace(
+            "- [x] Then: 记录文件存在",
+            "- [ ] Then: 记录文件存在",
+        )
+        result = _result(content, "V4")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("未勾选", result[2])
+
+    def test_then_not_v3_fails(self):
+        content = _content().replace(
+            "- [x] Then: 记录文件存在 — V3，",
+            "- [x] Then: 记录文件存在 — V2，",
+        )
         result = _result(content, "V4")
         self.assertEqual("FAIL", result[1])
         self.assertIn("V3", result[2])
+
+    def test_all_unchecked_thens_fails(self):
+        content = _content().replace("- [x] Then:", "- [ ] Then:").replace(
+            "- [x] And:", "- [ ] And:"
+        )
+        result = _result(content, "V4")
+        self.assertEqual("FAIL", result[1])
 
     def test_valid_v3_passes(self):
         result = _result(_content(), "V4")
@@ -169,8 +198,20 @@ class TestFinalReview(unittest.TestCase):
         self.assertEqual("FAIL", result[1])
         self.assertIn("验收路径", result[2])
 
+    def test_path_table_then_not_passing_fails(self):
+        content = _content().replace(
+            "| P01 | 生成并查看交接记录 | V3 | 手动走通 | 是 | 是 | 是 |",
+            "| P01 | 生成并查看交接记录 | V3 | 手动走通 | 是 | 是 | 否 |",
+        )
+        result = _result(content, "V6")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("Then 全通过", result[2])
+
     def test_path_table_without_v3_fails(self):
-        content = _content().replace("| P01 | 生成并查看交接记录 | V3 |", "| P01 | 生成并查看交接记录 | V2 |")
+        content = _content().replace(
+            "| P01 | 生成并查看交接记录 | V3 |",
+            "| P01 | 生成并查看交接记录 | V2 |",
+        )
         result = _result(content, "V6")
         self.assertEqual("FAIL", result[1])
         self.assertIn("V3", result[2])
@@ -202,6 +243,48 @@ class TestFinalReview(unittest.TestCase):
     def test_valid_gate_passes(self):
         result = _result(_content(), "V6")
         self.assertEqual("PASS", result[1])
+
+
+class TestCrossValidation(unittest.TestCase):
+    def test_valid_cross_validation_passes(self):
+        result = _result(_content(), "V7")
+        self.assertEqual("PASS", result[1])
+
+    def test_missing_path_in_verify_fails(self):
+        """verify-record 缺少 INTENT.md 中的路径时 V7 失败。"""
+        content = _content().replace("### 路径 P01:", "### 路径 P99:")
+        result = _result(content, "V7")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("缺少", result[2])
+
+    def test_extra_path_in_verify_fails(self):
+        """verify-record 有 INTENT.md 中不存在的路径时 V7 失败。"""
+        # 在 E2E 段末尾插入一条多余路径
+        content = _content().replace(
+            "## 条件性验证结果",
+            "### 路径 P99: 不存在的路径\n\n- Given: test — 就绪\n- When: test — 已执行\n- [x] Then: test — V3，test\n- 验证方式：手动走通\n\n---\n\n## 条件性验证结果",
+        )
+        result = _result(content, "V7")
+        self.assertEqual("FAIL", result[1])
+
+    def test_missing_capability_in_verify_fails(self):
+        """保留能力核对表缺少 INTENT.md 中的能力时 V7 失败。"""
+        content = _content().replace("| C01 |", "| C99 |")
+        result = _result(content, "V7")
+        self.assertEqual("FAIL", result[1])
+
+    def test_security_marked_not_applicable_when_intent_has_requirement_fails(self):
+        """INTENT.md 有安全要求但验收记录标注不适用时 V7 失败。"""
+        content = _content().replace(
+            "- INTENT.md/PRD 中是否有安全要求：是",
+            "- INTENT.md/PRD 中是否有安全要求：否",
+        ).replace(
+            "- 结果：通过\n\n---\n\n## 最终复核",
+            "- 结果：不适用\n\n---\n\n## 最终复核",
+        )
+        result = _result(content, "V7")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("安全", result[2])
 
 
 if __name__ == "__main__":
