@@ -81,15 +81,11 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 ```text
 先读 prd/{实际文件名}.md 和 intent-anchor/{INTENT.md 文件名}.md，再完成任务拆分。
 
-只把 User Stories 中标注的能力作为开发范围。Acceptance Criteria 中的每条验收路径必须被至少一个工单覆盖。
+拆工单用 intent-issues——它会原生读取 INTENT.md 和 PRD，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
 
-涉及界面的工单，Acceptance criteria 必须包含"对照 {设计文件} 结构一致"（如果有设计标准）。
-界面文案必须使用术语表中的人话翻译（如果有术语表）。
+只把 User Stories 中标注的能力作为开发范围。
 
-产出末尾增加「意图核对」：
-1. 逐项列出每个保留能力：已体现 / 本阶段不适用（说明原因）/ 遗漏。
-2. 单独核对所有不可妥协项。
-3. 列出新增但 INTENT.md 中没有的能力，并等待我确认。
+发现遗漏、冲突或未经确认的新增项时停下来告诉我，不要自行改写原意。
 ```
 
 ## 强制规则

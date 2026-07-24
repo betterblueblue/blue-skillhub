@@ -10,6 +10,8 @@
   V3: 所有验收路径被至少一个工单覆盖（交叉检查 INTENT.md）
   V4: 所有保留能力被至少一个工单覆盖（交叉检查 INTENT.md）
   V5: Coverage Verification 节存在且包含三个子节
+  V6: INTENT.md 有设计标准时，至少一个工单的 Acceptance criteria 包含"对照"（交叉检查 INTENT.md）
+  V7: INTENT.md 有术语表时，至少一个工单的 Acceptance criteria 引用了术语表中的术语（交叉检查 INTENT.md）
 
 本脚本不能验证工单的技术可行性，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -62,6 +64,36 @@ def _table_rows(content: str, header_first_cell: str) -> list[list[str]]:
             continue
         rows.append(columns)
     return rows
+
+
+def _has_placeholder(value: str) -> bool:
+    return bool(re.search(r"\{[^{}]+\}", value))
+
+
+def _parse_design_standards(intent_content: str) -> tuple[bool, list[str]]:
+    """从 INTENT.md 第 12 节提取设计标准。
+
+    返回 (has_standards, paths)。
+    """
+    section = _section(intent_content, "## 12. 设计标准")
+    rows = _table_rows(section, "设计素材 ID")
+    if rows:
+        paths = [row[2] for row in rows if len(row) >= 3 and not _has_placeholder(row[2])]
+        return True, paths
+    return False, []
+
+
+def _parse_terminology(intent_content: str) -> tuple[bool, list[str]]:
+    """从 INTENT.md 第 13 节提取术语表。
+
+    返回 (has_terms, terms)。
+    """
+    section = _section(intent_content, "## 13. 术语表")
+    rows = _table_rows(section, "原始术语")
+    if rows:
+        terms = [row[0] for row in rows if len(row) >= 1 and not _has_placeholder(row[0])]
+        return True, terms
+    return False, []
 
 
 def _parse_retained_capabilities(intent_content: str) -> set[str]:
@@ -200,6 +232,50 @@ def validate(issues_content: str, intent_content: str) -> list[tuple[str, str, s
         results.append(("V5", "FAIL", "; ".join(coverage_errors)))
     else:
         results.append(("V5", "PASS", "Coverage Verification 完整且与 INTENT.md 一致"))
+
+    # V6: 设计标准传递检查
+    has_design, _design_paths = _parse_design_standards(intent_content)
+    if has_design:
+        found_design_ref = False
+        for issue in issues:
+            criteria_match = re.search(
+                r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+                issue,
+                re.MULTILINE | re.DOTALL,
+            )
+            if criteria_match and "对照" in criteria_match.group(1):
+                found_design_ref = True
+                break
+        if found_design_ref:
+            results.append(("V6", "PASS", "设计标准约束已传递到工单 Acceptance criteria"))
+        else:
+            results.append(("V6", "FAIL", "INTENT.md 有设计标准但工单 Acceptance criteria 未包含对照设计文件的要求"))
+    else:
+        results.append(("V6", "PASS", "INTENT.md 无设计标准，不适用"))
+
+    # V7: 术语表传递检查
+    has_terms, terms = _parse_terminology(intent_content)
+    if has_terms:
+        found_term_ref = False
+        for issue in issues:
+            criteria_match = re.search(
+                r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+                issue,
+                re.MULTILINE | re.DOTALL,
+            )
+            if criteria_match:
+                for term in terms:
+                    if term in criteria_match.group(1):
+                        found_term_ref = True
+                        break
+            if found_term_ref:
+                break
+        if found_term_ref:
+            results.append(("V7", "PASS", f"术语表约束已传递到工单（{len(terms)} 个术语）"))
+        else:
+            results.append(("V7", "FAIL", "INTENT.md 有术语表但工单未引用任何术语"))
+    else:
+        results.append(("V7", "PASS", "INTENT.md 无术语表，不适用"))
 
     return results
 

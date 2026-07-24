@@ -89,6 +89,17 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 输出：通过校验的工单文件。
 
+### Phase 5：交接
+
+给用户以下提示：
+
+```text
+工单已生成。下一步用 intent-dev 开发——按 TDD 循环逐个工单开发，每个工单完成后实际运行验证。
+
+读取 intent-anchor/{INTENT.md 文件名}.md、prd/{PRD 文件名}.md 和 issues/{工单文件名}.md，
+开始逐个工单开发与验证。全部工单开发完成后，用 intent-verify 做端到端验收。
+```
+
 ## 强制规则
 
 1. **INTENT.md 和 PRD 必须存在且通过校验**。

@@ -29,7 +29,7 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 
 ## 校验
 
-`issues_validate.py` 运行 5 项检查：
+`issues_validate.py` 运行 7 项检查：
 
 | 检查项 | 检查内容 |
 |---|---|
@@ -38,6 +38,8 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 | V3 | 所有验收路径被至少一个工单覆盖 |
 | V4 | 所有保留能力被至少一个工单覆盖 |
 | V5 | Coverage Verification 包含三个子节且与 INTENT.md 一致 |
+| V6 | INTENT.md 有设计标准时，至少一个工单 Acceptance criteria 包含"对照" |
+| V7 | INTENT.md 有术语表时，至少一个工单 Acceptance criteria 引用了术语 |
 
 ```bash
 python skills/intent-issues/scripts/issues_validate.py issues/issues.md intent-anchor/INTENT.md
@@ -52,7 +54,7 @@ intent-issues/
 ├── templates/
 │   └── issue-template.md             ← 工单模板
 ├── scripts/
-│   └── issues_validate.py            ← 5 项结构与交叉引用检查
+│   └── issues_validate.py            ← 7 项结构与交叉引用检查
 └── tests/
     ├── fixtures/valid-issues.md       ← 有效样本
     └── test_issues_validate.py        ← 行为回归测试

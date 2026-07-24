@@ -11,6 +11,8 @@ skills/blue-interview/
 skills/*/tests/
 !skills/intent-anchor/tests/
 !skills/intent-anchor/tests/test_intent_validate.py
+!skills/intent-dev/tests/
+!skills/intent-verify/tests/
 test-projects/
 
 # === 控制变量实验临时产物(skill 提取 / 跑出的 map)===

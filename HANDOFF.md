@@ -1,7 +1,7 @@
 # 交接文档
 
 > 写给完全没有上下文的新会话。最近更新：2026-07-24。
-> 本文档覆盖三个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、blue-interview 优化（部分完成，待补测）。
+> 本文档覆盖四个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、blue-interview 优化（部分完成，待补测）。
 
 ---
 
@@ -46,7 +46,7 @@ Phase 4 交接 prompt 新增：
 | `SKILL.md` | Phase 2 加 Step 7/8，Phase 2.5 表格加 S6/S7，强制规则第 4 条更新为 S1-S7，Phase 4 交接 prompt 加约束，必需章节列表加第 12/13 节 |
 | `templates/INTENT.md` | 新增第 12 节（设计标准）和第 13 节（术语表） |
 | `references/semantic-audit.md` | 新增 S6（设计标准）和 S7（术语标记）规则，执行要求更新为 S1-S7 |
-| `templates/stage-gate-check.md` | brainstorm/PRD、任务拆分、开发完成三阶段加设计标准和术语检查项 |
+| `templates/阶段核对表.md` | brainstorm/PRD、任务拆分、开发完成三阶段加设计标准和术语检查项 |
 | `scripts/intent_validate.py` | REQUIRED_SECTIONS 加第 12/13 节，V2 改为 13 个章节，V9 扩展到 S1-S7，新增 V10（设计标准校验）和 V11（术语表校验） |
 | `tests/fixtures/valid-intent.md` | 加第 12/13 节和 S6/S7 复核记录 |
 | `tests/test_intent_validate.py` | 期望检查数 9→11，新增 TestDesignStandards 和 TestTerminology 测试类 |
@@ -100,7 +100,7 @@ Phase 4 交接 prompt 新增：
 | `SKILL.md` | Phase 2 加 Step 9，Phase 2.5 表格加 S8，强制规则 S1-S7→S1-S8，Phase 4 交接 prompt 简化为指向 intent-prd / intent-issues，必需章节加第 14 节 |
 | `templates/INTENT.md` | 新增第 14 节（验收路径） |
 | `references/semantic-audit.md` | 新增 S8（验收路径）规则，执行要求更新为 S1-S8 |
-| `templates/stage-gate-check.md` | brainstorm/PRD、任务拆分、开发完成三阶段加验收路径检查项 |
+| `templates/阶段核对表.md` | brainstorm/PRD、任务拆分、开发完成三阶段加验收路径检查项 |
 | `scripts/intent_validate.py` | REQUIRED_SECTIONS 加第 14 节，V2 改为 14 个章节，V9 扩展到 S1-S8，新增 V12（验收路径校验），新增 PATH_ID_RE |
 | `tests/fixtures/valid-intent.md` | 加第 14 节和 S8 复核记录 |
 | `tests/test_intent_validate.py` | 期望检查数 11→12，新增 TestAcceptancePaths 测试类（6 个测试） |
@@ -152,19 +152,19 @@ skills/intent-issues/
 ├── SKILL.md
 ├── README.md
 ├── templates/issue-template.md
-├── scripts/issues_validate.py     ← 5 项检查（V1-V5），含交叉验证
+├── scripts/issues_validate.py     ← 7 项检查（V1-V7），含交叉验证
 └── tests/
     ├── fixtures/valid-issues.md
-    └── test_issues_validate.py     ← 16 个测试
+    └── test_issues_validate.py     ← 22 个测试
 ```
 
 ### 验证状态
 
-- `python -m pytest skills/intent-anchor/tests/test_intent_validate.py skills/intent-prd/tests/test_prd_validate.py skills/intent-issues/tests/test_issues_validate.py -v` → 70 passed，退出码 0
+- `python -m pytest skills/intent-anchor/tests/test_intent_validate.py skills/intent-prd/tests/test_prd_validate.py skills/intent-issues/tests/test_issues_validate.py -v` → 76 passed，退出码 0
 - 第一轮验收（建 skill 后）：发现 2 项漏改，已修复——intent-issues 命令行参数 3→2、3 个模板 HTML 注释旧名称→新名称
 - Given/When/Then 改造：PRD Acceptance Criteria 和工单 Acceptance criteria 改为 Given/When/Then 结构，prd_validate.py 新增 V8 检查，新增 5 个测试
 - 第二轮验收（Given/When/Then 改造后）：发现 3 项文档/风格问题，已修复——HANDOFF 测试总数 65→70、HANDOFF Phase 4 描述修正、SKILL.md 直引号→弯引号
-- 两轮验收后 70 项测试全部通过
+- 两轮验收后 76 项测试全部通过
 
 ### 完整链路
 
@@ -175,12 +175,72 @@ intent-prd → PRD.md（原生引用能力表和验收路径，Acceptance Criter
     ↓ 强制输入
 intent-issues → 工单（自动引用路径编号，自动检查覆盖）
     ↓
-开发完成 → stage-gate-check（逐条验收路径端到端走通）
+开发完成 → 最终复核（逐条验收路径端到端走通）
 ```
 
 ### git 状态
 
-改动均未提交，处于工作区未暂存状态。基线：`HEAD`（commit `bc6511b`）。
+已提交为 `783d263`，已推送到远程。基线：`bc6511b`。
+
+后续优化（未提交）：intent-prd Phase 4 交接 prompt 清理方案 A 遗留约束注入；issues_validate.py 新增 V6（设计标准传递检查）和 V7（术语表传递检查），新增 6 个测试。三个 skill 合计 76 测试通过。
+
+---
+
+## 任务 A3：intent-dev / intent-verify 拆分与性能安全要求前移（已完成）
+
+### 背景
+
+任务 A2 完成后，链路是 intent-anchor → intent-prd → intent-issues → 开发 → intent-verify。但有两个问题：
+
+1. **性能和安全要求没有收集点**：intent-verify 的 Phase 4 条件性验证会检查性能和安全要求，但这些要求之前没有在任何环节被主动收集。如果用户不说，就永远没有。
+2. **"Stage Gate Check" 命名不直观**：原名含义是"阶段门禁检查"，容易被误解为阶段性检查。实际是全部开发完成后的最终检查，应叫"最终复核"。
+
+### 改造范围
+
+- intent-anchor 再改一轮：Phase 2 加 Step 10/11（主动问性能和安全要求），新增第 15/16 节、S9/S10、V13/V14
+- intent-verify 全文 Stage Gate Check → 最终复核
+- intent-anchor 模板文件 `stage-gate-check.md` 重命名为 `阶段核对表.md`
+- `.claude` 和 `.codex` 下的运行态副本不修改
+
+### 改了什么（2 处改动，涉及 16 个文件）
+
+**改动 1：性能/安全要求前移到 intent-anchor**
+
+Phase 2 新增 Step 10（问性能要求）和 Step 11（问安全要求）。必须主动询问，不能等用户提出。有要求逐条记录到第 15/16 节，没要求记录用户确认"没有"。语义复核新增 S9/S10，校验器新增 V13/V14。
+
+**改动 2：Stage Gate Check 改名为"最终复核"**
+
+intent-verify 的 Phase 5 标题、正文、交接 prompt、verify-record 模板、verify_validate.py 常量和消息、README、测试类名全部改名。intent-anchor 中的 `stage-gate-check.md` 文件也重命名为 `阶段核对表.md`。
+
+**涉及的文件**
+
+| 文件 | 改动 |
+|---|---|
+| `intent-anchor/SKILL.md` | Phase 2 加 Step 10/11，语义复核表加 S9/S10，必需章节加第 15/16 节，模板引用 `阶段核对表.md` |
+| `intent-anchor/templates/INTENT.md` | 新增第 15 节（性能要求）和第 16 节（安全要求），补全模板中缺失的 S6-S10 子节 |
+| `intent-anchor/scripts/intent_validate.py` | REQUIRED_SECTIONS 加第 15/16 节，V2 改为 16 个章节，V9 扩展到 S1-S10，新增 V13（性能要求校验）和 V14（安全要求校验） |
+| `intent-anchor/references/semantic-audit.md` | 新增 S9 和 S10 规则，执行要求更新为 S1-S10 |
+| `intent-anchor/README.md` | 工作流图加 S9/S10，检查项数量 12→14，新增 V13/V14 描述表 |
+| `intent-anchor/tests/fixtures/valid-intent.md` | 加第 15/16 节和 S9/S10 复核记录 |
+| `intent-anchor/tests/test_intent_validate.py` | 期望检查数 12→14，一行自查测试加 S9/S10，新增 TestPerformanceRequirements（4 个测试）和 TestSecurityRequirements（5 个测试） |
+| `intent-anchor/templates/阶段核对表.md` | 从 `stage-gate-check.md` 重命名（内容不变） |
+| `intent-verify/SKILL.md` | Phase 5 标题、正文、交接 prompt 中 Stage Gate Check → 最终复核 |
+| `intent-verify/scripts/verify_validate.py` | GATE_HEADING 常量和所有 V6 消息改名 |
+| `intent-verify/templates/verify-record.md` | 章节标题和注释改名 |
+| `intent-verify/README.md` | 描述和检查项表格改名 |
+| `intent-verify/tests/fixtures/valid-verify-record.md` | 章节标题改名 |
+| `intent-verify/tests/test_verify_validate.py` | 测试类名 TestStageGateCheck → TestFinalReview，断言文案改名 |
+| `HANDOFF.md` | 历史引用中的 stage-gate-check.md → 阶段核对表.md |
+| `docs/intent-anchor-validation-instruction.md` | 历史引用中的 stage-gate-check.md → 阶段核对表.md |
+
+### 验证状态
+
+- `python -m pytest skills/ --tb=short -q` → 243 passed, 5 subtests passed，退出码 0
+- 中间踩坑：编辑器将中文弯引号 `"没有"` 替换为 ASCII 直引号 `"没有"` 导致 Python 语法错误，用脚本批量修复 5 处后通过
+
+### git 状态
+
+未提交。基线：`783d263`。
 
 ---
 
@@ -234,12 +294,24 @@ intent-issues → 工单（自动引用路径编号，自动检查覆盖）
   Phase 4 交接 prompt 注入设计标准和术语约束（后被 A2 简化）。
   .claude/.codex 运行态不修改，已还原。
 
-任务 A2（已完成，未提交）：在 A 基础上加验收路径（Step 9 / S8 / V12 / 第 14 节），
-  新建 intent-prd（8 项校验，含 V8 Given/When/Then 结构检查）和 intent-issues（5 项校验），
+任务 A2（已提交 783d263，已推送）：在 A 基础上加验收路径（Step 9 / S8 / V12 / 第 14 节），
+  新建 intent-prd（8 项校验，含 V8 Given/When/Then 结构检查）和 intent-issues（7 项校验，含 V6/V7 设计标准与术语传递检查），
   Phase 4 交接 prompt 简化为指向 intent-prd / intent-issues。
   PRD 的 Acceptance Criteria 和工单的 Acceptance criteria 均使用 Given/When/Then 结构。
-  三个 skill 合计 70 测试通过，两轮独立验收问题全部修复。
+  三个 skill 合计 76 测试通过，两轮独立验收问题全部修复。
   有 INTENT.md 用 intent-prd / intent-issues，没有用原版 to-prd / to-issues。
+
+后续优化（未提交）：
+  - intent-prd Phase 4 交接 prompt 清理方案 A 遗留约束注入（只指路，不注入约束）
+  - issues_validate.py 新增 V6（设计标准传递检查）和 V7（术语表传递检查），新增 6 个测试
+  - 76 测试全部通过
+
+任务 A3（未提交）：在 A2 基础上加性能/安全要求前移和 Stage Gate Check 改名。
+  - intent-anchor Phase 2 加 Step 10/11（主动问性能和安全要求），新增第 15/16 节、S9/S10、V13/V14
+  - intent-verify 全文 Stage Gate Check → 最终复核
+  - intent-anchor 模板 stage-gate-check.md 重命名为 阶段核对表.md
+  - 全部 skill 合计 243 passed
+  - 中间踩坑：中文弯引号被替换为 ASCII 直引号导致 Python 语法错误，批量修复 5 处后通过
 
 任务 B（待补测）：blue-interview P1/P2/P3/P8/P9 已落地，P3 试跑通过，P1/P2/P8/P9 待补测。
   skill 被 .gitignore 忽略，不入库。未经同意禁止修改。
