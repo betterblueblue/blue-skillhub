@@ -69,7 +69,7 @@ def _replace_subsection(content: str, heading: str, body: str) -> str:
 class TestValidFixture(unittest.TestCase):
     def test_current_fixture_passes_all_checks(self):
         results = validate(_valid_content())
-        self.assertEqual(11, len(results))
+        self.assertEqual(12, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -231,6 +231,9 @@ class TestSemanticReviewEvidence(unittest.TestCase):
 已检查
 
 ### S7 术语标记
+已检查
+
+### S8 验收路径
 已检查""",
         )
         result = _result(content, "V9")
@@ -315,6 +318,66 @@ class TestTerminology(unittest.TestCase):
 
     def test_explicit_no_terminology_passes(self):
         self.assertEqual("PASS", _result(_valid_content(), "V11")[1])
+
+
+class TestAcceptancePaths(unittest.TestCase):
+    def test_missing_acceptance_section_fails(self):
+        content = _valid_content().replace("## 14. 验收路径", "## 14. X")
+        result = _result(content, "V2")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("验收路径", result[2])
+
+    def test_acceptance_path_without_user_confirmation_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 14. 验收路径",
+            "| 路径 ID | 路径名称 | 对应能力 | 入口 | 关键步骤 | 预期结果 | 用户确认 |\n"
+            "|---|---|---|---|---|---|---|\n"
+            "| P01 | 生成记录 | C01 | 会话结束 | 触发生成 | 交接记录 | |",
+        )
+        result = _result(content, "V12")
+        self.assertEqual("FAIL", result[1])
+
+    def test_acceptance_path_with_placeholder_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 14. 验收路径",
+            "| 路径 ID | 路径名称 | 对应能力 | 入口 | 关键步骤 | 预期结果 | 用户确认 |\n"
+            "|---|---|---|---|---|---|---|\n"
+            "| P01 | {路径名称} | C01 | 会话结束 | 触发生成 | 交接记录 | 确认 |",
+        )
+        result = _result(content, "V12")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("占位符", result[2])
+
+    def test_acceptance_path_with_unknown_capability_fails(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 14. 验收路径",
+            "| 路径 ID | 路径名称 | 对应能力 | 入口 | 关键步骤 | 预期结果 | 用户确认 |\n"
+            "|---|---|---|---|---|---|---|\n"
+            "| P01 | 生成记录 | C99 | 会话结束 | 触发生成 | 交接记录 | 确认 |",
+        )
+        result = _result(content, "V12")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("未知能力", result[2])
+
+    def test_valid_acceptance_path_passes(self):
+        self.assertEqual("PASS", _result(_valid_content(), "V12")[1])
+
+    def test_explicit_no_acceptance_path_passes(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 14. 验收路径",
+            "无验收路径。用户明确确认：“没有用户可感知的保留能力，不需要验收路径”。",
+        )
+        content = _replace_subsection(
+            content,
+            "S8 验收路径",
+            "无验收路径。用户明确确认：“没有用户可感知的保留能力，不需要验收路径”。",
+        )
+        self.assertEqual("PASS", _result(content, "V12")[1])
+        self.assertEqual("PASS", _result(content, "V9")[1])
 
 
 class TestOutputPath(unittest.TestCase):

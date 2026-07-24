@@ -6,16 +6,17 @@
 
 检查项：
   V1: 文件非空
-  V2: 13 个必需章节齐全
+  V2: 14 个必需章节齐全
   V3: 能力、证据、决策和决策来源关系合法，且没有待确认项
   V4: 不可妥协项引用保留能力，并有用户明确确认；允许为空
   V5: 推迟和放弃清单与能力决策一致
   V6: 决策统计与能力清单一致，未决问题为空
   V7: 7 个通用漂移模式均使用明确状态并留下说明
   V8: 存在针对 INTENT.md 全文的用户明确确认记录
-  V9: S1-S7 具有规定的证据结构，并与能力和漂移记录交叉一致
+  V9: S1-S8 具有规定的证据结构，并与能力和漂移记录交叉一致
   V10: 设计标准节存在；有素材时记录了路径和用户确认，无素材时记录用户确认“没有”
   V11: 术语表节存在；有术语时记录了人话翻译和界面文案，无术语时明确写“无”
+  V12: 验收路径节存在；有路径时记录了入口、步骤和预期结果，无路径时记录用户确认“没有”
 
 本脚本不能验证文件引用是否真实、模型推导是否合理，也不能证明内容
 符合用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -43,6 +44,7 @@ REQUIRED_SECTIONS = [
     "## 11. 锚定原始记录",
     "## 12. 设计标准",
     "## 13. 术语表",
+    "## 14. 验收路径",
 ]
 
 DRIFT_PATTERNS = [
@@ -63,6 +65,7 @@ VALID_DECISION_SOURCES = {
 }
 VALID_DRIFT_STATUSES = {"未命中", "命中", "不适用"}
 CAPABILITY_ID_RE = re.compile(r"^C\d{2,}$")
+PATH_ID_RE = re.compile(r"^P\d{2,}$")
 EVIDENCE_ID_RE = re.compile(r"^E\d{2,}$")
 OUTPUT_PATH_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}-\d{3}-[^\\/:*?\"<>| ]+\.md$"
@@ -204,7 +207,7 @@ def validate(content: str) -> list[tuple[str, str, str]]:
     if missing:
         results.append(("V2", "FAIL", f"缺少章节：{', '.join(missing)}"))
     else:
-        results.append(("V2", "PASS", "全部 13 个章节存在"))
+        results.append(("V2", "PASS", "全部 14 个章节存在"))
 
     capabilities, capability_errors = _parse_capabilities(content)
     if capability_errors:
@@ -389,6 +392,7 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         "S5 漂移复核",
         "S6 设计标准",
         "S7 术语标记",
+        "S8 验收路径",
     ]
     audit_parts = {heading: _subsection(audit_section, heading) for heading in audit_headings}
     for heading, part in audit_parts.items():
@@ -505,10 +509,25 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         elif not re.search(r"\u65e0\u672f\u8bed\u9700\u8981\u7ffb\u8bd1", s7_part):
             audit_errors.append("S7 没有术语时，必须明确写“无术语需要翻译”")
 
+        s8_part = audit_parts["S8 验收路径"]
+        s8_rows = _table_rows(s8_part, "路径 ID")
+        if s8_rows:
+            for index, row in enumerate(s8_rows, 1):
+                if len(row) != 7:
+                    audit_errors.append(f"S8 第 {index} 行应有 7 列")
+                    continue
+                p_id, name, cap_refs, entry, steps, expected, confirm = row
+                if any(_has_placeholder(v) for v in row):
+                    audit_errors.append(f"S8 {p_id} 仍含模板占位符")
+                if not name or not entry or not steps or not expected or not confirm:
+                    audit_errors.append(f"S8 {p_id} 缺少名称、入口、步骤、预期结果或用户确认")
+        elif not re.search(r"无验收路径.+用户明确确认", s8_part):
+            audit_errors.append("S8 没有验收路径时，必须记录用户明确确认“没有”")
+
     if audit_errors:
         results.append(("V9", "FAIL", "；".join(audit_errors)))
     else:
-        results.append(("V9", "PASS", "S1-S7 结构化复核记录齐全并与正文一致"))
+        results.append(("V9", "PASS", "S1-S8 结构化复核记录齐全并与正文一致"))
 
     design_section = _section(content, "## 12. 设计标准")
     design_errors: list[str] = []
@@ -549,6 +568,35 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         results.append(("V11", "FAIL", "；".join(terminology_errors)))
     else:
         results.append(("V11", "PASS", "术语表节存在且格式正确"))
+
+    acceptance_section = _section(content, "## 14. 验收路径")
+    acceptance_errors: list[str] = []
+    acceptance_rows = _table_rows(acceptance_section, "路径 ID")
+    if acceptance_rows:
+        path_ids: set[str] = set()
+        for index, row in enumerate(acceptance_rows, 1):
+            if len(row) != 7:
+                acceptance_errors.append(f"验收路径第 {index} 行应有 7 列")
+                continue
+            p_id, name, cap_refs, entry, steps, expected, confirm = row
+            if p_id in path_ids:
+                acceptance_errors.append(f"验收路径 ID 重复：{p_id}")
+            path_ids.add(p_id)
+            if not PATH_ID_RE.fullmatch(p_id):
+                acceptance_errors.append(f"验收路径 ID 非法：{p_id}")
+            if any(_has_placeholder(v) for v in row):
+                acceptance_errors.append(f"验收路径 {p_id} 仍含模板占位符")
+            if not name or not entry or not steps or not expected or not confirm:
+                acceptance_errors.append(f"验收路径 {p_id} 缺少名称、入口、步骤、预期结果或用户确认")
+            referenced_caps = _split_evidence_ids(cap_refs)
+            if not referenced_caps or any(item not in capabilities for item in referenced_caps):
+                acceptance_errors.append(f"验收路径 {p_id} 引用了未知能力 ID：{cap_refs}")
+    elif not re.search(r"无验收路径.+用户明确确认", acceptance_section):
+        acceptance_errors.append("没有验收路径时，必须记录用户明确确认“没有”")
+    if acceptance_errors:
+        results.append(("V12", "FAIL", "；".join(acceptance_errors)))
+    else:
+        results.append(("V12", "PASS", "验收路径节存在且格式正确"))
 
     return results
 
