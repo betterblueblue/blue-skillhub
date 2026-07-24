@@ -42,7 +42,7 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 | V7 | INTENT.md 有术语表时，至少一个工单 Acceptance criteria 引用了术语 |
 
 ```bash
-python skills/intent-issues/scripts/issues_validate.py intent-chain/{链路目录}/ISSUES.md intent-chain/{链路目录}/INTENT.md
+python skills/intent-issues/scripts/issues_validate.py intent-chain/{链路目录}/issues.md intent-chain/{链路目录}/intent.md
 ```
 
 ## 文件结构

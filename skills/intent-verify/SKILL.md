@@ -118,7 +118,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 给用户以下提示：
 
 ```text
-验收完成。intent-chain/{链路目录}/VERIFY-RECORD.md 记录了端到端验收结果和最终复核结论。
+验收完成。intent-chain/{链路目录}/verify-record.md 记录了端到端验收结果和最终复核结论。
 
 如果后续需要变更，使用 impact 做影响分析。
 如果需要新增功能，从 intent-anchor 重新开始。
@@ -164,7 +164,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 最终文件放在目标项目根目录：
 
 ```text
-intent-chain/{链路目录}/VERIFY-RECORD.md
+intent-chain/{链路目录}/verify-record.md
 ```
 
 - 链路目录由 intent-anchor 创建，VERIFY-RECORD 写入同一目录。

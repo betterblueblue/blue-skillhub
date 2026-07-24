@@ -79,7 +79,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 给用户以下可直接传给下一会话的 Prompt，并替换真实路径：
 
 ```text
-先读 intent-chain/{链路目录}/PRD.md 和 INTENT.md，再完成任务拆分。
+先读 intent-chain/{链路目录}/prd.md 和 INTENT.md，再完成任务拆分。
 
 拆工单用 intent-issues（写入同一链路目录下的 ISSUES.md）——它会原生读取 INTENT.md 和 PRD，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
 
@@ -118,7 +118,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 最终文件放在目标项目根目录：
 
 ```text
-intent-chain/{链路目录}/PRD.md
+intent-chain/{链路目录}/prd.md
 ```
 
 - 链路目录由 intent-anchor 创建，PRD 写入同一目录。
