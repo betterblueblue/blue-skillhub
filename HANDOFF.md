@@ -270,7 +270,7 @@ intent-verify 的 Phase 5 标题、正文、交接 prompt、verify-record 模板
 
 **commit `36b4ba0`：输出产物统一大写命名**
 
-- 模板文件最终命名为小写：dev-record.md、verify-record.md
+- 模板文件重命名：dev-record.md → DEV-RECORD.md，verify-record.md → VERIFY-RECORD.md
 - 所有 SKILL.md、validate.py、README.md、fixture 中的产物名引用改为大写
 - fixture 文件名保持小写（与 valid-intent.md、valid-prd.md 一致）
 
@@ -304,10 +304,13 @@ intent-chain/
 
 - `python -m pytest skills/ -q` → 243 passed, 5 subtests passed
 - grep 确认全文不再有大写的 intent.md / prd.md / issues.md / dev-record.md / verify-record.md 引用（fixture 文件名除外）
+- 独立验收报告发现 commit `6e45539` 执行不完整：SKILL.md、模板注释、交接 prompt、validate.py 文档字符串中共约 30 处大写产物名残留；两个模板文件（INTENT.md、阶段核对表.md）存放路径仍为旧目录结构；docs 链路图未更新为小写
+- 验收报告中的所有 FAIL 项已在 commit `6c1f2b9` 中修复
+- 概念名大写引用（如"把目标写进 INTENT.md"）保持大写，与模板文件名约定一致，不构成问题
 
 ### git 状态
 
-四个 commit 均已推送：`024c06b` → `36b4ba0` → `2167a6e` → `6e45539`。基线：`a11f12d`。
+五个 commit 均已推送：`024c06b` → `36b4ba0` → `2167a6e` → `6e45539` → `6c1f2b9`。基线：`a11f12d`。
 
 ---
 
@@ -382,12 +385,14 @@ intent-chain/
   - 文档修复 388d3fb：3 处 S1-S8 → S1-S10，已推送
   - 独立验收 25 项检查全部通过
 
-任务 A4（已提交 024c06b → 36b4ba0 → 2167a6e → 6e45539，已推送）：README 同步与输出目录/命名统一。
+任务 A4（已提交 024c06b → 36b4ba0 → 2167a6e → 6e45539 → 6c1f2b9，已推送）：README 同步与输出目录/命名统一。
   - README.md 补全 intent-dev/intent-verify，更新检查项数量
   - 输出目录从 5 个独立目录合并到 intent-chain/{链路目录}/
   - 产物文件名统一小写：intent.md / prd.md / issues.md / dev-record.md / verify-record.md
   - 下游 skill 从输入文件路径推导链路目录，不再独立计算日期序号
+  - 独立验收发现 6e45539 遗漏约 30 处大写引用和 2 个模板路径，已在 6c1f2b9 修复
   - 243 passed
+  - 概念名大写引用（如"把目标写进 INTENT.md"）保持大写，与模板文件名约定一致
 
 任务 B（待补测）：blue-interview P1/P2/P3/P8/P9 已落地，P3 试跑通过，P1/P2/P8/P9 待补测。
   skill 被 .gitignore 忽略，不入库。未经同意禁止修改。
