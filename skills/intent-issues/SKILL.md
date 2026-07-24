@@ -44,7 +44,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. 确认 INTENT.md 和 PRD 路径。
 2. 读取两者全文。
 3. 运行 `intent_validate.py` 和 `prd_validate.py` 确认通过。任一 FAIL 则停止。
-4. 从 INTENT.md 路径推导链路目录，工单写入同一目录下的 `ISSUES.md`。不创建目录、不写文件。
+4. 从 INTENT.md 路径推导链路目录，工单写入同一目录下的 `issues.md`。不创建目录、不写文件。
 
 输出：确认后的文件路径和候选输出路径。
 
@@ -82,7 +82,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 2. 运行：
 
    ```bash
-   python "{intent-issues skill 目录}/scripts/issues_validate.py" "{ISSUES.md 路径}" "{INTENT.md 路径}"
+   python "{intent-issues skill 目录}/scripts/issues_validate.py" "{issues 路径}" "{intent.md 路径}"
    ```
 
 3. 修复结构问题后重新运行。若有验收路径未被覆盖，补充工单或请用户确认放弃。
@@ -96,7 +96,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 ```text
 工单已生成。下一步用 intent-dev 开发——按 TDD 循环逐个工单开发，每个工单完成后实际运行验证。
 
-读取 intent-chain/{链路目录}/intent.md 和 PRD.md，开始拆工单。工单写入同一目录下的 ISSUES.md。全部工单开发完成后，用 intent-dev 做开发。
+读取 intent-chain/{链路目录}/intent.md 和 prd.md，开始拆工单。工单写入同一目录下的 issues.md。全部工单开发完成后，用 intent-dev 做开发。
 ```
 
 ## 强制规则

@@ -2,7 +2,7 @@
 
 <!--
   本文件由 intent-anchor 生成。
-  存放路径：intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md
+  存放路径：intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/intent.md
   这是用户确认过的意图记录，不是 PRD，也不是自动执行授权。
   后续会话需要由用户主动提供本文件路径。
 -->

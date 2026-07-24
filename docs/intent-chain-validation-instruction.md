@@ -19,15 +19,15 @@
 ## 完整链路
 
 ```text
-intent-anchor → INTENT.md（16 节：意图、能力、验收路径、设计标准、术语表、性能/安全要求）
+intent-anchor → intent.md（16 节：意图、能力、验收路径、设计标准、术语表、性能/安全要求）
     ↓ 强制输入
-intent-prd → PRD.md（原生引用能力表和验收路径，Acceptance Criteria 用 Given/When/Then 结构）
+intent-prd → prd.md（原生引用能力表和验收路径，Acceptance Criteria 用 Given/When/Then 结构）
     ↓ 强制输入
-intent-issues → 工单文件（自动引用路径编号，自动检查覆盖）
+intent-issues → issues.md（自动引用路径编号，自动检查覆盖）
     ↓ 强制输入
-intent-dev → DEV-RECORD.md（TDD 循环开发，工单级 V0/V1/V2 验证）
+intent-dev → dev-record.md（TDD 循环开发，工单级 V0/V1/V2 验证）
     ↓ 强制输入
-intent-verify → VERIFY-RECORD.md（全量回归 + 端到端 V3 验收 + 条件性验证 + 最终复核）
+intent-verify → verify-record.md（全量回归 + 端到端 V3 验收 + 条件性验证 + 最终复核）
 ```
 
 每个 Skill 的前置条件强制要求上游产物通过校验。Skill 之间不依赖交接 Prompt 串联，而是各自独立读取上游文件。约束传递通过 INTENT.md 的结构化字段（第 12-16 节）和校验器的交叉检查实现。
@@ -138,7 +138,7 @@ python -c "import sys; sys.path.insert(0, 'skills/intent-dev/scripts'); from dev
 #### 检查 11：DEV-RECORD 模板包含 TDD 过程段
 
 ```bash
-findstr /C:"### TDD 过程" /C:"#### Red" /C:"#### Green" /C:"#### Refactor" skills\intent-dev\templates\DEV-RECORD.md
+findstr /C:"### TDD 过程" /C:"#### Red" /C:"#### Green" /C:"#### Refactor" skills\intent-dev\templates\dev-record.md
 ```
 
 预期：找到 4 行。
@@ -180,7 +180,7 @@ python -c "import sys; sys.path.insert(0, 'skills/intent-verify/scripts'); from 
 #### 检查 16：VERIFY-RECORD 模板包含条件性验证段
 
 ```bash
-findstr /C:"### 性能验证" /C:"### 安全验证" skills\intent-verify\templates\VERIFY-RECORD.md
+findstr /C:"### 性能验证" /C:"### 安全验证" skills\intent-verify\templates\verify-record.md
 ```
 
 预期：找到 2 行。

@@ -2,7 +2,7 @@
 
 <!--
   本文件由 intent-dev skill 生成。
-  前置文件：intent-chain/{链路目录}/intent.md、PRD.md、ISSUES.md
+  前置文件：intent-chain/{链路目录}/intent.md、prd.md、issues.md
   生成日期：{日期}
   每个工单按 TDD 循环开发，记录红灯→绿灯→重构过程。
 -->

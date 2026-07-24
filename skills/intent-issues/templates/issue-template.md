@@ -2,7 +2,7 @@
 
 <!--
   本文件由 intent-issues skill 生成。
-  前置文件：intent-chain/{链路目录}/intent.md 和 PRD.md
+  前置文件：intent-chain/{链路目录}/intent.md 和 prd.md
   生成日期：{日期}
   工单按垂直切片拆分，每个工单贯穿所有集成层。
 -->

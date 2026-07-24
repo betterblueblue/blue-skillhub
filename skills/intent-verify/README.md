@@ -56,7 +56,7 @@ intent-verify/
 ├── SKILL.md
 ├── README.md
 ├── templates/
-│   └── VERIFY-RECORD.md              ← 验收记录模板
+│   └── verify-record.md              ← 验收记录模板
 ├── scripts/
 │   └── verify_validate.py            ← 6 项结构检查
 └── tests/

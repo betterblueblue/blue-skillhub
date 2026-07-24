@@ -2,7 +2,7 @@
 
 <!--
   本文件由 intent-verify skill 生成。
-  前置文件：intent-chain/{链路目录}/intent.md、PRD.md、ISSUES.md、DEV-RECORD.md
+  前置文件：intent-chain/{链路目录}/intent.md、prd.md、issues.md、dev-record.md
   生成日期：{日期}
   所有工单开发完成后，先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端验证，最后做条件性验证和最终复核。
 -->

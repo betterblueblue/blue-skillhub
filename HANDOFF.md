@@ -230,7 +230,7 @@ intent-verify 的 Phase 5 标题、正文、交接 prompt、verify-record 模板
 | `intent-anchor/templates/阶段核对表.md` | 从 `stage-gate-check.md` 重命名（内容不变） |
 | `intent-verify/SKILL.md` | Phase 5 标题、正文、交接 prompt 中 Stage Gate Check → 最终复核 |
 | `intent-verify/scripts/verify_validate.py` | GATE_HEADING 常量和所有 V6 消息改名 |
-| `intent-verify/templates/VERIFY-RECORD.md` | 章节标题和注释改名 |
+| `intent-verify/templates/verify-record.md` | 章节标题和注释改名 |
 | `intent-verify/README.md` | 描述和检查项表格改名 |
 | `intent-verify/tests/fixtures/valid-verify-record.md` | 章节标题改名 |
 | `intent-verify/tests/test_verify_validate.py` | 测试类名 TestStageGateCheck → TestFinalReview，断言文案改名 |
@@ -270,7 +270,7 @@ intent-verify 的 Phase 5 标题、正文、交接 prompt、verify-record 模板
 
 **commit `36b4ba0`：输出产物统一大写命名**
 
-- 模板文件重命名：dev-record.md → DEV-RECORD.md，verify-record.md → VERIFY-RECORD.md
+- 模板文件最终命名为小写：dev-record.md、verify-record.md
 - 所有 SKILL.md、validate.py、README.md、fixture 中的产物名引用改为大写
 - fixture 文件名保持小写（与 valid-intent.md、valid-prd.md 一致）
 
@@ -303,7 +303,7 @@ intent-chain/
 ### 验证状态
 
 - `python -m pytest skills/ -q` → 243 passed, 5 subtests passed
-- grep 确认全文不再有大写的 INTENT.md / PRD.md / ISSUES.md / DEV-RECORD.md / VERIFY-RECORD.md 引用（fixture 文件名除外）
+- grep 确认全文不再有大写的 intent.md / prd.md / issues.md / dev-record.md / verify-record.md 引用（fixture 文件名除外）
 
 ### git 状态
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""VERIFY-RECORD.md 结构校验。
+"""verify-record.md 结构校验。
 
 用法：
   python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md
