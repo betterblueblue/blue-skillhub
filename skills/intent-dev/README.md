@@ -58,7 +58,7 @@ Intent-Dev 解决这两个问题：
 | V4 | 标 done 的工单：所有 Then >= V2 |
 
 ```bash
-python skills/intent-dev/scripts/dev_validate.py intent-chain/{链路目录}/DEV-RECORD.md intent-chain/{链路目录}/ISSUES.md
+python skills/intent-dev/scripts/dev_validate.py intent-chain/{链路目录}/dev-record.md intent-chain/{链路目录}/issues.md
 ```
 
 ## 文件结构

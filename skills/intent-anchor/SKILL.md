@@ -153,7 +153,7 @@ intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/INTENT.md
 5. 运行：
 
    ```bash
-   python "{intent-anchor skill 目录}/scripts/intent_validate.py" "{目标项目根目录}/intent-chain/{链路目录}/INTENT.md"
+   python "{intent-anchor skill 目录}/scripts/intent_validate.py" "{目标项目根目录}/intent-chain/{链路目录}/intent.md"
    ```
 
 6. 修复结构问题后重新运行。若修复改变了能力、证据、决策或用户原话，之前的全文确认立即失效，必须展示更新后的全文并重新确认。
@@ -166,7 +166,7 @@ intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/INTENT.md
 给用户以下可直接传给下一会话的 Prompt，并替换真实路径：
 
 ```text
-先读 intent-chain/{链路目录}/INTENT.md，再完成接下来的 [PRD / 任务拆分 / 开发]。
+先读 intent-chain/{链路目录}/intent.md，再完成接下来的 [PRD / 任务拆分 / 开发]。
 
 生成 PRD 用 intent-prd（写入同一链路目录下的 PRD.md），拆工单用 intent-issues（写入同一链路目录下的 ISSUES.md）——它们会原生读取 INTENT.md，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
 

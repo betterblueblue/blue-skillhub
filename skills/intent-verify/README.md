@@ -46,7 +46,7 @@ intent-dev 完成了每个工单的开发和工单级验证（零件合格），
 | V6 | 最终复核完整（回归汇总、保留能力、验收路径、条件性汇总、漂移复核、结论） |
 
 ```bash
-python skills/intent-verify/scripts/verify_validate.py intent-chain/{链路目录}/VERIFY-RECORD.md
+python skills/intent-verify/scripts/verify_validate.py intent-chain/{链路目录}/verify-record.md
 ```
 
 ## 文件结构

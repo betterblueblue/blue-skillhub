@@ -2,7 +2,7 @@
 
 <!--
   本文件由 intent-dev skill 生成。
-  前置文件：intent-chain/{链路目录}/INTENT.md、PRD.md、ISSUES.md
+  前置文件：intent-chain/{链路目录}/intent.md、PRD.md、ISSUES.md
   生成日期：{日期}
   每个工单按 TDD 循环开发，记录红灯→绿灯→重构过程。
 -->
@@ -10,9 +10,9 @@
 ## 开发概述
 
 - 产品名称：{产品名称}
-- INTENT.md：intent-chain/{链路目录}/INTENT.md
-- PRD：intent-chain/{链路目录}/PRD.md
-- 工单文件：intent-chain/{链路目录}/ISSUES.md
+- INTENT.md：intent-chain/{链路目录}/intent.md
+- PRD：intent-chain/{链路目录}/prd.md
+- 工单文件：intent-chain/{链路目录}/issues.md
 - 工单总数：{N}
 - 构建命令：{命令或"未发现构建配置"}
 - 测试命令：{命令或"未发现测试配置"}

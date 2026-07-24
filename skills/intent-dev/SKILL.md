@@ -155,13 +155,13 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 4. 给用户以下提示：
 
 ```text
-开发阶段完成。intent-chain/{链路目录}/DEV-RECORD.md 记录了每个工单的 TDD 过程和验证结果。
+开发阶段完成。intent-chain/{链路目录}/dev-record.md 记录了每个工单的 TDD 过程和验证结果。
 
 下一步：使用 intent-verify 做端到端验收。提供以下文件：
-- intent-chain/{链路目录}/INTENT.md
-- intent-chain/{链路目录}/PRD.md
-- intent-chain/{链路目录}/ISSUES.md
-- intent-chain/{链路目录}/DEV-RECORD.md
+- intent-chain/{链路目录}/intent.md
+- intent-chain/{链路目录}/prd.md
+- intent-chain/{链路目录}/issues.md
+- intent-chain/{链路目录}/dev-record.md
 ```
 
 ## 强制规则
@@ -196,7 +196,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 最终文件放在目标项目根目录：
 
 ```text
-intent-chain/{链路目录}/DEV-RECORD.md
+intent-chain/{链路目录}/dev-record.md
 ```
 
 - 链路目录由 intent-anchor 创建，DEV-RECORD 写入同一目录。

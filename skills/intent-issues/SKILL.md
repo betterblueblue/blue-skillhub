@@ -96,7 +96,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 ```text
 工单已生成。下一步用 intent-dev 开发——按 TDD 循环逐个工单开发，每个工单完成后实际运行验证。
 
-读取 intent-chain/{链路目录}/INTENT.md 和 PRD.md，开始拆工单。工单写入同一目录下的 ISSUES.md。全部工单开发完成后，用 intent-dev 做开发。
+读取 intent-chain/{链路目录}/intent.md 和 PRD.md，开始拆工单。工单写入同一目录下的 ISSUES.md。全部工单开发完成后，用 intent-dev 做开发。
 ```
 
 ## 强制规则
@@ -126,7 +126,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 最终文件放在目标项目根目录：
 
 ```text
-intent-chain/{链路目录}/ISSUES.md
+intent-chain/{链路目录}/issues.md
 ```
 
 - 链路目录由 intent-anchor 创建，工单写入同一目录。

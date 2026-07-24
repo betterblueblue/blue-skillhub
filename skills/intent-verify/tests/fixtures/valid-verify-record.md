@@ -2,17 +2,17 @@
 
 <!--
   本文件由 intent-verify skill 生成。
-  前置文件：intent-chain/2026-07-24-001-团队进度助手/INTENT.md、PRD.md、ISSUES.md、DEV-RECORD.md
+  前置文件：intent-chain/2026-07-24-001-团队进度助手/intent.md、prd.md、issues.md、dev-record.md
   生成日期：2026-07-24
 -->
 
 ## 验收概述
 
 - 产品名称：团队进度助手
-- INTENT.md：intent-chain/2026-07-24-001-团队进度助手/INTENT.md
-- PRD：intent-chain/2026-07-24-001-团队进度助手/PRD.md
-- 工单文件：intent-chain/2026-07-24-001-团队进度助手/ISSUES.md
-- DEV-RECORD：intent-chain/2026-07-24-001-团队进度助手/DEV-RECORD.md
+- INTENT.md：intent-chain/2026-07-24-001-团队进度助手/intent.md
+- PRD：intent-chain/2026-07-24-001-团队进度助手/prd.md
+- 工单文件：intent-chain/2026-07-24-001-团队进度助手/issues.md
+- DEV-RECORD：intent-chain/2026-07-24-001-团队进度助手/dev-record.md
 - 验收路径总数：1
 
 ---
