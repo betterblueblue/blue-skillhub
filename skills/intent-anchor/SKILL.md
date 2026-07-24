@@ -81,7 +81,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash, WebSearch, WebFetch
 1. **先确认一句话意图**：未确认前不列完整功能清单。
 2. **先取证再推导**：有文件就引用文件；没有文件时保留用户原话。推导必须标明是推导。
 3. **先确认再写文件**：在对话中展示完整草稿，得到针对全文的明确确认后，才创建目录和写入文件。“继续”不算全文确认。
-4. **语义复核留证据**：写入前执行 `references/semantic-audit.md` 的 S1-S8；它是自查记录，不是正确性证明。
+4. **语义复核留证据**：写入前执行 `references/semantic-audit.md` 的 S1-S10；它是自查记录，不是正确性证明。
 5. **结构校验必须通过**：写入后运行 `intent_validate.py`。FAIL 只表示当前文件不满足结构契约，不代表内容一定错误；PASS 也不代表语义正确。
 6. **恢复时确认活动文件**：上下文压缩或长时间等待后，优先读取本会话已记录的活动文件路径。路径不明或目录中有多份文件时，询问用户，不得自动选择“最新一份”。
 
@@ -127,7 +127,7 @@ intent-anchor/{YYYY-MM-DD}-{NNN}-{意图名称}.md
 
 ### Phase 2.5：语义复核
 
-按 `references/semantic-audit.md` 生成 S1-S8 记录：
+按 `references/semantic-audit.md` 生成 S1-S10 记录：
 
 | 项目 | 要回答的问题 |
 |---|---|
