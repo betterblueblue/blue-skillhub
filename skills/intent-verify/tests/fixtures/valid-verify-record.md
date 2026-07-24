@@ -12,7 +12,7 @@
 - INTENT.md：intent-anchor/valid-intent.md
 - PRD：prd/valid-prd.md
 - 工单文件：issues/valid-issues.md
-- dev-record：dev/valid-dev-record.md
+- DEV-RECORD：dev/valid-dev-record.md
 - 验收路径总数：1
 
 ---
@@ -86,7 +86,7 @@
 
 | 能力 ID | 保留能力 | 状态 | 证据 |
 |---|---|---|---|
-| C01 | 生成交接记录 | 已体现 | src/handoff.js 实现，dev-record 验证 npm test 4 passed，端到端验收通过 |
+| C01 | 生成交接记录 | 已体现 | src/handoff.js 实现，DEV-RECORD 验证 npm test 4 passed，端到端验收通过 |
 
 ### 验收路径逐条验证
 
@@ -109,7 +109,7 @@
 | D4 保留项遗漏 | 未命中 | C01 已体现 |
 | D5 推迟或放弃项被重新加入 | 未命中 | C02 和 C03 未出现 |
 | D6 决策来源失真 | 未命中 | 决策来源与 INTENT.md 一致 |
-| D7 交接信息丢失 | 未命中 | dev-record 和 verify-record 记录完整 |
+| D7 交接信息丢失 | 未命中 | DEV-RECORD 和 VERIFY-RECORD 记录完整 |
 
 ### 结论
 
