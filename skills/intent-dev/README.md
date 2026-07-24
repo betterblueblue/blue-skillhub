@@ -68,7 +68,7 @@ intent-dev/
 ├── SKILL.md
 ├── README.md
 ├── templates/
-│   └── DEV-RECORD.md                 ← 开发执行记录模板
+│   └── dev-record.md                 ← 开发执行记录模板
 ├── scripts/
 │   └── dev_validate.py               ← 4 项结构与交叉引用检查
 └── tests/

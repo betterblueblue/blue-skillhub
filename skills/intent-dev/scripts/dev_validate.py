@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""DEV-RECORD.md 结构与工单文件交叉引用校验。
+"""dev-record.md 结构与工单文件交叉引用校验。
 
 用法：
   python dev_validate.py /path/to/intent-chain/{链路目录}/dev-record.md /path/to/intent-chain/{链路目录}/issues.md

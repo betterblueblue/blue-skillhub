@@ -113,8 +113,8 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 3. 运行 `intent_validate.py`、`prd_validate.py` 和 `issues_validate.py` 确认通过。任一 FAIL 则停止。
 4. **探索目标项目根目录**，按"验证命令来源"节的步骤查找构建/测试配置文件，从文件内容中提取实际命令。找不到配置文件则问用户。
 5. 确定构建命令和测试命令。用户确认没有测试环境则标"V2 不可用，工单无法标 done"。
-6. 从输入文件路径推导链路目录，DEV-RECORD 写入同一目录下的 `DEV-RECORD.md`。不创建目录、不写文件。
-7. 如果 DEV-RECORD 已存在（跨会话恢复），读取现有记录，复述当前进度。
+6. 从输入文件路径推导链路目录，DEV-RECORD 写入同一目录下的 `dev-record.md`。不创建目录、不写文件。
+7. 如果 dev-record 已存在（跨会话恢复），读取现有记录，复述当前进度。
 
 输出：确认后的文件路径、工单清单、构建/测试命令和当前进度。
 
@@ -143,15 +143,15 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 5. 每条 Then 必须有明确的验证等级和证据。V2 必须附真实命令输出，不得仅凭"应该能通过"标注。
 6. 所有 Then 达到 V2 以上 → 工单标 done，可进下一个工单。
 7. 有未通过项或仅有 V1 → 要求修复或补测试环境，不得跳到下一个工单。
-8. 每个工单验证完成后，追加写入 DEV-RECORD.md。
+8. 每个工单验证完成后，追加写入 dev-record.md。
 
-输出：更新后的 DEV-RECORD.md。
+输出：更新后的 dev-record.md。
 
 ### Phase 3：交接
 
 1. 确认所有工单都标 done。
 2. 如果任一工单未 done，停止，不允许交接。
-3. 运行 `dev_validate.py` 确认 DEV-RECORD 结构通过。
+3. 运行 `dev_validate.py` 确认 dev-record 结构通过。
 4. 给用户以下提示：
 
 ```text
@@ -177,7 +177,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 9. **先确认再写文件**：在对话中展示验证结果草稿，得到确认后才写入。
 10. **结构校验必须通过**：写入后运行 `dev_validate.py`。
 
-## DEV-RECORD.md 必需章节
+## dev-record.md 必需章节
 
 1. 开发概述（产品名称、前置文件路径、工单总数、构建命令、测试命令）
 2. 每个工单的开发记录

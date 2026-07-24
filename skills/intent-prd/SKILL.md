@@ -40,7 +40,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. 确认 INTENT.md 路径。路径不明时询问用户，不自动选择"最新一份"。
 2. 读取 INTENT.md 全文。
 3. 运行 `intent_validate.py` 确认通过。FAIL 则停止，提示用户先修正 INTENT.md。
-4. 从 INTENT.md 路径推导链路目录（INTENT.md 的父目录），PRD 写入同一目录下的 `PRD.md`。不创建目录、不写文件。
+4. 从 INTENT.md 路径推导链路目录（INTENT.md 的父目录），PRD 写入同一目录下的 `prd.md`。不创建目录、不写文件。
 
 输出：确认后的 INTENT.md 路径和候选 PRD 路径（同一链路目录下）。
 
@@ -63,11 +63,11 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 ### Phase 3：确认并写入
 
 1. 在回复中展示完整草稿。
-2. 用户确认全文后，将 PRD 写入链路目录下的 `PRD.md`（链路目录已由 intent-anchor 创建）。
+2. 用户确认全文后，将 PRD 写入链路目录下的 `prd.md`（链路目录已由 intent-anchor 创建）。
 3. 运行：
 
    ```bash
-   python "{intent-prd skill 目录}/scripts/prd_validate.py" "{PRD 路径}" "{INTENT.md 路径}"
+   python "{intent-prd skill 目录}/scripts/prd_validate.py" "{prd 路径}" "{intent.md 路径}"
    ```
 
 4. 修复结构问题后重新运行。若修复改变了能力覆盖或验收路径引用，之前的全文确认立即失效，必须重新确认。
@@ -79,9 +79,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 给用户以下可直接传给下一会话的 Prompt，并替换真实路径：
 
 ```text
-先读 intent-chain/{链路目录}/prd.md 和 INTENT.md，再完成任务拆分。
+先读 intent-chain/{链路目录}/prd.md 和 intent.md，再完成任务拆分。
 
-拆工单用 intent-issues（写入同一链路目录下的 ISSUES.md）——它会原生读取 INTENT.md 和 PRD，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
+拆工单用 intent-issues（写入同一链路目录下的 issues.md）——它会原生读取 INTENT.md 和 PRD，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
 
 只把 User Stories 中标注的能力作为开发范围。
 

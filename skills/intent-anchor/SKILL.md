@@ -90,7 +90,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash, WebSearch, WebFetch
 最终文件放在目标项目根目录：
 
 ```text
-intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/INTENT.md
+intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/intent.md
 ```
 
 - 日期使用生成当天的实际日期。
@@ -168,7 +168,7 @@ intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/INTENT.md
 ```text
 先读 intent-chain/{链路目录}/intent.md，再完成接下来的 [PRD / 任务拆分 / 开发]。
 
-生成 PRD 用 intent-prd（写入同一链路目录下的 PRD.md），拆工单用 intent-issues（写入同一链路目录下的 ISSUES.md）——它们会原生读取 INTENT.md，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
+生成 PRD 用 intent-prd（写入同一链路目录下的 prd.md），拆工单用 intent-issues（写入同一链路目录下的 issues.md）——它们会原生读取 INTENT.md，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
 
 只把“保留”的能力作为目标范围；“推迟”和“放弃”的能力不能悄悄加回来。
 
