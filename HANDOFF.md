@@ -240,7 +240,9 @@ intent-verify 的 Phase 5 标题、正文、交接 prompt、verify-record 模板
 
 ### git 状态
 
-未提交。基线：`783d263`。
+已提交为 `a11f12d`，已推送到远程。基线：`783d263`。
+
+文档修复 `388d3fb`：SKILL.md 和 README.md 中 3 处 S1-S8 → S1-S10（强制规则 #4、Phase 2.5 标题、文件结构注释），已推送。
 
 ---
 
@@ -301,17 +303,19 @@ intent-verify 的 Phase 5 标题、正文、交接 prompt、verify-record 模板
   三个 skill 合计 76 测试通过，两轮独立验收问题全部修复。
   有 INTENT.md 用 intent-prd / intent-issues，没有用原版 to-prd / to-issues。
 
-后续优化（未提交）：
+后续优化（已包含在 783d263 中）：
   - intent-prd Phase 4 交接 prompt 清理方案 A 遗留约束注入（只指路，不注入约束）
   - issues_validate.py 新增 V6（设计标准传递检查）和 V7（术语表传递检查），新增 6 个测试
-  - 76 测试全部通过
 
-任务 A3（未提交）：在 A2 基础上加性能/安全要求前移和 Stage Gate Check 改名。
-  - intent-anchor Phase 2 加 Step 10/11（主动问性能和安全要求），新增第 15/16 节、S9/S10、V13/V14
+任务 A3（已提交 a11f12d，已推送）：在 A2 基础上加性能/安全要求前移和 Stage Gate Check 改名。
+  - intent-anchor Phase 2 加第 10/11 项（主动问性能和安全要求），新增第 15/16 节、S9/S10、V13/V14
+  - 新建 intent-dev（4 项校验）和 intent-verify（6 项校验），从原 Stage Gate Check 拆分
   - intent-verify 全文 Stage Gate Check → 最终复核
   - intent-anchor 模板 stage-gate-check.md 重命名为 阶段核对表.md
   - 全部 skill 合计 243 passed
   - 中间踩坑：中文弯引号被替换为 ASCII 直引号导致 Python 语法错误，批量修复 5 处后通过
+  - 文档修复 388d3fb：3 处 S1-S8 → S1-S10，已推送
+  - 独立验收 25 项检查全部通过
 
 任务 B（待补测）：blue-interview P1/P2/P3/P8/P9 已落地，P3 试跑通过，P1/P2/P8/P9 待补测。
   skill 被 .gitignore 忽略，不入库。未经同意禁止修改。
