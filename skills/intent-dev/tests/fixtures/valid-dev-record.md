@@ -2,16 +2,16 @@
 
 <!--
   本文件由 intent-dev skill 生成。
-  前置文件：intent-anchor/valid-intent.md、prd/valid-prd.md、issues/valid-issues.md
+  前置文件：intent-chain/2026-07-24-001-团队进度助手/INTENT.md、PRD.md、ISSUES.md
   生成日期：2026-07-24
 -->
 
 ## 开发概述
 
 - 产品名称：团队进度助手
-- INTENT.md：intent-anchor/valid-intent.md
-- PRD：prd/valid-prd.md
-- 工单文件：issues/valid-issues.md
+- INTENT.md：intent-chain/2026-07-24-001-团队进度助手/INTENT.md
+- PRD：intent-chain/2026-07-24-001-团队进度助手/PRD.md
+- 工单文件：intent-chain/2026-07-24-001-团队进度助手/ISSUES.md
 - 工单总数：1
 - 构建命令：`npm run build`
 - 测试命令：`npm test`

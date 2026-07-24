@@ -2,7 +2,7 @@
 """VERIFY-RECORD.md 结构校验。
 
 用法：
-  python verify_validate.py /path/to/verify/VERIFY-RECORD.md
+  python verify_validate.py /path/to/intent-chain/{链路目录}/VERIFY-RECORD.md
 
 检查项：
   V1: 文件非空
@@ -226,7 +226,7 @@ def validate(verify_content: str) -> list[tuple[str, str, str]]:
 
 def main() -> int:
     if len(sys.argv) != 2:
-        print("用法: python verify_validate.py /path/to/verify/VERIFY-RECORD.md")
+        print("用法: python verify_validate.py /path/to/intent-chain/{链路目录}/VERIFY-RECORD.md")
         return 1
 
     verify_path = Path(sys.argv[1])

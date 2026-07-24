@@ -2,7 +2,7 @@
 """PRD 结构与 INTENT.md 交叉引用校验。
 
 用法：
-  python prd_validate.py /path/to/prd/PRD.md /path/to/intent-anchor/INTENT.md
+  python prd_validate.py /path/to/intent-chain/{链路目录}/PRD.md /path/to/intent-chain/{链路目录}/INTENT.md
 
 检查项：
   V1: PRD 文件非空
@@ -285,7 +285,7 @@ def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print("用法: python prd_validate.py /path/to/prd/PRD.md /path/to/intent-anchor/INTENT.md")
+        print("用法: python prd_validate.py /path/to/intent-chain/{链路目录}/PRD.md /path/to/intent-chain/{链路目录}/INTENT.md")
         return 1
 
     prd_path = Path(sys.argv[1])

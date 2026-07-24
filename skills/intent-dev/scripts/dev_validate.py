@@ -2,7 +2,7 @@
 """DEV-RECORD.md 结构与工单文件交叉引用校验。
 
 用法：
-  python dev_validate.py /path/to/dev/DEV-RECORD.md /path/to/ISSUES.md
+  python dev_validate.py /path/to/intent-chain/{链路目录}/DEV-RECORD.md /path/to/intent-chain/{链路目录}/ISSUES.md
 
 检查项：
   V1: 文件非空
@@ -197,7 +197,7 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
 
 def main() -> int:
     if len(sys.argv) != 3:
-        print("用法: python dev_validate.py /path/to/dev/DEV-RECORD.md /path/to/ISSUES.md")
+        print("用法: python dev_validate.py /path/to/intent-chain/{链路目录}/DEV-RECORD.md /path/to/intent-chain/{链路目录}/ISSUES.md")
         return 1
 
     dev_path = Path(sys.argv[1])
