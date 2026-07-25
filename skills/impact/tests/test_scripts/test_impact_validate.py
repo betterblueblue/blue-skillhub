@@ -46,10 +46,17 @@ def _make_repo(style_rules: str | None = None, context_pack: str | None = None) 
     with open(os.path.join(req_dir, "000-context-pack.md"), "w", encoding="utf-8") as f:
         f.write(context_pack)
 
-    # 020-design.md with §6 全局影响检查 (19 rows, all ☐)
+    # 020-design.md with §5.1 (无额外结构) and §6 全局影响检查 (19 rows, all ☐)
     rows = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
     with open(os.path.join(req_dir, "020-design.md"), "w", encoding="utf-8") as f:
-        f.write(f"# Design\n\n## 6. 全局影响检查\n\n| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |\n|---|------|----------|----------|-------------|\n{rows}\n")
+        f.write(
+            f"# Design\n\n"
+            f"## 5.1 额外结构与假设\n\n无额外结构\n\n"
+            f"## 6. 全局影响检查\n\n"
+            f"| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |\n"
+            f"|---|------|----------|----------|-------------|\n"
+            f"{rows}\n"
+        )
 
     # 030-implementation.md (minimal, no method calls)
     with open(os.path.join(req_dir, "030-implementation.md"), "w", encoding="utf-8") as f:
@@ -1679,6 +1686,889 @@ class TestGitBaselineDeletion(unittest.TestCase):
             self.assertIn("src/pre.py", changed, f"Deleted file should be in changed paths, got: {changed}")
         finally:
             sys.path.pop(0)
+
+
+# ===========================================================================
+# V23 Tests: Extra structure & assumptions
+# ===========================================================================
+
+
+def _v23_lines(stdout: str) -> list[str]:
+    return [l for l in stdout.splitlines() if "V23:" in l]
+
+
+def _write_design(req_dir: str, content: str):
+    """Write 020-design.md into req_dir."""
+    with open(os.path.join(req_dir, "020-design.md"), "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+class TestV23NoExtraStructure(unittest.TestCase):
+    """V23: Design with '无额外结构' should pass."""
+
+    def test_no_extra_structure_passes(self):
+        td, rd = _make_repo()
+        # _make_repo already writes §5.1 with 无额外结构
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 0, f"Expected exit 0, got {code}\n{out}")
+        self.assertTrue(any("无额外结构" in l for l in v23), f"Expected V23 PASS, got: {v23}")
+
+
+class TestV23MissingSection(unittest.TestCase):
+    """V23: Missing §5.1 section in full mode should FAIL."""
+
+    def test_missing_section_fails(self):
+        td, rd = _make_repo()
+        rows = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"# Design\n\n## 6. 全局影响检查\n\n| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |\n|---|------|----------|----------|-------------|\n{rows}\n")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Missing §5.1 should FAIL, got {code}\n{out}")
+        self.assertTrue(any("missing §5.1" in l for l in v23), f"Expected V23 FAIL, got: {v23}")
+
+
+class TestV23VagueEvidence(unittest.TestCase):
+    """V23: Evidence using '扩展性' or '最佳实践' must FAIL."""
+
+    def test_vague_evidence_extensibility_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 3. 变更明细
+
+### 代码（如涉及）
+
+| 设计项 | 对象 | 当前逻辑 | 变更操作 | 目标逻辑 | 影响说明 |
+|--------|------|----------|----------|----------|----------|
+| D01 | UserService.update | 直接更新 | 修改 | 加缓存层 | 全局 |
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 缓存层 | 高频查询场景 | 为了扩展性 | 需要重构数据访问层 |
+
+> **需要你确认的假设**
+>
+> - [ ] D01：缓存层——扩展性场景无实际依据
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Vague evidence '扩展性' should FAIL, got {code}\n{out}")
+        self.assertTrue(any("vague justifications" in l for l in v23), f"Expected V23 vague-evidence FAIL, got: {v23}")
+
+    def test_vague_evidence_best_practice_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 3. 变更明细
+
+### 代码（如涉及）
+
+| 设计项 | 对象 | 当前逻辑 | 变更操作 | 目标逻辑 | 影响说明 |
+|--------|------|----------|----------|----------|----------|
+| D01 | UserService.update | 直接更新 | 修改 | 加 Repository 抽象 | 全局 |
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | Repository 抽象层 | 统一数据访问 | 最佳实践 | 需要重构全部 Service |
+
+> **需要你确认的假设**
+>
+> - [ ] D01：Repository 抽象——最佳实践无实际依据
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Vague evidence '最佳实践' should FAIL, got {code}\n{out}")
+        self.assertTrue(any("vague justifications" in l for l in v23), f"Expected V23 vague-evidence FAIL, got: {v23}")
+
+
+class TestV23UnconfirmedNotListed(unittest.TestCase):
+    """V23: Unconfirmed assumptions not in confirmation list must FAIL."""
+
+    def test_unconfirmed_not_listed_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 分布式锁 | 两个客服同时修改同一订单 | 无依据，属于假设 | 加版本字段和冲突判断 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Unconfirmed not listed should FAIL, got {code}\n{out}")
+        self.assertTrue(any("no" in l.lower() and "需要你确认的假设" in l for l in v23), f"Expected V23 unconfirmed-not-listed FAIL, got: {v23}")
+
+
+class TestV23UnconfirmedWithListWarns(unittest.TestCase):
+    """V23: Unconfirmed assumptions listed in confirmation list should WARN (Phase 4)."""
+
+    def test_unconfirmed_listed_warns_in_phase4(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 分布式锁 | 两个客服同时修改同一订单 | 无依据，属于假设 | 加版本字段和冲突判断 |
+
+> **需要你确认的假设**
+>
+> - [ ] D01：分布式锁——并发修改场景无实际依据
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        # Should WARN (not FAIL) since no preflight executable and no source steps
+        self.assertEqual(code, 0, f"V23 WARN should not cause FAIL exit, got {code}\n{out}")
+        self.assertTrue(any("pending user confirmation" in l for l in v23), f"Expected V23 WARN, got: {v23}")
+        self.assertFalse(any("unresolved" in l.lower() for l in v23), f"Should not FAIL in Phase 4, got: {v23}")
+
+
+class TestV23UnconfirmedAtExecutionFails(unittest.TestCase):
+    """V23: Unconfirmed assumptions at execution stage should FAIL."""
+
+    def test_unconfirmed_with_preflight_executable_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 分布式锁 | 两个客服同时修改同一订单 | 无依据，属于假设 | 加版本字段和冲突判断 |
+
+> **需要你确认的假设**
+>
+> - [ ] D01：分布式锁——并发修改场景无实际依据
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        # Write preflight declaring executable
+        with open(os.path.join(rd, "060-preflight.md"), "w", encoding="utf-8") as f:
+            f.write("# Preflight\n\n## 结论\n\n- 是否允许进入执行阶段：是\n")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Unconfirmed at execution should FAIL, got {code}\n{out}")
+        self.assertTrue(any("unresolved" in l.lower() for l in v23), f"Expected V23 execution FAIL, got: {v23}")
+
+
+class TestV23ConfirmedEvidencePasses(unittest.TestCase):
+    """V23: Extra structure with concrete code-location evidence should PASS."""
+
+    def test_concrete_evidence_passes(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 乐观锁 | 两个用户同时修改同一条记录 | `src/services/user.service.ts:45` 存在无锁并发更新 | 加 version 字段和冲突判断 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 0, f"Concrete evidence should PASS, got {code}\n{out}")
+        self.assertTrue(any("concrete evidence" in l for l in v23), f"Expected V23 PASS, got: {v23}")
+
+
+class TestV23LightModeNotChecked(unittest.TestCase):
+    """V23: Light mode should not be checked."""
+
+    def test_light_mode_not_checked(self):
+        td = tempfile.mkdtemp()
+        req_dir = os.path.join(td, "req")
+        os.makedirs(req_dir)
+        # Light mode files
+        with open(os.path.join(req_dir, "000-context-pack.md"), "w", encoding="utf-8") as f:
+            f.write("# Context Pack\n\n## 1. 变更意图\n\n- 用户原话：test\n- 项目地图状态：无地图\n")
+        with open(os.path.join(req_dir, "040-light.md"), "w", encoding="utf-8") as f:
+            f.write("# Light\n\n## 关键链路深度检查\n\n- 不涉及\n")
+        with open(os.path.join(req_dir, "_active-state.md"), "w", encoding="utf-8") as f:
+            f.write(
+                "# Active State\n\n## 状态头\n\n- 当前阶段：Phase 4\n- 模式：light\n"
+                "- Phase 3 状态：快速通道跳过\n- Phase 3.5 定级：快速通道跳过\n"
+                "- 是否需要确认：false\n- 待执行 Step：none\n"
+                "- 上次提示 Step：none\n- 上次确认 Step：none\n- 上次完成 Step：none\n"
+                "- V1-only 计数：0\n\n## Step 台账\n\n"
+                "| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n\n"
+                "## 恢复备注\n\n- 无\n\n## 最近验证\n\n"
+                "- 命令：`python skills/impact/scripts/impact_validate.py`\n"
+                "- 结果：15 passed, 0 failed, 0 warnings\n"
+            )
+        code, out = _run_validator(td, req_dir)
+        v23 = _v23_lines(out)
+        # V23 should produce no output in light mode
+        self.assertEqual(len(v23), 0, f"V23 should not run in light mode, got: {v23}")
+
+
+# ===========================================================================
+# V24 Tests: Design→implementation mapping
+# ===========================================================================
+
+
+def _v24_lines(stdout: str) -> list[str]:
+    return [l for l in stdout.splitlines() if "V24:" in l]
+
+
+def _make_design_with_items(dxx_items: list[str], extra_section: str = "无额外结构") -> str:
+    """Create a 020-design.md with given Dxx items in §3."""
+    rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+    code_rows = "\n".join([
+        f"| {dxx} | UserService.update | 直接更新 | 修改 | 加字段 | 全局 |"
+        for dxx in dxx_items
+    ])
+    return f"""# Design
+
+## 3. 变更明细
+
+### 代码（如涉及）
+
+| 设计项 | 对象 | 当前逻辑 | 变更操作 | 目标逻辑 | 影响说明 |
+|--------|------|----------|----------|----------|----------|
+{code_rows}
+
+## 5.1 额外结构与假设
+
+{extra_section}
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+"""
+
+
+def _make_impl_with_mapping(mapping_rows: str, steps: str = "") -> str:
+    """Create a 030-implementation.md with §2.2 mapping table."""
+    return f"""# Implementation
+
+## 2.2 设计到实施的对照
+
+| 设计项（来自 020） | 对应 Step | 覆盖状态 |
+|---|---|---|
+{mapping_rows}
+
+## 3. 执行步骤
+
+{steps}
+"""
+
+
+class TestV24D01ButNoChanges(unittest.TestCase):
+    """V24: 020 has D01 but 030 says No changes → FAIL."""
+
+    def test_d01_with_no_changes_fails(self):
+        td, rd = _make_repo()
+        _write_design(rd, _make_design_with_items(["D01"]))
+        _write_impl(rd, "# Implementation\n\nNo changes.\n")
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 1, f"D01 with No changes should FAIL, got {code}\n{out}")
+        self.assertTrue(any("missing from 030" in l for l in v24), f"Expected V24 FAIL, got: {v24}")
+
+
+class TestV24UnknownDxx(unittest.TestCase):
+    """V24: 030 references D99 not in 020 → FAIL."""
+
+    def test_unknown_dxx_fails(self):
+        td, rd = _make_repo()
+        _write_design(rd, _make_design_with_items(["D01"]))
+        _write_impl(rd, _make_impl_with_mapping(
+            "| D01 | Step 1 | ✅ 已覆盖 |",
+            """### Step 1: 修改代码
+
+- **设计项**：D99
+- **维度**：代码
+- **文件**：`src/services/user.service.ts`
+- **操作**：
+  ```typescript
+  // code
+  ```
+- **确认类型**：改代码
+"""
+        ))
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 1, f"Unknown D99 should FAIL, got {code}\n{out}")
+        self.assertTrue(any("not in 020" in l for l in v24), f"Expected V24 unknown-ref FAIL, got: {v24}")
+
+
+class TestV24SourceStepWithoutDesign(unittest.TestCase):
+    """V24: Source Step without 设计项 → FAIL."""
+
+    def test_source_step_no_design_item_fails(self):
+        td, rd = _make_repo()
+        _write_design(rd, _make_design_with_items(["D01"]))
+        _write_impl(rd, _make_impl_with_mapping(
+            "| D01 | Step 1 | ✅ 已覆盖 |",
+            """### Step 1: 修改代码
+
+- **维度**：代码
+- **文件**：`src/services/user.service.ts`
+- **操作**：
+  ```typescript
+  // code
+  ```
+- **确认类型**：改代码
+"""
+        ))
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 1, f"Source Step without 设计项 should FAIL, got {code}\n{out}")
+        self.assertTrue(any("missing" in l and "设计项" in l for l in v24), f"Expected V24 FAIL, got: {v24}")
+
+
+class TestV24ExecutionInconsistency(unittest.TestCase):
+    """V24: 090 design items inconsistent with 030 → FAIL."""
+
+    def test_090_inconsistent_with_030_fails(self):
+        td, rd = _make_repo()
+        _write_design(rd, _make_design_with_items(["D01"]))
+        _write_impl(rd, _make_impl_with_mapping(
+            "| D01 | Step 1 | ✅ 已覆盖 |",
+            """### Step 1: 修改代码
+
+- **设计项**：D01
+- **维度**：代码
+- **文件**：`src/services/user.service.ts`
+- **操作**：
+  ```typescript
+  // code
+  ```
+- **确认类型**：改代码
+"""
+        ))
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: 修改代码
+
+- 确认类型：改代码
+- 设计项：D02
+- 操作对象：`src/services/user.service.ts`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：修改代码
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 1, f"090 inconsistent with 030 should FAIL, got {code}\n{out}")
+        self.assertTrue(any("inconsistent" in l.lower() for l in v24), f"Expected V24 inconsistent FAIL, got: {v24}")
+
+
+class TestV24NormalFullPasses(unittest.TestCase):
+    """V24: Normal Full design with proper mapping passes."""
+
+    def test_normal_full_passes(self):
+        td, rd = _make_repo()
+        _write_design(rd, _make_design_with_items(["D01"]))
+        _write_impl(rd, _make_impl_with_mapping(
+            "| D01 | Step 1 | ✅ 已覆盖 |",
+            """### Step 1: 修改代码
+
+- **设计项**：D01
+- **维度**：代码
+- **文件**：`src/services/user.service.ts`
+- **操作**：
+  ```typescript
+  // code
+  ```
+- **确认类型**：改代码
+"""
+        ))
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 0, f"Normal Full should pass, got {code}\n{out}")
+        self.assertTrue(any("mapped in 030" in l for l in v24), f"Expected V24 PASS, got: {v24}")
+
+
+class TestV24LightModeNotChecked(unittest.TestCase):
+    """V24: Light mode should not be checked."""
+
+    def test_light_mode_not_checked(self):
+        td = tempfile.mkdtemp()
+        req_dir = os.path.join(td, "req")
+        os.makedirs(req_dir)
+        with open(os.path.join(req_dir, "000-context-pack.md"), "w", encoding="utf-8") as f:
+            f.write("# Context Pack\n\n## 1. 变更意图\n\n- 用户原话：test\n- 项目地图状态：无地图\n")
+        with open(os.path.join(req_dir, "040-light.md"), "w", encoding="utf-8") as f:
+            f.write("# Light\n\n## 关键链路深度检查\n\n- 不涉及\n")
+        with open(os.path.join(req_dir, "_active-state.md"), "w", encoding="utf-8") as f:
+            f.write(
+                "# Active State\n\n## 状态头\n\n- 当前阶段：Phase 4\n- 模式：light\n"
+                "- Phase 3 状态：快速通道跳过\n- Phase 3.5 定级：快速通道跳过\n"
+                "- 是否需要确认：false\n- 待执行 Step：none\n"
+                "- 上次提示 Step：none\n- 上次确认 Step：none\n- 上次完成 Step：none\n"
+                "- V1-only 计数：0\n\n## Step 台账\n\n"
+                "| Step | 状态 | 写入对象 | 确认 | 验证等级 | 备注 |\n| --- | --- | --- | --- | --- | --- |\n\n"
+                "## 恢复备注\n\n- 无\n\n## 最近验证\n\n"
+                "- 命令：`python skills/impact/scripts/impact_validate.py`\n"
+                "- 结果：15 passed, 0 failed, 0 warnings\n"
+            )
+        code, out = _run_validator(td, req_dir)
+        v24 = _v24_lines(out)
+        self.assertEqual(len(v24), 0, f"V24 should not run in light mode, got: {v24}")
+
+
+# ===========================================================================
+# V23 Bypass path tests
+# ===========================================================================
+
+
+class TestV23TemplateCommentBypass(unittest.TestCase):
+    """V23: '无额外结构' in HTML comment should NOT cause PASS when table has bad content."""
+
+    def test_comment_no_extra_but_table_has_vague_evidence_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 3. 变更明细
+
+### 代码（如涉及）
+
+| 设计项 | 对象 | 当前逻辑 | 变更操作 | 目标逻辑 | 影响说明 |
+|--------|------|----------|----------|----------|----------|
+| D01 | UserService | 直接更新 | 修改 | 加缓存 | 全局 |
+
+## 5.1 额外结构与假设
+
+<!-- 没有额外结构时写"无额外结构"。 -->
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 缓存层 | 高频查询 | 为了扩展性 | 重构数据层 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Should FAIL (vague evidence in table), got {code}\n{out}")
+        self.assertTrue(any("vague" in l.lower() for l in v23), f"Expected vague FAIL, got: {v23}")
+
+
+class TestV23EmptyTableFails(unittest.TestCase):
+    """V23: Empty §5.1 table (no data rows) must FAIL, not PASS."""
+
+    def test_empty_table_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| — | — | — | — | — |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Empty table should FAIL, got {code}\n{out}")
+        self.assertTrue(any("empty" in l.lower() for l in v23), f"Expected empty-table FAIL, got: {v23}")
+
+
+class TestV23ExpandedVagueWords(unittest.TestCase):
+    """V23: Expanded vague words like '为了性能' must FAIL."""
+
+    def test_for_performance_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 3. 变更明细
+
+### 代码（如涉及）
+
+| 设计项 | 对象 | 当前逻辑 | 变更操作 | 目标逻辑 | 影响说明 |
+|--------|------|----------|----------|----------|----------|
+| D01 | UserService | 无缓存 | 修改 | 加缓存 | 全局 |
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 缓存层 | 高频查询慢 | 为了性能 | 重构数据层 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"'为了性能' should FAIL, got {code}\n{out}")
+        self.assertTrue(any("vague" in l.lower() for l in v23), f"Expected vague FAIL, got: {v23}")
+
+
+class TestV23VagueScenarioColumn(unittest.TestCase):
+    """V23: Vague words in '为了解决什么情况' column must FAIL."""
+
+    def test_vague_scenario_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 3. 变更明细
+
+### 代码（如涉及）
+
+| 设计项 | 对象 | 当前逻辑 | 变更操作 | 目标逻辑 | 影响说明 |
+|--------|------|----------|----------|----------|----------|
+| D01 | UserService | 无锁 | 修改 | 加锁 | 全局 |
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 分布式锁 | 为了安全性 | `src/UserService.java:45` | 加版本字段 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Vague scenario should FAIL, got {code}\n{out}")
+        self.assertTrue(any("vague" in l.lower() for l in v23), f"Expected vague FAIL, got: {v23}")
+
+
+class TestV23EmptyFieldFails(unittest.TestCase):
+    """V23: Empty/placeholder field in table row must FAIL."""
+
+    def test_empty_cost_field_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 3. 变更明细
+
+### 代码（如涉及）
+
+| 设计项 | 对象 | 当前逻辑 | 变更操作 | 目标逻辑 | 影响说明 |
+|--------|------|----------|----------|----------|----------|
+| D01 | UserService | 无锁 | 修改 | 加锁 | 全局 |
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 分布式锁 | 并发修改 | `src/UserService.java:45` | [待填] |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Empty field should FAIL, got {code}\n{out}")
+        self.assertTrue(any("empty" in l.lower() or "placeholder" in l.lower() for l in v23), f"Expected empty-field FAIL, got: {v23}")
+
+
+class TestV23InvalidDesignRef(unittest.TestCase):
+    """V23: 关联设计项 references Dxx not in §3 must FAIL."""
+
+    def test_invalid_design_ref_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 3. 变更明细
+
+### 代码（如涉及）
+
+| 设计项 | 对象 | 当前逻辑 | 变更操作 | 目标逻辑 | 影响说明 |
+|--------|------|----------|----------|----------|----------|
+| D01 | UserService | 无锁 | 修改 | 加锁 | 全局 |
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D99 | 分布式锁 | 并发修改 | `src/UserService.java:45` | 加版本字段 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Invalid design ref should FAIL, got {code}\n{out}")
+        self.assertTrue(any("not in §3" in l for l in v23), f"Expected invalid-ref FAIL, got: {v23}")
+
+
+# ===========================================================================
+# V24 Bypass path tests
+# ===========================================================================
+
+
+class TestV24NonExistentStep(unittest.TestCase):
+    """V24: Mapping references Step 99 that doesn't exist in §3 → FAIL."""
+
+    def test_non_existent_step_fails(self):
+        td, rd = _make_repo()
+        _write_design(rd, _make_design_with_items(["D01"]))
+        _write_impl(rd, _make_impl_with_mapping(
+            "| D01 | Step 99 | ✅ 已覆盖 |",
+            ""
+        ))
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 1, f"Non-existent Step 99 should FAIL, got {code}\n{out}")
+        self.assertTrue(any("not in §3" in l for l in v24), f"Expected non-existent-step FAIL, got: {v24}")
+
+
+class TestV24NoDxxButSourceSteps(unittest.TestCase):
+    """V24: 020 has no Dxx but 030 has source Steps → FAIL."""
+
+    def test_no_dxx_with_source_steps_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        # Design with no §3 section
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+无额外结构
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        _write_impl(rd, """# Implementation
+
+## 3. 执行步骤
+
+### Step 1: 修改代码
+
+- **维度**：代码
+- **文件**：`src/services/user.service.ts`
+- **操作**：
+  ```typescript
+  // code
+  ```
+- **确认类型**：改代码
+""")
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 1, f"No Dxx but source Steps should FAIL, got {code}\n{out}")
+        self.assertTrue(any("no design items" in l.lower() and "source" in l.lower() for l in v24), f"Expected no-Dxx FAIL, got: {v24}")
+
+
+class TestV24FlowStepWithDML(unittest.TestCase):
+    """V24: Step marked '流程步骤' but has DML content → FAIL."""
+
+    def test_flow_step_with_dml_fails(self):
+        td, rd = _make_repo()
+        _write_design(rd, _make_design_with_items(["D01"]))
+        _write_impl(rd, _make_impl_with_mapping(
+            "| D01 | Step 1 | ✅ 已覆盖 |",
+            """### Step 1: 修改代码
+
+- **设计项**：D01
+- **维度**：代码
+- **文件**：`src/services/user.service.ts`
+- **操作**：
+  ```typescript
+  // code
+  ```
+- **确认类型**：改代码
+
+### Step 2: 运行回填脚本
+
+- **设计项**：流程步骤，不改业务对象
+- **维度**：DML
+- **文件**：`050-validation/001-backfill.sql`
+- **操作**：执行回填 SQL
+- **确认类型**：DML
+"""
+        ))
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 1, f"Flow step with DML should FAIL, got {code}\n{out}")
+        self.assertTrue(any("Step 2" in l and "missing" in l.lower() for l in v24), f"Expected DML-bypass FAIL, got: {v24}")
+
+
+class TestV24Missing090DesignItem(unittest.TestCase):
+    """V24: 090 Step missing 设计项 field when 030 has it → FAIL."""
+
+    def test_090_missing_design_item_fails(self):
+        td, rd = _make_repo()
+        _write_design(rd, _make_design_with_items(["D01"]))
+        _write_impl(rd, _make_impl_with_mapping(
+            "| D01 | Step 1 | ✅ 已覆盖 |",
+            """### Step 1: 修改代码
+
+- **设计项**：D01
+- **维度**：代码
+- **文件**：`src/services/user.service.ts`
+- **操作**：
+  ```typescript
+  // code
+  ```
+- **确认类型**：改代码
+"""
+        ))
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: 修改代码
+
+- 确认类型：改代码
+- 操作对象：`src/services/user.service.ts`
+- 操作内容：修改代码
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 1, f"090 missing 设计项 should FAIL, got {code}\n{out}")
+        self.assertTrue(any("missing" in l.lower() and "设计项" in l for l in v24), f"Expected 090-missing FAIL, got: {v24}")
+
+
+class TestV24MappingVsStepInconsistency(unittest.TestCase):
+    """V24: Mapping says D01→Step1, but Step1 references D02 → FAIL."""
+
+    def test_mapping_step_inconsistency_fails(self):
+        td, rd = _make_repo()
+        _write_design(rd, _make_design_with_items(["D01", "D02"]))
+        _write_impl(rd, _make_impl_with_mapping(
+            "| D01 | Step 1 | ✅ 已覆盖 |\n| D02 | Step 2 | ✅ 已覆盖 |",
+            """### Step 1: 修改代码A
+
+- **设计项**：D02
+- **维度**：代码
+- **文件**：`src/services/a.ts`
+- **操作**：
+  ```typescript
+  // code
+  ```
+- **确认类型**：改代码
+
+### Step 2: 修改代码B
+
+- **设计项**：D01
+- **维度**：代码
+- **文件**：`src/services/b.ts`
+- **操作**：
+  ```typescript
+  // code
+  ```
+- **确认类型**：改代码
+"""
+        ))
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 1, f"Mapping inconsistency should FAIL, got {code}\n{out}")
+        self.assertTrue(any("inconsistent" in l.lower() for l in v24), f"Expected inconsistency FAIL, got: {v24}")
+
+
+class TestV24DuplicateDxx(unittest.TestCase):
+    """V24: 020 has duplicate D01 in §3 tables → FAIL."""
+
+    def test_duplicate_dxx_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 3. 变更明细
+
+### 数据库（如涉及）
+
+| 设计项 | 对象 | 类型 | 当前定义 | 变更操作 | 目标定义 | 影响说明 |
+|--------|------|------|----------|----------|----------|----------|
+| D01 | users.email | 字段 | VARCHAR(50) | ALTER | VARCHAR(100) | 全局 |
+
+### 代码（如涉及）
+
+| 设计项 | 对象 | 当前逻辑 | 变更操作 | 目标逻辑 | 影响说明 |
+|--------|------|----------|----------|----------|----------|
+| D01 | UserService | 无校验 | 修改 | 加校验 | 全局 |
+
+## 5.1 额外结构与假设
+
+无额外结构
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        _write_impl(rd, "# Implementation\n\nNo changes.\n")
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 1, f"Duplicate D01 should FAIL, got {code}\n{out}")
+        self.assertTrue(any("duplicate" in l.lower() for l in v24), f"Expected duplicate FAIL, got: {v24}")
 
 
 if __name__ == "__main__":

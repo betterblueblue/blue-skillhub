@@ -2,7 +2,7 @@
 
 ImpactRadar 用于修改已有系统。它会先从代码、配置、接口、数据库结构和测试中查清影响范围，再生成分析文档，并在用户逐步确认后协助实施。
 
-当前版本为 v5.8。`impact_validate.py` 提供 V1-V22 共 22 项自动检查，用来发现文档缺失、执行记录不完整、状态矛盾和明显的改动遗漏。
+当前版本为 v5.9。`impact_validate.py` 提供 V1-V24 共 24 项自动检查，用来发现文档缺失、执行记录不完整、状态矛盾和明显的改动遗漏。
 
 ImpactRadar 不负责从 0 到 1 搭建完整系统。只有模糊产品想法时，可以先使用 IntentAnchor；刚接手陌生项目时，可以先使用 Pathfinder。
 
@@ -184,7 +184,7 @@ python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|ful
 
 `--bootstrap` 会暂时跳过 V18。其他检查全部通过后，脚本把真实结果写入 `_active-state.md`；然后再不带 `--bootstrap` 运行一次，确认 V18 也通过。写入失败时脚本返回非零退出码。
 
-### V1-V22
+### V1-V24
 
 | 编号 | 检查内容 | 主要结果 |
 |---|---|---|
@@ -210,6 +210,8 @@ python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|ful
 | V20 | 每个执行 Step 是否记录匹配编号的用户确认 | FAIL |
 | V21 | context pack 中的事实是否标明来源 | FAIL |
 | V22 | 存在 Pathfinder 地图时，是否记录采用或重新验证了哪些内容 | FAIL |
+| V23 | 020 §5.1 额外结构与假设是否完整填写，证据是否具体 | FAIL / WARN |
+| V24 | 020 Dxx ↔ 030 Step ↔ 090 Step 设计到实施映射是否一致 | FAIL |
 
 V17 目前只覆盖已经实现的特定模式，例如路由显示文案只改 `label`、漏改同一对象的 `title`。它不是通用业务验收器，不能证明所有需求都已完整实现。
 

@@ -498,6 +498,14 @@ python eval/real-projects/scripts/validate_real_projects.py   # 退出码 1
 
 ---
 
+## 待办：intent-design 真实项目验证留证
+
+会话中约定用一个真实的 0→1 小项目生成 `architecture.md` 和 `design.md`，确认两份文档能产出实际内容。当前仓库没有保留对应的 `intent-chain/` 示例目录或运行记录，因此无法确认是尚未执行，还是执行后删除了临时产物。
+
+完成标准：选择一个真实小项目运行到 intent-design，记录项目、产物路径、校验命令和结果。产物是否入库由用户另行决定。
+
+---
+
 ## 新会话开场最短上下文
 
 ```text
@@ -551,6 +559,7 @@ python eval/real-projects/scripts/validate_real_projects.py   # 退出码 1
   - README intent-chain 流程图加 intent-design 必经环节
   - 302 passed，全链路冒烟测试通过
   - 起因：AI 方案设计阶段容易过度设计，强制文档化架构假设和代价来拦住
+  - TODO：用一个真实的 0→1 小项目运行到 intent-design，并记录产物路径、校验命令和结果
 
 任务 B（待补测）：blue-interview P1/P2/P3/P8/P9 已落地，P3 试跑通过，P1/P2/P8/P9 待补测。
   skill 被 .gitignore 忽略，不入库。未经同意禁止修改。
