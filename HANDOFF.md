@@ -1,7 +1,7 @@
 # 交接文档
 
 > 写给完全没有上下文的新会话。最近更新：2026-07-25。
-> 本文档覆盖六个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、blue-interview 优化（部分完成，待补测）。
+> 本文档覆盖七个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、blue-interview 优化（部分完成，待补测）。
 
 ---
 
@@ -447,6 +447,57 @@ python eval/real-projects/scripts/validate_real_projects.py   # 退出码 1
 
 ---
 
+## 任务 A6：intent-design 新建与下游消费（已完成）
+
+### 背景
+
+用户看到一个普遍问题：AI 在方案设计阶段容易过度设计，为了覆盖理论上可能但现实中不会发生的边界条件，引入不必要的复杂度（比如动底层架构）。根本原因是设计阶段没有强制把架构假设和代价写清楚，下游也没有校验点拦住。
+
+用户决定新建 `intent-design` skill，在 PRD 和 Issues 之间插入一个设计环节，强制产出 `architecture.md`（全局架构假设）和 `design.md`（功能设计），并让下游 skill（intent-issues / intent-verify / intent-dev）消费 `architecture.md`。
+
+### 改造范围
+
+分两步：
+
+1. **新建 intent-design skill**：SKILL.md + templates（architecture.md / design.md）+ scripts（design_validate.py）+ tests
+2. **下游 skill 消费 architecture.md**：intent-prd / intent-issues / intent-verify / intent-dev 的 SKILL.md、校验脚本、模板、fixture、测试全部更新，把 architecture.md 从可选变为强制输入
+
+### 改了什么
+
+**第 1 步：新建 intent-design（全新 skill）**
+
+| 文件 | 内容 |
+|---|---|
+| `skills/intent-design/SKILL.md` | 5 个 Phase：输入校验 → 写 architecture.md → 写 design.md → 自检 → 交接。强制要求 PRD 作为输入 |
+| `skills/intent-design/templates/architecture.md` | 模板：技术栈、模块边界、核心数据流、依赖关系、已知约束、假设与代价 |
+| `skills/intent-design/templates/design.md` | 模板：功能概述、接口设计、数据模型、状态转换、错误处理、与架构对齐说明 |
+| `skills/intent-design/scripts/design_validate.py` | 校验：architecture.md 4 项（A1-A4）、design.md 6 项（D1-D6）、交叉 2 项（X1-X2），共 12 项 |
+| `skills/intent-design/tests/test_design_validate.py` | 行为测试 |
+
+**第 2 步：下游强制消费 architecture.md**
+
+| skill | 改动 |
+|---|---|
+| intent-prd | Phase 4 交接 prompt 指向 intent-design（强制，非可选） |
+| intent-issues | Phase 1 前置条件加 architecture.md；Phase 4 校验命令含 architecture.md；Phase 5 交接 prompt 带 architecture.md；issue-template 加"涉及模块"子节；issues_validate.py V11 从可选变强制 |
+| intent-verify | Phase 1 前置条件加 architecture.md；加"技术漂移复核"章节；verify_validate.py V8 从可选变强制 |
+| intent-dev | Phase 1 引用 architecture.md / design.md；Phase 3 交接带 architecture.md |
+| README.md | intent-chain 流程图加 intent-design 必经环节；描述更新 |
+
+对应的 fixture 和测试同步更新：valid-issues.md 加"涉及模块"、valid-verify-record.md 加"技术漂移复核"、test_issues_validate.py 和 test_verify_validate.py 加强制检查测试。
+
+### 验证状态
+
+- `python -m pytest skills/ -q` → 302 passed，退出码 0
+- 全链路冒烟测试：`design_validate.py` → `issues_validate.py` → `verify_validate.py` 串行调用，全部通过
+- Lint 无错误
+
+### git 状态
+
+已提交。基线：`9873c55`。
+
+---
+
 ## 新会话开场最短上下文
 
 ```text
@@ -491,6 +542,15 @@ python eval/real-projects/scripts/validate_real_projects.py   # 退出码 1
   - README 安装命令加 _common 目录
   - 145 passed（比之前多 2 个 V2 测试）
   - .claude/.codex 运行态不修改
+
+任务 A6（已提交，已推送）：intent-design 新建与下游消费。
+  - 新建 intent-design skill：强制产出 architecture.md（全局架构假设）和 design.md（功能设计）
+  - 在 PRD 和 Issues 之间插入设计环节，强制把架构假设和代价写清楚
+  - 下游 skill（intent-prd / intent-issues / intent-verify / intent-dev）强制消费 architecture.md
+  - intent-issues V11、intent-verify V8 从可选变强制检查
+  - README intent-chain 流程图加 intent-design 必经环节
+  - 302 passed，全链路冒烟测试通过
+  - 起因：AI 方案设计阶段容易过度设计，强制文档化架构假设和代价来拦住
 
 任务 B（待补测）：blue-interview P1/P2/P3/P8/P9 已落地，P3 试跑通过，P1/P2/P8/P9 待补测。
   skill 被 .gitignore 忽略，不入库。未经同意禁止修改。
