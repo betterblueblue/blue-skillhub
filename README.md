@@ -160,6 +160,7 @@ Pathfinder 和 ImpactRadar 完成一次任务后，会在回复中附上一段�
 1. 安装需要的 Skill。
 
 ```powershell
+Copy-Item "E:\agent\blue-skillhub\skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force

@@ -132,6 +132,26 @@ class TestThenVerificationLevel(unittest.TestCase):
         self.assertEqual("FAIL", result[1])
         self.assertIn("命令输出", result[2])
 
+    def test_v2_with_command_only_no_output_fails(self):
+        """V2 只有命令但没有输出结果，不算有效证据。"""
+        content = _dev_content().replace(
+            "- [x] Then: 记录文件存在 — V2，命令 `npm test` 输出: 4 passed",
+            "- [x] Then: 记录文件存在 — V2，命令 `npm test`",
+        )
+        result = _result(content, _issues_content(), "V3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("命令输出", result[2])
+
+    def test_v2_with_output_only_no_command_fails(self):
+        """V2 只有输出结果但没有命令，不算有效证据。"""
+        content = _dev_content().replace(
+            "- [x] Then: 记录文件存在 — V2，命令 `npm test` 输出: 4 passed",
+            "- [x] Then: 记录文件存在 — V2，输出: 4 passed",
+        )
+        result = _result(content, _issues_content(), "V3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("命令输出", result[2])
+
     def test_valid_levels_passes(self):
         result = _result(_dev_content(), _issues_content(), "V3")
         self.assertEqual("PASS", result[1])

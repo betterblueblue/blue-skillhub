@@ -2,7 +2,10 @@
 """INTENT.md 结构与交叉引用校验。
 
 用法：
-  python intent_validate.py /path/to/intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/intent.md
+  python intent_validate.py <intent.md> [--baseline <git_ref>]
+
+  --baseline <git_ref>  可选：与 git 中的基线版本比较能力决策和路径 ID 变化，
+                        变化时输出 WARN 提示（不影响 PASS/FAIL）。
 
 检查项：
   V1: 文件非空
@@ -30,6 +33,17 @@ import re
 import sys
 from collections import Counter
 from pathlib import Path
+
+# 公共 Markdown 解析函数
+_COMMON_DIR = Path(__file__).resolve().parent.parent.parent / "_common"
+if str(_COMMON_DIR) not in sys.path:
+    sys.path.insert(0, str(_COMMON_DIR))
+from markdown_parser import (
+    section,
+    subsection,
+    table_rows as _table_rows,
+    has_placeholder as _has_placeholder,
+)
 
 
 REQUIRED_SECTIONS = [
@@ -77,40 +91,13 @@ OUTPUT_PATH_RE = re.compile(
 
 
 def _section(content: str, heading: str) -> str:
-    match = re.search(
-        rf"^{re.escape(heading)}\s*$\n?(.*?)(?=^##\s+\d+\.\s|\Z)",
-        content,
-        re.MULTILINE | re.DOTALL,
-    )
-    return match.group(1) if match else ""
+    """INTENT.md 使用编号章节（## 1. Title），需要 numbered=True。"""
+    return section(content, heading, numbered=True)
 
 
 def _subsection(content: str, heading: str) -> str:
-    match = re.search(
-        rf"^###\s+{re.escape(heading)}\s*$\n?(.*?)(?=^###\s+|\Z)",
-        content,
-        re.MULTILINE | re.DOTALL,
-    )
-    return match.group(1) if match else ""
-
-
-def _table_rows(content: str, header_first_cell: str) -> list[list[str]]:
-    rows: list[list[str]] = []
-    for line in content.splitlines():
-        stripped = line.strip()
-        if not stripped.startswith("|") or not stripped.endswith("|"):
-            continue
-        columns = [cell.strip() for cell in stripped.strip("|").split("|")]
-        if not columns or columns[0] == header_first_cell:
-            continue
-        if all(re.fullmatch(r":?-{3,}:?", cell) for cell in columns):
-            continue
-        rows.append(columns)
-    return rows
-
-
-def _has_placeholder(value: str) -> bool:
-    return bool(re.search(r"\{[^{}]+\}", value))
+    """INTENT.md 语义复核子节只以 ### 为边界。"""
+    return subsection(content, heading, stop_at_h2=False)
 
 
 def _looks_like_full_confirmation(value: str) -> bool:
@@ -685,12 +672,103 @@ def _path_error(intent_path: Path) -> str | None:
     return None
 
 
+# ---------------------------------------------------------------------------
+# 基线对比（--baseline）
+# ---------------------------------------------------------------------------
+
+
+def _read_git_baseline(file_path: Path, git_ref: str) -> str | None:
+    """从 git 读取文件在指定 ref 的版本。
+
+    Returns:
+        文件内容字符串；无法读取时返回 None。
+    """
+    import subprocess
+
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True, text=True, cwd=str(file_path.parent),
+            timeout=10,
+        )
+        if result.returncode != 0:
+            return None
+        repo_root = result.stdout.strip()
+        rel_path = str(file_path.relative_to(repo_root)).replace("\\", "/")
+
+        result = subprocess.run(
+            ["git", "show", f"{git_ref}:{rel_path}"],
+            capture_output=True, text=True, cwd=repo_root,
+            timeout=10,
+        )
+        if result.returncode == 0:
+            return result.stdout
+        return None
+    except (subprocess.SubprocessError, FileNotFoundError, ValueError):
+        return None
+
+
+def _parse_path_ids(content: str) -> set[str]:
+    """从 INTENT.md 第 14 节提取验收路径 ID。"""
+    section_text = _section(content, "## 14. 验收路径")
+    rows = _table_rows(section_text, "路径 ID")
+    return {row[0] for row in rows if len(row) >= 1 and PATH_ID_RE.fullmatch(row[0])}
+
+
+def _compare_baseline(baseline_content: str, current_content: str) -> list[str]:
+    """比较基线和当前版本的关键字段变化，返回 WARN 提示列表。"""
+    warnings: list[str] = []
+
+    old_caps, _ = _parse_capabilities(baseline_content)
+    new_caps, _ = _parse_capabilities(current_content)
+
+    for cap_id in sorted(set(old_caps) | set(new_caps)):
+        if cap_id not in new_caps:
+            warnings.append(
+                f"能力 {cap_id}（{old_caps[cap_id]['name']}）在新版本中被删除"
+                f"（原决策: {old_caps[cap_id]['decision']}）"
+            )
+        elif cap_id not in old_caps:
+            warnings.append(
+                f"能力 {cap_id}（{new_caps[cap_id]['name']}）在新版本中新增"
+                f"（决策: {new_caps[cap_id]['decision']}）"
+            )
+        elif old_caps[cap_id]["decision"] != new_caps[cap_id]["decision"]:
+            warnings.append(
+                f"能力 {cap_id}（{new_caps[cap_id]['name']}）决策从"
+                f"'{old_caps[cap_id]['decision']}' 变为 '{new_caps[cap_id]['decision']}'"
+            )
+
+    old_paths = _parse_path_ids(baseline_content)
+    new_paths = _parse_path_ids(current_content)
+
+    for path_id in sorted(old_paths - new_paths):
+        warnings.append(f"验收路径 {path_id} 在新版本中被删除")
+    for path_id in sorted(new_paths - old_paths):
+        warnings.append(f"验收路径 {path_id} 在新版本中新增")
+
+    return warnings
+
+
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("用法: python intent_validate.py /path/to/intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/intent.md")
+    # 解析参数
+    args = sys.argv[1:]
+    baseline_ref: str | None = None
+    if "--baseline" in args:
+        idx = args.index("--baseline")
+        if idx + 1 < len(args):
+            baseline_ref = args[idx + 1]
+            args = args[:idx] + args[idx + 2:]
+        else:
+            print("用法: python intent_validate.py <intent.md> [--baseline <git_ref>]")
+            return 1
+
+    if len(args) != 1:
+        print("用法: python intent_validate.py <intent.md> [--baseline <git_ref>]")
+        print("  --baseline <git_ref>  可选：与 git 中的基线版本比较能力决策和路径 ID 变化")
         return 1
 
-    intent_path = Path(sys.argv[1])
+    intent_path = Path(args[0])
     if not intent_path.exists():
         print(f"FAIL: 文件不存在: {intent_path}")
         return 1
@@ -720,6 +798,23 @@ def main() -> int:
         print("  结论: 结构不符合当前契约，不得交接")
         return 1
     print("  结论: 结构符合当前契约；语义仍需用户复核")
+
+    # 基线对比
+    if baseline_ref:
+        baseline_content = _read_git_baseline(intent_path, baseline_ref)
+        if baseline_content is None:
+            print(f"\n  [WARN] 无法从 git 读取基线版本（ref: {baseline_ref}），跳过基线对比")
+        else:
+            warnings = _compare_baseline(baseline_content, content)
+            if warnings:
+                print(f"\n{'=' * 60}")
+                print(f"基线对比（ref: {baseline_ref}）")
+                print(f"{'=' * 60}\n")
+                for w in warnings:
+                    print(f"  [WARN] {w}")
+            else:
+                print(f"\n  基线对比（ref: {baseline_ref}）：无变化")
+
     return 0
 
 
