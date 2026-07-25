@@ -1,6 +1,6 @@
 ---
 name: intent-issues
-description: 读取 INTENT.md 和 PRD，按垂直切片拆分工单。工单的 Acceptance criteria 自动引用验收路径编号，输出前自动检查所有路径被覆盖。如果链路目录下有 architecture.md，工单的"涉及模块"字段会引用架构文档中定义的模块名。强制要求 INTENT.md 和 PRD 作为输入。
+description: 读取 INTENT.md 和 PRD，按垂直切片拆分工单。工单的 Acceptance criteria 自动引用验收路径编号，输出前自动检查所有路径被覆盖。工单的"涉及模块"字段引用架构文档中定义的模块名。强制要求 INTENT.md、PRD 和 architecture.md 作为输入。
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
@@ -20,7 +20,8 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 1. 必须存在通过 `intent_validate.py` 校验的 `INTENT.md`。
 2. 必须存在通过 `prd_validate.py` 校验的 `PRD`。
-3. 两者缺一不可。
+3. 必须存在通过 `design_validate.py` 校验的 `architecture.md` 和 `design.md`。
+4. 三者缺一不可。
 
 ## 垂直切片规则
 
@@ -44,7 +45,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. 确认 INTENT.md 和 PRD 路径。
 2. 读取两者全文。
 3. 运行 `intent_validate.py` 和 `prd_validate.py` 确认通过。任一 FAIL 则停止。
-4. 检查链路目录下是否有 `architecture.md`。有则读取全文，作为模块定义的来源；没有则跳过，不影响后续流程。
+4. 确认 `architecture.md` 和 `design.md` 存在，运行 `design_validate.py` 确认通过。任一缺失或 FAIL 则停止，提示用户先运行 intent-design。
 5. 从 INTENT.md 路径推导链路目录，工单写入同一目录下的 `issues.md`。不创建目录、不写文件。
 
 输出：确认后的文件路径和候选输出路径。
@@ -59,7 +60,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
    - **What to build**：端到端行为描述，不写逐层实现
    - **Acceptance criteria**：从 PRD 的 Given/When/Then 场景拆解。Given 和 When 作为场景上下文，每条 Then 拆为一个可勾选的 `[ ] Then: ...` 条目。引用验收路径编号（如 `[P01]`）。
    - **User stories covered**：对应的 User Story 编号和能力 ID
-3. 如果链路目录下有 architecture.md，每个工单必须包含**涉及模块**子节，列出该工单涉及的模块名（引用 architecture.md 第 2 节定义的模块名）。
+3. 如果链路目录下有 architecture.md，每个工单必须包含**涉及模块**子节，列出该工单涉及的模块名（引用 architecture.md 第 2 节定义的模块名）。architecture.md 是强制前置，此子节必填。
 4. 如果设计标准存在，涉及界面的工单 Acceptance criteria 必须包含"对照 {设计文件} 结构一致"。
 5. 如果术语表存在，涉及界面的工单必须要求使用术语表中的界面文案。
 6. 如果 INTENT.md 有性能要求（第 15 节），涉及的工单 Acceptance criteria 必须引用性能要求 ID（如 `[PF01]`）。
@@ -89,7 +90,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
    python "{intent-issues skill 目录}/scripts/issues_validate.py" "{issues 路径}" "{intent.md 路径}" "{prd 路径}" ["{architecture.md 路径}"]
    ```
 
-   architecture.md 路径是可选参数。链路目录下有 architecture.md 时传入，校验器会检查工单的"涉及模块"是否引用了架构文档中定义的模块名。
+   architecture.md 路径是必需参数。校验器会检查工单的"涉及模块"是否引用了架构文档中定义的模块名。
 
 3. 修复结构问题后重新运行。若有验收路径未被覆盖，补充工单或请用户确认放弃。
 
@@ -114,7 +115,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 3. **工单的 Acceptance criteria 必须引用验收路径编号**，并用 Given/When/Then 结构拆解验收条件。
 4. **设计标准、术语表、性能和安全要求约束必须传递到工单**。性能要求引用 PF 编号，安全要求引用 SF 编号。
 5. **先确认再写文件**。
-6. **结构校验必须通过**：写入后运行 `issues_validate.py`（需传入 issues.md、intent.md 和 prd.md 三个路径，architecture.md 路径可选），校验器会交叉检查验收路径、保留能力、设计标准、术语表、性能和安全要求是否与 INTENT.md 一致，以及 PRD 的 Then/And 条件是否被工单覆盖。如果传入了 architecture.md 路径，还会检查工单的"涉及模块"是否引用了架构文档中定义的模块名。
+6. **结构校验必须通过**：写入后运行 `issues_validate.py`（需传入 issues.md、intent.md、prd.md 和 architecture.md 四个路径），校验器会交叉检查验收路径、保留能力、设计标准、术语表、性能和安全要求是否与 INTENT.md 一致，以及 PRD 的 Then/And 条件是否被工单覆盖，以及工单的"涉及模块"是否引用了架构文档中定义的模块名。
 
 ## 工单必需段落
 
@@ -124,7 +125,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 2. Acceptance criteria
 3. Blocked by
 4. User stories covered
-5. 涉及模块（仅当链路目录下有 architecture.md 时必需）
+5. 涉及模块
 
 文件末尾必须包含：
 

@@ -373,15 +373,15 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
     else:
         results.append(("V7", "PASS", "与 INTENT.md 交叉校验一致"))
 
-    # V8: 技术漂移复核检查（可选，仅当 architecture_content 非空时）
-    if architecture_content:
+    # V8: 技术漂移复核检查（强制——intent-design 是 intent-chain 的必经环节）
+    if not architecture_content:
+        results.append(("V8", "FAIL", "未提供 architecture.md；intent-design 是必经环节，architecture.md 必须存在"))
+    else:
         tech_drift = _subsection(gate_section, TECH_DRIFT_HEADING)
         if not tech_drift.strip():
-            results.append(("V8", "FAIL", "提供了 architecture.md 但最终复核缺少技术漂移复核子节"))
+            results.append(("V8", "FAIL", "最终复核缺少技术漂移复核子节"))
         else:
             results.append(("V8", "PASS", "技术漂移复核子节存在"))
-    else:
-        results.append(("V8", "PASS", "未提供 architecture.md，不检查技术漂移复核"))
 
     return results
 
