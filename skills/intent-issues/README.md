@@ -29,7 +29,7 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 
 ## 校验
 
-`issues_validate.py` 运行 10 项检查：
+`issues_validate.py` 运行 11 项检查：
 
 | 检查项 | 检查内容 |
 |---|---|
@@ -43,9 +43,10 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 | V8 | INTENT.md 有性能要求时，所有性能要求 ID 被工单引用 |
 | V9 | INTENT.md 有安全要求时，所有安全要求 ID 被工单引用 |
 | V10 | PRD 中每条验收路径的 Then/And 条件被工单覆盖 |
+| V11 | 提供 architecture.md 时，工单的"涉及模块"引用的模块名在架构文档中定义 |
 
 ```bash
-python skills/intent-issues/scripts/issues_validate.py intent-chain/{链路目录}/issues.md intent-chain/{链路目录}/intent.md intent-chain/{链路目录}/prd.md
+python skills/intent-issues/scripts/issues_validate.py intent-chain/{链路目录}/issues.md intent-chain/{链路目录}/intent.md intent-chain/{链路目录}/prd.md [intent-chain/{链路目录}/architecture.md]
 ```
 
 ## 文件结构
@@ -57,7 +58,7 @@ intent-issues/
 ├── templates/
 │   └── issue-template.md             ← 工单模板
 ├── scripts/
-│   └── issues_validate.py            ← 10 项结构与交叉引用检查
+│   └── issues_validate.py            ← 11 项结构与交叉引用检查
 └── tests/
     ├── fixtures/valid-issues.md       ← 有效样本
     └── test_issues_validate.py        ← 行为回归测试

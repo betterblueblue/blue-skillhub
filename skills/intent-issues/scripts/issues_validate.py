@@ -15,6 +15,7 @@
   V8: INTENT.md 有性能要求时，所有性能要求 ID 被至少一个工单引用（交叉检查 INTENT.md）
   V9: INTENT.md 有安全要求时，所有安全要求 ID 被至少一个工单引用（交叉检查 INTENT.md）
   V10: PRD 中每条验收路径的 Then/And 条件数量不少于工单中对应路径的条目数（交叉检查 PRD）
+  V11: 提供 architecture.md 时，工单的"涉及模块"引用的模块名必须在架构文档第 2 节中定义（交叉检查 architecture.md）
 
 本脚本不能验证工单的技术可行性，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -149,6 +150,28 @@ def _count_prd_thens_per_path(prd_content: str) -> dict[str, int]:
     return result
 
 
+def _parse_architecture_modules(arch_content: str) -> set[str]:
+    """从 architecture.md 第 2 节提取模块名。"""
+    section = _section(arch_content, "## 2. 模块与边界")
+    rows = _table_rows(section, "模块")
+    return {row[0] for row in rows if len(row) >= 1 and not _has_placeholder(row[0])}
+
+
+def _extract_issue_modules(issue: str) -> set[str]:
+    """从工单的"涉及模块"子节提取模块名列表项。"""
+    modules_match = re.search(
+        r"### 涉及模块\s*\n(.*?)(?=^###\s+|\Z)",
+        issue,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not modules_match:
+        return set()
+    modules_text = modules_match.group(1)
+    # 提取列表项中的模块名，跳过注释和占位符
+    modules = re.findall(r"^-\s+(.+)$", modules_text, re.MULTILINE)
+    return {m.strip() for m in modules if m.strip() and not m.strip().startswith("{")}
+
+
 def _count_issue_thens_per_path(issues: list[str]) -> dict[str, int]:
     """从工单的 Acceptance criteria 中统计每条路径的 Then/And 条目数。"""
     result: dict[str, int] = {}
@@ -168,7 +191,7 @@ def _count_issue_thens_per_path(issues: list[str]) -> dict[str, int]:
     return result
 
 
-def validate(issues_content: str, intent_content: str, prd_content: str = "") -> list[tuple[str, str, str]]:
+def validate(issues_content: str, intent_content: str, prd_content: str = "", architecture_content: str = "") -> list[tuple[str, str, str]]:
     """返回 (检查项, 结果, 说明)。"""
     results: list[tuple[str, str, str]] = []
 
@@ -379,17 +402,45 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "") ->
     else:
         results.append(("V10", "PASS", "未提供 PRD，跳过 Then 覆盖检查"))
 
+    # V11: 架构模块引用检查（可选，仅当 architecture_content 非空时）
+    if architecture_content:
+        arch_modules = _parse_architecture_modules(architecture_content)
+        if arch_modules:
+            v11_errors: list[str] = []
+            for i, issue in enumerate(issues, 1):
+                modules_text = re.search(
+                    r"### 涉及模块\s*\n(.*?)(?=^###\s+|\Z)",
+                    issue,
+                    re.MULTILINE | re.DOTALL,
+                )
+                if not modules_text:
+                    v11_errors.append(f"Issue {i} 缺少涉及模块子节")
+                else:
+                    issue_modules = _extract_issue_modules(issue)
+                    undefined = issue_modules - arch_modules
+                    if undefined:
+                        v11_errors.append(f"Issue {i} 引用了架构文档中未定义的模块: {sorted(undefined)}")
+            if v11_errors:
+                results.append(("V11", "FAIL", "; ".join(v11_errors)))
+            else:
+                results.append(("V11", "PASS", f"全部工单的涉及模块引用了架构文档中定义的模块"))
+        else:
+            results.append(("V11", "PASS", "architecture.md 无模块定义，不适用"))
+    else:
+        results.append(("V11", "PASS", "未提供 architecture.md，不检查模块引用"))
+
     return results
 
 
 def main() -> int:
     if len(sys.argv) < 3:
-        print("用法: python issues_validate.py /path/to/intent-chain/{链路目录}/issues.md /path/to/intent-chain/{链路目录}/intent.md [/path/to/intent-chain/{链路目录}/prd.md]")
+        print("用法: python issues_validate.py /path/to/intent-chain/{链路目录}/issues.md /path/to/intent-chain/{链路目录}/intent.md [/path/to/intent-chain/{链路目录}/prd.md] [/path/to/intent-chain/{链路目录}/architecture.md]")
         return 1
 
     issues_path = Path(sys.argv[1])
     intent_path = Path(sys.argv[2])
     prd_path = Path(sys.argv[3]) if len(sys.argv) >= 4 else None
+    arch_path = Path(sys.argv[4]) if len(sys.argv) >= 5 else None
 
     if not issues_path.exists():
         print(f"FAIL: Issues 文件不存在: {issues_path}")
@@ -401,13 +452,16 @@ def main() -> int:
     issues_content = issues_path.read_text(encoding="utf-8")
     intent_content = intent_path.read_text(encoding="utf-8")
     prd_content = prd_path.read_text(encoding="utf-8") if prd_path and prd_path.exists() else ""
-    results = validate(issues_content, intent_content, prd_content)
+    architecture_content = arch_path.read_text(encoding="utf-8") if arch_path and arch_path.exists() else ""
+    results = validate(issues_content, intent_content, prd_content, architecture_content)
 
     print(f"\n{'=' * 60}")
     print(f"Issues 校验结果: {issues_path}")
     print(f"INTENT.md: {intent_path}")
     if prd_path:
         print(f"PRD: {prd_path}")
+    if arch_path:
+        print(f"Architecture: {arch_path}")
     print(f"{'=' * 60}\n")
 
     fail_count = 0
