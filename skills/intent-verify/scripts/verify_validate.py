@@ -23,6 +23,16 @@ import re
 import sys
 from pathlib import Path
 
+# 公共 Markdown 解析函数
+_COMMON_DIR = Path(__file__).resolve().parent.parent.parent / "_common"
+if str(_COMMON_DIR) not in sys.path:
+    sys.path.insert(0, str(_COMMON_DIR))
+from markdown_parser import (
+    section as _section,
+    subsection as _subsection,
+    table_rows as _table_rows,
+)
+
 
 PATH_HEADING_RE = re.compile(r"^###\s+路径\s+P\d+:\s*(.+)$", re.MULTILINE)
 PATH_ID_IN_HEADING_RE = re.compile(r"P\d{2,}")
@@ -48,40 +58,6 @@ CONCLUSION_HEADING = "### 结论"
 
 CAPABILITY_ID_RE = re.compile(r"C\d{2,}")
 PATH_ID_RE = re.compile(r"P\d{2,}")
-
-
-def _section(content: str, heading: str) -> str:
-    match = re.search(
-        rf"^{re.escape(heading)}\s*$\n?(.*?)(?=^##\s+|\Z)",
-        content,
-        re.MULTILINE | re.DOTALL,
-    )
-    return match.group(1) if match else ""
-
-
-def _subsection(content: str, heading: str) -> str:
-    """提取 ### 级别的子节，停在下一个 ### 或 ## 之前。"""
-    match = re.search(
-        rf"^{re.escape(heading)}\s*$\n?(.*?)(?=^###\s+|^##\s+|\Z)",
-        content,
-        re.MULTILINE | re.DOTALL,
-    )
-    return match.group(1) if match else ""
-
-
-def _table_rows(content: str, header_first_cell: str) -> list[list[str]]:
-    rows: list[list[str]] = []
-    for line in content.splitlines():
-        stripped = line.strip()
-        if not stripped.startswith("|") or not stripped.endswith("|"):
-            continue
-        columns = [cell.strip() for cell in stripped.strip("|").split("|")]
-        if not columns or columns[0] == header_first_cell:
-            continue
-        if all(re.fullmatch(r":?-{3,}:?", cell) for cell in columns):
-            continue
-        rows.append(columns)
-    return rows
 
 
 def _split_paths(content: str) -> list[str]:
@@ -148,12 +124,8 @@ def _all_thens_v3(path_content: str) -> bool:
 
 
 def _intent_section(intent_content: str, heading: str) -> str:
-    match = re.search(
-        rf"^{re.escape(heading)}\s*$\n?(.*?)(?=^##\s+\d+\.\s|\Z)",
-        intent_content,
-        re.MULTILINE | re.DOTALL,
-    )
-    return match.group(1) if match else ""
+    """INTENT.md 使用编号章节，需要 numbered=True。"""
+    return _section(intent_content, heading, numbered=True)
 
 
 def _parse_retained_capabilities(intent_content: str) -> set[str]:

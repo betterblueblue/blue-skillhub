@@ -20,7 +20,7 @@ FIXTURE = Path(__file__).resolve().parent / "fixtures" / "valid-intent.md"
 
 sys.path.insert(0, str(SCRIPT_DIR))
 try:
-    from intent_validate import _path_error, validate
+    from intent_validate import _path_error, validate, _compare_baseline
 finally:
     sys.path.pop(0)
 
@@ -478,6 +478,58 @@ class TestOutputPath(unittest.TestCase):
         self.assertIsNotNone(
             _path_error(Path("project/intent-anchor/latest.md"))
         )
+
+
+class TestBaselineComparison(unittest.TestCase):
+    """测试 --baseline 基线对比功能。"""
+
+    def test_no_changes_produces_no_warnings(self):
+        content = _valid_content()
+        warnings = _compare_baseline(content, content)
+        self.assertEqual([], warnings)
+
+    def test_capability_decision_change_produces_warning(self):
+        old = _valid_content()
+        new = old.replace(
+            "| C02 | 自动归档旧记录 | 定期移动已经完成的历史交接文件 | E02 | 推迟 | 用户授权模型决定 |",
+            "| C02 | 自动归档旧记录 | 定期移动已经完成的历史交接文件 | E02 | 保留 | 用户明确确认 |",
+        )
+        # 同步更新推迟项和决策统计，避免新版本结构不合法
+        new = new.replace(
+            "| C02 | 自动归档旧记录 | 第一版先验证交接内容是否有用 | 历史文件开始影响查找时 |",
+            "",
+        )
+        new = new.replace("| 推迟 | 1 |", "| 推迟 | 0 |")
+        new = new.replace("| 保留 | 1 |", "| 保留 | 2 |")
+        warnings = _compare_baseline(old, new)
+        texts = " ".join(warnings)
+        self.assertIn("C02", texts)
+        self.assertIn("推迟", texts)
+        self.assertIn("保留", texts)
+
+    def test_new_capability_produces_warning(self):
+        old = _valid_content()
+        # 在能力表末尾加一行新能力
+        new = old.replace(
+            "| C03 | 自动发送通知 | 交接完成后向外部聊天工具发消息 | E01 | 放弃 | 用户明确确认 |",
+            "| C03 | 自动发送通知 | 交接完成后向外部聊天工具发消息 | E01 | 放弃 | 用户明确确认 |\n"
+            "| C04 | 新增能力 | 测试用 | E01 | 保留 | 用户明确确认 |",
+        )
+        warnings = _compare_baseline(old, new)
+        texts = " ".join(warnings)
+        self.assertIn("C04", texts)
+        self.assertIn("新增", texts)
+
+    def test_deleted_capability_produces_warning(self):
+        old = _valid_content()
+        new = old.replace(
+            "| C03 | 自动发送通知 | 交接完成后向外部聊天工具发消息 | E01 | 放弃 | 用户明确确认 |\n",
+            "",
+        )
+        warnings = _compare_baseline(old, new)
+        texts = " ".join(warnings)
+        self.assertIn("C03", texts)
+        self.assertIn("删除", texts)
 
 
 if __name__ == "__main__":
