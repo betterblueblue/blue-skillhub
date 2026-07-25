@@ -2,7 +2,7 @@
 """verify-record.md 结构校验与 INTENT.md 交叉引用校验。
 
 用法：
-  python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md /path/to/intent-chain/{链路目录}/intent.md
+  python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md /path/to/intent-chain/{链路目录}/intent.md /path/to/intent-chain/{链路目录}/architecture.md
 
 检查项：
   V1: 文件非空
@@ -12,7 +12,7 @@
   V5: 有条件性验证段（性能验证和安全验证，不适用也要标注）
   V6: 最终复核完整（回归汇总、保留能力核对、验收路径逐条验证含 Then 全通过、条件性汇总、漂移复核、结论）
   V7: 与 INTENT.md 交叉校验（路径 ID 一致、保留能力 ID 一致、性能/安全结论与 INTENT.md 要求一致）
-  V8: 提供 architecture.md 时，最终复核包含技术漂移复核子节
+  V8: 最终复核包含技术漂移复核子节（强制检查 architecture.md）
 
 本脚本不能验证 V3 证据是否真实，也不能证明验收结果符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -387,13 +387,13 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
 
 
 def main() -> int:
-    if len(sys.argv) < 3:
-        print("用法: python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md /path/to/intent-chain/{链路目录}/intent.md [/path/to/intent-chain/{链路目录}/architecture.md]")
+    if len(sys.argv) < 4:
+        print("用法: python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md /path/to/intent-chain/{链路目录}/intent.md /path/to/intent-chain/{链路目录}/architecture.md")
         return 1
 
     verify_path = Path(sys.argv[1])
     intent_path = Path(sys.argv[2])
-    arch_path = Path(sys.argv[3]) if len(sys.argv) >= 4 else None
+    arch_path = Path(sys.argv[3])
 
     if not verify_path.exists():
         print(f"FAIL: VERIFY-RECORD 文件不存在: {verify_path}")
@@ -401,17 +401,19 @@ def main() -> int:
     if not intent_path.exists():
         print(f"FAIL: INTENT.md 文件不存在: {intent_path}")
         return 1
+    if not arch_path.exists():
+        print(f"FAIL: architecture.md 不存在: {arch_path}")
+        return 1
 
     verify_content = verify_path.read_text(encoding="utf-8")
     intent_content = intent_path.read_text(encoding="utf-8")
-    architecture_content = arch_path.read_text(encoding="utf-8") if arch_path and arch_path.exists() else ""
+    architecture_content = arch_path.read_text(encoding="utf-8")
     results = validate(verify_content, intent_content, architecture_content)
 
     print(f"\n{'=' * 60}")
     print(f"VERIFY-RECORD 校验结果: {verify_path}")
     print(f"INTENT.md: {intent_path}")
-    if arch_path:
-        print(f"Architecture: {arch_path}")
+    print(f"Architecture: {arch_path}")
     print(f"{'=' * 60}\n")
 
     fail_count = 0

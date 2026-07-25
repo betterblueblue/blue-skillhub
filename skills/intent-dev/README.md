@@ -39,11 +39,12 @@ Intent-Dev 解决这两个问题：
 适合：
 
 - intent-issues 已完成，工单文件通过 `issues_validate.py` 校验。
+- intent-design 已完成，`architecture.md` 和 `design.md` 通过 `design_validate.py` 校验。
 - 开始进入开发阶段。
 
 不适合：
 
-- 没有 INTENT.md、PRD 或工单文件（先运行前置 skill）。
+- 没有 INTENT.md、PRD、工单文件、architecture.md 或 design.md（先运行前置 skill）。
 - 所有工单已开发完成（该用 intent-verify 做端到端验收）。
 
 ## 校验

@@ -1,10 +1,10 @@
 # Intent-Issues
 
-> 读取 INTENT.md 和 PRD，按垂直切片拆分工单，自动检查验收路径覆盖。
+> 读取 INTENT.md、PRD、architecture.md 和 design.md，按垂直切片拆分工单，自动检查验收路径覆盖。
 
 ## 为什么需要它
 
-PRD 生成后需要拆分为独立可抓取的工单。使用第三方 to-issues 时，验收路径约束只能通过交接 prompt 注入，工单的 Acceptance criteria 不会自动引用路径编号，也无法自动检查覆盖情况。如果没有 INTENT.md，直接用原版 to-issues 即可。
+PRD 和设计文件生成后需要拆分为独立可抓取的工单。使用第三方 to-issues 时，验收路径约束只能通过交接 prompt 注入，工单的 Acceptance criteria 不会自动引用路径编号，也无法自动检查覆盖情况。如果没有 INTENT.md，直接用原版 to-issues 即可。
 
 Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance criteria 中自动引用路径编号，并在输出前自动检查所有路径被至少一个工单覆盖。
 
@@ -13,11 +13,12 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 适合：
 
 - intent-prd 已完成，PRD 通过 `prd_validate.py` 校验。
+- intent-design 已完成，`architecture.md` 和 `design.md` 通过 `design_validate.py` 校验。
 - 需要把 PRD 拆分为工单，进入开发阶段。
 
 不适合：
 
-- 没有 INTENT.md 或 PRD（先运行前置 skill）。
+- 没有 INTENT.md、PRD、architecture.md 或 design.md（先运行前置 skill）。
 - PRD 未通过校验（先修正）。
 
 ## 垂直切片规则
@@ -43,7 +44,7 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 | V8 | INTENT.md 有性能要求时，所有性能要求 ID 被工单引用 |
 | V9 | INTENT.md 有安全要求时，所有安全要求 ID 被工单引用 |
 | V10 | PRD 中每条验收路径的 Then/And 条件被工单覆盖 |
-| V11 | 提供 architecture.md 时，工单的"涉及模块"引用的模块名在架构文档中定义 |
+| V11 | 工单的"涉及模块"引用的模块名必须在 architecture.md 中定义（强制检查） |
 
 ```bash
 python skills/intent-issues/scripts/issues_validate.py intent-chain/{链路目录}/issues.md intent-chain/{链路目录}/intent.md intent-chain/{链路目录}/prd.md intent-chain/{链路目录}/architecture.md

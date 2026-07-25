@@ -469,9 +469,9 @@ python eval/real-projects/scripts/validate_real_projects.py   # 退出码 1
 | 文件 | 内容 |
 |---|---|
 | `skills/intent-design/SKILL.md` | 5 个 Phase：输入校验 → 写 architecture.md → 写 design.md → 自检 → 交接。强制要求 PRD 作为输入 |
-| `skills/intent-design/templates/architecture.md` | 模板：技术栈、模块边界、核心数据流、依赖关系、已知约束、假设与代价 |
-| `skills/intent-design/templates/design.md` | 模板：功能概述、接口设计、数据模型、状态转换、错误处理、与架构对齐说明 |
-| `skills/intent-design/scripts/design_validate.py` | 校验：architecture.md 4 项（A1-A4）、design.md 6 项（D1-D6）、交叉 2 项（X1-X2），共 12 项 |
+| `skills/intent-design/templates/architecture.md` | 模板：架构概览、模块与边界、技术选型、关键数据流、额外结构与假设、重要决策的详细说明 |
+| `skills/intent-design/templates/design.md` | 模板：设计概览、能力设计（逐个保留能力）、与架构文档的对照 |
+| `skills/intent-design/scripts/design_validate.py` | 校验：architecture.md 8 项（A1-A8）、design.md 5 项（D1-D5）、交叉 2 项（X1-X2），共 15 项 |
 | `skills/intent-design/tests/test_design_validate.py` | 行为测试 |
 
 **第 2 步：下游强制消费 architecture.md**
