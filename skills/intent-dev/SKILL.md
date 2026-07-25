@@ -1,6 +1,6 @@
 ---
 name: intent-dev
-description: 管理工单开发过程。按 TDD 循环（Red-Green-Refactor）开发每个工单，工单完成后实际运行验证确认通过。全部工单开发完成后交接给 intent-verify 做端到端验收。强制要求 INTENT.md、PRD 和工单文件作为输入。
+description: 管理工单开发过程。按 TDD 循环（Red-Green-Refactor）开发每个工单，工单完成后实际运行验证确认通过。全部工单开发完成后交接给 intent-verify 做端到端验收。强制要求 INTENT.md、PRD、工单文件、architecture.md 和 design.md 作为输入。
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
@@ -23,7 +23,8 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. 必须存在通过 `intent_validate.py` 校验的 `INTENT.md`。
 2. 必须存在通过 `prd_validate.py` 校验的 `PRD`。
 3. 必须存在通过 `issues_validate.py` 校验的工单文件。
-4. 三者缺一不可。
+4. 必须存在通过 `design_validate.py` 校验的 `architecture.md` 和 `design.md`。
+5. 五者缺一不可。
 
 ## 验证等级
 
@@ -108,9 +109,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 ### Phase 1：前置检查与项目探索
 
-1. 确认 INTENT.md、PRD 和工单文件路径。
-2. 读取三者全文。如果链路目录下有 `architecture.md` 和 `design.md`，一并读取作为技术参考。
-3. 运行 `intent_validate.py`、`prd_validate.py` 和 `issues_validate.py` 确认通过。任一 FAIL 则停止。
+1. 确认 INTENT.md、PRD、工单文件、`architecture.md` 和 `design.md` 路径。
+2. 读取全部文件。
+3. 运行 `intent_validate.py`、`prd_validate.py`、`issues_validate.py` 和 `design_validate.py` 确认通过。任一 FAIL 则停止。
 4. **探索目标项目根目录**，按"验证命令来源"节的步骤查找构建/测试配置文件，从文件内容中提取实际命令。找不到配置文件则问用户。
 5. 确定构建命令和测试命令。用户确认没有测试环境则标"V2 不可用，工单无法标 done"。
 6. 从输入文件路径推导链路目录，DEV-RECORD 写入同一目录下的 `dev-record.md`。不创建目录、不写文件。
@@ -162,12 +163,13 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 - intent-chain/{链路目录}/prd.md
 - intent-chain/{链路目录}/issues.md
 - intent-chain/{链路目录}/dev-record.md
-- 如果链路目录下有 architecture.md，也一并提供——intent-verify 会据此做技术漂移复核。
+- intent-chain/{链路目录}/architecture.md
+- intent-chain/{链路目录}/design.md
 ```
 
 ## 强制规则
 
-1. **三个前置文件必须存在且通过校验**：不通过则不进入开发。
+1. **五个前置文件必须存在且通过校验**：不通过则不进入开发。
 2. **验证必须有真实输出**：可以是构建/测试命令、直接运行入口、或最小验证脚本，但不能只有代码审查。
 3. **每个工单完成后必须运行验证**：不得只凭代码审查标 done。
 4. **V2 必须附真实命令输出**：标 V2 但无输出 → 视为 V1 冒充，P0。

@@ -1,6 +1,6 @@
 ---
 name: intent-verify
-description: 所有工单开发完成后的整体验收。先跑全量测试确认老功能没被改坏，再按 INTENT.md 的验收路径逐条走通，核对保留能力是否都有证据，检查有没有偷偷丢掉或加上什么。如果 INTENT.md 有性能或安全要求，按要求验证。如果链路目录下有 architecture.md，做技术漂移复核。强制要求 INTENT.md、PRD、工单文件和 dev-record 作为输入。
+description: 所有工单开发完成后的整体验收。先跑全量测试确认老功能没被改坏，再按 INTENT.md 的验收路径逐条走通，核对保留能力是否都有证据，检查有没有偷偷丢掉或加上什么。如果 INTENT.md 有性能或安全要求，按要求验证。根据 architecture.md 做技术漂移复核。强制要求 INTENT.md、PRD、工单文件、dev-record、architecture.md 和 design.md 作为输入。
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
@@ -26,9 +26,8 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 2. 必须存在通过 `prd_validate.py` 校验的 `PRD`。
 3. 必须存在通过 `issues_validate.py` 校验的工单文件。
 4. 必须存在通过 `dev_validate.py` 校验的 `dev-record.md`。
-5. 必须存在通过 `design_validate.py` 校验的 `architecture.md`。
-6. dev-record 中所有工单必须标 done。
-7. 六者缺一不可。
+5. 必须存在通过 `design_validate.py` 校验的 `architecture.md` 和 `design.md`。
+6. 六个前置文件缺一不可，且 dev-record 中所有工单必须标 done。
 
 ## 验证等级
 
@@ -44,11 +43,11 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 ### Phase 1：前置检查
 
-1. 确认 INTENT.md、PRD、工单文件和 dev-record 路径。
-2. 读取四者全文。
-3. 运行 `intent_validate.py`、`prd_validate.py`、`issues_validate.py` 和 `dev_validate.py` 确认通过。任一 FAIL 则停止。
-4. 确认 dev-record 中所有工单标 done。有未完成工单则停止。
-5. 确认 `architecture.md` 存在，运行 `design_validate.py` 确认通过。缺失或 FAIL 则停止，提示用户先运行 intent-design。
+1. 确认 INTENT.md、PRD、工单文件、dev-record、`architecture.md` 和 `design.md` 路径。
+2. 读取全部文件。
+3. 确认 `architecture.md` 和 `design.md` 存在，运行 `design_validate.py` 确认通过。缺失或 FAIL 则停止，提示用户先运行 intent-design。
+4. 运行 `intent_validate.py`、`prd_validate.py`、`issues_validate.py` 和 `dev_validate.py` 确认通过。任一 FAIL 则停止。
+5. 确认 dev-record 中所有工单标 done。有未完成工单则停止。
 6. 从输入文件路径推导链路目录，VERIFY-RECORD 写入同一目录下的 `verify-record.md`。不创建目录、不写文件。
 7. 如果 verify-record 已存在（跨会话恢复），读取现有记录，复述当前进度。
 

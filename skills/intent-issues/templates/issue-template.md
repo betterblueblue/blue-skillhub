@@ -39,7 +39,7 @@ None - can start immediately / {Issue 编号}
 
 ### 涉及模块
 
-<!-- 如果链路目录下有 architecture.md，列出本工单涉及的模块名（引用 architecture.md 第 2 节定义的模块名）。没有 architecture.md 时不需要此子节。 -->
+<!-- 列出本工单涉及的模块名（引用 architecture.md 第 2 节定义的模块名）。architecture.md 是强制前置，此子节必填。 -->
 
 - {模块名}
 

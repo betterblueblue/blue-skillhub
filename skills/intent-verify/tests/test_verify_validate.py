@@ -9,6 +9,7 @@ Run:
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -19,7 +20,7 @@ FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
 
 sys.path.insert(0, str(SCRIPT_DIR))
 try:
-    from verify_validate import validate
+    from verify_validate import validate, main
 finally:
     sys.path.pop(0)
 
@@ -326,6 +327,57 @@ class TestTechDriftCheck(unittest.TestCase):
         self.assertEqual(1, len(v8))
         self.assertEqual("FAIL", v8[0][1])
         self.assertIn("技术漂移复核", v8[0][2])
+
+
+class TestCLI(unittest.TestCase):
+    """CLI 参数变更测试：architecture.md 从可选改为强制。"""
+
+    @classmethod
+    def setUpClass(cls):
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False, encoding="utf-8"
+        )
+        tmp.write(_ARCH_CONTENT)
+        tmp.close()
+        cls._arch_path = tmp.name
+
+    @classmethod
+    def tearDownClass(cls):
+        Path(cls._arch_path).unlink(missing_ok=True)
+
+    def _run_main(self, *args) -> int:
+        old = sys.argv
+        sys.argv = ["verify_validate.py"] + list(args)
+        try:
+            return main()
+        finally:
+            sys.argv = old
+
+    def test_all_args_valid_exit_0(self):
+        """参数完整且文件存在时退出 0。"""
+        code = self._run_main(
+            str(FIXTURE_DIR / "valid-verify-record.md"),
+            str(FIXTURE_DIR / "valid-intent.md"),
+            self._arch_path,
+        )
+        self.assertEqual(0, code)
+
+    def test_missing_arch_arg_exit_1(self):
+        """缺少 architecture.md 参数时退出 1。"""
+        code = self._run_main(
+            str(FIXTURE_DIR / "valid-verify-record.md"),
+            str(FIXTURE_DIR / "valid-intent.md"),
+        )
+        self.assertEqual(1, code)
+
+    def test_nonexistent_arch_file_exit_1(self):
+        """architecture.md 文件不存在时退出 1。"""
+        code = self._run_main(
+            str(FIXTURE_DIR / "valid-verify-record.md"),
+            str(FIXTURE_DIR / "valid-intent.md"),
+            "/nonexistent/path/architecture.md",
+        )
+        self.assertEqual(1, code)
 
 
 if __name__ == "__main__":

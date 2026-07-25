@@ -82,7 +82,7 @@ intent-prd → prd.md（原生引用能力表和验收路径，Acceptance Criter
     ↓ 强制输入
 intent-design → architecture.md + design.md（架构决策外化为文件，假设表把过度设计变成显式决策）
     ↓ 强制输入
-intent-issues → issues.md（自动引用路径编号，自动检查覆盖；有 architecture.md 时检查模块引用）
+intent-issues → issues.md（自动引用路径编号，自动检查覆盖；检查模块引用）
     ↓ 强制输入
 intent-dev → dev-record.md（TDD 循环，每条 Then 按实际运行结果判定验证等级）
     ↓ 强制输入
@@ -115,7 +115,7 @@ IntentDev 按 TDD 循环开发每个工单：先写测试看到红灯，再写�
 
 IntentVerify 在所有工单开发完成后做整体验收：先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，然后做条件性验证（性能和安全要求，有则逐项验证，没有标不适用），最后做最终复核（保留能力核对 + 漂移复核）。
 
-两个 Skill 都强制要求前置产物作为输入：IntentDev 要求工单文件通过 `issues_validate.py` 校验，IntentVerify 要求 dev-record 通过 `dev_validate.py` 校验且所有工单标 done。
+两个 Skill 都强制要求前置产物作为输入：IntentDev 要求 INTENT.md、PRD、工单文件、architecture.md 和 design.md 通过校验，IntentVerify 在此基础上还要求 dev-record 通过 `dev_validate.py` 校验且所有工单标 done。
 
 ### Superpowers：希望一套流程带着项目往前走
 
@@ -308,7 +308,7 @@ IntentAnchor 负责在开发前把意图说清楚，ImpactRadar 负责在开发�
 
 IntentPRD 从 `INTENT.md` 生成 PRD。它原生读取 `INTENT.md` 的各章节，把一句话意图映射到 Problem Statement，保留能力和不可妥协项映射到 Solution 和 User Stories，设计标准映射到 Implementation Decisions > Design Standards，术语表映射到 Terminology Constraints，验收路径映射到 Acceptance Criteria。
 
-`prd_validate.py` 运行 8 项检查（V1-V8），包括文件非空、必需章节、能力覆盖、验收路径覆盖、设计标准引用、术语引用、Intent Verification 和 Given/When/Then 验收条件结构。
+`prd_validate.py` 运行 10 项检查（V1-V10），包括文件非空、必需章节、能力覆盖、验收路径覆盖、设计标准引用、术语引用、Intent Verification、Given/When/Then 验收条件结构、性能要求引用和安全要求引用。
 
 ### IntentIssues
 
@@ -322,7 +322,7 @@ IntentIssues 从 `INTENT.md` 和 PRD 拆分工单，按垂直切片（tracer bul
 
 [skills/intent-dev/](skills/intent-dev/)
 
-IntentDev 按 TDD 循环开发每个工单。它强制要求工单文件通过 `issues_validate.py` 校验作为输入。开发时先写测试看到红灯，再写代码看到绿灯，最后重构；修 bug 必须先写复现测试。每条验收条件根据实际运行的命令输出判定验证等级（V0 未验证 / V1 代码审查 / V2 实际运行通过），标 V2 但没有真实命令输出视为冒充，不允许标 done。
+IntentDev 按 TDD 循环开发每个工单。它强制要求 INTENT.md、PRD、工单文件、architecture.md 和 design.md 通过校验作为输入。开发时先写测试看到红灯，再写代码看到绿灯，最后重构；修 bug 必须先写复现测试。每条验收条件根据实际运行的命令输出判定验证等级（V0 未验证 / V1 代码审查 / V2 实际运行通过），标 V2 但没有真实命令输出视为冒充，不允许标 done。
 
 `dev_validate.py` 运行 4 项检查，包括文件非空、工单开发记录完整性、每条 Then 的验证等级和 V2 证据、标 done 的工单所有 Then 达到 V2。
 
@@ -330,7 +330,7 @@ IntentDev 按 TDD 循环开发每个工单。它强制要求工单文件通过 `
 
 [skills/intent-verify/](skills/intent-verify/)
 
-IntentVerify 在所有工单开发完成后做整体验收。它强制要求 dev-record 通过 `dev_validate.py` 校验且所有工单标 done 作为输入。验收流程：先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，然后做条件性验证（性能和安全要求，有则逐项验证，没有标不适用），最后做最终复核（保留能力核对 + 漂移复核）。
+IntentVerify 在所有工单开发完成后做整体验收。它强制要求 INTENT.md、PRD、工单文件、dev-record、architecture.md 和 design.md 通过校验且所有工单标 done 作为输入。验收流程：先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，然后做条件性验证（性能和安全要求，有则逐项验证，没有标不适用），最后做最终复核（保留能力核对 + 漂移复核 + 技术漂移复核）。
 
 `verify_validate.py` 运行 8 项检查，包括文件非空、回归验证段、验收路径的 Given/When/Then 和验证方式、每条路径有 V3 证据、条件性验证段、最终复核完整性、与 INTENT.md 交叉校验和技术漂移复核检查。
 

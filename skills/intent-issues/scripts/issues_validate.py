@@ -2,7 +2,7 @@
 """Issues 文件结构与 INTENT.md、PRD 交叉引用校验。
 
 用法：
-  python issues_validate.py /path/to/intent-chain/{链路目录}/issues.md /path/to/intent-chain/{链路目录}/intent.md /path/to/intent-chain/{链路目录}/prd.md
+  python issues_validate.py /path/to/intent-chain/{链路目录}/issues.md /path/to/intent-chain/{链路目录}/intent.md /path/to/intent-chain/{链路目录}/prd.md /path/to/intent-chain/{链路目录}/architecture.md
 
 检查项：
   V1: 文件非空
@@ -15,7 +15,7 @@
   V8: INTENT.md 有性能要求时，所有性能要求 ID 被至少一个工单引用（交叉检查 INTENT.md）
   V9: INTENT.md 有安全要求时，所有安全要求 ID 被至少一个工单引用（交叉检查 INTENT.md）
   V10: PRD 中每条验收路径的 Then/And 条件数量不少于工单中对应路径的条目数（交叉检查 PRD）
-  V11: 提供 architecture.md 时，工单的"涉及模块"引用的模块名必须在架构文档第 2 节中定义（交叉检查 architecture.md）
+  V11: 工单的"涉及模块"引用的模块名必须在 architecture.md 第 2 节中定义（强制检查 architecture.md）
 
 本脚本不能验证工单的技术可行性，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -433,14 +433,14 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
 
 
 def main() -> int:
-    if len(sys.argv) < 3:
-        print("用法: python issues_validate.py /path/to/intent-chain/{链路目录}/issues.md /path/to/intent-chain/{链路目录}/intent.md [/path/to/intent-chain/{链路目录}/prd.md] [/path/to/intent-chain/{链路目录}/architecture.md]")
+    if len(sys.argv) < 5:
+        print("用法: python issues_validate.py /path/to/intent-chain/{链路目录}/issues.md /path/to/intent-chain/{链路目录}/intent.md /path/to/intent-chain/{链路目录}/prd.md /path/to/intent-chain/{链路目录}/architecture.md")
         return 1
 
     issues_path = Path(sys.argv[1])
     intent_path = Path(sys.argv[2])
-    prd_path = Path(sys.argv[3]) if len(sys.argv) >= 4 else None
-    arch_path = Path(sys.argv[4]) if len(sys.argv) >= 5 else None
+    prd_path = Path(sys.argv[3])
+    arch_path = Path(sys.argv[4])
 
     if not issues_path.exists():
         print(f"FAIL: Issues 文件不存在: {issues_path}")
@@ -448,20 +448,24 @@ def main() -> int:
     if not intent_path.exists():
         print(f"FAIL: INTENT.md 文件不存在: {intent_path}")
         return 1
+    if not prd_path.exists():
+        print(f"FAIL: PRD 文件不存在: {prd_path}")
+        return 1
+    if not arch_path.exists():
+        print(f"FAIL: architecture.md 不存在: {arch_path}")
+        return 1
 
     issues_content = issues_path.read_text(encoding="utf-8")
     intent_content = intent_path.read_text(encoding="utf-8")
-    prd_content = prd_path.read_text(encoding="utf-8") if prd_path and prd_path.exists() else ""
-    architecture_content = arch_path.read_text(encoding="utf-8") if arch_path and arch_path.exists() else ""
+    prd_content = prd_path.read_text(encoding="utf-8")
+    architecture_content = arch_path.read_text(encoding="utf-8")
     results = validate(issues_content, intent_content, prd_content, architecture_content)
 
     print(f"\n{'=' * 60}")
     print(f"Issues 校验结果: {issues_path}")
     print(f"INTENT.md: {intent_path}")
-    if prd_path:
-        print(f"PRD: {prd_path}")
-    if arch_path:
-        print(f"Architecture: {arch_path}")
+    print(f"PRD: {prd_path}")
+    print(f"Architecture: {arch_path}")
     print(f"{'=' * 60}\n")
 
     fail_count = 0
