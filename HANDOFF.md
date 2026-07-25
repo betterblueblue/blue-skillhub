@@ -1,7 +1,7 @@
 # 交接文档
 
-> 写给完全没有上下文的新会话。最近更新：2026-07-24。
-> 本文档覆盖五个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、blue-interview 优化（部分完成，待补测）。
+> 写给完全没有上下文的新会话。最近更新：2026-07-25。
+> 本文档覆盖六个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、blue-interview 优化（部分完成，待补测）。
 
 ---
 
@@ -314,6 +314,75 @@ intent-chain/
 
 ---
 
+## 任务 A5：intent-chain 校验脚本重构（已完成）
+
+### 背景
+
+任务 A4 后，链路五个 skill 的校验脚本（`*_validate.py`）存在三个结构性问题：
+
+1. **Markdown 解析逻辑分散重复**：`section()`、`subsection()`、`table_rows()`、`has_placeholder()` 四个函数在 5 个校验脚本里各自复制一份，共约 250 行重复代码。改解析逻辑要同时改 5 处，容易漏。
+2. **V2 证据检查太宽松**：`intent-dev` 的 V2 检查只要求证据段里同时出现"命令"和"输出"两个关键词，但没有校验是否真的包含命令文本和输出文本。开发记录模板里有占位提示但没人强制填。
+3. **没有需求漂移追溯**：INTENT.md 从 anchor 产出后被 PRD、Issues、Dev、Verify 逐级引用，但没有任何手段检查"下游引用的关键决策是否和 anchor 原始定义一致"。如果用户中途改了 INTENT.md 的决策或验收路径编号，下游文档不会感知到。
+
+### 改了什么（3 项改动，7 个文件）
+
+**改动 1：提取公共 Markdown 解析模块**
+
+新建 `skills/_common/markdown_parser.py`，集中 4 个函数：
+
+| 函数 | 用途 |
+|---|---|
+| `section(text, name)` | 提取 `## {name}` 到下一个同级标题之间的内容 |
+| `subsection(text, name)` | 提取 `### {name}` 到下一个同级标题之间的内容 |
+| `table_rows(text)` | 解析 Markdown 表格，返回每行字段字典 |
+| `has_placeholder(text, name)` | 检查模板占位符 `{name}` 是否未被替换 |
+
+`prd_validate.py`、`issues_validate.py`、`verify_validate.py` 删除各自的本地实现，改为从 `_common.markdown_parser` 导入。`intent_validate.py` 和 `dev_validate.py` 也导入公共模块（这两个文件保留了少量本地适配代码，因为解析逻辑有细微差异）。
+
+**改动 2：强化 V2 证据检查**
+
+`dev_validate.py` 的 `_has_command_output()` 方法原来只检查关键词存在性，改为：
+- 必须同时包含命令文本（`$` 或 `` ` `` 开头的代码块）**和**输出文本（非空行）
+- 两者缺一则 V2 报 warning，提示"证据段缺少命令或输出"
+
+**改动 3：基线对比功能**
+
+`intent_validate.py` 新增 `--baseline <git_ref>` 参数：
+- 读取 git 历史中指定 ref（如 `HEAD~1`、`main`）的 INTENT.md 版本
+- 对比当前版本与基线版本的**决策段**（第 6 节）和**验收路径段**（第 14 节）
+- 如果决策内容变化或路径编号变化，输出 warning 提示"关键决策与基线 {ref} 不一致，请确认下游文档是否需要同步更新"
+- 不阻断校验（只 warning 不 error），因为用户可能确实有意修改
+
+### 涉及的文件
+
+| 文件 | 改动 |
+|---|---|
+| `skills/_common/markdown_parser.py` | 新建，4 个公共函数 |
+| `skills/intent-anchor/scripts/intent_validate.py` | 导入公共模块，新增 `--baseline` 参数和 `_compare_baseline()` |
+| `skills/intent-dev/scripts/dev_validate.py` | 导入公共模块，`_has_command_output()` 强化检查逻辑 |
+| `skills/intent-prd/scripts/prd_validate.py` | 删除本地解析函数，改为导入 |
+| `skills/intent-issues/scripts/issues_validate.py` | 删除本地解析函数，改为导入 |
+| `skills/intent-verify/scripts/verify_validate.py` | 删除本地解析函数，改为导入 |
+| `README.md` | 3 分钟上手安装命令加 `_common` 目录 |
+
+### 验证状态
+
+- `python -m pytest skills/ -q` → 145 passed，退出码 0（比之前 143 多 2 个：V2 强化的正向测试和反向测试）
+- `python skills/intent-anchor/scripts/intent_validate.py tests/fixtures/valid-intent.md --baseline HEAD` → 正常退出，无 warning（基线与当前一致）
+- 手动验证：修改 fixture 的决策段后加 `--baseline HEAD` → 输出 warning，确认功能生效
+
+### git 状态
+
+已提交为 `9873c55`，已推送到远程。基线：`6c1f2b9`。
+
+### 设计说明
+
+- **公共模块放 `_common/` 而非 `intent-anchor/`**：因为所有 5 个 skill 都依赖它，放在任何一个 skill 下都不合适。`_common/` 是中性目录，不绑定任何具体 skill。
+- **基线对比只 warning 不 error**：用户可能有意修改决策，不应阻断正常校验流程。warning 提示足够引起注意。
+- **V2 检查强化但不改 V2 的检查编号和报错消息结构**：保持测试兼容，只改内部判断逻辑。
+
+---
+
 ## 任务 B：blue-interview 优化（部分完成，待补测）
 
 > 以下内容来自 2026-07-09 会话，保持原样。skill 被 `.gitignore` 忽略，不入库。
@@ -393,6 +462,14 @@ intent-chain/
   - 独立验收发现 6e45539 遗漏约 30 处大写引用和 2 个模板路径，已在 6c1f2b9 修复
   - 243 passed
   - 概念名大写引用（如"把目标写进 INTENT.md"）保持大写，与模板文件名约定一致
+
+任务 A5（已提交 9873c55，已推送）：intent-chain 校验脚本重构。
+  - 提取公共 Markdown 解析模块 skills/_common/markdown_parser.py，5 个校验脚本统一导入
+  - 强化 intent-dev V2 证据检查：命令和输出必须同时存在
+  - intent-anchor 新增 --baseline <git_ref> 参数，对比决策段和验收路径段，只 warning 不 error
+  - README 安装命令加 _common 目录
+  - 145 passed（比之前多 2 个 V2 测试）
+  - .claude/.codex 运行态不修改
 
 任务 B（待补测）：blue-interview P1/P2/P3/P8/P9 已落地，P3 试跑通过，P1/P2/P8/P9 待补测。
   skill 被 .gitignore 忽略，不入库。未经同意禁止修改。
