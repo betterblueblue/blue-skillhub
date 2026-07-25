@@ -1,7 +1,7 @@
 # 交接文档
 
-> 写给完全没有上下文的新会话。最近更新：2026-07-25。
-> 本文档覆盖七个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、blue-interview 优化（部分完成，待补测）。
+> 写给完全没有上下文的新会话。最近更新：2026-07-26。
+> 本文档覆盖八个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、impact V23/V24 可校验契约补丁（已完成）、blue-interview 优化（部分完成，待补测）。
 
 ---
 
@@ -498,6 +498,100 @@ python eval/real-projects/scripts/validate_real_projects.py   # 退出码 1
 
 ---
 
+## 任务 A7：impact V23/V24 可校验契约补丁（已完成）
+
+### 背景
+
+`impact` skill 的 Full 模式有两个结构性缺口：
+
+1. **设计阶段不约束过度设计**：方案为了假想风险额外加缓存、锁、事件、配置项等结构时，没有强制说明具体场景、依据和补做成本。用户只要求"修改订单备注"，方案却准备加分布式锁——这种情况没有校验点拦截。
+2. **设计到实施没有映射校验**：020-design.md 的设计项（Dxx）和 030-implementation.md 的 Step 之间没有双向一致性检查。设计写了 D01 但实施 Step 引用 D02、映射表指向不存在的 Step、Step 标"流程步骤"但实际执行 DML——这些都能通过。
+
+用户决定做一次"最小完整修复"：不新增 Skill、不引入架构文档，只给 Impact Full 模式补两条可校验契约（V23 和 V24），并修正 Light 模式的反向引导。
+
+### 改了什么（14 个文件，+1589 / -26）
+
+**V23：额外结构与假设检查（020-design.md §5.1）**
+
+020-design.md 新增 §5.1 模板，要求：当方案为了用户未明确要求、且当前需求没有直接证明会发生的场景额外增加结构时，必须填写五列表（关联设计项 / 加了什么结构 / 为了解决什么情况 / 这种情况的依据 / 以后再补的成本）。无额外结构时写"无额外结构"。
+
+V23 校验逻辑修复了 6 条绕过路径：
+- strip HTML comments 后再检查"无额外结构"，防止模板注释绕过
+- 空表从 PASS 改为 FAIL
+- 五列字段全部检查非空和占位内容（`[占位`/`TODO`/`...`）
+- 扩展模糊证据词表（扩展性/健壮性/为了性能/为了安全/以防万一等 13 词）
+- 同时检查"为了解决什么情况"列的模糊描述
+- 关联设计项交叉验证 §3 中是否存在
+
+无依据项（"无依据，属于假设"）须列入确认清单；执行阶段（preflight 声明可执行或源码 Step 已写入）仍未确认则升级为 FAIL。
+
+**V24：设计到实施映射检查（020 Dxx ↔ 030 Step ↔ 090 Step）**
+
+030-implementation.md 新增 §2.2 设计到实施对照表，Step 新增"设计项"字段。090-execution-record.md Step 也加"设计项"字段。
+
+V24 校验逻辑包含 7 项检查：
+- Check A：020 无 Dxx 但 030 有源码/DML Step → FAIL
+- Check B：020 每个 Dxx 必须出现在 §2.2 映射表
+- Check C/C2：映射表和 Step 中引用的 Dxx 必须在 020 §3 中存在
+- Check D：映射表引用的 Step 编号必须在 030 §3 中实际存在
+- Check E：有 source/DML 内容的 Step 必须引用至少一个 Dxx（"流程步骤"标记不豁免）
+- Check F：映射表与实际 Step 的设计项逐条对照
+- Check G：090 的设计项与 030 一致，030 有设计项时 090 不能缺字段
+
+020 §3 新增稳定编号（D01、D02...），检测重复编号 → FAIL。
+
+**P1 修复**
+
+- `_extract_blockquote_section` 函数：识别引用块加粗文本（`> **需要你确认的假设**`），解决确认清单无法提取的问题。测试断言退出码（Phase 4 WARN 不导致 FAIL，执行阶段 FAIL）。
+- 设计偏离流程：`phase-5-execution.md` 改为"暂停 → 提出文档修订 Step → 用户确认 → 更新 020/030 → 重跑 validator → 提出新源码 Step → 用户再次确认"。`090-execution-record.md` 要求 Full 模式首次进入执行时同时读取 020 和 030。
+
+**P2 公开契约同步**
+
+- README / skills/impact/README.md / SKILL.md / phase-4-output.md 声明 V1-V24
+- .gitignore 排除 `skills/impact/tests/e2e/` 目录
+- `_active-state.md` 含退出码和原始 SUMMARY
+
+**Light 模式**
+
+`040-light.md` 确保不增加 V23/V24 检查，保持 Light 模式简单。
+
+### 涉及的文件
+
+| 文件 | 改动 |
+|---|---|
+| `skills/impact/scripts/impact_validate.py` | +591 行：V23/V24 校验逻辑、辅助函数、正则 |
+| `skills/impact/tests/test_scripts/test_impact_validate.py` | +894 行：V23/V24 测试（含 12 条绕过路径反例） |
+| `skills/impact/templates/020-design.md` | §5.1 额外结构与假设模板，§3 稳定编号 |
+| `skills/impact/templates/030-implementation.md` | §2.2 设计到实施对照表，Step 设计项字段 |
+| `skills/impact/templates/040-light.md` | Light 模式不增加 V23/V24 |
+| `skills/impact/templates/060-preflight.md` | 设计映射检查 |
+| `skills/impact/templates/090-execution-record.md` | 设计项字段，首次读取 020+030 |
+| `skills/impact/references/phase-5-execution.md` | 设计偏离流程调整 |
+| `skills/impact/references/phase-4-output.md` | V23/V24 声明 |
+| `skills/impact/README.md` | V1-V24 |
+| `skills/impact/SKILL.md` | §5.1/§2.2/V23/V24 |
+| `README.md` | V1-V24 |
+| `.gitignore` | e2e 测试目录排除 |
+
+### 验证状态
+
+- `python -m pytest skills/impact/tests/test_scripts/test_impact_validate.py -v` → 81 passed
+- 真实项目验证（RuoYi email-validation）：V23 PASS、V24 PASS（V15/V18 失败是 Phase 4 fixture 预期行为）
+- `git diff --ignore-all-space --stat` 确认 impact_validate.py 为 591 行纯增量（0 删除）
+- 行尾一致 CRLF（与原始文件一致），`git diff --check` 的 trailing whitespace 报错为 CRLF + `core.autocrlf=false` 误报
+
+### 踩过的坑
+
+1. **V24 初版有 6 条可复现绕过路径**：评审发现 D01→Step 99 不存在也通过、映射表引用不存在的 Dxx 不检查、"流程步骤"含 DML 绕过检查等。逐条修复并补反例测试。
+2. **V23 初版模板注释可直接绕过**：`_strip_html_comments` 在检查"无额外结构"之前执行，但初版是在整份文档中搜索而非先提取 §5.1。修复为先提取 §5.1 → strip comments → 再检查。
+3. **行尾噪音**：`impact_validate.py` 原始为 CRLF，编辑后保持 CRLF，但 `git diff --check` 仍报 trailing whitespace（`\r` 被视为 trailing whitespace）。`--ignore-all-space` 确认实际改动为纯增量。
+
+### git 状态
+
+已提交为 `cf1e6f8`，已推送到远程。基线：intent-design 提交。
+
+---
+
 ## 待办：intent-design 真实项目验证留证
 
 会话中约定用一个真实的 0→1 小项目生成 `architecture.md` 和 `design.md`，确认两份文档能产出实际内容。当前仓库没有保留对应的 `intent-chain/` 示例目录或运行记录，因此无法确认是尚未执行，还是执行后删除了临时产物。
@@ -560,6 +654,16 @@ python eval/real-projects/scripts/validate_real_projects.py   # 退出码 1
   - 302 passed，全链路冒烟测试通过
   - 起因：AI 方案设计阶段容易过度设计，强制文档化架构假设和代价来拦住
   - TODO：用一个真实的 0→1 小项目运行到 intent-design，并记录产物路径、校验命令和结果
+
+任务 A7（已提交 cf1e6f8，已推送）：impact V23/V24 可校验契约补丁。
+  - V23（额外结构与假设）：020 §5.1 强制填写五列表（关联设计项/加了什么结构/为了解决什么情况/依据/补做成本）
+  - V24（设计到实施映射）：020 Dxx ↔ 030 Step ↔ 090 Step 双向一致性检查，7 项检查
+  - 修复 V23 6 条绕过路径（模板注释绕过、空表 PASS、字段占位、弱词、模糊描述、关联设计项存在性）
+  - 修复 V24 6 条绕过路径（Step 不存在、Dxx 不存在、无 Dxx 但有源码 Step、流程步骤含 DML、090 缺字段、映射不一致）
+  - P1：引用块加粗文本提取、设计偏离流程改为先确认再写文件
+  - P2：README/SKILL.md/phase-4-output.md 声明 V1-V24
+  - 14 文件 +1589/-26，81 passed，RuoYi 真实项目 V23/V24 PASS
+  - 起因：impact Full 模式不约束过度设计、设计到实施无映射校验
 
 任务 B（待补测）：blue-interview P1/P2/P3/P8/P9 已落地，P3 试跑通过，P1/P2/P8/P9 待补测。
   skill 被 .gitignore 忽略，不入库。未经同意禁止修改。
