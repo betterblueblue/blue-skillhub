@@ -28,6 +28,8 @@ Checks:
   V20: Step confirmation field (every Step must have 用户确认 with Step number)  — FAIL
   V21: Provenance tags (§7 facts must have 【用户确认】/【代码推断】/【用户委托默认】) — FAIL
   V22: Pathfinder map consumption record (when map exists, record used/rechecked/rejected facts) — FAIL
+  V23: Extra structure & assumptions (020 §5.1 — extra structures need scenario, evidence, cost) — WARN/FAIL
+  V24: Design→implementation mapping (020 Dxx ↔ 030 Step ↔ 090 Step consistency)   — FAIL
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -2264,6 +2266,583 @@ def check_pathfinder_consumption(req_dir: Path, repo_root: str) -> tuple[list[st
     return passes, fails, warns
 
 
+# ===========================================================================
+# V23: Extra structure & assumptions — 020-design.md §5.1 must document
+#      extra structures added for hypothetical scenarios not directly
+#      required by the task.
+# ===========================================================================
+
+RE_EXTRA_STRUCTURE_HEADER = re.compile(r"##\s*5\.1\s*额外结构与假设")
+RE_HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
+
+EXTRA_STRUCTURE_REQUIRED_COLS = [
+    "关联设计项", "加了什么结构", "为了解决什么情况",
+    "这种情况的依据", "以后再补的成本",
+]
+
+# Vague justifications — expanded list
+RE_VAGUE_EVIDENCE = re.compile(
+    r"扩展性|健壮性|最佳实践|业界惯例|性能考虑|为了性能|"
+    r"安全性考虑|为了安全|兼容性|未来扩展|以防万一|"
+    r"可能需要|以防|万一"
+)
+RE_NO_EVIDENCE = re.compile(r"无依据.*假设|假设.*无依据|无依据")
+RE_CONFIRMATION_LIST = re.compile(r"需要你确认的假设")
+RE_PREFLIGHT_EXECUTABLE = re.compile(r"是否允许进入执行阶段[：:]\s*是", re.I)
+
+# DML keywords for detecting DML content in Steps
+RE_DML_KEYWORDS = re.compile(
+    r"\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|TRUNCATE)\b", re.I
+)
+
+
+def _strip_html_comments(text: str) -> str:
+    """Remove HTML comments from markdown text."""
+    return RE_HTML_COMMENT.sub("", text)
+
+
+def _extract_blockquote_section(text: str, keyword: str) -> str:
+    """Extract text following a blockquote bold marker containing keyword."""
+    pattern = rf'(>\s*\*\*[^*]*{keyword}[^*]*\*\*[^\n]*\n(?:>\s*[^\n]*\n)*)'
+    m = re.search(pattern, text)
+    if m:
+        return m.group(0)
+    return ""
+
+
+def _parse_extra_structure_table(text: str) -> tuple[list[dict], list[str]]:
+    """Parse the §5.1 table rows, return (rows, missing_columns)."""
+    section = _extract_section_text(text, ["额外结构与假设"])
+    if not section:
+        return [], EXTRA_STRUCTURE_REQUIRED_COLS[:]
+
+    lines = section.splitlines()
+    header_idx = None
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("|") and "关联设计项" in stripped:
+            header_idx = i
+            break
+    if header_idx is None:
+        return [], EXTRA_STRUCTURE_REQUIRED_COLS[:]
+
+    header_cells = _split_table_row(lines[header_idx])
+    col_map: dict[str, int] = {}
+    for idx, cell in enumerate(header_cells):
+        for required in EXTRA_STRUCTURE_REQUIRED_COLS:
+            if required in cell:
+                col_map[required] = idx
+                break
+
+    missing = [c for c in EXTRA_STRUCTURE_REQUIRED_COLS if c not in col_map]
+
+    rows: list[dict] = []
+    for j in range(header_idx + 1, len(lines)):
+        stripped = lines[j].strip()
+        if not stripped.startswith("|"):
+            break
+        if re.match(r"^\|[-:\s|]+$", stripped):
+            continue
+        cells = _split_table_row(stripped)
+        if all(c.strip() in ("", "—", "-") for c in cells):
+            continue
+        row: dict[str, str] = {}
+        for col, idx in col_map.items():
+            row[col] = cells[idx].strip() if idx < len(cells) else ""
+        rows.append(row)
+    return rows, missing
+
+
+def check_extra_structure(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
+    """V23: Check 020-design.md §5.1 for extra structures and assumptions."""
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    if mode != "full":
+        return passes, fails, warns
+
+    design_file = req_dir / "020-design.md"
+    if not design_file.exists():
+        return passes, fails, warns
+
+    text = design_file.read_text(encoding="utf-8")
+
+    # Extract §5.1 section, strip comments, then check for "无额外结构"
+    section = _extract_section_text(text, ["额外结构与假设"])
+    if not section:
+        fails.append(
+            "V23: 020-design.md missing §5.1 额外结构与假设 section — "
+            "must include the section (write '无额外结构' if no extra structures)."
+        )
+        return passes, fails, warns
+
+    section_clean = _strip_html_comments(section).strip()
+
+    # Check for "无额外结构" only in cleaned section body (not in comments)
+    if "无额外结构" in section_clean:
+        passes.append("V23: 020-design.md §5.1 declares 无额外结构")
+        return passes, fails, warns
+
+    # Parse table
+    rows, missing = _parse_extra_structure_table(text)
+
+    if missing:
+        fails.append(
+            f"V23: §5.1 table missing required columns: {', '.join(missing)}. "
+            f"Required: {', '.join(EXTRA_STRUCTURE_REQUIRED_COLS)}"
+        )
+        return passes, fails, warns
+
+    # Empty table → FAIL (must write "无额外结构" instead)
+    if not rows:
+        fails.append(
+            "V23: §5.1 table is empty — write '无额外结构' if no extra structures, "
+            "or fill in the table with required details."
+        )
+        return passes, fails, warns
+
+    # Extract design items from §3 for cross-reference
+    design_items_020 = _extract_design_items_from_020(text)
+
+    # Check each row
+    vague_evidence: list[str] = []
+    empty_fields: list[str] = []
+    invalid_design_refs: list[str] = []
+    unconfirmed: list[str] = []
+
+    for row in rows:
+        design_item = row.get("关联设计项", "")
+        structure = row.get("加了什么结构", "")
+        scenario = row.get("为了解决什么情况", "")
+        evidence = row.get("这种情况的依据", "")
+        cost = row.get("以后再补的成本", "")
+
+        # Check all fields non-empty and not placeholder
+        placeholders = {"[", "占位", "待填", "TODO", "TBD", "..."}
+        for col_name, val in [
+            ("关联设计项", design_item), ("加了什么结构", structure),
+            ("为了解决什么情况", scenario), ("这种情况的依据", evidence),
+            ("以后再补的成本", cost),
+        ]:
+            if not val or val.strip() in placeholders or val.startswith("["):
+                empty_fields.append(f"{design_item or 'row'}: {col_name} is empty/placeholder")
+
+        # Check vague words in evidence column
+        if RE_VAGUE_EVIDENCE.search(evidence):
+            vague_evidence.append(f"{design_item} ({structure}): evidence '{evidence[:60]}'")
+
+        # Check vague words in scenario column too
+        if RE_VAGUE_EVIDENCE.search(scenario):
+            vague_evidence.append(f"{design_item} ({structure}): scenario '{scenario[:60]}'")
+
+        # Check 关联设计项 exists in §3
+        if design_item and design_items_020:
+            dxx_in_row = [m.group(0) for m in RE_DESIGN_ITEM.finditer(design_item)]
+            for dxx in dxx_in_row:
+                if dxx not in design_items_020:
+                    invalid_design_refs.append(f"{dxx} not in §3")
+
+        # Collect unconfirmed (无依据) items
+        if RE_NO_EVIDENCE.search(evidence):
+            unconfirmed.append(f"{design_item}: {structure}")
+
+    if empty_fields:
+        fails.append(
+            "V23: §5.1 table has empty/placeholder fields — "
+            f"all 5 columns must be filled. Offending: {'; '.join(empty_fields[:3])}"
+        )
+
+    if vague_evidence:
+        fails.append(
+            "V23: §5.1 uses vague justifications — evidence and scenario must be "
+            "code location, query/test result, user quote, or '无依据，属于假设'. "
+            f"Offending: {'; '.join(vague_evidence[:3])}"
+        )
+
+    if invalid_design_refs:
+        fails.append(
+            "V23: §5.1 关联设计项 references design items not in §3 — "
+            f"Offending: {'; '.join(invalid_design_refs[:3])}"
+        )
+
+    # Check unconfirmed assumptions are in confirmation list
+    confirmation_text = _extract_blockquote_section(text, "需要你确认的假设")
+    if not confirmation_text:
+        # Also try regular section extraction
+        confirmation_text = _extract_section_text(text, ["需要你确认的假设"])
+
+    if unconfirmed and not confirmation_text:
+        fails.append(
+            f"V23: §5.1 has {len(unconfirmed)} unconfirmed assumption(s) but no "
+            "'需要你确认的假设' list — must list them for user confirmation. "
+            f"Items: {'; '.join(unconfirmed[:3])}"
+        )
+    elif unconfirmed and confirmation_text:
+        not_listed = []
+        for item in unconfirmed:
+            parts = item.split(": ", 1)
+            design_id = parts[0]
+            structure_name = parts[1] if len(parts) > 1 else ""
+            if design_id not in confirmation_text and structure_name not in confirmation_text:
+                not_listed.append(item)
+        if not_listed:
+            fails.append(
+                "V23: §5.1 unconfirmed assumptions not listed in confirmation list — "
+                f"Missing: {'; '.join(not_listed[:3])}"
+            )
+        else:
+            passes.append(
+                f"V23: §5.1 has {len(unconfirmed)} unconfirmed assumption(s) listed for confirmation"
+            )
+    elif not unconfirmed and not empty_fields and not vague_evidence:
+        passes.append("V23: §5.1 all extra structures have concrete evidence")
+
+    # Escalation
+    if unconfirmed and not empty_fields and not vague_evidence:
+        preflight_file = req_dir / "060-preflight.md"
+        record_file = req_dir / "090-execution-record.md"
+
+        preflight_executable = False
+        if preflight_file.exists():
+            pf_text = preflight_file.read_text(encoding="utf-8")
+            preflight_executable = bool(RE_PREFLIGHT_EXECUTABLE.search(pf_text))
+
+        source_steps_exist = False
+        if record_file.exists():
+            rec_text = record_file.read_text(encoding="utf-8")
+            sections = _execution_step_sections(rec_text)
+            source_steps_exist = any(_has_source_write_in_step(s) for s in sections)
+
+        if preflight_executable or source_steps_exist:
+            fails.append(
+                "V23: Unconfirmed extra-structure assumptions still unresolved at "
+                "execution stage — must get user confirmation before preflight "
+                f"declares executable or source Steps are written. "
+                f"Unresolved: {'; '.join(unconfirmed[:3])}"
+            )
+        else:
+            warns.append(
+                f"V23: {len(unconfirmed)} unconfirmed extra-structure assumption(s) "
+                "pending user confirmation — resolve before execution"
+            )
+
+    return passes, fails, warns
+
+
+# ===========================================================================
+# V24: Design→implementation mapping — 020 Dxx ↔ 030 Step ↔ 090 Step
+#      bidirectional consistency check.
+# ===========================================================================
+
+RE_DESIGN_ITEM = re.compile(r"\bD(\d{2})\b")
+RE_MAPPING_TABLE_HEADER = re.compile(r"##\s*2\.2\s*设计到实施的对照")
+RE_IMPL_STEP_HEADER = re.compile(r"###\s*Step\s+(\d+)", re.I)
+RE_STEP_DESIGN_ITEM = re.compile(r"设计项[：:]\s*(.+?)$", re.M)
+RE_NO_CHANGES = re.compile(r"No\s+changes|无变更|无改动", re.I)
+
+
+def _extract_design_items_from_020(text: str) -> set[str]:
+    """Extract all Dxx identifiers from 020-design.md §3 tables."""
+    items: set[str] = set()
+    s3_start = re.search(r"^##\s*3\b", text, re.M)
+    if not s3_start:
+        return items
+    s3_end = re.search(r"^##\s*[4-9]\b", text[s3_start.end():], re.M)
+    section = text[s3_start.start():s3_start.end() + s3_end.start()] if s3_end else text[s3_start.start():]
+
+    for line in section.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        if re.match(r"^\|[-:\s|]+$", stripped):
+            continue
+        for m in RE_DESIGN_ITEM.finditer(stripped):
+            items.add(m.group(0))
+    return items
+
+
+def _extract_design_items_with_duplicates(text: str) -> list[str]:
+    """Extract Dxx from 020 §3 tables preserving duplicates for detection."""
+    items: list[str] = []
+    s3_start = re.search(r"^##\s*3\b", text, re.M)
+    if not s3_start:
+        return items
+    s3_end = re.search(r"^##\s*[4-9]\b", text[s3_start.end():], re.M)
+    section = text[s3_start.start():s3_start.end() + s3_end.start()] if s3_end else text[s3_start.start():]
+
+    for line in section.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        if re.match(r"^\|[-:\s|]+$", stripped):
+            continue
+        for m in RE_DESIGN_ITEM.finditer(stripped):
+            items.append(m.group(0))
+    return items
+
+
+def _extract_mapping_from_030(text: str) -> dict[str, list[str]]:
+    """Parse §2.2 mapping table: {Dxx: [Step N, Step M, ...]}."""
+    section = _extract_section_text(text, ["设计到实施的对照"])
+    if not section:
+        return {}
+    mapping: dict[str, list[str]] = {}
+    for line in section.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|"):
+            continue
+        if "---" in stripped or "设计项" in stripped:
+            continue
+        cells = _split_table_row(stripped)
+        if not cells:
+            continue
+        dxx_matches = [m.group(0) for m in RE_DESIGN_ITEM.finditer(cells[0])]
+        if not dxx_matches:
+            continue
+        step_matches = re.findall(r"Step\s*(\d+)", cells[1], re.I) if len(cells) > 1 else []
+        for dxx in dxx_matches:
+            mapping.setdefault(dxx, []).extend(step_matches)
+    return mapping
+
+
+def _extract_step_design_items_from_030(text: str) -> dict[str, set[str]]:
+    """Parse Step sections in 030, return {Step N: {Dxx, ...}}."""
+    steps: dict[str, set[str]] = {}
+    step_matches = list(RE_IMPL_STEP_HEADER.finditer(text))
+    for i, m in enumerate(step_matches):
+        step_num = m.group(1)
+        start = m.start()
+        end = step_matches[i + 1].start() if i + 1 < len(step_matches) else len(text)
+        next_heading = re.search(r"\n##\s+", text[m.end():end])
+        section_end = m.end() + next_heading.start() if next_heading else end
+        section_text = text[start:section_end]
+
+        items: set[str] = set()
+        for dm in RE_DESIGN_ITEM.finditer(section_text):
+            items.add(dm.group(0))
+
+        di_match = RE_STEP_DESIGN_ITEM.search(section_text)
+        if di_match:
+            for dm in RE_DESIGN_ITEM.finditer(di_match.group(1)):
+                items.add(dm.group(0))
+
+        steps[f"Step {step_num}"] = items
+    return steps
+
+
+def _extract_step_design_items_from_090(text: str) -> dict[str, set[str]]:
+    """Parse Step sections in 090-execution-record.md."""
+    sections = _execution_step_sections(text)
+    steps: dict[str, set[str]] = {}
+    for section in sections:
+        title = section.splitlines()[0].strip() if section else ""
+        step_match = re.search(r"Step\s*(\d+)", title, re.I)
+        if not step_match:
+            continue
+        step_num = step_match.group(1)
+        items: set[str] = set()
+        di_match = RE_STEP_DESIGN_ITEM.search(section)
+        if di_match:
+            for dm in RE_DESIGN_ITEM.finditer(di_match.group(1)):
+                items.add(dm.group(0))
+        steps[f"Step {step_num}"] = items
+    return steps
+
+
+def check_design_impl_mapping(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
+    """V24: Check 020 Dxx ↔ 030 Step ↔ 090 Step bidirectional consistency."""
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    if mode != "full":
+        return passes, fails, warns
+
+    design_file = req_dir / "020-design.md"
+    impl_file = req_dir / "030-implementation.md"
+    if not design_file.exists() or not impl_file.exists():
+        return passes, fails, warns
+
+    design_text = design_file.read_text(encoding="utf-8")
+    impl_text = impl_file.read_text(encoding="utf-8")
+
+    # Check for duplicate Dxx in 020
+    all_dxx_list = _extract_design_items_with_duplicates(design_text)
+    dxx_counts: dict[str, int] = {}
+    for dxx in all_dxx_list:
+        dxx_counts[dxx] = dxx_counts.get(dxx, 0) + 1
+    duplicates = [dxx for dxx, count in dxx_counts.items() if count > 1]
+    if duplicates:
+        fails.append(
+            "V24: 020 §3 has duplicate design item numbers — "
+            f"each Dxx must be unique. Duplicates: {', '.join(sorted(duplicates))}"
+        )
+
+    design_items = set(all_dxx_list)
+
+    # Extract actual Step numbers from 030 §3
+    actual_steps: set[str] = set()
+    for m in re.finditer(r"###\s*Step\s+(\d+)", impl_text, re.I):
+        actual_steps.add(m.group(1))
+
+    # Extract §2.2 mapping
+    mapping = _extract_mapping_from_030(impl_text)
+
+    # Extract Step design items from 030
+    step_design_items_030 = _extract_step_design_items_from_030(impl_text)
+
+    # Check A: 020 has no Dxx
+    if not design_items:
+        # Check if 030 has source Steps
+        has_source_steps = False
+        for m in re.finditer(r"###\s*Step\s+(\d+)", impl_text, re.I):
+            snippet = impl_text[m.start():m.start() + 500]
+            if (RE_SOURCE_WRITE_TARGET.search(snippet) or
+                RE_SOURCE_CONTENT_WRITE_ACTION.search(snippet) or
+                RE_DML_KEYWORDS.search(snippet)):
+                has_source_steps = True
+                break
+
+        if has_source_steps:
+            fails.append(
+                "V24: 020 has no design items (Dxx) but 030 has source/DML Steps — "
+                "every source/DML Step must reference a design item from 020 §3."
+            )
+        elif RE_NO_CHANGES.search(impl_text):
+            passes.append("V24: 020 has no design items and 030 says No changes — consistent")
+        else:
+            passes.append("V24: 020 has no design items and 030 has no source Steps — consistent")
+        return passes, fails, warns
+
+    # Check B: every Dxx in 020 must appear in §2.2 mapping
+    unmapped = [dxx for dxx in sorted(design_items) if dxx not in mapping]
+    if unmapped:
+        fails.append(
+            "V24: 020 design items missing from 030 §2.2 mapping table — "
+            f"every Dxx must have at least one Step. Missing: {', '.join(unmapped)}"
+        )
+    else:
+        passes.append(f"V24: All {len(design_items)} design item(s) mapped in 030 §2.2")
+
+    # Check C: §2.2 mapping Dxx must exist in 020
+    mapping_unknown_dxx = [dxx for dxx in mapping if dxx not in design_items]
+    if mapping_unknown_dxx:
+        fails.append(
+            "V24: 030 §2.2 mapping references design items not in 020 — "
+            f"unknown: {', '.join(sorted(mapping_unknown_dxx))}"
+        )
+
+    # Check C2: Step design items must not reference Dxx not in 020
+    all_030_refs: set[str] = set()
+    for items in step_design_items_030.values():
+        all_030_refs.update(items)
+    unknown_step_refs = all_030_refs - design_items
+    if unknown_step_refs:
+        fails.append(
+            "V24: 030 Step design items reference Dxx not in 020 — "
+            f"unknown: {', '.join(sorted(unknown_step_refs))}"
+        )
+
+    # Check D: §2.2 mapping Step references must exist in 030 §3
+    mapping_unknown_steps: list[str] = []
+    for dxx, step_nums in mapping.items():
+        for sn in step_nums:
+            if sn not in actual_steps:
+                mapping_unknown_steps.append(f"{dxx} → Step {sn} (not in §3)")
+    if mapping_unknown_steps:
+        fails.append(
+            "V24: 030 §2.2 mapping references Steps not in §3 — "
+            f"Offending: {'; '.join(mapping_unknown_steps[:3])}"
+        )
+
+    # Check E: source/test/config Steps must reference at least one Dxx
+    # "流程步骤" exemption only if Step truly has no source/DML/config content
+    steps_without_design: list[str] = []
+    for m in re.finditer(r"###\s*Step\s+(\d+)", impl_text, re.I):
+        step_num = m.group(1)
+        step_key = f"Step {step_num}"
+        items = step_design_items_030.get(step_key, set())
+        snippet = impl_text[m.start():m.start() + 500]
+
+        has_content = bool(
+            RE_SOURCE_WRITE_TARGET.search(snippet) or
+            RE_SOURCE_CONTENT_WRITE_ACTION.search(snippet) or
+            RE_DML_KEYWORDS.search(snippet)
+        )
+
+        if not items:
+            if has_content:
+                # Has source/DML content but no design item → FAIL
+                # even if marked as "流程步骤"
+                steps_without_design.append(step_key)
+
+    if steps_without_design:
+        fails.append(
+            "V24: Source/DML Steps missing 设计项 reference — "
+            f"every Step with source/DML content must cite at least one Dxx. "
+            f"Offending: {'; '.join(steps_without_design[:3])}"
+        )
+    else:
+        passes.append("V24: All source/DML Steps have design item references")
+
+    # Check F: per-Step comparison — mapping says D01→Step1,
+    #          but Step 1 actually references D02 → FAIL
+    inconsistent_mapping: list[str] = []
+    for dxx, step_nums in mapping.items():
+        for sn in step_nums:
+            step_key = f"Step {sn}"
+            actual_items = step_design_items_030.get(step_key, set())
+            if actual_items and dxx not in actual_items:
+                inconsistent_mapping.append(
+                    f"§2.2 says {dxx}→{step_key}, but {step_key} references {', '.join(sorted(actual_items))}"
+                )
+    if inconsistent_mapping:
+        fails.append(
+            "V24: §2.2 mapping inconsistent with Step design items — "
+            f"{'; '.join(inconsistent_mapping[:3])}"
+        )
+
+    # Check G: 090 design items consistent with 030
+    record_file = req_dir / "090-execution-record.md"
+    if record_file.exists():
+        rec_text = record_file.read_text(encoding="utf-8")
+        step_design_items_090 = _extract_step_design_items_from_090(rec_text)
+
+        inconsistent: list[str] = []
+        for step_key, items_090 in step_design_items_090.items():
+            items_030 = step_design_items_030.get(step_key, set())
+
+            # 090 Step must have 设计项 field if 030 Step has design items
+            if not items_090 and items_030:
+                inconsistent.append(
+                    f"{step_key}: 090 missing 设计项 field (030 has {', '.join(sorted(items_030))})"
+                )
+                continue
+
+            extra_in_090 = items_090 - items_030
+            missing_in_090 = items_030 - items_090
+
+            if extra_in_090:
+                inconsistent.append(
+                    f"{step_key}: 090 has {', '.join(sorted(extra_in_090))} not in 030"
+                )
+            if missing_in_090 and items_090:
+                inconsistent.append(
+                    f"{step_key}: 090 missing {', '.join(sorted(missing_in_090))} from 030"
+                )
+
+        if inconsistent:
+            fails.append(
+                "V24: 090 execution record design items inconsistent with 030 — "
+                f"{'; '.join(inconsistent[:3])}"
+            )
+        else:
+            passes.append("V24: 090 execution record design items consistent with 030")
+
+    return passes, fails, warns
+
+
 def _bootstrap_write_result(req_dir: Path, n_pass: int, n_fail: int, n_warn: int) -> bool:
     """Write the validator result into _active-state.md 最近验证 section.
 
@@ -2500,6 +3079,18 @@ def main():
 
     # V22: Pathfinder map consumption record
     p, f, w = check_pathfinder_consumption(req_dir, repo_root)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V23: Extra structure & assumptions (full mode only)
+    p, f, w = check_extra_structure(req_dir, mode)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V24: Design→implementation mapping (full mode only)
+    p, f, w = check_design_impl_mapping(req_dir, mode)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

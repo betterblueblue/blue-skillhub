@@ -240,8 +240,8 @@ Phase 2.5 产出的每个不确定项，先判断能不能从代码推断，再�
 | light + full | `000-context-pack.md` | §7 已确认事实 | V1 |
 | light | `040-light.md` | 「关键链路深度检查」节 | V1, V11 FAIL |
 | full | `010-requirements.md` | — | V1 |
-| full | `020-design.md` | `## 6. 全局影响检查`（19 行全局影响检查表，标题不得改名） | V10 FAIL（缺失或行数不足） |
-| full | `030-implementation.md` | `## 3.2 API 方法验证`（已有方法 grep 验证表） | V3 FAIL |
+| full | `020-design.md` | `## 6. 全局影响检查`（19 行全局影响检查表，标题不得改名）；`## 5.1 额外结构与假设`（无额外结构时写「无额外结构」） | V10 FAIL（缺失或行数不足）；V23 FAIL/WARN（额外结构未填写或无依据项未列入确认清单） |
+| full | `030-implementation.md` | `## 3.2 API 方法验证`（已有方法 grep 验证表）；`## 2.2 设计到实施的对照`（Dxx → Step 映射表） | V3 FAIL；V24 FAIL（映射不一致或有源码/DML Step 未引用设计项） |
 | light + full | `_active-state.md` | — | V1 FAIL |
 
 **全部文档输出后，必须运行验证脚本（不可跳过）：**
