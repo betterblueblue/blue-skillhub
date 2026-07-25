@@ -81,7 +81,7 @@ intent-anchor → intent.md（意图、能力、验收路径、设计标准、�
 intent-prd → prd.md（原生引用能力表和验收路径，Acceptance Criteria 用 Given/When/Then 结构）
     ↓ 强制输入
 intent-design → architecture.md + design.md（架构决策外化为文件，假设表把过度设计变成显式决策）
-    ↓ 可选输入
+    ↓ 强制输入
 intent-issues → issues.md（自动引用路径编号，自动检查覆盖；有 architecture.md 时检查模块引用）
     ↓ 强制输入
 intent-dev → dev-record.md（TDD 循环，每条 Then 按实际运行结果判定验证等级）

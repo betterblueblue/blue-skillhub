@@ -24,6 +24,19 @@ finally:
     sys.path.pop(0)
 
 
+_ARCH_CONTENT = (
+    "# 架构 - 测试\n"
+    "\n"
+    "## 1. 架构概览\n\n"
+    "测试用架构。\n\n"
+    "## 2. 模块与边界\n\n"
+    "| 模块 | 职责 | 服务的能力 | 依赖模块 |\n"
+    "|---|---|---|---|\n"
+    "| 记录生成器 | 从任务状态生成交接记录内容 | C01 | 无 |\n"
+    "| 文件存储 | 读写交接记录 Markdown 文件 | C01 | 无 |\n"
+)
+
+
 def _content() -> str:
     return (FIXTURE_DIR / "valid-verify-record.md").read_text(encoding="utf-8")
 
@@ -32,8 +45,8 @@ def _intent() -> str:
     return (FIXTURE_DIR / "valid-intent.md").read_text(encoding="utf-8")
 
 
-def _result(content: str, check_id: str) -> tuple[str, str, str]:
-    matches = [item for item in validate(content, _intent()) if item[0] == check_id]
+def _result(content: str, check_id: str, arch: str = _ARCH_CONTENT) -> tuple[str, str, str]:
+    matches = [item for item in validate(content, _intent(), arch) if item[0] == check_id]
     if len(matches) != 1:
         raise AssertionError(f"Expected one {check_id} result, got {matches}")
     return matches[0]
@@ -41,7 +54,7 @@ def _result(content: str, check_id: str) -> tuple[str, str, str]:
 
 class TestValidFixture(unittest.TestCase):
     def test_valid_verify_record_passes_all_checks(self):
-        results = validate(_content(), _intent())
+        results = validate(_content(), _intent(), _ARCH_CONTENT)
         self.assertEqual(8, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
@@ -288,39 +301,27 @@ class TestCrossValidation(unittest.TestCase):
 
 
 class TestTechDriftCheck(unittest.TestCase):
-    """V8: 提供 architecture.md 时，最终复核必须包含技术漂移复核子节。"""
+    """V8: 最终复核必须包含技术漂移复核子节。"""
 
-    _ARCH_CONTENT = (
-        "# 架构 - 测试\n"
-        "\n"
-        "## 1. 架构概览\n\n"
-        "测试用架构。\n\n"
-        "## 2. 模块与边界\n\n"
-        "| 模块 | 职责 | 服务的能力 | 依赖模块 |\n"
-        "|---|---|---|---|\n"
-        "| 记录生成器 | 从任务状态生成交接记录内容 | C01 | 无 |\n"
-        "| 文件存储 | 读写交接记录 Markdown 文件 | C01 | 无 |\n"
-    )
-
-    def test_no_architecture_passes(self):
-        """不提供 architecture.md 时 V8 返回 PASS。"""
+    def test_no_architecture_fails(self):
+        """不提供 architecture.md 时 V8 返回 FAIL。"""
         results = validate(_content(), _intent())
         v8 = [r for r in results if r[0] == "V8"]
         self.assertEqual(1, len(v8))
-        self.assertEqual("PASS", v8[0][1])
-        self.assertIn("不检查", v8[0][2])
+        self.assertEqual("FAIL", v8[0][1])
+        self.assertIn("必须存在", v8[0][2])
 
     def test_tech_drift_present_passes(self):
-        """提供了 architecture.md 且有技术漂移复核子节时 V8 返回 PASS。"""
-        results = validate(_content(), _intent(), self._ARCH_CONTENT)
+        """有技术漂移复核子节时 V8 返回 PASS。"""
+        results = validate(_content(), _intent(), _ARCH_CONTENT)
         v8 = [r for r in results if r[0] == "V8"]
         self.assertEqual(1, len(v8))
         self.assertEqual("PASS", v8[0][1])
 
     def test_tech_drift_missing_fails(self):
-        """提供了 architecture.md 但缺少技术漂移复核子节时 V8 返回 FAIL。"""
+        """缺少技术漂移复核子节时 V8 返回 FAIL。"""
         content = _content().replace("### 技术漂移复核", "### X")
-        results = validate(content, _intent(), self._ARCH_CONTENT)
+        results = validate(content, _intent(), _ARCH_CONTENT)
         v8 = [r for r in results if r[0] == "V8"]
         self.assertEqual(1, len(v8))
         self.assertEqual("FAIL", v8[0][1])

@@ -25,6 +25,33 @@ finally:
     sys.path.pop(0)
 
 
+_ARCH_CONTENT = (
+    "# 架构 - 测试\n"
+    "\n"
+    "## 1. 架构概览\n\n"
+    "测试用架构。\n\n"
+    "## 2. 模块与边界\n\n"
+    "| 模块 | 职责 | 服务的能力 | 依赖模块 |\n"
+    "|---|---|---|---|\n"
+    "| 记录生成器 | 从任务状态生成交接记录内容 | C01 | 无 |\n"
+    "| 文件存储 | 读写交接记录 Markdown 文件 | C01 | 无 |\n\n"
+    "## 3. 技术选型\n\n"
+    "| 决策项 | 选了什么 | 服务的能力 | 为什么不选另一个 | 以后再改的成本 |\n"
+    "|---|---|---|---|---|\n"
+    "| 文件格式 | Markdown | C01 | JSON 不便阅读 | 便宜 |\n\n"
+    "## 4. 关键数据流\n\n"
+    "| 路径 ID | 数据从哪来 | 经过模块 | 存到哪 |\n"
+    "|---|---|---|---|\n"
+    "| P01 | 当前会话任务状态 | 记录生成器 → 文件存储 | handoff/ 目录 |\n\n"
+    "## 5. 额外结构与假设\n\n"
+    "无额外结构\n\n"
+    "### 需要你确认的假设\n\n"
+    "无\n\n"
+    "## 6. 重要决策的详细说明\n\n"
+    "无\n"
+)
+
+
 def _issues_content() -> str:
     return (FIXTURE_DIR / "valid-issues.md").read_text(encoding="utf-8")
 
@@ -33,8 +60,8 @@ def _intent_content() -> str:
     return INTENT_FIXTURE.read_text(encoding="utf-8")
 
 
-def _result(issues: str, intent: str, check_id: str) -> tuple[str, str, str]:
-    matches = [item for item in validate(issues, intent) if item[0] == check_id]
+def _result(issues: str, intent: str, check_id: str, arch: str = _ARCH_CONTENT) -> tuple[str, str, str]:
+    matches = [item for item in validate(issues, intent, "", arch) if item[0] == check_id]
     if len(matches) != 1:
         raise AssertionError(f"Expected one {check_id} result, got {matches}")
     return matches[0]
@@ -42,7 +69,7 @@ def _result(issues: str, intent: str, check_id: str) -> tuple[str, str, str]:
 
 class TestValidFixture(unittest.TestCase):
     def test_valid_issues_passes_all_checks(self):
-        results = validate(_issues_content(), _intent_content())
+        results = validate(_issues_content(), _intent_content(), "", _ARCH_CONTENT)
         self.assertEqual(11, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
@@ -236,51 +263,27 @@ class TestTerminologyPropagation(unittest.TestCase):
 
 
 class TestArchitectureModuleRef(unittest.TestCase):
-    """V11: 提供 architecture.md 时，工单的"涉及模块"必须引用架构文档中定义的模块名。"""
+    """V11: 工单的"涉及模块"必须引用架构文档中定义的模块名。"""
 
-    _ARCH_CONTENT = (
-        "# 架构 - 测试\n"
-        "\n"
-        "## 1. 架构概览\n\n"
-        "测试用架构。\n\n"
-        "## 2. 模块与边界\n\n"
-        "| 模块 | 职责 | 服务的能力 | 依赖模块 |\n"
-        "|---|---|---|---|\n"
-        "| 记录生成器 | 从任务状态生成交接记录内容 | C01 | 无 |\n"
-        "| 文件存储 | 读写交接记录 Markdown 文件 | C01 | 无 |\n\n"
-        "## 3. 技术选型\n\n"
-        "| 决策项 | 选了什么 | 服务的能力 | 为什么不选另一个 | 以后再改的成本 |\n"
-        "|---|---|---|---|---|\n"
-        "| 文件格式 | Markdown | C01 | JSON 不便阅读 | 便宜 |\n\n"
-        "## 4. 关键数据流\n\n"
-        "| 路径 ID | 数据从哪来 | 经过模块 | 存到哪 |\n"
-        "|---|---|---|---|\n"
-        "| P01 | 当前会话任务状态 | 记录生成器 → 文件存储 | handoff/ 目录 |\n\n"
-        "## 5. 额外结构与假设\n\n"
-        "无额外结构\n\n"
-        "### 需要你确认的假设\n\n"
-        "无\n\n"
-        "## 6. 重要决策的详细说明\n\n"
-        "无\n"
-    )
-
-    def test_no_architecture_passes(self):
-        """不提供 architecture.md 时 V11 返回 PASS。"""
-        result = _result(_issues_content(), _intent_content(), "V11")
-        self.assertEqual("PASS", result[1])
-        self.assertIn("不检查", result[2])
+    def test_no_architecture_fails(self):
+        """不提供 architecture.md 时 V11 返回 FAIL。"""
+        results = validate(_issues_content(), _intent_content())
+        v11 = [r for r in results if r[0] == "V11"]
+        self.assertEqual(1, len(v11))
+        self.assertEqual("FAIL", v11[0][1])
+        self.assertIn("必须存在", v11[0][2])
 
     def test_valid_module_references_passes(self):
         """工单的涉及模块都定义在 architecture.md 中时 V11 返回 PASS。"""
-        results = validate(_issues_content(), _intent_content(), "", self._ARCH_CONTENT)
+        results = validate(_issues_content(), _intent_content(), "", _ARCH_CONTENT)
         v11 = [r for r in results if r[0] == "V11"]
         self.assertEqual(1, len(v11))
         self.assertEqual("PASS", v11[0][1])
 
     def test_missing_module_subsection_fails(self):
-        """architecture.md 存在但工单缺少涉及模块子节时 V11 返回 FAIL。"""
+        """工单缺少涉及模块子节时 V11 返回 FAIL。"""
         issues = _issues_content().replace("### 涉及模块", "### X")
-        results = validate(issues, _intent_content(), "", self._ARCH_CONTENT)
+        results = validate(issues, _intent_content(), "", _ARCH_CONTENT)
         v11 = [r for r in results if r[0] == "V11"]
         self.assertEqual(1, len(v11))
         self.assertEqual("FAIL", v11[0][1])
@@ -289,7 +292,7 @@ class TestArchitectureModuleRef(unittest.TestCase):
     def test_undefined_module_fails(self):
         """工单引用了 architecture.md 中未定义的模块时 V11 返回 FAIL。"""
         issues = _issues_content().replace("- 记录生成器", "- 不存在的模块")
-        results = validate(issues, _intent_content(), "", self._ARCH_CONTENT)
+        results = validate(issues, _intent_content(), "", _ARCH_CONTENT)
         v11 = [r for r in results if r[0] == "V11"]
         self.assertEqual(1, len(v11))
         self.assertEqual("FAIL", v11[0][1])

@@ -46,7 +46,7 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 | V11 | 提供 architecture.md 时，工单的"涉及模块"引用的模块名在架构文档中定义 |
 
 ```bash
-python skills/intent-issues/scripts/issues_validate.py intent-chain/{链路目录}/issues.md intent-chain/{链路目录}/intent.md intent-chain/{链路目录}/prd.md [intent-chain/{链路目录}/architecture.md]
+python skills/intent-issues/scripts/issues_validate.py intent-chain/{链路目录}/issues.md intent-chain/{链路目录}/intent.md intent-chain/{链路目录}/prd.md intent-chain/{链路目录}/architecture.md
 ```
 
 ## 文件结构

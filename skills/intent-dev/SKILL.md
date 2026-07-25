@@ -109,7 +109,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 ### Phase 1：前置检查与项目探索
 
 1. 确认 INTENT.md、PRD 和工单文件路径。
-2. 读取三者全文。如果链路目录下有 `architecture.md` 和 `design.md`，一并读取作为技术参考——它们不是强制前置，没有也不影响开发流程。
+2. 读取三者全文。如果链路目录下有 `architecture.md` 和 `design.md`，一并读取作为技术参考。
 3. 运行 `intent_validate.py`、`prd_validate.py` 和 `issues_validate.py` 确认通过。任一 FAIL 则停止。
 4. **探索目标项目根目录**，按"验证命令来源"节的步骤查找构建/测试配置文件，从文件内容中提取实际命令。找不到配置文件则问用户。
 5. 确定构建命令和测试命令。用户确认没有测试环境则标"V2 不可用，工单无法标 done"。

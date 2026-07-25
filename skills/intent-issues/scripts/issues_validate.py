@@ -402,10 +402,14 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
     else:
         results.append(("V10", "PASS", "未提供 PRD，跳过 Then 覆盖检查"))
 
-    # V11: 架构模块引用检查（可选，仅当 architecture_content 非空时）
-    if architecture_content:
+    # V11: 架构模块引用检查（强制——intent-design 是 intent-chain 的必经环节）
+    if not architecture_content:
+        results.append(("V11", "FAIL", "未提供 architecture.md；intent-design 是必经环节，architecture.md 必须存在"))
+    else:
         arch_modules = _parse_architecture_modules(architecture_content)
-        if arch_modules:
+        if not arch_modules:
+            results.append(("V11", "FAIL", "architecture.md 第 2 节无模块定义"))
+        else:
             v11_errors: list[str] = []
             for i, issue in enumerate(issues, 1):
                 modules_text = re.search(
@@ -424,10 +428,6 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
                 results.append(("V11", "FAIL", "; ".join(v11_errors)))
             else:
                 results.append(("V11", "PASS", f"全部工单的涉及模块引用了架构文档中定义的模块"))
-        else:
-            results.append(("V11", "PASS", "architecture.md 无模块定义，不适用"))
-    else:
-        results.append(("V11", "PASS", "未提供 architecture.md，不检查模块引用"))
 
     return results
 
