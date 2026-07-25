@@ -61,7 +61,7 @@ flowchart TD
 
 下面是最常见的搭配，不要求每次把所有工具都走一遍。
 
-- **从模糊想法开始做新项目**：律刃 → IntentAnchor → 需要时调研开源项目 → 用 IntentPRD 生成 PRD → 用 IntentIssues 拆工单 → 用 IntentDev 开发 → 用 IntentVerify 端到端验收 → 提交前整理。也可以选择 Superpowers 或 Skills for Real Engineers 进入开发。担心 AI 把简单需求做复杂时，可以在开发阶段搭配 Ponytail。
+- **从模糊想法开始做新项目**：律刃 → IntentAnchor → 需要时调研开源项目 → 用 IntentPRD 生成 PRD → 用 IntentDesign 做技术方案设计 → 用 IntentIssues 拆工单 → 用 IntentDev 开发 → 用 IntentVerify 端到端验收 → 提交前整理。也可以选择 Superpowers 或 Skills for Real Engineers 进入开发。担心 AI 把简单需求做复杂时，可以在开发阶段搭配 Ponytail。
 - **接手陌生项目并准备修改**：律刃 → Pathfinder → 需求仍然模糊时使用 IntentAnchor → ImpactRadar → 独立验收 → 提交前整理。
 - **熟悉项目中的明确改动**：律刃 → ImpactRadar → 验证 → 独立验收或提交前整理。不必为了流程完整强行运行 Pathfinder。
 - **开发中途需求改变**：先暂停修改 → 需求变更对账 → 目标变化时回到 IntentAnchor，改动范围变化时回到 ImpactRadar。
@@ -71,7 +71,7 @@ flowchart TD
 
 ## 从零开始开发
 
-IntentAnchor 负责先把方向说清楚，"开工前调研开源项目"负责在技术路线不确定时查找依据。方向和方案确认以后，有两条路可以选：用 Blue SkillHub 自己的完整链路（IntentPRD → IntentIssues → IntentDev → IntentVerify）继续往下走，或者使用下面的第三方工具。
+IntentAnchor 负责先把方向说清楚，"开工前调研开源项目"负责在技术路线不确定时查找依据。方向和方案确认以后，有两条路可以选：用 Blue SkillHub 自己的完整链路（IntentPRD → IntentDesign → IntentIssues → IntentDev → IntentVerify）继续往下走，或者使用下面的第三方工具。
 
 完整链路：
 
@@ -80,11 +80,13 @@ intent-anchor → intent.md（意图、能力、验收路径、设计标准、�
     ↓ 强制输入
 intent-prd → prd.md（原生引用能力表和验收路径，Acceptance Criteria 用 Given/When/Then 结构）
     ↓ 强制输入
-intent-issues → issues.md（自动引用路径编号，自动检查覆盖）
+intent-design → architecture.md + design.md（架构决策外化为文件，假设表把过度设计变成显式决策）
+    ↓ 可选输入
+intent-issues → issues.md（自动引用路径编号，自动检查覆盖；有 architecture.md 时检查模块引用）
     ↓ 强制输入
 intent-dev → dev-record.md（TDD 循环，每条 Then 按实际运行结果判定验证等级）
     ↓ 强制输入
-intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 条件性验证 + 漂移复核）
+intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 条件性验证 + 漂移复核 + 技术漂移复核）
 ```
 
 ### IntentPRD 和 IntentIssues：让 INTENT.md 的约束一路传到工单
@@ -96,6 +98,14 @@ intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 条�
 IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设计标准映射到 PRD 的 Implementation Decisions，把验收路径映射到 PRD 的 Acceptance Criteria，把术语表传递到工单的界面文案约束。IntentIssues 还会自动检查所有验收路径是否被至少一个工单覆盖。
 
 两个 Skill 都强制要求 `INTENT.md` 作为输入；没有 `INTENT.md` 时，直接用原版 to-prd / to-issues 即可。
+
+### IntentDesign：把技术方案和假设外化为文件
+
+[IntentDesign](skills/intent-design/) 从 `INTENT.md` 和 PRD 产出架构文档和功能设计文档。架构文档写全局技术决策（分层、模块边界、技术选型、数据流、额外结构与假设），功能设计文档写每个保留能力在架构里怎么落地。
+
+它通过假设表把"这个场景会不会发生"从模型的隐含判断变成用户的显式决策。额外结构必须写出具体场景和依据，依据只能是代码位置、用户原话或"无依据，属于假设"。
+
+`design_validate.py` 运行 15 项检查（A1-A8, D1-D5, X1-X2），包括架构概览、模块定义、技术选型、数据流、假设合规性、能力覆盖、模块引用一致性和额外能力检查。
 
 ### IntentDev 和 IntentVerify：从开发到端到端验收
 
@@ -165,6 +175,7 @@ Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.claude\s
 Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\intent-prd" "$env:USERPROFILE\.claude\skills\intent-prd" -Recurse -Force
+Copy-Item "E:\agent\blue-skillhub\skills\intent-design" "$env:USERPROFILE\.claude\skills\intent-design" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\intent-issues" "$env:USERPROFILE\.claude\skills\intent-issues" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\intent-dev" "$env:USERPROFILE\.claude\skills\intent-dev" -Recurse -Force
 Copy-Item "E:\agent\blue-skillhub\skills\intent-verify" "$env:USERPROFILE\.claude\skills\intent-verify" -Recurse -Force
@@ -305,7 +316,7 @@ IntentPRD 从 `INTENT.md` 生成 PRD。它原生读取 `INTENT.md` 的各章节�
 
 IntentIssues 从 `INTENT.md` 和 PRD 拆分工单，按垂直切片（tracer bullet）组织。每个工单贯穿所有集成层，可以独立演示或验证。工单的 Acceptance criteria 自动引用验收路径编号（如 `[P01]`），输出前自动检查所有验收路径被至少一个工单覆盖。
 
-`issues_validate.py` 运行 7 项检查（V1-V7），包括文件非空、工单必需子节、验收路径覆盖、保留能力覆盖、Coverage Verification、设计标准传递检查和术语表传递检查。
+`issues_validate.py` 运行 11 项检查（V1-V11），包括文件非空、工单必需子节、验收路径覆盖、保留能力覆盖、Coverage Verification、设计标准传递、术语表传递、性能要求传递、安全要求传递、PRD Then 覆盖和架构模块引用检查。
 
 ### IntentDev
 
@@ -321,7 +332,7 @@ IntentDev 按 TDD 循环开发每个工单。它强制要求工单文件通过 `
 
 IntentVerify 在所有工单开发完成后做整体验收。它强制要求 dev-record 通过 `dev_validate.py` 校验且所有工单标 done 作为输入。验收流程：先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，然后做条件性验证（性能和安全要求，有则逐项验证，没有标不适用），最后做最终复核（保留能力核对 + 漂移复核）。
 
-`verify_validate.py` 运行 6 项检查，包括文件非空、回归验证段、验收路径的 Given/When/Then 和验证方式、每条路径有 V3 证据、条件性验证段和最终复核完整性。
+`verify_validate.py` 运行 8 项检查，包括文件非空、回归验证段、验收路径的 Given/When/Then 和验证方式、每条路径有 V3 证据、条件性验证段、最终复核完整性、与 INTENT.md 交叉校验和技术漂移复核检查。
 
 ### VL 识图
 
@@ -516,6 +527,7 @@ blue-skillhub/
     ├── impact/
     ├── intent-anchor/
     ├── intent-prd/
+    ├── intent-design/
     ├── intent-issues/
     ├── intent-dev/
     ├── intent-verify/

@@ -426,6 +426,27 @@ intent-chain/
 
 ---
 
+## 待办：CI 门禁失效（2026-07-25 发现，用户决定暂不处理）
+
+`.github/workflows/eval-checks.yml` 在 master 上有两步会失败，CI 实际处于长期红灯状态，等于没有门禁。
+
+| # | 失败步骤 | 原因 | 修法 |
+|---|---|---|---|
+| 1 | `validate_real_projects.py` | `delivery-results.json` results[19] 引用的 `eval/runs/real-projects/2026-07-04-minimax-m3-delivery-d19r2/README.md` 不存在——该文件（302 行）在 commit `a11f12d` 中被误删，同目录其他文件（change-impact/ 7 份 + diff/ 2 份）都还在 | `git show a11f12d^:eval/runs/real-projects/2026-07-04-minimax-m3-delivery-d19r2/README.md` 可完整取回 |
+| 2 | Validate skill metadata | `skills/vl-vision/SKILL.md` 缺 `allowed-tools` 字段。vl-vision 建于 2026-06-29（`7c08272`），metadata 检查加于 2026-07-10（`b6aa7a3`），加检查时未回看已有文件 | 补 `allowed-tools`，或让检查跳过 vl-vision。vl-vision 自称"非核心 Skill，不参与评测体系"，选哪种取决于是否要让它可被模型调用——产品决定，待用户拍板 |
+
+另有一处覆盖缺口（非失败）：CI 只单独跑了 intent-anchor 的测试，intent-prd / intent-issues / intent-dev / intent-verify 四个 skill 的 99 个测试未进 CI（`tests/run.sh` 那一步只对有 run.sh 的目录生效，这四个没有）。
+
+复现命令：
+
+```bash
+python eval/real-projects/scripts/validate_real_projects.py   # 退出码 1
+```
+
+本地已确认其余 CI 步骤通过：JSON 全量解析、check_delivery 单测（41 passed）、`sync_templates.py --check`（10/10）、`pytest skills/`（260 passed）。
+
+---
+
 ## 新会话开场最短上下文
 
 ```text

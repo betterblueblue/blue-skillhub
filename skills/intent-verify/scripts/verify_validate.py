@@ -12,6 +12,7 @@
   V5: 有条件性验证段（性能验证和安全验证，不适用也要标注）
   V6: 最终复核完整（回归汇总、保留能力核对、验收路径逐条验证含 Then 全通过、条件性汇总、漂移复核、结论）
   V7: 与 INTENT.md 交叉校验（路径 ID 一致、保留能力 ID 一致、性能/安全结论与 INTENT.md 要求一致）
+  V8: 提供 architecture.md 时，最终复核包含技术漂移复核子节
 
 本脚本不能验证 V3 证据是否真实，也不能证明验收结果符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -54,6 +55,7 @@ CAPABILITY_HEADING = "### 保留能力逐项核对"
 PATH_TABLE_HEADING = "### 验收路径逐条验证"
 CONDITIONAL_SUMMARY_HEADING = "### 条件性验证结果汇总"
 DRIFT_HEADING = "### 漂移复核"
+TECH_DRIFT_HEADING = "### 技术漂移复核"
 CONCLUSION_HEADING = "### 结论"
 
 CAPABILITY_ID_RE = re.compile(r"C\d{2,}")
@@ -154,7 +156,7 @@ def _intent_has_security_requirements(intent_content: str) -> bool:
     return bool(rows)
 
 
-def validate(verify_content: str, intent_content: str) -> list[tuple[str, str, str]]:
+def validate(verify_content: str, intent_content: str, architecture_content: str = "") -> list[tuple[str, str, str]]:
     """返回 (检查项, 结果, 说明)。"""
     results: list[tuple[str, str, str]] = []
 
@@ -371,16 +373,27 @@ def validate(verify_content: str, intent_content: str) -> list[tuple[str, str, s
     else:
         results.append(("V7", "PASS", "与 INTENT.md 交叉校验一致"))
 
+    # V8: 技术漂移复核检查（可选，仅当 architecture_content 非空时）
+    if architecture_content:
+        tech_drift = _subsection(gate_section, TECH_DRIFT_HEADING)
+        if not tech_drift.strip():
+            results.append(("V8", "FAIL", "提供了 architecture.md 但最终复核缺少技术漂移复核子节"))
+        else:
+            results.append(("V8", "PASS", "技术漂移复核子节存在"))
+    else:
+        results.append(("V8", "PASS", "未提供 architecture.md，不检查技术漂移复核"))
+
     return results
 
 
 def main() -> int:
-    if len(sys.argv) != 3:
-        print("用法: python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md /path/to/intent-chain/{链路目录}/intent.md")
+    if len(sys.argv) < 3:
+        print("用法: python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md /path/to/intent-chain/{链路目录}/intent.md [/path/to/intent-chain/{链路目录}/architecture.md]")
         return 1
 
     verify_path = Path(sys.argv[1])
     intent_path = Path(sys.argv[2])
+    arch_path = Path(sys.argv[3]) if len(sys.argv) >= 4 else None
 
     if not verify_path.exists():
         print(f"FAIL: VERIFY-RECORD 文件不存在: {verify_path}")
@@ -391,11 +404,14 @@ def main() -> int:
 
     verify_content = verify_path.read_text(encoding="utf-8")
     intent_content = intent_path.read_text(encoding="utf-8")
-    results = validate(verify_content, intent_content)
+    architecture_content = arch_path.read_text(encoding="utf-8") if arch_path and arch_path.exists() else ""
+    results = validate(verify_content, intent_content, architecture_content)
 
     print(f"\n{'=' * 60}")
     print(f"VERIFY-RECORD 校验结果: {verify_path}")
     print(f"INTENT.md: {intent_path}")
+    if arch_path:
+        print(f"Architecture: {arch_path}")
     print(f"{'=' * 60}\n")
 
     fail_count = 0

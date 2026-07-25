@@ -37,6 +37,12 @@ None - can start immediately / {Issue 编号}
 
 - Story {编号} [{能力 ID}]
 
+### 涉及模块
+
+<!-- 如果链路目录下有 architecture.md，列出本工单涉及的模块名（引用 architecture.md 第 2 节定义的模块名）。没有 architecture.md 时不需要此子节。 -->
+
+- {模块名}
+
 ---
 
 ## Issue 2: {标题}
@@ -61,6 +67,10 @@ None - can start immediately / {Issue 编号}
 ### User stories covered
 
 - Story {编号} [{能力 ID}]
+
+### 涉及模块
+
+- {模块名}
 
 ---
 

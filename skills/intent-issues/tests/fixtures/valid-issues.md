@@ -35,6 +35,11 @@ None - can start immediately
 
 - Story 1 [C01]
 
+### 涉及模块
+
+- 记录生成器
+- 文件存储
+
 ---
 
 ## Coverage Verification
