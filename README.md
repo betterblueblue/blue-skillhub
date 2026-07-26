@@ -332,7 +332,7 @@ IntentDev 按 TDD 循环开发每个工单。它强制要求 INTENT.md、PRD、�
 
 IntentVerify 在所有工单开发完成后做整体验收。它强制要求 INTENT.md、PRD、工单文件、dev-record、architecture.md 和 design.md 通过校验且所有工单标 done。验收流程：先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，然后做条件性验证（性能和安全要求，有则逐项验证，没有标不适用），最后做最终复核（保留能力核对 + 漂移复核 + 技术漂移复核）。
 
-`verify_validate.py` 运行 8 项检查，包括文件非空、回归验证段、验收路径的 Given/When/Then 和验证方式、每条路径有 V3 证据、条件性验证段、最终复核完整性（含漂移复核数据行检查）、与 INTENT.md 交叉校验和技术漂移复核检查（模块名与 architecture.md 对照；传入 design.md 时额外与 design.md 交叉检查；状态标"新增/缺失"的行不做存在性比对，改查说明列是否写明原因）。
+`verify_validate.py` 运行 8 项检查，包括文件非空、回归验证段、验收路径的 Given/When/Then 和验证方式、每条路径有 V3 证据、条件性验证段、最终复核完整性（含漂移复核数据行检查）、与 INTENT.md 交叉校验和技术漂移复核检查（四个路径都必传，缺 design.md 会直接 FAIL；模块名与 architecture.md 和 design.md 交叉比对；状态标"新增/缺失"的行不做存在性比对，改查说明列是否写明原因）。
 
 ### VL 识图
 

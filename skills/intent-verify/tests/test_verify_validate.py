@@ -37,6 +37,18 @@ _ARCH_CONTENT = (
     "| 文件存储 | 读写交接记录 Markdown 文件 | C01 | 无 |\n"
 )
 
+_DESIGN_CONTENT = (
+    "# 功能设计 - 测试\n\n"
+    "## 1. 设计概览\n\n覆盖 1 项能力。\n\n"
+    "## 2. 能力设计\n\n"
+    "### [C01] 生成交接记录\n\n"
+    "- **涉及模块**：记录生成器、文件存储\n"
+    "- **数据流转**：无\n"
+    "- **关键状态变化**：无\n"
+    "- **不做什么**：不做自动归档\n\n"
+    "## 3. 与架构文档的对照\n\n无\n"
+)
+
 
 def _content() -> str:
     return (FIXTURE_DIR / "valid-verify-record.md").read_text(encoding="utf-8")
@@ -55,7 +67,7 @@ def _result(content: str, check_id: str, arch: str = _ARCH_CONTENT) -> tuple[str
 
 class TestValidFixture(unittest.TestCase):
     def test_valid_verify_record_passes_all_checks(self):
-        results = validate(_content(), _intent(), _ARCH_CONTENT)
+        results = validate(_content(), _intent(), _ARCH_CONTENT, _DESIGN_CONTENT)
         self.assertEqual(8, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
@@ -312,9 +324,17 @@ class TestTechDriftCheck(unittest.TestCase):
         self.assertEqual("FAIL", v8[0][1])
         self.assertIn("必须存在", v8[0][2])
 
+    def test_no_design_fails(self):
+        """不提供 design.md 时 V8 返回 FAIL（不再静默跳过交叉检查）。"""
+        results = validate(_content(), _intent(), _ARCH_CONTENT)
+        v8 = [r for r in results if r[0] == "V8"]
+        self.assertEqual(1, len(v8))
+        self.assertEqual("FAIL", v8[0][1])
+        self.assertIn("design.md", v8[0][2])
+
     def test_tech_drift_present_passes(self):
         """有技术漂移复核子节时 V8 返回 PASS。"""
-        results = validate(_content(), _intent(), _ARCH_CONTENT)
+        results = validate(_content(), _intent(), _ARCH_CONTENT, _DESIGN_CONTENT)
         v8 = [r for r in results if r[0] == "V8"]
         self.assertEqual(1, len(v8))
         self.assertEqual("PASS", v8[0][1])
@@ -322,7 +342,7 @@ class TestTechDriftCheck(unittest.TestCase):
     def test_tech_drift_missing_fails(self):
         """缺少技术漂移复核子节时 V8 返回 FAIL。"""
         content = _content().replace("### 技术漂移复核", "### X")
-        results = validate(content, _intent(), _ARCH_CONTENT)
+        results = validate(content, _intent(), _ARCH_CONTENT, _DESIGN_CONTENT)
         v8 = [r for r in results if r[0] == "V8"]
         self.assertEqual(1, len(v8))
         self.assertEqual("FAIL", v8[0][1])
@@ -335,7 +355,7 @@ class TestTechDriftCheck(unittest.TestCase):
             "| 文件存储 | 是 | 一致 | 代码实现与架构文档定义一致 |",
             "已核对。",
         )
-        results = validate(content, _intent(), _ARCH_CONTENT)
+        results = validate(content, _intent(), _ARCH_CONTENT, _DESIGN_CONTENT)
         v8 = [r for r in results if r[0] == "V8"]
         self.assertEqual(1, len(v8))
         self.assertEqual("FAIL", v8[0][1])
@@ -347,7 +367,7 @@ class TestTechDriftCheck(unittest.TestCase):
             "| 记录生成器 | 是 | 一致 | 代码实现与架构文档定义一致 |",
             "| 不存在的模块 | 是 | 一致 | 代码实现与架构文档定义一致 |",
         )
-        results = validate(content, _intent(), _ARCH_CONTENT)
+        results = validate(content, _intent(), _ARCH_CONTENT, _DESIGN_CONTENT)
         v8 = [r for r in results if r[0] == "V8"]
         self.assertEqual(1, len(v8))
         self.assertEqual("FAIL", v8[0][1])
@@ -355,18 +375,7 @@ class TestTechDriftCheck(unittest.TestCase):
 
     def test_tech_drift_with_design_passes(self):
         """传入 design.md 且模块一致时 V8 PASS。"""
-        design = (
-            "# 功能设计 - 测试\n\n"
-            "## 1. 设计概览\n\n覆盖 1 项能力。\n\n"
-            "## 2. 能力设计\n\n"
-            "### [C01] 生成交接记录\n\n"
-            "- **涉及模块**：记录生成器、文件存储\n"
-            "- **数据流转**：无\n"
-            "- **关键状态变化**：无\n"
-            "- **不做什么**：不做自动归档\n\n"
-            "## 3. 与架构文档的对照\n\n无\n"
-        )
-        results = validate(_content(), _intent(), _ARCH_CONTENT, design)
+        results = validate(_content(), _intent(), _ARCH_CONTENT, _DESIGN_CONTENT)
         v8 = [r for r in results if r[0] == "V8"]
         self.assertEqual(1, len(v8))
         self.assertEqual("PASS", v8[0][1])
@@ -398,7 +407,7 @@ class TestTechDriftCheck(unittest.TestCase):
             "| 文件存储 | 是 | 一致 | 代码实现与架构文档定义一致 |\n"
             "| 通知服务 | 否 | 新增 | 开发中发现需要失败通知，architecture.md 未定义 |",
         )
-        results = validate(content, _intent(), _ARCH_CONTENT)
+        results = validate(content, _intent(), _ARCH_CONTENT, _DESIGN_CONTENT)
         v8 = [r for r in results if r[0] == "V8"]
         self.assertEqual(1, len(v8))
         self.assertEqual("PASS", v8[0][1])
@@ -410,7 +419,7 @@ class TestTechDriftCheck(unittest.TestCase):
             "| 文件存储 | 是 | 一致 | 代码实现与架构文档定义一致 |\n"
             "| 通知服务 | 否 | 新增 |  |",
         )
-        results = validate(content, _intent(), _ARCH_CONTENT)
+        results = validate(content, _intent(), _ARCH_CONTENT, _DESIGN_CONTENT)
         v8 = [r for r in results if r[0] == "V8"]
         self.assertEqual(1, len(v8))
         self.assertEqual("FAIL", v8[0][1])
@@ -482,7 +491,7 @@ class TestDriftTableCheck(unittest.TestCase):
 
 
 class TestCLI(unittest.TestCase):
-    """CLI 参数变更测试：architecture.md 从可选改为强制。"""
+    """CLI 参数测试：architecture.md 和 design.md 都是强制参数。"""
 
     @classmethod
     def setUpClass(cls):
@@ -492,10 +501,17 @@ class TestCLI(unittest.TestCase):
         tmp.write(_ARCH_CONTENT)
         tmp.close()
         cls._arch_path = tmp.name
+        tmp2 = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".md", delete=False, encoding="utf-8"
+        )
+        tmp2.write(_DESIGN_CONTENT)
+        tmp2.close()
+        cls._design_path = tmp2.name
 
     @classmethod
     def tearDownClass(cls):
         Path(cls._arch_path).unlink(missing_ok=True)
+        Path(cls._design_path).unlink(missing_ok=True)
 
     def _run_main(self, *args) -> int:
         old = sys.argv
@@ -511,6 +527,7 @@ class TestCLI(unittest.TestCase):
             str(FIXTURE_DIR / "valid-verify-record.md"),
             str(FIXTURE_DIR / "valid-intent.md"),
             self._arch_path,
+            self._design_path,
         )
         self.assertEqual(0, code)
 
@@ -522,12 +539,32 @@ class TestCLI(unittest.TestCase):
         )
         self.assertEqual(1, code)
 
+    def test_missing_design_arg_exit_1(self):
+        """只传 3 个路径（缺 design.md）时退出 1，不再静默跳过。"""
+        code = self._run_main(
+            str(FIXTURE_DIR / "valid-verify-record.md"),
+            str(FIXTURE_DIR / "valid-intent.md"),
+            self._arch_path,
+        )
+        self.assertEqual(1, code)
+
     def test_nonexistent_arch_file_exit_1(self):
         """architecture.md 文件不存在时退出 1。"""
         code = self._run_main(
             str(FIXTURE_DIR / "valid-verify-record.md"),
             str(FIXTURE_DIR / "valid-intent.md"),
             "/nonexistent/path/architecture.md",
+            self._design_path,
+        )
+        self.assertEqual(1, code)
+
+    def test_nonexistent_design_file_exit_1(self):
+        """design.md 路径打错（文件不存在）时退出 1，不再静默降级。"""
+        code = self._run_main(
+            str(FIXTURE_DIR / "valid-verify-record.md"),
+            str(FIXTURE_DIR / "valid-intent.md"),
+            self._arch_path,
+            "/nonexistent/path/design.md",
         )
         self.assertEqual(1, code)
 

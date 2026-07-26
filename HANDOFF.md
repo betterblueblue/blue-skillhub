@@ -375,7 +375,11 @@ Fable 5 对任务 H/I 的产出做对抗性验证，发现并直接修复了以�
 
 **验证**：impact 94 passed（+9）、design 46 passed（+7）、verify 52 passed（+5）、七套件全量 308 passed、`validate_real_projects.py` 退出码 0、证据探测样本 19/19 分类正确（修复前 10/19 分错）。
 
-**遗留（未修，属固有限制）**：直引号包裹任意文本即可过引号白名单——静态检查无法验证引语出处，已在两个模板的填写指引中加"引号即采信、禁止伪造"约束；verify_validate 的 design.md 参数仍是可选（路径错误时静默跳过交叉检查）。
+**遗留（未修，属固有限制）**：直引号包裹任意文本即可过引号白名单——静态检查无法验证引语出处，已在两个模板的填写指引中加"引号即采信、禁止伪造"约束。
+
+**追加修复（同日）**：verify_validate 的 design.md 从可选改为必传——CLI 缺第 4 个路径或文件不存在直接报错退出（不再静默降级）；validate() 的 design_content 为空时 V8 FAIL（与 architecture.md 同等待遇）。测试 55 passed（+3：缺 design FAIL、CLI 缺参数、CLI 路径不存在）。
+
+**遗留 TODO**：P3（真实 0→1 项目跑通 intent-chain 全链路）——用户确认暂不跑，V8 新语义（状态分流）等真实运行时一并检验。
 
 ---
 
