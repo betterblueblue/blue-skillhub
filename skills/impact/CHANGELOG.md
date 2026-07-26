@@ -503,6 +503,24 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 - `quick_validate.py skills/impact`：Skill is valid
 - `python -m pytest skills/pathfinder/tests/test_scripts/test_pathfinder_scripts.py skills/impact/tests/test_scripts/test_impact_validate.py`：79 项通过
 
+### v5.9（V23/V24 可校验契约 + 白名单校准 + 搜索盲区）
+
+2026-07 的三批改动合并为一个版本，全部经强模型验证 + 真实冒烟回归。
+
+**改了什么**
+
+- `impact_validate.py` 新增 V23（020 §5.1 额外结构与假设五列表 + 证据白名单）和 V24（020 Dxx ↔ 030 Step ↔ 090 Step 双向映射一致性），并修复各自的绕过路径
+- V23 证据白名单校准：新增裸文件名、`第 N 行`中文行号、反引号代码片段、camelCase/snake_case 标识符、commit 哈希、弯引号/单引号分支；测试关键词加 ASCII 边界（account/browser 不再混过）；黑名单只查引号外的部分；"无额外结构"必须独立声明行、与数据行并存判矛盾；§5.1 解析前剥离 HTML 注释
+- SKILL.md 精简 334 → 260 行，目录结构与改进记录细节移入 `references/`
+- `references/phase-2-context-discovery.md` 新增「搜索盲区强制检查」：配置键/环境变量类变更必须用 `rg --no-ignore --hidden` 补查被 gitignore 的 `.env` 和隐藏目录 `.github/` CI（评测 D16 的已知漏网形态）
+- 与 intent-design A7 的白名单拷贝加逐字符一致性测试（`skills/_common/tests/test_cross_validator_consistency.py`），单边修改即测试失败
+
+**验证**
+
+- `python -m pytest skills/impact/tests/test_scripts/test_impact_validate.py`：94 passed（+9）
+- `eval/real-projects/scripts/validate_real_projects.py`：exit 0（存量真实项目文档零误伤）
+- 证据分类探测样本 19/19 正确（校准前 10/19 分错）
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。
