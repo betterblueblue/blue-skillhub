@@ -108,7 +108,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 3. **验收路径逐条验证**：汇总 Phase 3 的结果，每条路径标 V3 和证据。
 4. **条件性验证结果**：汇总 Phase 4 的性能和安全验证结果。
 5. **漂移复核**：按 INTENT.md 第 7 节的 7 种漂移模式，检查是否有能力被静默降级、遗漏或重新加入。
-6. **技术漂移复核**：列出实际代码中的模块划分，与 architecture.md 第 2 节和 design.md 的涉及模块对照。新增模块必须显式列出，缺失模块需说明原因。
+6. **技术漂移复核**：列出实际代码中的模块划分，与 architecture.md 第 2 节和 design.md 的涉及模块对照。表格四列：模块名 / 在 architecture.md 中 / 状态（一致 / 新增 / 缺失）/ 说明。新增模块必须显式列出（状态标"新增"，说明列写原因）；缺失模块状态标"缺失"并说明原因。标"新增""缺失"的行校验器不做存在性比对——如实报告漂移不会导致校验失败。
 7. **设计标准核对**：如果 INTENT.md 第 12 节有设计标准，检查 UI 是否对照设计文件通过。
 8. 在对话中展示完整的最终复核结果。
 9. 用户确认后，将结果写入 verify-record.md。
@@ -130,7 +130,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 6. **保留能力必须逐项核对**：不能跳过。
 7. **漂移复核必须逐项检查**：7 种模式全部覆盖。
 8. **先确认再写文件**：在对话中展示结果草稿，得到确认后才写入。
-9. **结构校验必须通过**：写入后运行 `verify_validate.py`（需传入 verify-record.md、intent.md、architecture.md 和 design.md 四个路径），校验器会交叉检查路径 ID、保留能力 ID 和性能/安全结论是否与 INTENT.md 一致，检查技术漂移复核子节是否有数据行且模块名与 architecture.md 和 design.md 一致。
+9. **结构校验必须通过**：写入后运行 `verify_validate.py`（需传入 verify-record.md、intent.md、architecture.md 和 design.md 四个路径），校验器会交叉检查路径 ID、保留能力 ID 和性能/安全结论是否与 INTENT.md 一致，检查技术漂移复核子节是否有数据行且模块名与 architecture.md 和 design.md 一致（状态标"新增""缺失"的行不做存在性比对，改查说明列是否写明原因）。
 
 ## verify-record.md 必需章节
 
@@ -153,7 +153,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
    - 验收路径逐条验证（每条路径 V3 证据）
    - 条件性验证结果汇总
    - 漂移复核
-   - 技术漂移复核
+   - 技术漂移复核（模块名 / 在 architecture.md 中 / 状态 / 说明 四列表格）
    - 结论
 
 ## 文件存放

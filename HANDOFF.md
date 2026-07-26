@@ -1,7 +1,7 @@
 # 交接文档
 
 > 写给完全没有上下文的新会话。最近更新：2026-07-26。
-> 本文档覆盖十个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、impact V23/V24 可校验契约补丁（已完成）、intent-chain 评审修复 P0+P1+文档一致性（已完成，未经强模型验证）、impact 评审缺点修复 V23 白名单+SKILL.md 精简+评测脚本修复（已完成，待强模型验证）、blue-interview 优化（部分完成，待补测）。
+> 本文档覆盖十一个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、impact V23/V24 可校验契约补丁（已完成）、intent-chain 评审修复 P0+P1+文档一致性（已完成，已强模型验证）、impact 评审缺点修复 V23 白名单+SKILL.md 精简+评测脚本修复（已完成，已强模型验证）、强模型验证+校验器盲区修复（任务 J，已完成，未提交）、blue-interview 优化（部分完成，待补测）。
 
 ---
 
@@ -182,7 +182,7 @@ Phase 2.5 新增 S1-S10 语义复核记录表，写入 INTENT.md 第 10 节。
 
 ---
 
-## 任务 H：intent-chain 评审修复 P0+P1+文档一致性（已完成，未经强模型验证）
+## 任务 H：intent-chain 评审修复 P0+P1+文档一致性（已完成，已强模型验证——见任务 J）
 
 ### 1. 用户最初提出的需求
 
@@ -233,8 +233,7 @@ Phase 2.5 新增 S1-S10 语义复核记录表，写入 INTENT.md 第 10 节。
 - **项目绝对路径**：`e:\agent\blue-skillhub`
 - **当前分支**：`master`
 - **基线 commit**：`4734b78`（`feat(intent-verify): 补浏览器自动化（Playwright）验证层级`）
-- **未提交改动**：10 个文件，+238/-84 行（截至本次会话结束）
-- **改动未提交**：所有改动都在工作区，未 commit、未 push
+- **提交状态**：已提交为 `2492d9b`（fix(intent-chain): P0+P1 评审修复 + 文档一致性）
 
 ### 5. 本次实际修改的文件和修改目的
 
@@ -287,7 +286,7 @@ Phase 2.5 新增 S1-S10 语义复核记录表，写入 INTENT.md 第 10 节。
 
 ---
 
-## 任务 I：impact 评审缺点修复 — V23 白名单 + SKILL.md 精简 + 评测脚本修复（已完成，待强模型验证）
+## 任务 I：impact 评审缺点修复 — V23 白名单 + SKILL.md 精简 + 评测脚本修复（已完成，已强模型验证——见任务 J）
 
 ### 背景
 
@@ -354,7 +353,29 @@ Phase 2.5 新增 S1-S10 语义复核记录表，写入 INTENT.md 第 10 节。
 
 ### 状态
 
-已完成，未 commit。待强模型验证。
+已提交为 `60411d2`。2026-07-26 已经强模型（Fable 5）验证并修复发现的问题，见任务 J。
+
+---
+
+## 任务 J：强模型验证 + 校验器盲区修复（2026-07-26，已完成）
+
+Fable 5 对任务 H/I 的产出做对抗性验证，发现并直接修复了以下问题：
+
+**P0（会让正常使用失败）**
+
+- **V8 模板不同步**：`templates/verify-record.md` 缺 `### 技术漂移复核` 子节，表格式（模块名/在 architecture.md 中/状态/说明）只存在于测试 fixture——已补进模板和 SKILL.md
+- **V8 惩罚诚实**：校验器把"如实报告新增模块"判 FAIL——已改为按状态列分流：标"新增/缺失"的行免于存在性比对，改查说明列是否写明原因
+
+**P1（证据白名单两头漏）**
+
+- 误杀（实测 6/11 真证据被拒）：裸文件名、`第 N 行`中文行号、`Class.method()`、snake_case 标识符、弯引号/单引号原话、`无依据，属于假设。`带句号、引号内含"为了性能"的真实用户原话——已扩展白名单（impact V23 + design A7 同步）；黑名单只查引号外的部分
+- 漏放（实测 4/7 假证据混过）：RE_TEST_RESULT 无单词边界，account（含 COUNT）/browser（含 rows）/裸 rows/record 均可混过——已加 ASCII 字母边界，rows/records 要求数字前缀
+- "无额外结构"改为独立声明行才生效（"并非无额外结构"这类子串不再触发提前 PASS）；声明与数据行并存判矛盾 FAIL；表格解析前先剥 HTML 注释（注释内整表不再被当真行）
+- V6 收紧："是（部分）""V3 未达成"这类搭车写法判 FAIL
+
+**验证**：impact 94 passed（+9）、design 46 passed（+7）、verify 52 passed（+5）、七套件全量 308 passed、`validate_real_projects.py` 退出码 0、证据探测样本 19/19 分类正确（修复前 10/19 分错）。
+
+**遗留（未修，属固有限制）**：直引号包裹任意文本即可过引号白名单——静态检查无法验证引语出处，已在两个模板的填写指引中加"引号即采信、禁止伪造"约束；verify_validate 的 design.md 参数仍是可选（路径错误时静默跳过交叉检查）。
 
 ---
 
@@ -363,4 +384,4 @@ Phase 2.5 新增 S1-S10 语义复核记录表，写入 INTENT.md 第 10 节。
 blue-interview P1/P2/P3/P8/P9 已落地，P3 试跑通过，P1/P2/P8/P9 待补测。
 skill 被 .gitignore 忽略，不入库。未经同意禁止修改。
 
-详情：见仓库根目录 HANDOFF.md。
+详情：见 `skills/blue-interview/HANDOFF.md`。

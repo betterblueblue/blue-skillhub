@@ -2288,13 +2288,32 @@ RE_VAGUE_EVIDENCE = re.compile(
 )
 RE_NO_EVIDENCE = re.compile(r"无依据.*假设|假设.*无依据|无依据")
 
-# Evidence whitelist — evidence must match at least one of these patterns
-RE_CODE_LOCATION = re.compile(r"[/\\]\w+\.\w{1,5}|\w+\.\w{1,5}:\d+")
-RE_QUOTE = re.compile(r'["「『"].+["」』"]')
+# Evidence whitelist — evidence must match at least one of these patterns.
+# NOTE: \b is unreliable next to CJK chars (they are \w), so ASCII-letter
+# lookarounds are used instead where boundaries matter.
+RE_CODE_LOCATION = re.compile(
+    r"[/\\]\w+\.\w{1,5}"          # path segment: src/service.py, src\a.java
+    r"|\w+\.\w{1,5}:\d+"          # file:line
+    r"|\w+\.[A-Za-z]{2,5}"        # bare filename / method ref: pom.xml, Service.login()
+    r"|第\s*\d+\s*行"              # Chinese line reference: 第 45 行
+    r"|`[^`]+`"                   # backtick code span: `sys_config`
+    r"|(?<![A-Za-z])[A-Za-z][a-z0-9]+[A-Z][A-Za-z0-9]*"  # camelCase / PascalCase identifier
+    r"|[A-Za-z]\w*_\w+"           # snake_case identifier: config_type
+    r"|(?<![A-Za-z])commit\s+[0-9a-f]{7,40}"             # git commit hash
+)
+RE_QUOTE = re.compile("[\"'「『“‘].+[\"'」』”’]")
+RE_QUOTED_SPAN = re.compile("[\"'「『“‘][^\"'」』”’]*[\"'」』”’]")
 RE_TEST_RESULT = re.compile(
-    r"passed|failed|exit\s+\d|命中|SELECT|COUNT|rows?|records?|匹配|grep|npm|pytest",
+    r"(?<![A-Za-z])(?:passed|failed|grep|npm|pytest|SELECT|EXPLAIN)(?![A-Za-z])"
+    r"|exit\s+\d+"
+    r"|\d+\s*(?:rows?|records?|条)"   # digit-anchored: "0 rows" yes, "rows 会增长" no
+    r"|COUNT\s*\("
+    r"|命中|匹配",
     re.I,
 )
+# "无额外结构" declaration must be a standalone line (optionally bolded /
+# trailing punctuation) — substrings like "并非无额外结构" don't count
+RE_NO_EXTRA_LINE = re.compile(r"\**无额外结构\**[。．.！!]*")
 RE_CONFIRMATION_LIST = re.compile(r"需要你确认的假设")
 RE_PREFLIGHT_EXECUTABLE = re.compile(r"是否允许进入执行阶段[：:]\s*是", re.I)
 
@@ -2374,9 +2393,10 @@ def check_extra_structure(req_dir: Path, mode: str) -> tuple[list[str], list[str
     if not design_file.exists():
         return passes, fails, warns
 
-    text = design_file.read_text(encoding="utf-8")
+    # Strip HTML comments up front — commented-out declarations or whole
+    # tables must not participate in any V23 check.
+    text = _strip_html_comments(design_file.read_text(encoding="utf-8"))
 
-    # Extract §5.1 section, strip comments, then check for "无额外结构"
     section = _extract_section_text(text, ["额外结构与假设"])
     if not section:
         fails.append(
@@ -2385,15 +2405,26 @@ def check_extra_structure(req_dir: Path, mode: str) -> tuple[list[str], list[str
         )
         return passes, fails, warns
 
-    section_clean = _strip_html_comments(section).strip()
-
-    # Check for "无额外结构" only in cleaned section body (not in comments)
-    if "无额外结构" in section_clean:
-        passes.append("V23: 020-design.md §5.1 declares 无额外结构")
-        return passes, fails, warns
+    # "无额外结构" must be a standalone declaration line — substrings inside
+    # prose (e.g. "并非无额外结构") or table cells don't count
+    declared_no_extra = any(
+        RE_NO_EXTRA_LINE.fullmatch(line.strip())
+        for line in section.splitlines()
+        if line.strip() and not line.strip().startswith("|")
+    )
 
     # Parse table
     rows, missing = _parse_extra_structure_table(text)
+
+    if declared_no_extra:
+        if rows:
+            fails.append(
+                f"V23: §5.1 declares 无额外结构 but the table still has "
+                f"{len(rows)} data row(s) — remove the rows or drop the declaration."
+            )
+        else:
+            passes.append("V23: 020-design.md §5.1 declares 无额外结构")
+        return passes, fails, warns
 
     if missing:
         fails.append(
@@ -2441,9 +2472,11 @@ def check_extra_structure(req_dir: Path, mode: str) -> tuple[list[str], list[str
         if RE_VAGUE_EVIDENCE.search(scenario):
             vague_evidence.append(f"{design_item} ({structure}): scenario '{scenario[:60]}'")
 
-        # Evidence column: blacklist first (backward compatible), then whitelist
-        # 1. Vague words → FAIL (catches "扩展性考虑" etc.)
-        if RE_VAGUE_EVIDENCE.search(evidence):
+        # Evidence column: blacklist first (only on text outside quoted spans —
+        # a genuine user quote may contain words like 为了性能), then whitelist
+        evidence_unquoted = RE_QUOTED_SPAN.sub("", evidence)
+        # 1. Vague words outside quotes → FAIL (catches "扩展性考虑" etc.)
+        if RE_VAGUE_EVIDENCE.search(evidence_unquoted):
             vague_evidence.append(f"{design_item} ({structure}): evidence '{evidence[:60]}'")
         # 2. "无依据" → mark as unconfirmed (not a FAIL)
         elif RE_NO_EVIDENCE.search(evidence):

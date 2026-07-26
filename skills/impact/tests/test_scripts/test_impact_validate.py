@@ -2682,5 +2682,148 @@ class TestV24DuplicateDxx(unittest.TestCase):
         self.assertTrue(any("duplicate" in l.lower() for l in v24), f"Expected duplicate FAIL, got: {v24}")
 
 
+class TestV23WhitelistHardening(unittest.TestCase):
+    """V23: expanded evidence whitelist + hardened 无额外结构 declaration."""
+
+    def _design_with_evidence(self, evidence: str) -> str:
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        return f"""# Design
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 校验层 | 请求字段会缺失 | {evidence} | 加校验注解 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+"""
+
+    def _assert_evidence(self, evidence: str, expect_pass: bool):
+        td, rd = _make_repo()
+        _write_design(rd, self._design_with_evidence(evidence))
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        if expect_pass:
+            self.assertEqual(code, 0, f"Expected PASS for {evidence!r}, got {code}\n{out}")
+        else:
+            self.assertEqual(code, 1, f"Expected FAIL for {evidence!r}, got {code}\n{out}")
+            self.assertTrue(
+                any("does not match any recognized type" in l for l in v23),
+                f"Expected non-whitelist FAIL for {evidence!r}, got: {v23}",
+            )
+
+    def test_bare_filename_evidence_passes(self):
+        """裸文件名（无路径、无行号）是合法代码位置证据。"""
+        self._assert_evidence("pom.xml 中已有 spring-boot-starter-validation 依赖", True)
+
+    def test_chinese_line_ref_evidence_passes(self):
+        """「文件名 第 N 行」中文行号引用是合法代码位置证据。"""
+        self._assert_evidence("SysUserController.java 第 45 行已有该字段", True)
+
+    def test_curly_quote_evidence_passes(self):
+        """弯引号包裹的用户原话是合法证据。"""
+        self._assert_evidence("用户答复“高峰期订单量会翻 3 倍”", True)
+
+    def test_db_identifier_evidence_passes(self):
+        """snake_case 数据库标识符是合法代码位置证据。"""
+        self._assert_evidence("数据库 sys_config 表已有 config_type 字段", True)
+
+    def test_keyword_substring_no_longer_passes(self):
+        """英文单词内嵌关键词（account 含 COUNT、纯 rows 推测）不再混过白名单。"""
+        self._assert_evidence("account 表后续要支持多租户", False)
+        self._assert_evidence("以后数据 rows 会增长", False)
+
+    def test_quoted_vague_word_evidence_passes(self):
+        """用户原话里合法出现"为了性能"这类词，不应被黑名单误杀。"""
+        self._assert_evidence("用户原话「为了性能，必须上缓存」", True)
+
+
+class TestV23DeclarationHardening(unittest.TestCase):
+    """V23: 无额外结构 declaration must be standalone; comments don't count."""
+
+    def test_commented_out_table_fails(self):
+        """整张表包在 HTML 注释里（渲染为空节）不能通过 V23。"""
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+<!--
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 缓存层 | 高峰期查询慢 | 用户原话「高峰期订单量会翻 3 倍」 | 加缓存中间件 |
+-->
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        self.assertEqual(code, 1, f"Commented-out table should FAIL, got {code}\n{out}")
+
+    def test_declaration_with_rows_contradiction_fails(self):
+        """声明"无额外结构"但表格仍有数据行 → 矛盾 FAIL。"""
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+无额外结构
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 缓存层 | 高峰期查询慢 | 用户原话「高峰期订单量会翻 3 倍」 | 加缓存中间件 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Contradiction should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("still has" in l for l in v23),
+            f"Expected contradiction FAIL, got: {v23}",
+        )
+
+    def test_no_extra_substring_not_declaration(self):
+        """"并非无额外结构"这类子串不构成声明，表格照常检查。"""
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+下面这些结构并非无额外结构：
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 缓存层 | 高峰期查询慢 | 模型判断确有必要 | 加缓存中间件 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Substring must not act as declaration, got {code}\n{out}")
+        self.assertTrue(
+            any("does not match any recognized type" in l for l in v23),
+            f"Expected non-whitelist FAIL (not early PASS), got: {v23}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

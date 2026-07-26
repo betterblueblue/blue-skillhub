@@ -391,6 +391,75 @@ class TestTechDriftCheck(unittest.TestCase):
         self.assertEqual("FAIL", v8[0][1])
         self.assertIn("design.md", v8[0][2])
 
+    def test_new_module_with_note_passes(self):
+        """如实报告新增模块（状态标"新增"且说明列写明原因）不应 FAIL。"""
+        content = _content().replace(
+            "| 文件存储 | 是 | 一致 | 代码实现与架构文档定义一致 |",
+            "| 文件存储 | 是 | 一致 | 代码实现与架构文档定义一致 |\n"
+            "| 通知服务 | 否 | 新增 | 开发中发现需要失败通知，architecture.md 未定义 |",
+        )
+        results = validate(content, _intent(), _ARCH_CONTENT)
+        v8 = [r for r in results if r[0] == "V8"]
+        self.assertEqual(1, len(v8))
+        self.assertEqual("PASS", v8[0][1])
+
+    def test_new_module_without_note_fails(self):
+        """新增模块没有在说明列写明原因时 V8 FAIL。"""
+        content = _content().replace(
+            "| 文件存储 | 是 | 一致 | 代码实现与架构文档定义一致 |",
+            "| 文件存储 | 是 | 一致 | 代码实现与架构文档定义一致 |\n"
+            "| 通知服务 | 否 | 新增 |  |",
+        )
+        results = validate(content, _intent(), _ARCH_CONTENT)
+        v8 = [r for r in results if r[0] == "V8"]
+        self.assertEqual(1, len(v8))
+        self.assertEqual("FAIL", v8[0][1])
+        self.assertIn("写明原因", v8[0][2])
+
+    def test_missing_module_skips_design_check(self):
+        """状态标"缺失"的模块（架构定义但代码未实现）不做 design.md 比对。"""
+        design = (
+            "# 功能设计 - 测试\n\n"
+            "## 1. 设计概览\n\n覆盖 1 项能力。\n\n"
+            "## 2. 能力设计\n\n"
+            "### [C01] 生成交接记录\n\n"
+            "- **涉及模块**：记录生成器\n"
+            "- **数据流转**：无\n"
+            "- **关键状态变化**：无\n"
+            "- **不做什么**：不做自动归档\n\n"
+            "## 3. 与架构文档的对照\n\n无\n"
+        )
+        content = _content().replace(
+            "| 文件存储 | 是 | 一致 | 代码实现与架构文档定义一致 |",
+            "| 文件存储 | 是 | 缺失 | 尚未实现，计划下一迭代补 |",
+        )
+        results = validate(content, _intent(), _ARCH_CONTENT, design)
+        v8 = [r for r in results if r[0] == "V8"]
+        self.assertEqual(1, len(v8))
+        self.assertEqual("PASS", v8[0][1])
+
+
+class TestPathTableNegativeMarkers(unittest.TestCase):
+    """V6: Then 全通过列和验证等级列不接受"是（部分）"、"V3 未达成"这类搭车写法。"""
+
+    def test_then_pass_partial_fails(self):
+        content = _content().replace(
+            "| P01 | 生成并查看交接记录 | V3 | 手动走通 | 是 | 是 | 是 |",
+            "| P01 | 生成并查看交接记录 | V3 | 手动走通 | 是 | 是 | 是（部分） |",
+        )
+        result = _result(content, "V6")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("部分", result[2])
+
+    def test_verify_level_not_achieved_fails(self):
+        content = _content().replace(
+            "| P01 | 生成并查看交接记录 | V3 | 手动走通 |",
+            "| P01 | 生成并查看交接记录 | V3 未达成 | 手动走通 |",
+        )
+        result = _result(content, "V6")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("未达成", result[2])
+
 
 class TestDriftTableCheck(unittest.TestCase):
     """V6: 漂移复核子节必须有数据行。"""

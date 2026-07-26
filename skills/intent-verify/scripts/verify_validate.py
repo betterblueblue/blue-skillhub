@@ -12,7 +12,8 @@
   V5: 有条件性验证段（性能验证和安全验证，不适用也要标注）
   V6: 最终复核完整（回归汇总、保留能力核对、验收路径逐条验证含 Then 全通过、条件性汇总、漂移复核、结论）
   V7: 与 INTENT.md 交叉校验（路径 ID 一致、保留能力 ID 一致、性能/安全结论与 INTENT.md 要求一致）
-  V8: 最终复核包含技术漂移复核子节（强制检查 architecture.md；传了 design.md 时额外交叉检查模块一致性）
+  V8: 最终复核包含技术漂移复核子节（强制检查 architecture.md；传了 design.md 时额外交叉检查模块一致性；
+      状态标"新增/缺失"的行免于存在性比对，但必须在说明列写明原因——如实报告漂移不应被判 FAIL）
 
 本脚本不能验证 V3 证据是否真实，也不能证明验收结果符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -279,9 +280,13 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                     then_pass = row[6]  # Then 全通过 列
                     if "是" not in then_pass:
                         v6_errors.append(f"路径 {path_id} 的 Then 全通过列不是'是': {then_pass}")
+                    elif re.search(r"否|未|部分", then_pass):
+                        v6_errors.append(f"路径 {path_id} 的 Then 全通过列含否定或部分标记: {then_pass}")
                     verify_level = row[2]  # 验证等级 列
                     if "V3" not in verify_level:
                         v6_errors.append(f"路径 {path_id} 的验证等级不是 V3: {verify_level}")
+                    elif re.search(r"未|降级", verify_level):
+                        v6_errors.append(f"路径 {path_id} 的验证等级含未达成标记: {verify_level}")
         if not _subsection(gate_section, CONDITIONAL_SUMMARY_HEADING).strip():
             v6_errors.append("缺少条件性验证结果汇总")
         drift_section = _subsection(gate_section, DRIFT_HEADING)
@@ -398,22 +403,11 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                     for row in _table_rows(arch_module_section, "模块")
                     if row
                 }
-                for row in drift_table_rows:
-                    if len(row) < 2:
-                        v8_errors.append(f"技术漂移复核表行列数不足: {' | '.join(row)}")
-                        continue
-                    mod_name = row[0].strip()
-                    if mod_name and mod_name not in arch_modules:
-                        v8_errors.append(
-                            f"技术漂移复核引用了 architecture.md 中未定义的模块 '{mod_name}'"
-                        )
-            if v8_errors:
-                results.append(("V8", "FAIL", "; ".join(v8_errors)))
-            else:
-                # 如果提供了 design.md，额外检查技术漂移复核中的模块是否在 design.md 的涉及模块中出现
+                # 解析 design.md 各能力的涉及模块（提供时才交叉检查）
+                design_modules: set[str] | None = None
                 if design_content:
                     design_section2 = _section(design_content, "## 2. 能力设计", numbered=True)
-                    design_modules: set[str] = set()
+                    design_modules = set()
                     for cap_match in re.finditer(r"###\s+\[(C\d{2,})\].*?(?=^###\s+|\Z)", design_section2, re.MULTILINE | re.DOTALL):
                         cap_text = cap_match.group(0)
                         mod_match = re.search(r"\*\*涉及模块\*\*[：:]\s*(.+)", cap_text)
@@ -422,21 +416,43 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                                 token = token.strip()
                                 if token and token != "无":
                                     design_modules.add(token)
-                    # 检查技术漂移复核中是否有 design.md 未提及的模块
-                    for row in drift_table_rows:
-                        mod_name = row[0].strip()
-                        if mod_name and mod_name not in design_modules:
-                            # 模块在 architecture.md 中存在但不在 design.md 中——可能是新增模块
-                            v8_errors.append(
-                                f"技术漂移复核模块 '{mod_name}' 在 design.md 的涉及模块中未找到"
-                            )
-                if v8_errors:
-                    results.append(("V8", "FAIL", "; ".join(v8_errors)))
+                for row in drift_table_rows:
+                    if len(row) < 2:
+                        v8_errors.append(f"技术漂移复核表行列数不足: {' | '.join(row)}")
+                        continue
+                    mod_name = row[0].strip()
+                    if not mod_name:
+                        continue
+                    status = row[2].strip() if len(row) > 2 else ""
+                    note = row[3].strip() if len(row) > 3 else ""
+                    if "新增" in status:
+                        # 如实报告的新增模块不做存在性比对——漂移复核的目的是暴露漂移，
+                        # 不能让如实报告反而无法通过校验；但必须写明原因
+                        if not note:
+                            v8_errors.append(f"新增模块 '{mod_name}' 必须在说明列写明原因")
+                        continue
+                    if mod_name not in arch_modules:
+                        v8_errors.append(
+                            f"技术漂移复核引用了 architecture.md 中未定义的模块 '{mod_name}'"
+                            "（若是代码中新增的模块，状态列须标\"新增\"并在说明列写明原因）"
+                        )
+                    if "缺失" in status:
+                        # 架构中定义但代码未实现的模块：不做 design.md 比对，但必须写明原因
+                        if not note:
+                            v8_errors.append(f"缺失模块 '{mod_name}' 必须在说明列写明原因")
+                        continue
+                    if design_modules is not None and mod_name not in design_modules:
+                        v8_errors.append(
+                            f"技术漂移复核模块 '{mod_name}' 在 design.md 的涉及模块中未找到"
+                            "（若是新增模块，状态列须标\"新增\"）"
+                        )
+            if v8_errors:
+                results.append(("V8", "FAIL", "; ".join(v8_errors)))
+            else:
+                if design_content:
+                    results.append(("V8", "PASS", "技术漂移复核模块与 architecture.md 和 design.md 均一致"))
                 else:
-                    if design_content:
-                        results.append(("V8", "PASS", "技术漂移复核模块与 architecture.md 和 design.md 均一致"))
-                    else:
-                        results.append(("V8", "PASS", "技术漂移复核子节包含模块对照且模块名与 architecture.md 一致"))
+                    results.append(("V8", "PASS", "技术漂移复核子节包含模块对照且模块名与 architecture.md 一致"))
 
     return results
 
