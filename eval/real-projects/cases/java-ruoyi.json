@@ -374,6 +374,90 @@
           "导出列"
         ]
       }
+    },
+    {
+      "id": "java-ruoyi-style-trap",
+      "title": "新增复制参数接口必须沿用项目风格，不得自由发挥",
+      "skill": "impact",
+      "kind": "impact-full",
+      "scenario_type": "style-trap",
+      "size": "M",
+      "phase": 1,
+      "run_mode": "isolated-copy",
+      "delivery_mode": "phase5-delivery",
+      "prompt": "给系统参数管理加一个「复制参数」功能：传入 configId，把该参数复制为一条新参数（参数键名加 _copy 后缀，参数名称加「副本」前缀）。照现有代码的写法来。",
+      "expected_artifacts": [
+        "change-impact/<需求名>/ 下 full 五件套",
+        "SysConfigController 新增接口 diff",
+        "SysConfigService/Impl 与 Mapper 层 diff（如需）",
+        "新接口的权限注解与日志注解"
+      ],
+      "verification": [
+        "impact_validate.py <需求目录> --mode full --repo-root .",
+        "git diff --check",
+        "新接口返回 AjaxResult、带 @PreAuthorize(\"@ss.hasPermi(...)\") 与 @Log 注解"
+      ],
+      "blocking_questions": [
+        "复制出的参数 configType（系统内置）沿用原值还是重置为 N？"
+      ],
+      "rollback_or_compat": [
+        "回滚方式是删除新增接口与相关方法；不改动既有接口。"
+      ],
+      "expected": {
+        "must_cover": [
+          "Controller 层：返回 AjaxResult，方法上有 @PreAuthorize(\"@ss.hasPermi('system:config:...')\") 权限注解和 @Log 操作日志注解，与相邻方法风格一致",
+          "分层完整：Controller → ISysConfigService → SysConfigServiceImpl → SysConfigMapper，不在 Controller 里直接写业务或 SQL",
+          "SQL 写法沿用项目惯例：复用已有 Mapper 方法（selectConfigById/insertConfig）或在 SysConfigMapper.xml 中新增，不使用 @Select/@Insert 注解 SQL",
+          "命名与注释风格与 SysConfigController 相邻方法一致（驼峰、Javadoc 风格）"
+        ],
+        "must_not_claim": [
+          "返回 ResponseEntity、Map 或裸实体等自建响应结构",
+          "跳过 @PreAuthorize 权限注解或 @Log 注解",
+          "在项目使用 Mapper XML 的情况下引入注解 SQL",
+          "在 Controller 内直接操作 Mapper 或拼装业务逻辑"
+        ],
+        "quality_checks": [
+          "「照现有代码的写法来」不是空话——判分以相邻代码为基准逐项对照",
+          "020 的代码风格报告如实描述项目惯例并被实施遵守",
+          "写操作前等待确认"
+        ]
+      },
+      "review_hints": {
+        "likely_files_or_dirs": [
+          "ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysConfigController.java",
+          "ruoyi-system/src/main/java/com/ruoyi/system/service/ISysConfigService.java",
+          "ruoyi-system/src/main/resources/mapper/system/SysConfigMapper.xml"
+        ],
+        "risk_topics": [
+          "风格沿用",
+          "权限注解",
+          "分层纪律",
+          "响应包装"
+        ]
+      },
+      "acceptance": {
+        "expected_changed_files": [
+          "ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysConfigController.java",
+          "ruoyi-system/src/main/java/com/ruoyi/system/service/ISysConfigService.java",
+          "ruoyi-system/src/main/java/com/ruoyi/system/service/impl/SysConfigServiceImpl.java"
+        ],
+        "forbidden_changed_files": [
+          "ruoyi-common/src/main/java/com/ruoyi/common/core/domain/AjaxResult.java"
+        ],
+        "validators": [
+          "python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode full --repo-root .",
+          "git diff --check"
+        ],
+        "must_contain": [
+          "@ss.hasPermi('system:config:",
+          "public AjaxResult"
+        ],
+        "must_not_contain": [
+          "ResponseEntity",
+          "@Select(",
+          "@Insert("
+        ]
+      }
     }
   ]
 }
