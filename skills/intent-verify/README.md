@@ -33,6 +33,8 @@ intent-dev 完成了每个工单的开发和工单级验证（零件合格），
 - 还有工单未完成（先回 intent-dev）。
 - 没有 dev-record、architecture.md 或 design.md（先走前置 skill）。
 
+**轻量档**：INTENT.md 标注轻量档时，本 skill 流程不变——全量回归、逐路径 V3 证据、漂移复核和技术漂移复核一概不降级。轻量档降的是上游文档厚度和确认次数，不是验收强度。
+
 ## 校验
 
 `verify_validate.py` 运行 8 项检查：

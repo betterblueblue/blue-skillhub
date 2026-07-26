@@ -284,7 +284,7 @@ ImpactRadar 会生成分析文档、要求逐步确认并运行自动检查。�
 
 如果客户端提供 code graph MCP，也可以先用它查找定义和引用；没有时就使用普通代码搜索。
 
-当前版本为 v5.8。完整机制、版本记录和评测数据见 [ImpactRadar README](skills/impact/README.md)。
+当前版本为 v5.9。完整机制、版本记录和评测数据见 [ImpactRadar README](skills/impact/README.md)。
 
 ### IntentAnchor 意图锚定
 

@@ -35,6 +35,14 @@ Intent-PRD 原生读取 INTENT.md 各节，把能力表、验收路径、设计�
 | 第 16 节安全要求 | Implementation Decisions > Security Requirements |
 | 第 6 节推迟/放弃 | Out of Scope |
 
+可选子节（Design Standards / Terminology Constraints / Performance / Security Requirements）在 INTENT.md 没有对应内容时直接省略，不保留标题写"无"。
+
+## 轻量档
+
+INTENT.md 第 2 节标注轻量档时，各节允许薄写法（User Story 每能力一行、Implementation Decisions 一行表），Phase 1 的路径确认并入草稿确认。必需章节和校验不降级。
+
+**上游已答不重问**：INTENT.md 已记录的信息（技术偏好、无性能/安全要求、术语表等）直接引用使用，不再重复提问；仅当发现现状与记录冲突时才向用户确认。
+
 ## 校验
 
 `prd_validate.py` 运行 10 项检查：
