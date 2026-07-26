@@ -4,6 +4,8 @@ Pathfinder 用于快速看懂一个不熟悉的现有项目。它只读查看源
 
 项目地图保存在 `change-impact/_project-map.md`。它可以单独使用，也可以交给 ImpactRadar，帮助后者更快定位本次变更可能涉及的文件。
 
+当前版本为 v1.0，版本历史见 [CHANGELOG.md](CHANGELOG.md)。
+
 ## 快速开始
 
 在目标项目里对 AI 客户端说：
