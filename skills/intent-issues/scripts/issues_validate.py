@@ -32,6 +32,9 @@ _COMMON_DIR = Path(__file__).resolve().parent.parent.parent / "_common"
 if str(_COMMON_DIR) not in sys.path:
     sys.path.insert(0, str(_COMMON_DIR))
 from markdown_parser import (
+    ISSUES_HEADING_ALIASES,
+    PRD_HEADING_ALIASES,
+    normalize_legacy_headings,
     section as _section,
     table_rows as _table_rows,
     has_placeholder as _has_placeholder,
@@ -39,10 +42,10 @@ from markdown_parser import (
 
 
 REQUIRED_ISSUE_SUBSECTIONS = [
-    "### What to build",
-    "### Acceptance criteria",
-    "### Blocked by",
-    "### User stories covered",
+    "### 做什么",
+    "### 验收标准",
+    "### 前置依赖",
+    "### 覆盖的用户故事",
 ]
 
 COVERAGE_SUBSECTIONS = [
@@ -135,7 +138,7 @@ def _split_issues(content: str) -> list[str]:
 
 def _count_prd_thens_per_path(prd_content: str) -> dict[str, int]:
     """从 PRD 的 Acceptance Criteria 中统计每条路径的 Then/And 条目数。"""
-    criteria_section = _section(prd_content, "## Acceptance Criteria")
+    criteria_section = _section(prd_content, "## 验收标准")
     result: dict[str, int] = {}
     # 按 ### P01: ... 拆分
     path_blocks = re.split(r"(?=^###\s+P\d{2,})", criteria_section, flags=re.MULTILINE)
@@ -177,7 +180,7 @@ def _count_issue_thens_per_path(issues: list[str]) -> dict[str, int]:
     result: dict[str, int] = {}
     for issue in issues:
         criteria_match = re.search(
-            r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+            r"### 验收标准\s*\n(.*?)(?=^###\s+|\Z)",
             issue,
             re.MULTILINE | re.DOTALL,
         )
@@ -192,6 +195,9 @@ def _count_issue_thens_per_path(issues: list[str]) -> dict[str, int]:
 
 
 def validate(issues_content: str, intent_content: str, prd_content: str = "", architecture_content: str = "") -> list[tuple[str, str, str]]:
+    issues_content = normalize_legacy_headings(issues_content, ISSUES_HEADING_ALIASES)
+    if prd_content:
+        prd_content = normalize_legacy_headings(prd_content, PRD_HEADING_ALIASES)
     """返回 (检查项, 结果, 说明)。"""
     results: list[tuple[str, str, str]] = []
 
@@ -227,7 +233,7 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
     found_paths: set[str] = set()
     for issue in issues:
         criteria_match = re.search(
-            r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+            r"### 验收标准\s*\n(.*?)(?=^###\s+|\Z)",
             issue,
             re.MULTILINE | re.DOTALL,
         )
@@ -246,7 +252,7 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
     found_caps: set[str] = set()
     for issue in issues:
         stories_match = re.search(
-            r"### User stories covered\s*\n(.*?)(?=^###\s+|\Z)",
+            r"### 覆盖的用户故事\s*\n(.*?)(?=^###\s+|\Z)",
             issue,
             re.MULTILINE | re.DOTALL,
         )
@@ -262,10 +268,10 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
         results.append(("V4", "PASS", f"全部 {len(retained_caps)} 项保留能力被工单覆盖"))
 
     # V5: Coverage Verification
-    coverage_section = _section(issues_content, "## Coverage Verification")
+    coverage_section = _section(issues_content, "## 覆盖核对")
     coverage_errors: list[str] = []
     if not coverage_section:
-        coverage_errors.append("缺少 Coverage Verification 节")
+        coverage_errors.append("缺少「覆盖核对」节")
     else:
         for sub in COVERAGE_SUBSECTIONS:
             if sub not in coverage_section:
@@ -300,7 +306,7 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
     if coverage_errors:
         results.append(("V5", "FAIL", "; ".join(coverage_errors)))
     else:
-        results.append(("V5", "PASS", "Coverage Verification 完整且与 INTENT.md 一致"))
+        results.append(("V5", "PASS", "覆盖核对完整且与 INTENT.md 一致"))
 
     # V6: 设计标准传递检查
     has_design, _design_paths = _parse_design_standards(intent_content)
@@ -308,7 +314,7 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
         found_design_ref = False
         for issue in issues:
             criteria_match = re.search(
-                r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+                r"### 验收标准\s*\n(.*?)(?=^###\s+|\Z)",
                 issue,
                 re.MULTILINE | re.DOTALL,
             )
@@ -328,7 +334,7 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
         found_term_ref = False
         for issue in issues:
             criteria_match = re.search(
-                r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+                r"### 验收标准\s*\n(.*?)(?=^###\s+|\Z)",
                 issue,
                 re.MULTILINE | re.DOTALL,
             )
@@ -351,7 +357,7 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
         found_perf: set[str] = set()
         for issue in issues:
             criteria_match = re.search(
-                r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+                r"### 验收标准\s*\n(.*?)(?=^###\s+|\Z)",
                 issue,
                 re.MULTILINE | re.DOTALL,
             )
@@ -370,7 +376,7 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
         found_sec: set[str] = set()
         for issue in issues:
             criteria_match = re.search(
-                r"### Acceptance criteria\s*\n(.*?)(?=^###\s+|\Z)",
+                r"### 验收标准\s*\n(.*?)(?=^###\s+|\Z)",
                 issue,
                 re.MULTILINE | re.DOTALL,
             )

@@ -12,12 +12,10 @@
 
 - **类型**：AFK
 
-### What to build
-
+### 做什么
 在会话结束前触发生成交接记录，记录包含任务、进度、阻塞和下一步。新会话读取记录后能恢复进度。
 
-### Acceptance criteria
-
+### 验收标准
 **[P01] 正常生成交接记录**
 - Given: 当前会话有 3 个进行中的任务和 1 个阻塞项
 - When: 触发生成交接记录
@@ -27,12 +25,10 @@
 - [ ] And: 记录包含下一步
 - [ ] And: 记录不包含敏感信息 [SF01]
 
-### Blocked by
-
+### 前置依赖
 None - can start immediately
 
-### User stories covered
-
+### 覆盖的用户故事
 - Story 1 [C01]
 
 ### 涉及模块
@@ -42,8 +38,7 @@ None - can start immediately
 
 ---
 
-## Coverage Verification
-
+## 覆盖核对
 ### 验收路径覆盖
 
 | 路径 ID | 验收路径 | 覆盖工单 | 状态 |

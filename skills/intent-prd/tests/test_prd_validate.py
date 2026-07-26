@@ -52,16 +52,16 @@ class TestValidFixture(unittest.TestCase):
 
 class TestRequiredSections(unittest.TestCase):
     def test_missing_acceptance_criteria_fails(self):
-        content = _prd_content().replace("## Acceptance Criteria", "## X")
+        content = _prd_content().replace("## 验收标准", "## X")
         result = _result(content, _intent_content(), "V2")
         self.assertEqual("FAIL", result[1])
-        self.assertIn("Acceptance Criteria", result[2])
+        self.assertIn("验收标准", result[2])
 
     def test_missing_intent_verification_fails(self):
-        content = _prd_content().replace("## Intent Verification", "## X")
+        content = _prd_content().replace("## 意图核对", "## X")
         result = _result(content, _intent_content(), "V2")
         self.assertEqual("FAIL", result[1])
-        self.assertIn("Intent Verification", result[2])
+        self.assertIn("意图核对", result[2])
 
     def test_empty_prd_fails(self):
         results = validate("", _intent_content())
@@ -193,3 +193,20 @@ class TestTemplateSync(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestLegacyEnglishHeadings(unittest.TestCase):
+    """旧英文章节标题的 PRD 仍被识别（2026-07-27 中文化的向后兼容）。"""
+
+    def test_legacy_english_prd_passes(self):
+        legacy = _prd_content()
+        for cn, en in [("## 问题陈述", "## Problem Statement"), ("## 方案", "## Solution"),
+                       ("## 用户故事", "## User Stories"), ("## 实现决策", "## Implementation Decisions"),
+                       ("## 验收标准", "## Acceptance Criteria"), ("## 测试决策", "## Testing Decisions"),
+                       ("## 范围外", "## Out of Scope"), ("## 意图核对", "## Intent Verification"),
+                       ("### 设计标准", "### Design Standards"), ("### 术语约束", "### Terminology Constraints"),
+                       ("### 安全要求", "### Security Requirements")]:
+            legacy = legacy.replace(cn, en)
+        results = validate(legacy, _intent_content())
+        fails = [r for r in results if r[1] == "FAIL"]
+        self.assertEqual([], fails, fails)

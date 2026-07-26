@@ -13,12 +13,10 @@
 
 - **类型**：HITL / AFK
 
-### What to build
-
+### 做什么
 {端到端行为描述，不写逐层实现。描述用户能做什么，而不是怎么做。}
 
-### Acceptance criteria
-
+### 验收标准
 **[P01] {场景名称}**
 - Given: {前置条件}
 - When: {触发操作}
@@ -29,12 +27,10 @@
 - [ ] 性能要求 [PF01]: {要求内容}（如果有性能要求且涉及本工单）
 - [ ] 安全要求 [SF01]: {要求内容}（如果有安全要求且涉及本工单）
 
-### Blocked by
-
+### 前置依赖
 None - can start immediately / {Issue 编号}
 
-### User stories covered
-
+### 覆盖的用户故事
 - Story {编号} [{能力 ID}]
 
 ### 涉及模块
@@ -49,23 +45,19 @@ None - can start immediately / {Issue 编号}
 
 - **类型**：HITL / AFK
 
-### What to build
-
+### 做什么
 {描述}
 
-### Acceptance criteria
-
+### 验收标准
 **[P02] {场景名称}**
 - Given: {前置条件}
 - When: {触发操作}
 - [ ] Then: {预期结果}
 
-### Blocked by
-
+### 前置依赖
 {Issue 1}
 
-### User stories covered
-
+### 覆盖的用户故事
 - Story {编号} [{能力 ID}]
 
 ### 涉及模块
@@ -74,8 +66,7 @@ None - can start immediately / {Issue 编号}
 
 ---
 
-## Coverage Verification
-
+## 覆盖核对
 ### 验收路径覆盖
 
 | 路径 ID | 验收路径 | 覆盖工单 | 状态 |

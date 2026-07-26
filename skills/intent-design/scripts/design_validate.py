@@ -36,6 +36,8 @@ _COMMON_DIR = Path(__file__).resolve().parent.parent.parent / "_common"
 if str(_COMMON_DIR) not in sys.path:
     sys.path.insert(0, str(_COMMON_DIR))
 from markdown_parser import (
+    ARCH_HEADING_ALIASES,
+    normalize_legacy_headings,
     section as _section,
     subsection as _subsection,
     table_rows as _table_rows,
@@ -58,7 +60,7 @@ ARCH_REQUIRED_SECTIONS = [
     "## 3. 技术选型",
     "## 4. 关键数据流",
     "## 5. 额外结构与假设",
-    "## 6. 重要决策的详细说明",
+    "## 6. 关键选型与代价（请重点核对）",
 ]
 
 DESIGN_REQUIRED_SECTIONS = [
@@ -184,6 +186,7 @@ def validate(
     intent_content: str,
 ) -> list[tuple[str, str, str]]:
     """返回 (检查项, 结果, 说明)；结果为 PASS / FAIL。"""
+    arch_content = normalize_legacy_headings(arch_content, ARCH_HEADING_ALIASES)
     results: list[tuple[str, str, str]] = []
 
     # 解析 INTENT.md
@@ -383,8 +386,8 @@ def validate(
         else:
             results.append(("A7", "PASS", f"假设表 {len(assum_rows)} 行，证据合规，无依据项已汇总"))
 
-    # A8: 重要决策的详细说明
-    detail_section = _section(arch_content, "## 6. 重要决策的详细说明", numbered=True)
+    # A8: 关键选型与代价（贵决策详细说明）
+    detail_section = _section(arch_content, "## 6. 关键选型与代价（请重点核对）", numbered=True)
     all_expensive = expensive_tech + expensive_assum
     all_cheap = cheap_tech + cheap_assum
 
