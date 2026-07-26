@@ -2907,5 +2907,133 @@ class TestV23DeclarationHardening(unittest.TestCase):
         )
 
 
+
+# ===========================================================================
+# V19 Tests: High-risk DDL crosscheck — template checklist table must not
+#            self-trigger the keyword scan (D21 sonnet 2/2 false positive)
+# ===========================================================================
+
+
+def _v19_lines(stdout: str) -> list[str]:
+    return [l for l in stdout.splitlines() if "V19:" in l]
+
+
+_HIGH_RISK_TABLE_BLOCK = """- 高风险清单检查（PASS/FAIL 表格）：
+
+  | 检查项 | 状态 | 说明 |
+  | --- | --- | --- |
+  | DROP TABLE / DROP COLUMN | PASS | 纯新增方法，无 DDL |
+  | DELETE FROM 无 WHERE | PASS | 不涉及数据操作 |
+  | 删旧接口 / 删旧 Controller 类 | PASS | 0 删除行 |
+"""
+
+
+class TestV19TemplateTableFalsePositive(unittest.TestCase):
+    """V19: mandatory checklist table rows must not count as DDL keywords."""
+
+    def test_template_table_with_bushiji_decision_passes(self):
+        # 复现 D21 trial-a/trial-b：照模板填清单表 + 决策依据"不涉及"，
+        # 无真实 DDL —— 修复前 V19 因表格行关键词误伤 FAIL。
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            f"""# Execution Record
+
+## [2026-07-27 02:34:54] Step 2: 新增 copy 方法
+
+- 确认类型：改代码
+- 操作对象：`src/main/java/com/ruoyi/web/controller/system/SysConfigController.java`; `090-execution-record.md`; `_active-state.md`
+- 操作内容：`在 addSave 后插入 copy 方法（+24 行，纯新增）`
+- 用户确认：确认 Step 2
+- 决策依据：不涉及
+{_HIGH_RISK_TABLE_BLOCK}
+- 执行结果：Edit 成功
+- 090 记录：已写入本文件
+- _active-state.md 更新：已更新
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v19 = _v19_lines(out)
+        self.assertFalse(
+            any("FAIL" in l for l in v19),
+            f"Template checklist table alone must not trigger V19, got: {v19}",
+        )
+
+    def test_real_ddl_with_bushiji_decision_still_fails(self):
+        # 守卫：操作内容里有真实 ALTER TABLE 时，"不涉及"仍必须被拦。
+        td, rd = _make_repo()
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            f"""# Execution Record
+
+## [2026-07-27 03:00:00] Step 3: 加列
+
+- 确认类型：DDL
+- 操作对象：`sql/patch.sql`
+- 操作内容：`ALTER TABLE sys_config ADD COLUMN ext_flag CHAR(1)`
+- 用户确认：确认 Step 3
+- 决策依据：不涉及
+{_HIGH_RISK_TABLE_BLOCK}
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v19 = _v19_lines(out)
+        self.assertTrue(
+            any("不涉及" in l and "FAIL" in l for l in v19),
+            f"Real DDL with 不涉及 must still FAIL, got: {v19}",
+        )
+
+
+class TestV13BaselineJsonFalsePositive(unittest.TestCase):
+    """V13: the skill's own .git-baseline.json must not read as a config write."""
+
+    def test_docs_step_listing_git_baseline_passes(self):
+        # 复现 D21 trial-b：Step 1 文档步如实列出 .git-baseline.json，
+        # 修复前 \.json 目标正则把它当配置写入 → 误判合并 Step。
+        td, rd = _make_repo()
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-27 02:20:00] Step 1: 写入 light 文档
+
+- 确认类型：写文件
+- 操作对象：`000-context-pack.md`、`040-light.md`、`_active-state.md`、`.git-baseline.json`
+- 操作内容：生成 light 文档与基线快照
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v13 = _v13_lines(out)
+        self.assertTrue(
+            any("separated" in l for l in v13),
+            f"Docs step listing .git-baseline.json must pass V13, got: {v13}",
+        )
+
+    def test_merged_step_with_real_json_config_still_fails(self):
+        # 守卫：真实配置文件（如 config/app.json）与文档合并仍必须拦。
+        td, rd = _make_repo()
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-27 02:25:00] Step 1: 写入 light 文档并调整应用配置
+
+- 确认类型：写文件 / 配置变更
+- 操作对象：`000-context-pack.md`、`040-light.md`、`config/app.json`
+- 操作内容：生成 light 文档，同时修改 config/app.json 超时配置
+- 用户确认：确认 Step 1
+""",
+        )
+        code, out = _run_validator(td, rd)
+        v13 = _v13_lines(out)
+        self.assertTrue(
+            any("merged in the same Step" in l for l in v13),
+            f"Real config write merged with docs must still FAIL, got: {v13}",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

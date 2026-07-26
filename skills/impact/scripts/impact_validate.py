@@ -1322,6 +1322,8 @@ def _has_source_write_in_step(section: str) -> bool:
     writes Phase 4 docs. V13 should fail merged write Steps, not valid docs-only
     records that mention source files as analysis input.
     """
+    # skill 自产的基线快照文件名含 .json，先中和掉，避免命中源码/配置目标正则
+    section = section.replace(".git-baseline.json", "[基线快照]")
     lines = section.splitlines()
     title = lines[0] if lines else ""
     if RE_SOURCE_WRITE_ACTION.search(title) and RE_SOURCE_WRITE_TARGET.search(section):
@@ -2003,7 +2005,12 @@ def check_high_risk_ddl_crosscheck(req_dir: Path) -> tuple[list[str], list[str],
 
     ddl_found = False
     for section in sections:
-        if not RE_DDL_KEYWORDS.search(section):
+        # 模板强制的高风险清单表格自带 DROP/DELETE 字样，关键词扫描排除表格行，
+        # 否则照模板填写的记录必被误伤（表格完整性仍按原文检查）。
+        scan_text = "\n".join(
+            l for l in section.splitlines() if not l.lstrip().startswith("|")
+        )
+        if not RE_DDL_KEYWORDS.search(scan_text):
             continue
         ddl_found = True
         title = section.splitlines()[0].strip() if section else "unknown"
