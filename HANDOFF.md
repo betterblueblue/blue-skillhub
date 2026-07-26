@@ -1,7 +1,7 @@
 # 交接文档
 
 > 写给完全没有上下文的新会话。最近更新：2026-07-26。
-> 本文档覆盖十二个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、impact V23/V24 可校验契约补丁（已完成）、intent-chain 评审修复 P0+P1+文档一致性（已完成，已强模型验证）、impact 评审缺点修复 V23 白名单+SKILL.md 精简+评测脚本修复（已完成，已强模型验证）、强模型验证+校验器盲区修复（任务 J，已完成，未提交）、blue-interview 优化（部分完成，待补测）。
+> 本文档覆盖十三个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、impact V23/V24 可校验契约补丁（已完成）、intent-chain 评审修复 P0+P1+文档一致性（已完成，已强模型验证）、impact 评审缺点修复 V23 白名单+SKILL.md 精简+评测脚本修复（已完成，已强模型验证）、强模型验证+校验器盲区修复（任务 J，已完成，未提交）、blue-interview 优化（部分完成，待补测）。
 
 ---
 
@@ -414,10 +414,37 @@ Sonnet 5 子代理在 `E:\agent\intent-chain-smoke\todo-cli\`（仓库外）跑�
 
 七套件 315 passed；skills 目录 grep 无残留 README 死链。改动均为 SKILL.md/模板文案，未触碰校验器逻辑。
 
+### 后续（同日完成，见任务 L）
+
+- W5 chain_validate.py 跑批、W7 防漂移测试已落地
+- 轻量档二次冒烟已启动
+
+---
+
+## 任务 L：链路跑批 + 防漂移测试（2026-07-26，已完成）
+
+### W5：chain_validate.py
+
+`skills/_common/chain_validate.py`——一条命令按流水线顺序对链路目录跑全部六个校验器。行为：intent.md 缺失 FAIL（链路起点）；下游未产出标跳过（做到一半是常态）；已产出但前置缺失 FAIL；任一 FAIL 退出 1。测试 4 项（编排行为）。真实验证：对冒烟一号产物目录跑 6/6 PASS 退出 0。README 已加使用说明。
+
+### W7：防漂移测试（+10 项）
+
+- `skills/_common/tests/test_cross_validator_consistency.py`：锁定 impact V23 与 design A7 的四组正则拷贝（代码位置白名单/引号/引号剥离/无额外结构声明行）必须逐字符一致——单边修改即测试失败
+- 五个 skill 各加 TestTemplateSync：校验器要求的必需章节/标题必须存在于模板（anchor 16 节、prd 8+3、design 6+3、issues 工单段落+覆盖段、verify 13 个标题常量）——从机制上杜绝"V8 模板缺节"类 bug。首跑全绿，说明现存模板无其他隐藏不同步
+- intent-dev 无标题常量契约，不适用模板自检
+
+### W3（D5 机械化）：本轮不做，已想清楚设计坑
+
+推迟/放弃项的名字会合法出现在 PRD Out of Scope、INTENT 第 6 节等位置，朴素 grep 必然误报。需要先设计排除规则（只扫实现性内容区，跳过 Out of Scope/推迟说明），另轮单独处理。
+
+### 验证
+
+八套件 329 passed（+14）；chain_validate 真实链路 6/6 PASS。
+
 ### 遗留
 
-- 建议再跑一次冒烟（轻量档路径）实测确认次数降幅（预期 21 → 个位数）
-- 评审 W3（D5 漂移复核机械化）、W5（chain_validate.py 跑批）、W7（防漂移测试）仍在待办
+- 轻量档二次冒烟（ledger-cli，Sonnet 5）结果待回，验证确认次数 21 → 个位数
+- W3 D5 机械化（含排除规则设计）
 
 ---
 

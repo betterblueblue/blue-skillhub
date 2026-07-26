@@ -468,6 +468,18 @@ class TestSecurityRequirements(unittest.TestCase):
         self.assertEqual("PASS", _result(_valid_content(), "V14")[1])
 
 
+class TestTemplateSync(unittest.TestCase):
+    """校验器要求的必需章节必须存在于模板——防止校验器与模板漂移。"""
+
+    def test_required_sections_exist_in_template(self):
+        import intent_validate as iv
+        template = (
+            Path(__file__).resolve().parent.parent / "templates" / "INTENT.md"
+        ).read_text(encoding="utf-8")
+        missing = [s for s in iv.REQUIRED_SECTIONS if s not in template]
+        self.assertFalse(missing, f"模板缺少校验器要求的章节: {missing}")
+
+
 class TestOutputPath(unittest.TestCase):
     def test_valid_output_path(self):
         path = Path("project/intent-chain/2026-07-11-001-跨会话交接/intent.md")

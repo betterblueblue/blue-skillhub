@@ -101,6 +101,8 @@ IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设计标�
 
 **轻量档**：小项目（用户可感知能力 ≤5、单用户、无数据库、无对外 API）可以在 intent-anchor 定档为轻量——文档薄写、确认合并、工单单条直行，但验收路径、假设表、V2 证据和全部校验器不降级。档位记录在 `INTENT.md` 第 2 节，只允许轻量升标准，不允许反向降档。
 
+**链路批量校验**：上游文档修订后，运行 `python skills/_common/chain_validate.py intent-chain/{链路目录}` 一条命令重验整条链——六个校验器自带交叉检查，重跑一遍就能发现下游哪些文档需要同步更新；尚未产出的文件自动跳过。
+
 ### IntentDesign：把技术方案和假设外化为文件
 
 [IntentDesign](skills/intent-design/) 从 `INTENT.md` 和 PRD 产出架构文档和功能设计文档。架构文档写全局技术决策（分层、模块边界、技术选型、数据流、额外结构与假设），功能设计文档写每个保留能力在架构里怎么落地。

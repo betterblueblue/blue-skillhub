@@ -500,6 +500,27 @@ class TestDriftTableCheck(unittest.TestCase):
         self.assertIn("数据行", result[2])
 
 
+class TestTemplateSync(unittest.TestCase):
+    """校验器要求的标题必须存在于模板——防止校验器与模板漂移。
+
+    2026-07 强模型验证曾发现模板缺 技术漂移复核 子节而校验器强制要求，
+    照模板写的文档必挂 V8。本测试从机制上杜绝这类不同步。
+    """
+
+    def test_validator_headings_exist_in_template(self):
+        import verify_validate as vv
+        template = (SKILL_DIR / "templates" / "verify-record.md").read_text(encoding="utf-8")
+        headings = [
+            vv.REGRESSION_HEADING, vv.E2E_HEADING, vv.CONDITIONAL_HEADING,
+            vv.PERF_HEADING, vv.SECURITY_HEADING, vv.GATE_HEADING,
+            vv.REGRESSION_SUMMARY_HEADING, vv.CAPABILITY_HEADING,
+            vv.PATH_TABLE_HEADING, vv.CONDITIONAL_SUMMARY_HEADING,
+            vv.DRIFT_HEADING, vv.TECH_DRIFT_HEADING, vv.CONCLUSION_HEADING,
+        ]
+        missing = [h for h in headings if h not in template]
+        self.assertFalse(missing, f"模板缺少校验器要求的标题: {missing}")
+
+
 class TestCLI(unittest.TestCase):
     """CLI 参数测试：architecture.md 和 design.md 都是强制参数。"""
 

@@ -180,5 +180,16 @@ class TestGivenWhenThen(unittest.TestCase):
         self.assertIn("场景块", result[2])
 
 
+class TestTemplateSync(unittest.TestCase):
+    """校验器要求的必需章节必须存在于模板——防止校验器与模板漂移。"""
+
+    def test_required_sections_exist_in_template(self):
+        import prd_validate as pv
+        template = (SKILL_DIR / "templates" / "PRD.md").read_text(encoding="utf-8")
+        required = pv.REQUIRED_SECTIONS + pv.VERIFICATION_SUBSECTIONS
+        missing = [s for s in required if s not in template]
+        self.assertFalse(missing, f"模板缺少校验器要求的章节: {missing}")
+
+
 if __name__ == "__main__":
     unittest.main()
