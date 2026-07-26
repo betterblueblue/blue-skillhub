@@ -86,6 +86,22 @@ def main() -> int:
             summary = "; ".join(fail_lines[:3]) if fail_lines else (proc.stderr or "").strip()[:200]
             rows.append((label, "FAIL", summary))
 
+    # D5 漂移交叉检查：推迟/放弃项是否回流到下游实现承载区（见 d5_check.py）
+    if (chain_dir / "intent.md").exists():
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        try:
+            from d5_check import check as d5_run
+        finally:
+            sys.path.pop(0)
+        d5_passes, d5_fails = d5_run(chain_dir)
+        if d5_fails:
+            exit_code = 1
+            rows.append(("D5 漂移交叉检查", "FAIL", "; ".join(d5_fails[:3])))
+        else:
+            rows.append(("D5 漂移交叉检查", "PASS", d5_passes[0] if d5_passes else ""))
+    else:
+        rows.append(("D5 漂移交叉检查", "跳过", "intent.md 缺失"))
+
     print(f"\n{'=' * 60}")
     print(f"intent-chain 链路校验: {chain_dir}")
     print(f"{'=' * 60}")

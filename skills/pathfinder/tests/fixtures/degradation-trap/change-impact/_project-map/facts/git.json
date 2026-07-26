@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "generator": "pf_git.py",
+  "source_path": "skills/pathfinder/tests/fixtures/degradation-trap",
+  "observed_at": "2026-07-05T00:00:00+00:00",
+  "is_git_repo": false,
+  "is_independent_repo": false,
+  "toplevel": null,
+  "head_short": null,
+  "head_full": null,
+  "branch": null,
+  "hotspots": [],
+  "recent_commit_modules": []
+}

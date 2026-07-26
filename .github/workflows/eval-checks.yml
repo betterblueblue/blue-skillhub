@@ -46,6 +46,9 @@ jobs:
       - name: Run IntentAnchor validator tests
         run: python skills/intent-anchor/tests/test_intent_validate.py
 
+      - name: Run shared chain validator tests (_common)
+        run: python -m unittest discover -s skills/_common/tests -p "test_*.py"
+
       - name: Run shared Skill improvement prompt tests
         run: python tests/test_skill_improvement_prompt.py
 
