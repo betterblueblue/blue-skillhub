@@ -2567,6 +2567,88 @@ class TestV24FlowStepWithDML(unittest.TestCase):
         self.assertTrue(any("Step 2" in l and "missing" in l.lower() for l in v24), f"Expected DML-bypass FAIL, got: {v24}")
 
 
+class TestV24ShortStepWindowNoLeak(unittest.TestCase):
+    """V24 Check E: 短流程 Step 的探测窗口不得越过节边界，把下一节里的
+    代码 token（如校验器路径）误判成本 Step 的源码内容（sonnet-sim-d16 实测假阳性）。"""
+
+    def test_short_flow_step_before_code_section_passes(self):
+        td, rd = _make_repo()
+        _write_design(rd, _make_design_with_items(["D01"]))
+        _write_impl(rd, _make_impl_with_mapping(
+            "| D01 | Step 1 | ✅ 已覆盖 |",
+            """### Step 1: 修改代码
+
+- **设计项**：D01
+- **维度**：代码
+- **文件**：`src/services/user.service.ts`
+- **操作**：
+  ```typescript
+  // code
+  ```
+- **确认类型**：改代码
+
+### Step 2: 验证
+
+- **设计项**：流程步骤，不改业务对象
+- **操作**：运行校验命令并核对输出
+- **确认类型**：流程确认
+
+## 3.2 API 方法验证表
+
+| 方法 | 验证方式 |
+|---|---|
+| validate | `python skills/impact/scripts/impact_validate.py <需求目录> --mode full` |
+"""
+        ))
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertEqual(code, 0, f"Short flow Step before code-token section should PASS, got {code}\n{out}")
+        self.assertFalse(any("Step 2" in l and "missing" in l.lower() for l in v24),
+                         f"Window leaked past section boundary: {v24}")
+
+
+class TestV24CheckAWindowNoLeak(unittest.TestCase):
+    """V24 Check A: 020 无 Dxx 时同样的窗口泄漏——短流程 Step 后跟含代码
+    token 的小节，不得被误判为源码 Step。"""
+
+    def test_no_dxx_short_step_before_code_section_passes(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+无额外结构
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        _write_impl(rd, """# Implementation
+
+## 3. 执行步骤
+
+### Step 1: 验证
+
+- **操作**：运行校验命令并核对输出
+- **确认类型**：流程确认
+
+## 3.2 API 方法验证表
+
+| 方法 | 验证方式 |
+|---|---|
+| validate | `python skills/impact/scripts/impact_validate.py <需求目录> --mode full` |
+""")
+        code, out = _run_validator(td, rd)
+        v24 = _v24_lines(out)
+        self.assertFalse(any("but 030 has source/DML Steps" in l for l in v24),
+                         f"Check A window leaked past section boundary: {v24}")
+        self.assertTrue(any("has no source Steps — consistent" in l for l in v24),
+                        f"Expected consistent PASS, got: {v24}")
+
+
 class TestV24Missing090DesignItem(unittest.TestCase):
     """V24: 090 Step missing 设计项 field when 030 has it → FAIL."""
 
