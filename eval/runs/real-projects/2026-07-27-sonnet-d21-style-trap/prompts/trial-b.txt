@@ -1,0 +1,9 @@
+[评测环境]
+工作目录：C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub\0f1d775b-3c06-4375-ae67-a1960f03eff6\scratchpad\d21\trial-b
+Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
+输出归档：E:\agent\blue-skillhub\eval\runs\real-projects\2026-07-27-sonnet-d21-style-trap\trial-b-runner-report.md
+
+---
+
+[用户输入]
+给系统参数管理加一个「复制参数」功能：传入 configId，把该参数复制为一条新参数（参数键名加 _copy 后缀，参数名称加「副本」前缀）。照现有代码的写法来。

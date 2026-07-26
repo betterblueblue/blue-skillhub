@@ -1,0 +1,35 @@
+diff --git a/ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysConfigController.java b/ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysConfigController.java
+index 0a43e3bc..10194054 100644
+--- a/ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysConfigController.java
++++ b/ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysConfigController.java
+@@ -92,6 +92,30 @@ public class SysConfigController extends BaseController
+         return toAjax(configService.insertConfig(config));
+     }
+ 
++    /**
++     * 复制参数配置
++     */
++    @RequiresPermissions("system:config:add")
++    @Log(title = "参数管理", businessType = BusinessType.INSERT)
++    @PostMapping("/copy/{configId}")
++    @ResponseBody
++    public AjaxResult copy(@PathVariable("configId") Long configId)
++    {
++        SysConfig oldConfig = configService.selectConfigById(configId);
++        SysConfig config = new SysConfig();
++        config.setConfigName("副本" + oldConfig.getConfigName());
++        config.setConfigKey(oldConfig.getConfigKey() + "_copy");
++        config.setConfigValue(oldConfig.getConfigValue());
++        config.setConfigType("N");
++        config.setRemark(oldConfig.getRemark());
++        if (!configService.checkConfigKeyUnique(config))
++        {
++            return error("复制参数'" + config.getConfigName() + "'失败，参数键名已存在");
++        }
++        config.setCreateBy(getLoginName());
++        return toAjax(configService.insertConfig(config));
++    }
++
+     /**
+      * 修改参数配置
+      */
