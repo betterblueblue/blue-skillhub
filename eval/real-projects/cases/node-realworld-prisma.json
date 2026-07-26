@@ -122,7 +122,7 @@
       "phase": 1,
       "run_mode": "analysis-only",
       "delivery_mode": "phase4-docs",
-      "prompt": "给用户 profile 增加一个公开字段 displayName，注册、更新资料、获取 profile、文章作者信息里都要返回。先不要写代码，只做完整影响分析。",
+      "prompt": "给用户 profile 增加一个公开字段 displayName，注册、更新资料、获取 profile、文章作者信息里都要返回。先不要改源码，只做完整影响分析。",
       "expected_artifacts": [
         "full 判档结论",
         "Prisma schema、迁移、DTO/序列化、profile API、article author 响应和测试影响清单",
@@ -245,7 +245,7 @@
       "phase": 1,
       "run_mode": "analysis-only",
       "delivery_mode": "phase4-docs",
-      "prompt": "tags 功能没人用了，把它整个删掉。先不要写代码，只做完整影响分析。",
+      "prompt": "tags 功能没人用了，把它整个删掉。先不要改源码，只做完整影响分析。",
       "expected_artifacts": [
         "full 判档结论",
         "路由、服务、Prisma schema、测试、API 契约影响清单",

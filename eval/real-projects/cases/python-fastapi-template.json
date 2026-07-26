@@ -296,7 +296,7 @@
       "phase": 1,
       "run_mode": "analysis-only",
       "delivery_mode": "phase4-docs",
-      "prompt": "给 item 增加 is_pinned 字段，后端要存储和返回，前端列表可以切换置顶状态。先不要写代码，只做完整影响分析。",
+      "prompt": "给 item 增加 is_pinned 字段，后端要存储和返回，前端列表可以切换置顶状态。先不要改源码，只做完整影响分析。",
       "expected_artifacts": [
         "full 判档结论",
         "模型、迁移、API schema、CRUD、前端列表/表单、测试影响清单",
@@ -418,7 +418,7 @@
       "phase": 1,
       "run_mode": "analysis-only",
       "delivery_mode": "phase4-docs",
-      "prompt": "环境变量 PROJECT_NAME 改成 APP_NAME，项目里用到的地方都改掉。先不要写代码，只做完整影响分析。",
+      "prompt": "环境变量 PROJECT_NAME 改成 APP_NAME，项目里用到的地方都改掉。先不要改源码，只做完整影响分析。",
       "expected_artifacts": [
         "full 判档结论",
         "配置文件、docker-compose、README、CI、前端配置影响清单",

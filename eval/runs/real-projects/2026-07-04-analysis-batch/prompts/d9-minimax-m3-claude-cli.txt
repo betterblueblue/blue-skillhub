@@ -6,4 +6,4 @@ Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
 ---
 
 [用户输入]
-给用户资料新增 organization 字段，后端存储和返回，前端注册/资料页可填写，shared type 也要同步。先不要写代码，只做完整影响分析。
+给用户资料新增 organization 字段，后端存储和返回，前端注册/资料页可填写，shared type 也要同步。先不要改源码，只做完整影响分析。

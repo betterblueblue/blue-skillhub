@@ -124,7 +124,7 @@
       "phase": 2,
       "run_mode": "analysis-only",
       "delivery_mode": "phase4-docs",
-      "prompt": "给用户资料新增 organization 字段，后端存储和返回，前端注册/资料页可填写，shared type 也要同步。先不要写代码，只做完整影响分析。",
+      "prompt": "给用户资料新增 organization 字段，后端存储和返回，前端注册/资料页可填写，shared type 也要同步。先不要改源码，只做完整影响分析。",
       "expected_artifacts": [
         "full 判档结论",
         "DB schema、迁移、API、shared types、前端表单/展示和测试影响清单",

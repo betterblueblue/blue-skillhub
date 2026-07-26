@@ -203,7 +203,7 @@
       "phase": 2,
       "run_mode": "analysis-only",
       "delivery_mode": "phase4-docs",
-      "prompt": "新增一个 Audit Logs 页面，侧边栏能进入，页面展示操作人、动作、时间，数据先从现有 mock/API 层读取。先不要写代码，只做完整影响分析。",
+      "prompt": "新增一个 Audit Logs 页面，侧边栏能进入，页面展示操作人、动作、时间，数据先从现有 mock/API 层读取。先不要改源码，只做完整影响分析。",
       "expected_artifacts": [
         "full 判档结论",
         "路由、菜单、页面、数据层、类型、测试影响清单",

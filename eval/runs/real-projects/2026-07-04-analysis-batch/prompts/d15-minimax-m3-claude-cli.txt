@@ -6,4 +6,4 @@ Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
 ---
 
 [用户输入]
-tags 功能没人用了，把它整个删掉。先不要写代码，只做完整影响分析。
+tags 功能没人用了，把它整个删掉。先不要改源码，只做完整影响分析。

@@ -6,4 +6,4 @@ Skill：E:\agent\blue-skillhub\skills\impact\SKILL.md
 ---
 
 [用户输入]
-环境变量 PROJECT_NAME 改成 APP_NAME，项目里用到的地方都改掉。先不要写代码，只做完整影响分析。
+环境变量 PROJECT_NAME 改成 APP_NAME，项目里用到的地方都改掉。先不要改源码，只做完整影响分析。
