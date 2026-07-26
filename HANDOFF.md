@@ -474,6 +474,21 @@ Sonnet 5 子代理在 `E:\agent\intent-chain-smoke\todo-cli\`（仓库外）跑�
 
 ---
 
+## 任务 N：发布主线阶段 3 收尾——15 条失败归因 + release-gate + 支持矩阵（2026-07-26，已完成）
+
+32 代理 workflow（15 归因 + 15 对抗核实 + 矩阵 + 综合）完成，**质疑者裁决 15/15 CONFIRMED**。
+
+**归因结论**：15 条 FAIL/UNVERIFIED 里 13 条已闭环（多数是"门禁正常工作的证据资产"——skill-process-escape 7、model-behavior-caught 5、infra 1、gate-defect 1、coverage-gap 1）。**唯一阻塞发布：D16**（gpt-5.4-mini 配置迁移分析漏查被 gitignore 的 .env 和 .github CI）。
+
+**产出**（均已落盘）：
+- `docs/skill-eval/release-gate.md`——阶段 5 硬标准逐条达标判定
+- `eval/real-projects/model-support-matrix.md`——4 runner × D1-D20；Composer 2.5 Fast 18/20 最可靠，gpt-5.4-mini 16/20 但最小 prompt 下有稳定流程逃逸
+- `eval/real-projects/attribution-2026-07-26.md`——归因总表
+
+**行动清单**：P0 ×2（impact 搜索指引补"配置迁移必查 --no-ignore 的 .env/.github"规则 + 复跑 D16；修 handoff-summary §6.5 与 D16 结果矛盾）；P1 ×3（D16 补 M3 数据、D3 M3 额度恢复后补跑、拍板 release-gate 标准 2"L 任务收敛"按 runner 还是按场景计）。
+
+---
+
 ## 任务 B（待补测）：blue-interview
 
 blue-interview P1/P2/P3/P8/P9 已落地，P3 试跑通过，P1/P2/P8/P9 待补测。
