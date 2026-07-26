@@ -85,8 +85,10 @@ VALID_DRIFT_STATUSES = {"未命中", "命中", "不适用"}
 CAPABILITY_ID_RE = re.compile(r"^C\d{2,}$")
 PATH_ID_RE = re.compile(r"^P\d{2,}$")
 EVIDENCE_ID_RE = re.compile(r"^E\d{2,}$")
-OUTPUT_PATH_RE = re.compile(
-    r"^\d{4}-\d{2}-\d{2}-\d{3}-[^\\/:*?\"<>| ]+\.md$"
+# 链路目录名：YYYY-MM-DD-NNN-意图名称（与 SKILL.md「文件存放」节的
+# intent-chain/{链路目录}/intent.md 契约一致）
+CHAIN_DIR_RE = re.compile(
+    r"^\d{4}-\d{2}-\d{2}-\d{3}-[^\\/:*?\"<>| ]+$"
 )
 
 
@@ -665,10 +667,12 @@ def validate(content: str) -> list[tuple[str, str, str]]:
 
 
 def _path_error(intent_path: Path) -> str | None:
-    if intent_path.parent.name != "intent-anchor":
-        return "文件必须放在目标项目的 intent-anchor/ 目录"
-    if not OUTPUT_PATH_RE.fullmatch(intent_path.name):
-        return "文件名必须符合 YYYY-MM-DD-NNN-意图名称.md，且意图名称不能含空格或特殊字符"
+    if intent_path.name != "intent.md":
+        return "文件名必须是 intent.md"
+    if not CHAIN_DIR_RE.fullmatch(intent_path.parent.name):
+        return "链路目录名必须符合 YYYY-MM-DD-NNN-意图名称，且意图名称不能含空格或特殊字符"
+    if intent_path.parent.parent.name != "intent-chain":
+        return "链路目录必须放在目标项目的 intent-chain/ 目录下"
     return None
 
 

@@ -425,6 +425,16 @@ class TestTechDriftCheck(unittest.TestCase):
         self.assertEqual("FAIL", v8[0][1])
         self.assertIn("写明原因", v8[0][2])
 
+    def test_spaced_module_name_passes(self):
+        """含空格的模块名（如 "CLI 入口"）不被 V8 分词拆散（冒烟 B-1）。"""
+        arch = _ARCH_CONTENT.replace("记录生成器", "CLI 入口")
+        design = _DESIGN_CONTENT.replace("记录生成器", "CLI 入口")
+        content = _content().replace("记录生成器", "CLI 入口")
+        results = validate(content, _intent(), arch, design)
+        v8 = [r for r in results if r[0] == "V8"]
+        self.assertEqual(1, len(v8))
+        self.assertEqual("PASS", v8[0][1])
+
     def test_missing_module_skips_design_check(self):
         """状态标"缺失"的模块（架构定义但代码未实现）不做 design.md 比对。"""
         design = (

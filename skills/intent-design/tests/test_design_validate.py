@@ -286,6 +286,16 @@ class TestA7Assumptions(unittest.TestCase):
         self.assertEqual("FAIL", result[1])
 
 
+class TestModuleNameWithSpace(unittest.TestCase):
+    def test_spaced_module_name_not_split(self):
+        """中英混合含空格的模块名（如 "CLI 入口"）不应被拆散误报未定义（冒烟 B-1）。"""
+        arch = _arch_content().replace("记录生成器", "CLI 入口")
+        design = _design_content().replace("记录生成器", "CLI 入口")
+        results = validate(arch, design, _intent_content())
+        failed = [(r[0], r[2]) for r in results if r[1] != "PASS"]
+        self.assertFalse(failed, f"Unexpected failures: {failed}")
+
+
 class TestA8ExpensiveDetails(unittest.TestCase):
     def test_missing_expensive_detail_fails(self):
         """有贵决策但第 6 节没有对应说明。"""
