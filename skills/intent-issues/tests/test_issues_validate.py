@@ -357,5 +357,16 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(1, code)
 
 
+class TestTemplateSync(unittest.TestCase):
+    """校验器要求的必需段落必须存在于模板——防止校验器与模板漂移。"""
+
+    def test_required_subsections_exist_in_template(self):
+        import issues_validate as iv
+        template = (SKILL_DIR / "templates" / "issue-template.md").read_text(encoding="utf-8")
+        required = iv.REQUIRED_ISSUE_SUBSECTIONS + iv.COVERAGE_SUBSECTIONS
+        missing = [s for s in required if s not in template]
+        self.assertFalse(missing, f"模板缺少校验器要求的段落: {missing}")
+
+
 if __name__ == "__main__":
     unittest.main()

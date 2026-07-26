@@ -286,6 +286,22 @@ class TestA7Assumptions(unittest.TestCase):
         self.assertEqual("FAIL", result[1])
 
 
+class TestTemplateSync(unittest.TestCase):
+    """校验器要求的必需章节必须存在于模板——防止校验器与模板漂移。"""
+
+    def test_arch_required_sections_exist_in_template(self):
+        import design_validate as dv
+        template = (SKILL_DIR / "templates" / "architecture.md").read_text(encoding="utf-8")
+        missing = [s for s in dv.ARCH_REQUIRED_SECTIONS if s not in template]
+        self.assertFalse(missing, f"architecture 模板缺少校验器要求的章节: {missing}")
+
+    def test_design_required_sections_exist_in_template(self):
+        import design_validate as dv
+        template = (SKILL_DIR / "templates" / "design.md").read_text(encoding="utf-8")
+        missing = [s for s in dv.DESIGN_REQUIRED_SECTIONS if s not in template]
+        self.assertFalse(missing, f"design 模板缺少校验器要求的章节: {missing}")
+
+
 class TestModuleNameWithSpace(unittest.TestCase):
     def test_spaced_module_name_not_split(self):
         """中英混合含空格的模块名（如 "CLI 入口"）不应被拆散误报未定义（冒烟 B-1）。"""
