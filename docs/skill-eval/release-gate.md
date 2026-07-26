@@ -53,21 +53,21 @@
 
 ### 5. pathfinder 补上 2026-06-16 遗留的 references 缺口
 
-**状态：待核（倾向基本达标，但本轮未逐条复核内容质量）**
+**状态：达标（2026-07-26 抽查完成并修复）**
 
 - 2026-06-16 遗留缺口原文（见历史评测记录）：pathfinder 的 `references/`（phase-1/2/3、stack-detection、handoff-contract、code-graph-adapter）与 project-map 模板"本轮完全未审"。
 - 当前 `skills/pathfinder/references/` 有 8 个文件（`phase-1-sizing.md`、`phase-2-explore-domains.md`、`phase-3-depth-fill.md`、`stack-detection.md`、`handoff-contract.md`、`cross-platform-notes.md`、`facts-schema.md`、`review-checklist.md`），SKILL.md 的 references 索引全部指向这些文件且有具体章节对应。
 - git log 显示 `skills/pathfinder/references` 路径下有多轮标注为"第二轮审查""第三轮审查报告 8 个 Bug""14 个 bug"的修复提交，说明 2026-06-16 之后确有多轮内容审查落地，不是零审查状态。
-- 但本次会话的任务范围是综合归因结论，没有逐字重读 8 个 references 文件判断内容质量，所以不能标"达标"，只能标"待核"——建议发布前做一次单独的 pathfinder references 通读确认（不必是全新审查，是最后一次抽查）。
+- **抽查结论（2026-07-26）**：按五项清单（索引一致性/校验器描述/章节号/脚本命令/跨文件矛盾）完成最后抽查，发现 7 条文档同步缺口——全部属于"脚本与模板已升级、说明文档没跟上"，门禁代码本身无缺陷。判分方逐条复核属实并当日修复：review-checklist 自动检查表 V1-V8 → V1-V11（含期望输出与打分卡）；SKILL.md 与 phase-3-depth-fill 的可选集 3 节 → 7 节（补 CI/CD、CODEOWNERS、测试覆盖率、性能基线）；模板头注释与【14】"可跳过"口径统一；V7 描述补"合理跳过降 WARN"分支；facts-schema 补 `file_count_source`/`physical_file_count` 两个输出字段；stack-detection 映射表补 `Pipfile`/`mix.exs`；review-checklist H9 去掉模板【8】没有的"迁移"项。修复后 pathfinder L0 测试 43 PASS / 0 FAIL。
 
 ## 距发布还差的事
 
-按当前数据，硬标准 5 条里：4 条达标（S/M、L 任务、NEG、escape-ledger）+ 1 条待核（pathfinder references）。**发布前必须做的事：**
+按当前数据，硬标准 5 条**全部达标**（S/M、L 任务、NEG、escape-ledger、pathfinder references）。**发布前必须做的事：**
 
 1. **解除 D16 阻塞**（P0，硬标准 1）：给 impact skill 补配置入口检查规则并用 gpt-54-mini 复跑转绿，或者显式把 gpt-54-mini 从"D16 类分析场景可用"的承诺中划出——二选一。同时修正 `docs/handoff-summary-2026-07-04.md` §6.5 表格里与本次 FAIL 矛盾的"分析场景可用"表述。
    **进展（2026-07-26）**：规则已落地——`skills/impact/references/phase-2-context-discovery.md` Step 2.3 新增第 9 条「搜索盲区强制检查」（配置键/环境变量类变更必须用 `rg --no-ignore --hidden` 补查被 gitignore 的 `.env` 和隐藏目录 `.github/` CI）；§6.5 两处矛盾表述已更正（"分析场景可用"加例外标注、M3 无数据行更正）。**剩余：gpt-54-mini 复跑 D16 验证转绿。**
 2. **补齐 D16 的 minimax-m3 runner 数据**（P1，硬标准 1）：目前完全没跑，runner_scope 要求的覆盖不完整。
 3. **拍板"L 任务收敛"标准的字面含义**（P1，硬标准 2）：**已完成（2026-07-26）**——定为按场景计（至少一个 runner 收敛即达标），标准 2 据此转达标，详见上文第 2 条。
 4. **补跑 D3-minimax-m3**（P1，硬标准 2 的数据补全，拍板后不再阻塞判定）：确认 MiniMax M3 额度恢复后用隔离 fixture 副本复跑，把 UNVERIFIED 转成明确结论。
-5. **pathfinder references 最后抽查**（P2，硬标准 5）：确认 8 个 references 文件内容与当前 SKILL.md 引用一致、无过期描述。
+5. **pathfinder references 最后抽查**（P2，硬标准 5）：**已完成（2026-07-26）**——发现并修复 7 条文档同步缺口，详见上文第 5 条。
 6. **达线后发布收尾清单目前均未启动**（不阻塞硬标准，但发布前必做）：外部 QUICKSTART 文档不存在；pathfinder 没有 CHANGELOG.md（impact 已有）；`eval/archive`、`test-projects` 历史 fixture 是否只留私有仓库尚未处理；环境兼容说明（Codex 子代理 vs Claude Code CLI 各自验证程度）尚未成文，可参考 escape-ledger 里已经记录的"Codex 裸跑无写前 hook"边界直接改写成文档。
