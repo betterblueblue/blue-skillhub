@@ -228,13 +228,13 @@ Pathfinder 和 ImpactRadar 完成一次任务后，会在回复中附上一段�
 
 [claudecode行为规范/ruleblade/](claudecode行为规范/ruleblade/)
 
-律刃是一组写给 AI 编码助手的通用行为规则，共 8 条编码规则和 1 条中文表达要求。它要求模型先弄清目标和上下文，再动手修改；遇到不确定的地方要明确说明，不能靠猜。
+律刃是一组写给 AI 编码助手的通用行为规则，共 8 条编码规则、1 条评审与迭代纪律和 1 条中文表达要求。它要求模型先弄清目标和上下文，再动手修改；遇到不确定的地方要明确说明，不能靠猜。
 
 这套规则既适用于新项目，也适用于已有项目。可以放进 `CLAUDE.md`，也可以按需复制成 Codex 项目的 `AGENTS.md`。它不绑定具体开发流程，修复 Bug、重构、补测试和普通开发都能使用。
 
 律刃最初参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后来结合中文编码任务和复杂变更持续调整。
 
-v3.2 通过了 Claude Code + MiniMax M3 的两轮稳定性复测；v3.3 新增的五条规则也通过了 Step 3.7 Flash 的 6 个场景测试。详细记录见 [律刃 README](claudecode行为规范/ruleblade/README.md)。
+v3.2 通过了 Claude Code + MiniMax M3 的两轮稳定性复测；v3.3 调整的五处表达通过了 Step 3.7 Flash 的 6 个场景测试；当前版本 v3.4 新增第 9 条「防止过度优化与评审扩张」并做了一轮去重。详细记录见 [律刃 README](claudecode行为规范/ruleblade/README.md)。
 
 ### 网搜 MCP
 
