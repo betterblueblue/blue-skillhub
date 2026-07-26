@@ -2280,13 +2280,21 @@ EXTRA_STRUCTURE_REQUIRED_COLS = [
     "这种情况的依据", "以后再补的成本",
 ]
 
-# Vague justifications — expanded list
+# Vague justifications — expanded list (blacklist, kept as secondary check)
 RE_VAGUE_EVIDENCE = re.compile(
     r"扩展性|健壮性|最佳实践|业界惯例|性能考虑|为了性能|"
     r"安全性考虑|为了安全|兼容性|未来扩展|以防万一|"
     r"可能需要|以防|万一"
 )
 RE_NO_EVIDENCE = re.compile(r"无依据.*假设|假设.*无依据|无依据")
+
+# Evidence whitelist — evidence must match at least one of these patterns
+RE_CODE_LOCATION = re.compile(r"[/\\]\w+\.\w{1,5}|\w+\.\w{1,5}:\d+")
+RE_QUOTE = re.compile(r'["「『"].+["」』"]')
+RE_TEST_RESULT = re.compile(
+    r"passed|failed|exit\s+\d|命中|SELECT|COUNT|rows?|records?|匹配|grep|npm|pytest",
+    re.I,
+)
 RE_CONFIRMATION_LIST = re.compile(r"需要你确认的假设")
 RE_PREFLIGHT_EXECUTABLE = re.compile(r"是否允许进入执行阶段[：:]\s*是", re.I)
 
@@ -2407,6 +2415,7 @@ def check_extra_structure(req_dir: Path, mode: str) -> tuple[list[str], list[str
 
     # Check each row
     vague_evidence: list[str] = []
+    non_whitelist_evidence: list[str] = []
     empty_fields: list[str] = []
     invalid_design_refs: list[str] = []
     unconfirmed: list[str] = []
@@ -2428,13 +2437,25 @@ def check_extra_structure(req_dir: Path, mode: str) -> tuple[list[str], list[str
             if not val or val.strip() in placeholders or val.startswith("["):
                 empty_fields.append(f"{design_item or 'row'}: {col_name} is empty/placeholder")
 
-        # Check vague words in evidence column
-        if RE_VAGUE_EVIDENCE.search(evidence):
-            vague_evidence.append(f"{design_item} ({structure}): evidence '{evidence[:60]}'")
-
-        # Check vague words in scenario column too
+        # Check vague words in scenario column (blacklist only for scenario)
         if RE_VAGUE_EVIDENCE.search(scenario):
             vague_evidence.append(f"{design_item} ({structure}): scenario '{scenario[:60]}'")
+
+        # Evidence column: blacklist first (backward compatible), then whitelist
+        # 1. Vague words → FAIL (catches "扩展性考虑" etc.)
+        if RE_VAGUE_EVIDENCE.search(evidence):
+            vague_evidence.append(f"{design_item} ({structure}): evidence '{evidence[:60]}'")
+        # 2. "无依据" → mark as unconfirmed (not a FAIL)
+        elif RE_NO_EVIDENCE.search(evidence):
+            unconfirmed.append(f"{design_item}: {structure}")
+        # 3. Must match at least one whitelist pattern
+        #    (catches "模型判断确有必要" — no vague words but not a recognized type)
+        elif not (RE_CODE_LOCATION.search(evidence)
+                  or RE_QUOTE.search(evidence)
+                  or RE_TEST_RESULT.search(evidence)):
+            non_whitelist_evidence.append(
+                f"{design_item} ({structure}): evidence '{evidence[:60]}'"
+            )
 
         # Check 关联设计项 exists in §3
         if design_item and design_items_020:
@@ -2443,14 +2464,19 @@ def check_extra_structure(req_dir: Path, mode: str) -> tuple[list[str], list[str
                 if dxx not in design_items_020:
                     invalid_design_refs.append(f"{dxx} not in §3")
 
-        # Collect unconfirmed (无依据) items
-        if RE_NO_EVIDENCE.search(evidence):
-            unconfirmed.append(f"{design_item}: {structure}")
-
     if empty_fields:
         fails.append(
             "V23: §5.1 table has empty/placeholder fields — "
             f"all 5 columns must be filled. Offending: {'; '.join(empty_fields[:3])}"
+        )
+
+    if non_whitelist_evidence:
+        fails.append(
+            "V23: §5.1 evidence does not match any recognized type — "
+            "evidence must be code location (e.g. src/service.py:42), "
+            "query/test result (e.g. 'npm test 26 passed'), "
+            "user quote (in quotes), or '无依据，属于假设'. "
+            f"Offending: {'; '.join(non_whitelist_evidence[:3])}"
         )
 
     if vague_evidence:
@@ -2495,11 +2521,11 @@ def check_extra_structure(req_dir: Path, mode: str) -> tuple[list[str], list[str
             passes.append(
                 f"V23: §5.1 has {len(unconfirmed)} unconfirmed assumption(s) listed for confirmation"
             )
-    elif not unconfirmed and not empty_fields and not vague_evidence:
+    elif not unconfirmed and not empty_fields and not vague_evidence and not non_whitelist_evidence:
         passes.append("V23: §5.1 all extra structures have concrete evidence")
 
     # Escalation
-    if unconfirmed and not empty_fields and not vague_evidence:
+    if unconfirmed and not empty_fields and not vague_evidence and not non_whitelist_evidence:
         preflight_file = req_dir / "060-preflight.md"
         record_file = req_dir / "090-execution-record.md"
 

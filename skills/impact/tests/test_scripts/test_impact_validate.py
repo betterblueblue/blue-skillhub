@@ -1917,6 +1917,117 @@ class TestV23ConfirmedEvidencePasses(unittest.TestCase):
         self.assertTrue(any("concrete evidence" in l for l in v23), f"Expected V23 PASS, got: {v23}")
 
 
+class TestV23NonWhitelistEvidenceFails(unittest.TestCase):
+    """V23: Evidence that doesn't match any whitelist pattern must FAIL.
+
+    This is the core improvement over the old blacklist-only approach.
+    "模型判断确有必要" has no vague words but isn't a recognized evidence type.
+    """
+
+    def test_model_judgment_fails(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 缓存层 | 查询量大时优化响应时间 | 模型判断确有必要 | 加缓存中间件和失效逻辑 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Non-whitelist evidence should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("does not match any recognized type" in l for l in v23),
+            f"Expected V23 non-whitelist FAIL, got: {v23}",
+        )
+
+    def test_plain_text_fails(self):
+        """Evidence without code location, quote, or test result must FAIL."""
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 重试机制 | 网络不稳定时自动重试 | 根据经验需要 | 加重试队列和退避策略 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 1, f"Non-whitelist evidence should FAIL, got {code}\n{out}")
+        self.assertTrue(
+            any("does not match any recognized type" in l for l in v23),
+            f"Expected V23 non-whitelist FAIL, got: {v23}",
+        )
+
+
+class TestV23QuoteEvidencePasses(unittest.TestCase):
+    """V23: Evidence that is a user quote (in quotes) should PASS."""
+
+    def test_quote_evidence_passes(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 消息队列 | 高峰期请求堆积 | 用户原话「高峰期订单量会翻 3 倍」 | 加队列和消费者池 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 0, f"Quote evidence should PASS, got {code}\n{out}")
+        self.assertTrue(any("concrete evidence" in l for l in v23), f"Expected V23 PASS, got: {v23}")
+
+
+class TestV23TestResultEvidencePasses(unittest.TestCase):
+    """V23: Evidence that is a query/test result should PASS."""
+
+    def test_test_result_evidence_passes(self):
+        td, rd = _make_repo()
+        rows_19 = "\n".join([f"| {i+1} | dim{i+1} | ☐ | check | 不涉及 |" for i in range(19)])
+        _write_design(rd, f"""# Design
+
+## 5.1 额外结构与假设
+
+| 关联设计项 | 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再补的成本 |
+|---|---|---|---|---|
+| D01 | 读写分离 | 主库负载过高 | npm test 26 passed, 主库 QPS 峰值 5000 | 加从库路由和读写分离代理 |
+
+## 6. 全局影响检查
+
+| # | 维度 | 是否涉及 | 检查要点 | 本变更的处理 |
+|---|------|----------|----------|-------------|
+{rows_19}
+""")
+        code, out = _run_validator(td, rd)
+        v23 = _v23_lines(out)
+        self.assertEqual(code, 0, f"Test result evidence should PASS, got {code}\n{out}")
+        self.assertTrue(any("concrete evidence" in l for l in v23), f"Expected V23 PASS, got: {v23}")
+
+
 class TestV23LightModeNotChecked(unittest.TestCase):
     """V23: Light mode should not be checked."""
 

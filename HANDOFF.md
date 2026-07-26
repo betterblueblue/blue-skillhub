@@ -1,7 +1,7 @@
 # 交接文档
 
 > 写给完全没有上下文的新会话。最近更新：2026-07-26。
-> 本文档覆盖九个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、impact V23/V24 可校验契约补丁（已完成）、intent-chain 评审修复 P0+P1+文档一致性（已完成，未经强模型验证）、blue-interview 优化（部分完成，待补测）。
+> 本文档覆盖十个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、impact V23/V24 可校验契约补丁（已完成）、intent-chain 评审修复 P0+P1+文档一致性（已完成，未经强模型验证）、impact 评审缺点修复 V23 白名单+SKILL.md 精简+评测脚本修复（已完成，待强模型验证）、blue-interview 优化（部分完成，待补测）。
 
 ---
 
@@ -284,6 +284,77 @@ Phase 2.5 新增 S1-S10 语义复核记录表，写入 INTENT.md 第 10 节。
 
 **用户原有改动**：
 - 用户当前打开的文件 `2026-07-25-151945-bro.txt`（评审意见原文）不在仓库中，不受本次改动影响。
+
+---
+
+## 任务 I：impact 评审缺点修复 — V23 白名单 + SKILL.md 精简 + 评测脚本修复（已完成，待强模型验证）
+
+### 背景
+
+用户对 Pathfinder → Impact 链路做了评审，列出 9 条缺点。逐条核实后，用户决定：
+- 缺点 1/2/7/8：不处理
+- 缺点 3（Full 模式成本较高 / SKILL.md 偏重）：精简 SKILL.md
+- 缺点 4/5（绕开 Impact / 流程依从性）：SKILL 层面已到位，暂不处理
+- 缺点 6（V23 证据检查不是严格白名单）：实施白名单
+- 缺点 9（validate_real_projects.py 退出码 1）：修复
+
+### 改了什么
+
+**缺点 9：评测脚本修复**
+
+- 创建 `eval/runs/real-projects/2026-07-04-minimax-m3-delivery-d19r2/README.md`（此前缺失，导致 `results[19]` 引用不存在）
+- `validate_real_projects.py` 退出码从 1 变为 0
+
+**缺点 6：V23 证据检查白名单**
+
+修改 `skills/impact/scripts/impact_validate.py`：
+- 新增 3 个白名单正则：`RE_CODE_LOCATION`（文件路径:行号）、`RE_QUOTE`（引号包裹的用户原话）、`RE_TEST_RESULT`（passed/failed/SELECT/命中等测试查询关键词）
+- 证据列检查改为三层：先查黑名单（模糊词 → FAIL），再查"无依据"（→ 标记未确认），最后查白名单（不匹配 → FAIL）
+- PASS 条件和 escalation 条件增加 `not non_whitelist_evidence` 守卫
+- 效果："模型判断确有必要"不再能漏过（无模糊词但不匹配任何白名单 → FAIL）
+
+新增 4 个测试用例（`skills/impact/tests/test_scripts/test_impact_validate.py`）：
+- `test_model_judgment_fails`："模型判断确有必要" → FAIL
+- `test_plain_text_fails`："根据经验需要" → FAIL
+- `test_quote_evidence_passes`：用户原话「高峰期订单量会翻 3 倍」→ PASS
+- `test_test_result_evidence_passes`："npm test 26 passed" → PASS
+
+文档同步：
+- `skills/impact/SKILL.md` Phase 4 必产出清单中 V23 描述更新
+- `README.md` IntentDesign 证据类型说明更新
+
+**缺点 3：SKILL.md 精简（334 行 → 260 行，减少 22%）**
+
+| 精简项 | 操作 | 节省 |
+|--------|------|------|
+| 行为准则检查段 + 行为准则段 | 删除两段（与 CLAUDE.md 和核心原则重复） | -20 行 |
+| 目录结构段 | 移到 `references/directory-structure.md` | -27 行 |
+| Rule #12 澄清被拒绝 | 6 行 → 3 行（细节已在 `phases-detail.md`） | -3 行 |
+| 快速通道段 | 11 行 → 3 行（细节已在 `phase-1-intent.md`） | -8 行 |
+| Phase 4 段 | 删 Step 模板 + 脚本路径注释 + 压缩验证 bullets | -12 行 |
+| 改进记录提示段 | 14 行 → 5 行，细节移到 `references/improvement-log.md` | -9 行 |
+
+新增文件：
+- `skills/impact/references/directory-structure.md`
+- `skills/impact/references/improvement-log.md`
+
+### 验证
+
+| 命令 | 退出码 | 结果 |
+|---|---|---|
+| `python eval/real-projects/scripts/validate_real_projects.py` | 0 | OK: 5 projects, 30 cases, delivery matrix checked |
+| `python -m pytest skills/impact/tests/test_scripts/test_impact_validate.py -k V23 -v` | 0 | 19 passed（原 15 + 新 4） |
+| `python -m pytest skills/impact/tests/test_scripts/test_impact_validate.py -v` | 0 | 85 passed（零回归） |
+
+### 已知风险
+
+- SKILL.md 精简后，上下文压缩时被移走的细节依赖 reference 文件存在。如果 reference 文件丢失，规则可能不完整。
+- V23 白名单的 `RE_TEST_RESULT` 正则覆盖了常见测试/查询关键词（passed/failed/SELECT/COUNT/grep/npm/pytest 等），但可能不覆盖所有合法格式。
+- 所有改动未经强模型在真实项目中端到端验证——V23 白名单是否误杀合规文档、SKILL.md 精简后弱模型是否仍能正确执行流程，都需要真实运行确认。
+
+### 状态
+
+已完成，未 commit。待强模型验证。
 
 ---
 
