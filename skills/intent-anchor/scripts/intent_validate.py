@@ -22,6 +22,7 @@
   V12: 验收路径节存在；有路径时记录了入口、步骤和预期结果，无路径时记录用户确认"没有"
   V13: 性能要求节存在；有要求时记录了要求和用户确认，无要求时记录用户确认"没有"
   V14: 安全要求节存在；有要求时记录了要求和用户确认，无要求时记录用户确认"没有"
+  V15: 术语表的原始术语不得出现在能力表的"能力"列（能力命名用人话侧，防止术语沿能力名繁殖到下游）
 
 本脚本不能验证文件引用是否真实、模型推导是否合理，也不能证明内容
 符合用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -662,6 +663,32 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         results.append(("V14", "FAIL", "；".join(security_errors)))
     else:
         results.append(("V14", "PASS", "安全要求节存在且有用户确认"))
+
+    # V15: 术语表的原始术语不得出现在能力表的"能力"列——源头掐断术语繁殖。
+    # 毕业考实测逃逸链：能力名带原始术语 → PRD/工单/代码/界面全线合法繁殖，
+    # 各站只查"术语表存在、被引用"，无一站拦截。能力命名必须用人话侧。
+    term_leak_errors: list[str] = []
+    term_names = [
+        row[0]
+        for row in terminology_rows
+        if len(row) == 4 and row[0] and not _has_placeholder(row[0])
+    ]
+    if term_names:
+        capability_rows = _table_rows(_section(content, "## 4. 能力与决策"), "能力 ID")
+        for row in capability_rows:
+            if len(row) != 6:
+                continue
+            cap_id, cap_name = row[0], row[1]
+            for term in term_names:
+                if term and term in cap_name:
+                    term_leak_errors.append(
+                        f"能力 {cap_id} 的名称「{cap_name}」含术语表原始术语「{term}」——"
+                        "能力命名应使用人话翻译，否则原始术语会沿能力名繁殖到下游文档、代码和界面"
+                    )
+    if term_leak_errors:
+        results.append(("V15", "FAIL", "；".join(term_leak_errors)))
+    else:
+        results.append(("V15", "PASS", "能力命名未使用术语表原始术语"))
 
     return results
 

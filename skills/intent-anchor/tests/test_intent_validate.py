@@ -69,7 +69,7 @@ def _replace_subsection(content: str, heading: str, body: str) -> str:
 class TestValidFixture(unittest.TestCase):
     def test_current_fixture_passes_all_checks(self):
         results = validate(_valid_content())
-        self.assertEqual(14, len(results))
+        self.assertEqual(15, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -562,3 +562,32 @@ class TestBaselineComparison(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestV15TermLeakIntoCapabilityNames(unittest.TestCase):
+    """V15: 术语表原始术语不得出现在能力名（毕业考术语逃逸修复·源头层）。"""
+
+    TERM_TABLE = (
+        "| 原始术语 | 人话翻译 | 用于界面的文案 | 出现在能力 ID |\n"
+        "|---|---|---|---|\n"
+        "| 金刚区 | 首页图标导航区 | 首页功能入口 | C01 |\n"
+    )
+
+    def _with_terms(self) -> str:
+        return _valid_content().replace("无术语需要翻译。", self.TERM_TABLE)
+
+    def test_term_in_capability_name_fails(self):
+        content = self._with_terms().replace(
+            "| C01 | 生成交接记录 |", "| C01 | 金刚区类型展示 |"
+        )
+        v15 = [r for r in validate(content) if r[0] == "V15"]
+        self.assertEqual(v15[0][1], "FAIL", v15)
+        self.assertIn("金刚区", v15[0][2])
+
+    def test_terms_with_clean_capability_names_pass(self):
+        v15 = [r for r in validate(self._with_terms()) if r[0] == "V15"]
+        self.assertEqual(v15[0][1], "PASS", v15)
+
+    def test_no_terms_passes(self):
+        v15 = [r for r in validate(_valid_content()) if r[0] == "V15"]
+        self.assertEqual(v15[0][1], "PASS", v15)
