@@ -2,6 +2,8 @@
 
 > 按 TDD 循环开发每个工单，工单完成后实际运行验证确认通过。检查的是每个零件合不合格。
 
+这是 intent-chain 六步链路的第 5 步：intent-anchor → intent-prd → intent-design → intent-issues → **intent-dev** → intent-verify。
+
 ## 为什么需要它
 
 intent-issues 产出工单后，开发阶段缺少两样东西：
@@ -13,6 +15,17 @@ Intent-Dev 解决这两个问题：
 
 1. **TDD 循环**：先写测试看到红灯 → 写代码看到绿灯 → 重构。修 bug 必须先写复现测试。
 2. **实际验证**：探索项目找到验证命令，实际运行，根据真实输出判定每条 Then 的验证等级。
+
+## 快速开始
+
+```text
+/intent-dev
+开始开发 intent-chain/todo-cli/ 的工单。
+```
+
+开发记录写入同一链路目录下的 `dev-record.md`，`dev_validate.py` 做 4 项检查（见下文）。写代码前会先圈定文件范围：AFK 工单（可自动完成的工单）开工前列出工单和文件清单，你一次确认后连续开发；超出清单的写入需要补充确认。
+
+下一步：所有工单标 done 后，交给 [intent-verify](../intent-verify/) 做端到端验收。
 
 ## TDD 规则
 

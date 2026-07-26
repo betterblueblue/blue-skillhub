@@ -1,6 +1,8 @@
 # Intent-Design
 
-> 读取 INTENT.md 和 PRD，产出架构文档和功能设计文档。
+> 把技术方案落成两份可检查的文件——全局架构决策和每个能力的落地设计；模型多加的每一个结构，都必须写明依据。
+
+这是 intent-chain 六步链路的第 3 步：intent-anchor → intent-prd → **intent-design** → intent-issues → intent-dev → intent-verify。
 
 ## 为什么需要它
 
@@ -11,6 +13,17 @@ Intent-Design 把技术方案拆成两层：
 - **功能设计层**（`design.md`）：每个保留能力在架构里怎么落地。
 
 其中「额外结构与假设」表是这个 skill 的核心：凡是用户没明确要求、为应对某种情况而多加的结构，必须写清为了解决什么具体情况、这种情况的依据（代码位置、用户原话或"无依据，属于假设"）、以后再改的成本。这样把"这个场景会不会发生"从模型的隐含判断变成用户的显式决策。
+
+## 快速开始
+
+```text
+/intent-design
+用 intent-chain/todo-cli/ 下的 intent.md 和 prd.md 出技术方案。
+```
+
+产出同一链路目录下的 `architecture.md` 和 `design.md`，草稿经你确认后写入，写入前运行 `design_validate.py` 的 15 项检查（见下文）。
+
+下一步：交给 [intent-issues](../intent-issues/) 拆工单。
 
 ## 什么时候使用
 
@@ -26,7 +39,7 @@ Intent-Design 把技术方案拆成两层：
 
 ## 轻量档
 
-INTENT.md 第 2 节标注轻量档时，两份文档允许薄写法（架构概览两三句、各表每行一条、能力设计每能力 3-5 行），路径确认并入草稿确认。必需章节和校验不降级。
+轻量档是小项目的精简模式，由 intent-anchor 定档并标注在 INTENT.md 第 2 节（触发条件见其 README）。标注轻量档时，两份文档允许写得更薄（架构概览两三句、各表每行一条、能力设计每能力 3-5 行），路径确认并入草稿确认。必需章节和校验不降级。
 
 ## 校验
 

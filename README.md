@@ -57,6 +57,55 @@ flowchart TD
 
 [律刃](claudecode行为规范/ruleblade/) 不属于某一个场景。它是一组可以在整个编码过程中常驻的行为规则，要求 AI 先弄清目标和上下文，再进行修改。
 
+## 3 分钟上手
+
+按你的场景选择最短路径。
+
+1. 安装需要的 Skill。在克隆下来的仓库根目录执行：
+
+```powershell
+Copy-Item "skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
+Copy-Item "skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
+Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
+Copy-Item "skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
+Copy-Item "skills\intent-prd" "$env:USERPROFILE\.claude\skills\intent-prd" -Recurse -Force
+Copy-Item "skills\intent-design" "$env:USERPROFILE\.claude\skills\intent-design" -Recurse -Force
+Copy-Item "skills\intent-issues" "$env:USERPROFILE\.claude\skills\intent-issues" -Recurse -Force
+Copy-Item "skills\intent-dev" "$env:USERPROFILE\.claude\skills\intent-dev" -Recurse -Force
+Copy-Item "skills\intent-verify" "$env:USERPROFILE\.claude\skills\intent-verify" -Recurse -Force
+```
+
+Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方式见 [安装与验证清单](docs/install-and-verify-checklist.md)。
+
+2. 根据任务选择入口。
+
+如果还在构思 0→1 新产品，或者需求比较模糊：
+
+```text
+/intent-anchor
+我想做一个帮助开发者整理跨会话工作进度的工具，但还没想清楚具体功能。
+```
+
+如果已经进入现有项目，需要先摸底或分析变更：
+
+```text
+/pathfinder
+这个项目我刚接手，先帮我只读摸底。
+
+/impact
+我想删除 sys_user.remark 字段，先做影响分析，不要直接改代码。
+```
+
+`/intent-anchor` 不生成代码，只负责在头脑风暴或 PRD 之前产出 `INTENT.md`。`/impact` 支持 Java、Node.js、Python、Go 和前端项目等多种技术栈。如果已经熟悉项目结构，可以跳过 `/pathfinder`，直接使用 `/impact`。
+
+3. 使用 ImpactRadar 改代码时，按步骤确认。
+
+```text
+确认 Step 2
+```
+
+只有明确回复 `确认 Step N` 才算授权。`继续`、`好的`、`全部确认` 都不算。Claude Code 用户可以启用 `.claude/hooks/impact-write-gate.*`，在工具执行前再次检查授权。
+
 ## 常用完整路线
 
 下面是最常见的搭配，不要求每次把所有工具都走一遍。
@@ -166,55 +215,6 @@ ImpactRadar 会根据任务风险选择流程。简单改动使用 `light` 模�
 Pathfinder 和 ImpactRadar 完成一次任务后，会在回复中附上一段简短记录，包括所用模型、运行模式、验证结果、是否被检查拦下过，以及最后的结果。这段记录默认只留在对话中，不会自动写入仓库。
 
 如果三项核心 Skill 在运行中发现了一个可能值得改进自身的问题，会在收尾时用一句话询问是否记录。你只需要回复“记录”或“不用”；内部编号、复现和回归由维护流程处理，不要求普通用户了解。
-
-## 3 分钟上手
-
-按你的场景选择最短路径。
-
-1. 安装需要的 Skill。
-
-```powershell
-Copy-Item "E:\agent\blue-skillhub\skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\intent-prd" "$env:USERPROFILE\.claude\skills\intent-prd" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\intent-design" "$env:USERPROFILE\.claude\skills\intent-design" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\intent-issues" "$env:USERPROFILE\.claude\skills\intent-issues" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\intent-dev" "$env:USERPROFILE\.claude\skills\intent-dev" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\intent-verify" "$env:USERPROFILE\.claude\skills\intent-verify" -Recurse -Force
-```
-
-Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方式见 [安装与验证清单](docs/install-and-verify-checklist.md)。
-
-2. 根据任务选择入口。
-
-如果还在构思 0→1 新产品，或者需求比较模糊：
-
-```text
-/intent-anchor
-我想做一个帮助开发者整理跨会话工作进度的工具，但还没想清楚具体功能。
-```
-
-如果已经进入现有项目，需要先摸底或分析变更：
-
-```text
-/pathfinder
-这个项目我刚接手，先帮我只读摸底。
-
-/impact
-我想删除 sys_user.remark 字段，先做影响分析，不要直接改代码。
-```
-
-`/intent-anchor` 不生成代码，只负责在头脑风暴或 PRD 之前产出 `INTENT.md`。`/impact` 支持 Java、Node.js、Python、Go 和前端项目等多种技术栈。如果已经熟悉项目结构，可以跳过 `/pathfinder`，直接使用 `/impact`。
-
-3. 使用 ImpactRadar 改代码时，按步骤确认。
-
-```text
-确认 Step 2
-```
-
-只有明确回复 `确认 Step N` 才算授权。`继续`、`好的`、`全部确认` 都不算。Claude Code 用户可以启用 `.claude/hooks/impact-write-gate.*`，在工具执行前再次检查授权。
 
 ## 里面有什么
 

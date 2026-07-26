@@ -19,22 +19,6 @@ ImpactRadar 不负责从 0 到 1 搭建完整系统。只有模糊产品想法�
 
 如果不确定一个改动是否简单，可以先运行 `/impact`。分析后确认影响很小时，ImpactRadar 会选择 `light` 模式，不会强制生成完整文档。
 
-## 支持的技术栈
-
-通用流程不绑定语言。Phase 2 会检测项目使用的技术栈，再从 `profiles/` 加载对应规则。当前提供：
-
-- Java / Spring / MyBatis
-- Node.js / Express / Prisma
-- Python / FastAPI / SQLModel
-- Go / Gin / GORM
-- React / Vite
-- Next.js
-- Nuxt / Vue
-- .NET / ASP.NET / Entity Framework Core
-- 无专用 Profile 时使用通用规则
-
-数据库规则位于 `db-adapters/`，当前包含 MySQL、PostgreSQL 和通用 SQL。客户端如果提供只读 code graph MCP，也可以先用它查找定义和引用；结果仍需回到源码核实。
-
 ## 快速开始
 
 ImpactRadar 默认手动触发。`agents/openai.yaml` 中的 `allow_implicit_invocation: false` 会避免普通编码问题自动进入完整流程。
@@ -51,6 +35,22 @@ ImpactRadar 默认手动触发。`agents/openai.yaml` 中的 `allow_implicit_inv
 ```
 
 `继续`、`好的`、`yes`、`全部确认` 都不能代替 `确认 Step N`。
+
+## 支持的技术栈
+
+通用流程不绑定语言。Phase 2 会检测项目使用的技术栈，再从 `profiles/` 加载对应规则。当前提供：
+
+- Java / Spring / MyBatis
+- Node.js / Express / Prisma
+- Python / FastAPI / SQLModel
+- Go / Gin / GORM
+- React / Vite
+- Next.js
+- Nuxt / Vue
+- .NET / ASP.NET / Entity Framework Core
+- 无专用 Profile 时使用通用规则
+
+数据库规则位于 `db-adapters/`，当前包含 MySQL、PostgreSQL 和通用 SQL。客户端如果提供只读 code graph MCP，也可以先用它查找定义和引用；结果仍需回到源码核实。
 
 ## 流程
 

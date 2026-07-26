@@ -4,6 +4,19 @@ Pathfinder 用于快速看懂一个不熟悉的现有项目。它只读查看源
 
 项目地图保存在 `change-impact/_project-map.md`。它可以单独使用，也可以交给 ImpactRadar，帮助后者更快定位本次变更可能涉及的文件。
 
+## 快速开始
+
+在目标项目里对 AI 客户端说：
+
+```text
+/pathfinder
+这个项目我刚接手，先帮我只读摸底。
+```
+
+跑完后，项目根目录会多出项目地图 `change-impact/_project-map.md`，以及 `change-impact/_project-map/facts/` 下的两份基础事实文件。地图写入前会先通过 `pf_validate.py` 校验，细节见下文「写入前检查」。
+
+Pathfinder 默认只能手动触发：`agents/openai.yaml` 中的 `allow_implicit_invocation: false` 避免普通的项目提问意外触发完整摸底流程。
+
 ## 与其他核心工具的分工
 
 | 工具 | 解决的问题 |
@@ -24,8 +37,6 @@ Pathfinder 不是 ImpactRadar 的强制前置步骤。没有项目地图时，Im
 | 已经熟悉项目，只想查某个函数 | 不需要，直接搜索更快 |
 | 只有一个新产品想法，还没有代码 | 不适合，可以先使用 IntentAnchor |
 | 已经明确要改什么，需要影响分析 | 直接使用 ImpactRadar |
-
-默认入口为手动 `/pathfinder`。`agents/openai.yaml` 中的 `allow_implicit_invocation: false` 会避免普通项目问题自动触发完整摸底流程。
 
 ## 项目地图包含什么
 
