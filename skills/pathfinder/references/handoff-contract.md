@@ -1,4 +1,4 @@
-<!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
+<!-- version: 1.0, last_updated: 2026-06-15 -->
 # 协作约定:Pathfinder → impact
 
 > 本文件定义 Pathfinder 产出的 `_project-map.md` 如何被 impact 家族安全消费。

@@ -190,6 +190,8 @@ web-search-mcp/
 └── web-search-mcp修复记录.md          # 详细修复与调优记录
 ```
 
+本 fork 不包含 TypeScript 源码目录：在原项目基础上直接维护 `dist/` 内的 JS 文件（上游 TypeScript 源码见[原项目](https://github.com/mrkrsl/web-search-mcp)）。修改 `dist/` 后无需构建，重启服务即生效。
+
 ## 致谢
 
 - 原项目：[mrkrsl/web-search-mcp](https://github.com/mrkrsl/web-search-mcp)，作者 Mark Russell
