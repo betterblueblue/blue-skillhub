@@ -1,7 +1,7 @@
 ---
 name: intent-dev
 description: 管理工单开发过程。按 TDD 循环（Red-Green-Refactor）开发每个工单，工单完成后实际运行验证确认通过。全部工单开发完成后交接给 intent-verify 做端到端验收。强制要求 INTENT.md、PRD、工单文件、architecture.md 和 design.md 作为输入。
-allowed-tools: Read, Grep, Glob, Write, Bash
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
 # Intent-Dev
@@ -16,7 +16,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 - 不写 PRD（那是 intent-prd 的事）。
 - 不拆工单（那是 intent-issues 的事）。
 - 不做端到端验收（那是 intent-verify 的事）。
-- AI 写测试和功能代码，用户确认结果后写入项目。
+- AI 写测试和功能代码；开工确认（或 AFK 批量授权）圈定可写入的文件范围，完成后用户确认验证结果。
 
 ## 前置条件
 
@@ -123,9 +123,11 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 **验证依据：工单文件里该工单的验收标准（Given/When/Then）。** 只验当前工单的 Then，不验整条用户路径。如果工单的 Acceptance criteria 包含性能要求（PF 编号）或安全要求（SF 编号），也必须验证这些条件。
 
+**AFK 工单批量授权**：类型为 AFK 的工单允许批量开发——开工前列出本批工单和预计创建/修改的文件清单，用户一次确认即构成对清单内文件写入的授权；批内逐工单走 TDD 循环并记录，批次结束后一次性展示全部验证结果，确认后写入 dev-record.md。HITL 工单保持逐工单确认。超出已列文件清单的写入需要补充确认。轻量档的单工单即一批一单。
+
 对每个工单，按依赖顺序执行：
 
-1. 用户声明开始某个工单。
+1. 用户声明开始某个工单（AFK 批量授权的批内工单无需再逐个声明）。
 2. 如果工单有 `Blocked by` 依赖，确认被依赖的工单已验证通过。未通过的不允许开始。
 3. **按工单类型走 TDD 循环**：
    - **新功能工单**：
@@ -154,7 +156,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 2. 如果任一工单未 done，停止，不允许交接。
 3. 运行 `dev_validate.py` 确认 dev-record 结构通过（需传入 dev-record.md 和 issues.md 两个路径），校验器会交叉检查工单编号是否匹配。
 
-`dev-record.md` 已写入 `intent-chain/{链路目录}/`。下一步参见 README「从零开始开发」的链路图。
+`dev-record.md` 已写入 `intent-chain/{链路目录}/`。下一步：运行 intent-verify，输入 intent.md、prd.md、issues.md、dev-record.md、architecture.md 和 design.md，做端到端验收。
 
 ## 强制规则
 
@@ -166,7 +168,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 6. **修 bug 工单必须先写复现测试**：先修后补测试 → 不允许标 done。
 7. **有未通过项的工单不得进下一个工单**：修复后重新验证。
 8. **所有工单 done 后必须交接给 intent-verify**：不自己端到端验收。
-9. **先确认再写文件**：在对话中展示验证结果草稿，得到确认后才写入。
+9. **先确认再写文件**：在对话中展示验证结果草稿，得到确认后才写入。用户回复“确认”即构成确认；“继续”“嗯”“可以”不算。
 10. **结构校验必须通过**：写入后运行 `dev_validate.py`（需传入 dev-record.md 和 issues.md 两个路径），校验器会交叉检查工单编号是否匹配。
 
 ## dev-record.md 必需章节

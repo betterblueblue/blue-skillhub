@@ -21,6 +21,13 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. 必须存在通过 `intent_validate.py` 校验的 `INTENT.md`。没有则停止，提示用户先运行 intent-anchor。
 2. INTENT.md 中不能有 `待确认` 项。
 
+## 轻量档
+
+INTENT.md 第 2 节标注轻量档时：
+
+- 各节允许薄写法：User Story 每能力一行、Implementation Decisions 用一行表。必需章节和结构不变，`prd_validate.py` 照常运行。
+- Phase 1 的路径确认并入草稿确认：草稿开头列出输入文件路径，用户对草稿的一次确认同时覆盖两者。
+
 ## INTENT.md 到 PRD 的映射
 
 | INTENT.md 章节 | PRD 段 |
@@ -78,7 +85,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 ### Phase 4：完成
 
-`prd.md` 已写入 `intent-chain/{链路目录}/`。下一步参见 README「从零开始开发」的链路图。
+`prd.md` 已写入 `intent-chain/{链路目录}/`。下一步：运行 intent-design，输入 intent.md 和本次产出的 prd.md。
 
 ## 强制规则
 
@@ -86,7 +93,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 2. **每个保留能力至少对应一个 User Story**：不得遗漏。
 3. **每条验收路径必须出现在 Acceptance Criteria 中**：不得跳过。使用 Given/When/Then 结构描述。
 4. **设计标准、术语表、性能和安全要求必须引用**：如果 INTENT.md 有对应内容，PRD 必须引用。性能要求引用要求 ID（如 PF01），安全要求引用要求 ID（如 SF01）。
-5. **先确认再写文件**：在对话中展示完整草稿，得到明确确认后才写入。
+5. **先确认再写文件**：在对话中展示完整草稿，得到明确确认后才写入。用户回复“确认”即构成全文确认；“继续”“嗯”“可以”不算。
 6. **结构校验必须通过**：写入后运行 `prd_validate.py`（需传入 prd.md 和 intent.md 两个路径），校验器会交叉检查保留能力 ID、验收路径 ID、设计标准、术语表、性能和安全要求是否与 INTENT.md 一致。
 
 ## PRD 必需章节

@@ -120,6 +120,10 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 `verify-record.md` 已写入 `intent-chain/{链路目录}/`。链路全部走完。后续如需变更，使用 impact 做影响分析；如需新增功能，从 intent-anchor 重新开始。
 
+## 轻量档
+
+INTENT.md 第 2 节标注轻量档时，本 skill 流程不变——全量回归、逐路径 V3 证据、漂移复核、技术漂移复核一概不降级。轻量档降的是上游文档厚度和确认次数，不是验收强度。
+
 ## 强制规则
 
 1. **六个前置文件必须存在且通过校验**：不通过则不进入验收。
@@ -129,7 +133,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 5. **性能/安全要求有则必验**：INTENT.md 或 PRD 中写了性能或安全要求就必须验证，不能跳过。
 6. **保留能力必须逐项核对**：不能跳过。
 7. **漂移复核必须逐项检查**：7 种模式全部覆盖。
-8. **先确认再写文件**：在对话中展示结果草稿，得到确认后才写入。
+8. **先确认再写文件**：在对话中展示结果草稿，得到确认后才写入。用户回复“确认”即构成确认；“继续”“嗯”“可以”不算。
 9. **结构校验必须通过**：写入后运行 `verify_validate.py`（需传入 verify-record.md、intent.md、architecture.md 和 design.md 四个路径），校验器会交叉检查路径 ID、保留能力 ID 和性能/安全结论是否与 INTENT.md 一致，检查技术漂移复核子节是否有数据行且模块名与 architecture.md 和 design.md 一致（状态标"新增""缺失"的行不做存在性比对，改查说明列是否写明原因）。
 
 ## verify-record.md 必需章节

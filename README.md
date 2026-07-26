@@ -99,6 +99,8 @@ IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设计标�
 
 两个 Skill 都强制要求 `INTENT.md` 作为输入；没有 `INTENT.md` 时，直接用原版 to-prd / to-issues 即可。
 
+**轻量档**：小项目（用户可感知能力 ≤5、单用户、无数据库、无对外 API）可以在 intent-anchor 定档为轻量——文档薄写、确认合并、工单单条直行，但验收路径、假设表、V2 证据和全部校验器不降级。档位记录在 `INTENT.md` 第 2 节，只允许轻量升标准，不允许反向降档。
+
 ### IntentDesign：把技术方案和假设外化为文件
 
 [IntentDesign](skills/intent-design/) 从 `INTENT.md` 和 PRD 产出架构文档和功能设计文档。架构文档写全局技术决策（分层、模块边界、技术选型、数据流、额外结构与假设），功能设计文档写每个保留能力在架构里怎么落地。
