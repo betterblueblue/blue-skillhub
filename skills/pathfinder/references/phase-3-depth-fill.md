@@ -152,6 +152,10 @@
 - **仓库活跃度**:`git log` 看近期改动集中在哪些模块、分支策略、CI 配置位置。
 - **部署 / 运行拓扑**:`Dockerfile`/`docker-compose`/`k8s` manifest → 服务拓扑、端口。
 - **可观测性**:日志框架、监控埋点、错误上报(Sentry 等)位置——对"排查 bug"关注重点特别有用。
+- **CI / CD 流水线**:CI 配置位置(`.github/workflows/`、`.gitlab-ci.yml`、`Jenkinsfile`)、构建触发条件、部署方式。
+- **代码所有权(CODEOWNERS)**:CODEOWNERS 文件位置、关键模块负责人(如有)。
+- **测试覆盖率**:测试框架、覆盖率报告与阈值位置(如有配置)。
+- **性能基线**:已知性能指标、压测脚本位置、性能回归门禁(如有)。
 
 ## Phase 4.5: 脚本检查（替代原模型自检）
 
@@ -166,7 +170,7 @@
 - V4: 未覆盖项非空（替代原 #3）
 - V5: Mermaid 实线一致性（替代原 #4）
 - V6: facts schema 与内容校验（schema_version/generator/source_path/observed_at、scan.json file_count > 0、dir_tree 含根目录且条目 > 1、dir_tree 条目对应磁盘真实目录、file_count 与磁盘实际文件数比值在 0.3-3.0 范围内；git.json head_short 非 null、toplevel 与 --repo-root 一致）。facts 文件缺失时报 FAIL（两个都缺失或只缺一个都报 FAIL；两个都缺失时附「先跑 Phase 1.5」提示）；内容不合理时 FAIL。
-- V7: 【14】代码风格观察节存在且有实质性内容（≥2 条），缺失或空壳均 FAIL。
+- V7: 【14】代码风格观察节存在且有实质性内容（≥2 条），缺失或空壳均 FAIL；若【13】以超大仓或预算耗尽为由声明跳过且理由成立，缺失降为 WARN。
 - V8: 证据路径格式检查，禁止 `模块名/E:/...` 这类相对前缀混入 Windows 绝对路径的错误引用。
 - V9: 地图头部 `基于 commit` 与 git.json 的 `head_short` 一致。
 - V10: 可信度标签密度不足时报 FAIL；疑似修复建议词时报 WARN。

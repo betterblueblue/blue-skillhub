@@ -21,12 +21,14 @@
 | `build.gradle(.kts)` | Java/Kotlin (Gradle) | plugins、dependencies | `./gradlew` / `gradle` |
 | `go.mod` | Go | `require`(gin/echo/gorm…) | `go build` / `go test` |
 | `requirements.txt` | Python (pip) | 包名(django/flask/fastapi…) | 见 README / Makefile |
+| `Pipfile` | Python (pipenv) | `[packages]` 依赖 | `pipenv install` / `pipenv run` |
 | `pyproject.toml` | Python (poetry/pdm/uv) | `[tool.poetry]`/deps | `poetry`/`pdm`/`uv` + 脚本 |
 | `*.csproj` / `*.sln` | .NET / C# | PackageReference(EFCore/AspNetCore…) | `dotnet build`/`test` |
 | `Gemfile` | Ruby | gem(rails/sinatra…) | `bundle` / `rake` |
 | `composer.json` | PHP | require(laravel/symfony…) | composer scripts |
 | `Cargo.toml` | Rust | dependencies(actix/axum…) | `cargo build`/`test` |
 | `pubspec.yaml` | Dart / Flutter | dependencies | `flutter`/`dart` |
+| `mix.exs` | Elixir | `deps`(phoenix/ecto…) | `mix deps.get` / `mix test` |
 
 ## DB 类型探测(只读)
 

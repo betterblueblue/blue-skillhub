@@ -27,6 +27,13 @@ Required fields:
 | `manifest_files` | string[] | Detected manifest/build files |
 | `budget_tier` | string | `小仓` / `中仓` / `大仓` / `超大仓` |
 
+Additional output fields (informational, not gate-checked):
+
+| Field | Type | Meaning |
+|---|---|---|
+| `file_count_source` | string | How `file_count` was obtained: `git-tracked` or `physical` |
+| `physical_file_count` | number | Raw on-disk file count before skip rules (cross-check reference) |
+
 ## `git.json`
 
 Required fields:
