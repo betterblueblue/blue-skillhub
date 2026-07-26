@@ -70,4 +70,4 @@
 3. **拍板"L 任务收敛"标准的字面含义**（P1，硬标准 2）：**已完成（2026-07-26）**——定为按场景计（至少一个 runner 收敛即达标），标准 2 据此转达标，详见上文第 2 条。
 4. **补跑 D3-minimax-m3**（P1，硬标准 2 的数据补全，拍板后不再阻塞判定）：确认 MiniMax M3 额度恢复后用隔离 fixture 副本复跑，把 UNVERIFIED 转成明确结论。
 5. **pathfinder references 最后抽查**（P2，硬标准 5）：**已完成（2026-07-26）**——发现并修复 7 条文档同步缺口，详见上文第 5 条。
-6. **达线后发布收尾清单目前均未启动**（不阻塞硬标准，但发布前必做）：外部 QUICKSTART 文档不存在；pathfinder 没有 CHANGELOG.md（impact 已有）；`eval/archive`、`test-projects` 历史 fixture 是否只留私有仓库尚未处理；环境兼容说明（Codex 子代理 vs Claude Code CLI 各自验证程度）尚未成文，可参考 escape-ledger 里已经记录的"Codex 裸跑无写前 hook"边界直接改写成文档。
+6. **达线后发布收尾清单：已全部完成（2026-07-26）**——根目录 `QUICKSTART.md`（装到哪/怎么触发/第一个例子/FAIL 了怎么办）、pathfinder `CHANGELOG.md` 与 v1.0 首次定版、`docs/environment-compatibility.md` 环境兼容说明均已落地；仓库门面已拍板保留现状（eval/archive 历史评测记录继续公开作为证据链，大体积 fixture 本就未跟踪、不在远端）。

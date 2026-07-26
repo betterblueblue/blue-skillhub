@@ -13,7 +13,7 @@
 2. **标准 2 计法已拍板**：按场景计（至少一个 runner ≤2 轮修复内收敛即达标），标准 2 达标；D2/D3 的 composer FAIL 作为证据资产披露在支持矩阵。
 3. **D16 × M3、D3 × M3 补跑随口径修订销项**（M3 移出承诺范围）。
 
-pathfinder references 最后抽查已完成（2026-07-26，发现并修复 7 条文档同步缺口，L0 测试 43 PASS）——**五条硬标准全部达标，发布线达线**。收尾清单进展（同日）：QUICKSTART（仓库根目录）、pathfinder CHANGELOG 与 v1.0 首次定版、环境兼容说明（`docs/environment-compatibility.md`）已完成；**剩仓库门面清理**（eval/archive、test-projects 历史 fixture 公有/私有去留，需用户拍板）。
+pathfinder references 最后抽查已完成（2026-07-26，发现并修复 7 条文档同步缺口，L0 测试 43 PASS）——**五条硬标准全部达标，发布线达线**。收尾清单进展（同日）：QUICKSTART（仓库根目录）、pathfinder CHANGELOG 与 v1.0 首次定版、环境兼容说明（`docs/environment-compatibility.md`）已完成；仓库门面已拍板（2026-07-26）：eval/archive 历史评测记录**保留公开**（与"数据诚实"理念一致，是发布主张的证据链）；degradation-trap 保留（eval 定义资产）；大体积 fixture 本就未跟踪、不在远端。**达线后收尾清单全部完成，发布线收官。**
 
 **其他待办**：W3 D5 漂移复核机械化（需先设计排除规则，见任务 L）；用户真实项目走一遍轻量档（毕业考）；sonnet-sim-d16 新发现两项待处理（V24 Check E 固定窗口假阳性、case prompt"先不要写代码"歧义，见该运行记录）。
 
