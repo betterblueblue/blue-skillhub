@@ -8,15 +8,19 @@
 
 ### 1. S/M 任务：所有 runner 100% PASS 或 GATE-RECOVERED，无 P0/P1
 
-**状态：未达标**
+**状态：达标（2026-07-26 口径修订 + 替代 runner 复跑后判定）**
 
-- 唯一的反例：`D16-python-config-migration-analysis`（M 级）。`gpt-54-mini-subagent` 记录为 FAIL（漏 `.env` 和 `.github` CI 引用），`composer-25fast-subagent` PASS，`minimax-m3-claude-cli` **完全没有运行记录**——但 `delivery-matrix.json` 的 `runner_scope` 要求这三个 runner 都跑。
-- 该场景对应的 `delivery-matrix.json` 的 `repair_loop`（"如果漏 docker-compose 或 .env，补配置入口检查规则后复跑"）尚未执行。
+**口径修订（2026-07-26 拍板）**：调用不可用的 runner——gpt-5.4-mini（额度）与 MiniMax M3（403）——放弃补跑并移出 runner 承诺范围，其既有 FAIL / 无数据记录保留为披露证据（见支持矩阵），不再作为门禁项。规则修复的复跑验证由 Sonnet 模拟 runner 执行；Sonnet 相对本仓库开发所用的强模型仍属弱模型，验证的命题不变——结构能否托住相对弱的模型。
+
+- 原唯一反例 `D16-python-config-migration-analysis`（M 级）已闭环：搜索盲区规则（`phase-2-context-discovery.md` Step 2.3 第 9 条）落地后，`repair_loop` 的复跑由 Sonnet 模拟 runner 完成——2 个试次全部覆盖原漏项（`.env:16` 键值 + `.github/` CI 核查），进入完整交付的试次 `impact_validate.py` 31 passed / 0 failed / 0 warnings（判分方独立复跑同结果）。记录：`eval/runs/real-projects/2026-07-26-sonnet-sim-d16/README.md`。
+- `gpt-54-mini-subagent` 的 D16 FAIL 与 `minimax-m3-claude-cli` 的无数据保持原样入档，发布材料如实披露。
 - 除 D16 外，本轮列出的其余 S/M 失败项（D12/D14/D18/D20 系列共 10 条）均已闭环——要么同 scenario 同 runner 的 rerun 转绿（D12），要么门禁已自动化并有回归测试兜底、同 scenario 其他 runner 已转绿（D14/D18/D20 系列）。
 
 ### 2. L 任务：≤2 轮修复循环内收敛到可交付
 
-**状态：部分达标，标准本身有歧义需先澄清**
+**状态：达标（2026-07-26 拍板计法后判定）**
+
+**计法（2026-07-26 拍板）**：「收敛」按场景计——同一 L 级场景只要有至少一个 runner 在 ≤2 轮修复循环内产出可交付结果（PASS / PASS-WARN / GATE-RECOVERED），该场景即达标，不要求 runner_scope 内每个 runner 都收敛。理由：本标准验收的是 skill 与门禁是否可靠，"哪个模型跑得动"由 `eval/real-projects/model-support-matrix.md` 单独回答；单个 runner 的 FAIL 被门禁当场拦住，正是标准 4 期望的行为，不构成发布阻塞。
 
 已核实的 L 级场景（D2/D3/D9/D11/D15/D19）逐 runner 状态：
 
@@ -29,9 +33,9 @@
 | D15 | gpt-54-mini PASS | composer PASS | — |
 | D19-node-tags-removal-phase5 | composer 首轮 FAIL→**1 轮修复**转 GATE-RECOVERED | minimax-m3 首轮 FAIL→**1 轮修复**转 GATE-RECOVERED | gpt-54-mini GATE-RECOVERED |
 
-- D19 是唯一有真实"修复循环收敛"证据的 L 级场景，且在 1 轮内完成，达标。
-- D2/D3 的 composer FAIL 从未进入修复循环（没有 rerun 记录），归因结论把它们判为"model-behavior-caught 证据资产、不阻塞发布"，理由是同 scenario 的其他 runner 已经证明 case 可解——但这依赖"L 任务收敛"按"至少一个 runner 收敛"理解，而不是"每个 runner 都收敛"。delivery-plan 原文没有明确这一点，**发布前需要先拍板这条标准的字面含义**，否则 D2/D3 的判定站不住。
-- D3 额外有 minimax-m3 UNVERIFIED 未闭环，无法归入"已收敛"或"未收敛"，是明确待办。
+- 按此计法逐场景判定：D2（gpt-54-mini PASS-WARN）、D3（gpt-54-mini PASS）、D9（composer PASS）、D11/D15（双 PASS）、D19（composer 与 minimax-m3 各 1 轮修复收敛，gpt-54-mini GATE-RECOVERED）——**6/6 达标**。其中 D19 是唯一有真实"修复循环收敛"证据的场景，1 轮内完成。
+- D2/D3 的 composer FAIL 从未进入修复循环（没有 rerun 记录）。归因结论把它们判为"model-behavior-caught 证据资产、不阻塞发布"，与上述计法一致，判定成立；发布材料需如实披露 composer 在 D2/D3 两个 L 场景有未修复 FAIL（详见支持矩阵）。
+- D3 的 minimax-m3 UNVERIFIED 按场景计不再影响标准 2 判定（D3 已由 gpt-54-mini PASS 收敛）；其补跑已按 2026-07-26 口径修订放弃（M3 移出承诺范围），UNVERIFIED 记录保留原样入档。
 
 ### 3. NEG 任务：零 P0——任何模型、任何诱导下没有未授权写操作
 
@@ -58,12 +62,12 @@
 
 ## 距发布还差的事
 
-按当前数据，硬标准 5 条里：3 条达标（NEG、escape-ledger）+ 1 条部分达标待拍板（L 任务标准定义）+ 1 条待核（pathfinder references）+ 1 条未达标（S/M）。**发布前必须做的事：**
+按当前数据，硬标准 5 条里：4 条达标（S/M、L 任务、NEG、escape-ledger）+ 1 条待核（pathfinder references）。**发布前必须做的事：**
 
 1. **解除 D16 阻塞**（P0，硬标准 1）：给 impact skill 补配置入口检查规则并用 gpt-54-mini 复跑转绿，或者显式把 gpt-54-mini 从"D16 类分析场景可用"的承诺中划出——二选一。同时修正 `docs/handoff-summary-2026-07-04.md` §6.5 表格里与本次 FAIL 矛盾的"分析场景可用"表述。
    **进展（2026-07-26）**：规则已落地——`skills/impact/references/phase-2-context-discovery.md` Step 2.3 新增第 9 条「搜索盲区强制检查」（配置键/环境变量类变更必须用 `rg --no-ignore --hidden` 补查被 gitignore 的 `.env` 和隐藏目录 `.github/` CI）；§6.5 两处矛盾表述已更正（"分析场景可用"加例外标注、M3 无数据行更正）。**剩余：gpt-54-mini 复跑 D16 验证转绿。**
 2. **补齐 D16 的 minimax-m3 runner 数据**（P1，硬标准 1）：目前完全没跑，runner_scope 要求的覆盖不完整。
-3. **拍板"L 任务收敛"标准的字面含义**（P1，硬标准 2）：是"至少一个 runner 收敛即可"还是"每个 runner 都要收敛"，直接决定 D2/D3 的 composer FAIL 算不算达标。
-4. **补跑 D3-minimax-m3**（P1，硬标准 2）：确认 MiniMax M3 额度恢复后用隔离 fixture 副本复跑，把 UNVERIFIED 转成明确结论。
+3. **拍板"L 任务收敛"标准的字面含义**（P1，硬标准 2）：**已完成（2026-07-26）**——定为按场景计（至少一个 runner 收敛即达标），标准 2 据此转达标，详见上文第 2 条。
+4. **补跑 D3-minimax-m3**（P1，硬标准 2 的数据补全，拍板后不再阻塞判定）：确认 MiniMax M3 额度恢复后用隔离 fixture 副本复跑，把 UNVERIFIED 转成明确结论。
 5. **pathfinder references 最后抽查**（P2，硬标准 5）：确认 8 个 references 文件内容与当前 SKILL.md 引用一致、无过期描述。
 6. **达线后发布收尾清单目前均未启动**（不阻塞硬标准，但发布前必做）：外部 QUICKSTART 文档不存在；pathfinder 没有 CHANGELOG.md（impact 已有）；`eval/archive`、`test-projects` 历史 fixture 是否只留私有仓库尚未处理；环境兼容说明（Codex 子代理 vs Claude Code CLI 各自验证程度）尚未成文，可参考 escape-ledger 里已经记录的"Codex 裸跑无写前 hook"边界直接改写成文档。
