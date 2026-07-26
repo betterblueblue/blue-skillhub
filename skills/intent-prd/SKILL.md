@@ -25,22 +25,22 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 INTENT.md 第 2 节标注轻量档时：
 
-- 各节允许薄写法：User Story 每能力一行、Implementation Decisions 用一行表。必需章节和结构不变，`prd_validate.py` 照常运行。
+- 各节允许薄写法：用户故事每能力一行、实现决策用一行表。必需章节和结构不变，`prd_validate.py` 照常运行。
 - Phase 1 的路径确认并入草稿确认：草稿开头列出输入文件路径，用户对草稿的一次确认同时覆盖两者。
 
 ## INTENT.md 到 PRD 的映射
 
 | INTENT.md 章节 | PRD 段 |
 |---|---|
-| 第 1 节一句话意图 | Problem Statement |
-| 第 4 节保留能力 + 第 5 节不可妥协项 | Solution |
-| 第 4 节保留能力 | User Stories（每个保留能力至少对应一个 story） |
-| 第 12 节设计标准 | Implementation Decisions > Design Standards |
-| 第 13 节术语表 | Implementation Decisions > Terminology Constraints |
-| 第 14 节验收路径 | Acceptance Criteria |
-| 第 15 节性能要求 | Implementation Decisions > Performance Requirements |
-| 第 16 节安全要求 | Implementation Decisions > Security Requirements |
-| 第 6 节推迟/放弃 | Out of Scope |
+| 第 1 节一句话意图 | 问题陈述 |
+| 第 4 节保留能力 + 第 5 节不可妥协项 | 方案 |
+| 第 4 节保留能力 | 用户故事（每个保留能力至少对应一个 story） |
+| 第 12 节设计标准 | 实现决策 > 设计标准 |
+| 第 13 节术语表 | 实现决策 > 术语约束 |
+| 第 14 节验收路径 | 验收标准 |
+| 第 15 节性能要求 | 实现决策 > 性能要求 |
+| 第 16 节安全要求 | 实现决策 > 安全要求 |
+| 第 6 节推迟/放弃 | 范围外 |
 
 ## 工作流程
 
@@ -57,14 +57,14 @@ INTENT.md 第 2 节标注轻量档时：
 
 1. 探索代码库（如果目标项目已有代码），了解现状。
 2. 按 `templates/PRD.md` 的骨架生成草稿：
-   - **Problem Statement**：从第 1 节一句话意图推导，用用户视角描述问题。
-   - **Solution**：从第 4 节保留能力和第 5 节不可妥协项推导，描述解决方案。
-   - **User Stories**：每个保留能力至少对应一个 story，格式 `As a <角色>, I want <功能>, so that <收益>`。story 末尾标注对应能力 ID（如 `[C01]`）。
-   - **Implementation Decisions**：技术决策。如果有设计标准，在 Design Standards 子节列出文件路径和验收范围。如果有术语表，在 Terminology Constraints 子节列出界面文案约束。如果有性能要求（第 15 节），在 Performance Requirements 子节逐条列出要求 ID、要求和对应能力。如果有安全要求（第 16 节），在 Security Requirements 子节逐条列出要求 ID、要求和对应能力。
-   - **Acceptance Criteria**：从第 14 节验收路径推导。每条路径用 Given/When/Then 结构描述验收条件：Given 是前置条件（操作前系统状态），When 是触发操作，Then 是可判定的预期结果（每条能回答是/否）。每条路径对应一个 `### {路径 ID}: {路径名称}` 场景块。
-   - **Testing Decisions**：测试策略，说明测什么、用什么缝、参考已有测试。
-   - **Out of Scope**：从第 6 节推迟和放弃项推导，逐项列出并标注原因。
-   - **Intent Verification**：逐项核对保留能力覆盖情况、不可妥协项支持情况、新增能力报告。
+   - **问题陈述**：从第 1 节一句话意图推导，用用户视角描述问题。
+   - **方案**：从第 4 节保留能力和第 5 节不可妥协项推导，描述解决方案。
+   - **用户故事**：每个保留能力至少对应一个 story，格式 `As a <角色>, I want <功能>, so that <收益>`。story 末尾标注对应能力 ID（如 `[C01]`）。
+   - **实现决策**：技术决策。如果有设计标准，在「设计标准」子节列出文件路径和验收范围。如果有术语表，在「术语约束」子节列出界面文案约束。如果有性能要求（第 15 节），在「性能要求」子节逐条列出要求 ID、要求和对应能力。如果有安全要求（第 16 节），在「安全要求」子节逐条列出要求 ID、要求和对应能力。
+   - **验收标准**：从第 14 节验收路径推导。每条路径用 Given/When/Then 结构描述验收条件：Given 是前置条件（操作前系统状态），When 是触发操作，Then 是可判定的预期结果（每条能回答是/否）。每条路径对应一个 `### {路径 ID}: {路径名称}` 场景块。
+   - **测试决策**：测试策略，说明测什么、用什么缝、参考已有测试。
+   - **范围外**：从第 6 节推迟和放弃项推导，逐项列出并标注原因。
+   - **意图核对**：逐项核对保留能力覆盖情况、不可妥协项支持情况、新增能力报告。
 3. 如果探索代码库时发现了与 INTENT.md 冲突的信息，停下来告诉用户，不要自行改写原意。
 
 输出：完整 PRD 草稿。
@@ -101,21 +101,23 @@ INTENT.md 第 2 节标注轻量档时：
 
 ## PRD 必需章节
 
-1. Problem Statement
-2. Solution
-3. User Stories
-4. Implementation Decisions
-   - Design Standards（如果有）
-   - Terminology Constraints（如果有）
-   - Performance Requirements（如果有）
-   - Security Requirements（如果有）
-5. Acceptance Criteria
-6. Testing Decisions
-7. Out of Scope
-8. Intent Verification
+1. 问题陈述
+2. 方案
+3. 用户故事
+4. 实现决策
+   - 设计标准（如果有）
+   - 术语约束（如果有）
+   - 性能要求（如果有）
+   - 安全要求（如果有）
+5. 验收标准
+6. 测试决策
+7. 范围外
+8. 意图核对
    - 保留能力覆盖
    - 不可妥协项核对
    - 新增能力
+
+> 章节标题以中文为准（2026-07-27 起）。历史文档中的旧英文标题（Problem Statement 等）仍被校验器识别，无需迁移。
 
 ## 文件存放
 

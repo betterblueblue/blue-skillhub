@@ -63,10 +63,10 @@ INTENT.md 第 2 节标注轻量档时：
 2. 每个工单包含：
    - **标题**：简短描述
    - **类型**：HITL / AFK
-   - **Blocked by**：依赖的其他工单（如有）
-   - **What to build**：端到端行为描述，不写逐层实现
-   - **Acceptance criteria**：从 PRD 的 Given/When/Then 场景拆解。Given 和 When 作为场景上下文，每条 Then 拆为一个可勾选的 `[ ] Then: ...` 条目。引用验收路径编号（如 `[P01]`）。
-   - **User stories covered**：对应的 User Story 编号和能力 ID
+   - **前置依赖**（Blocked by）：依赖的其他工单（如有）
+   - **做什么**：端到端行为描述，不写逐层实现
+   - **验收标准**：从 PRD 的 Given/When/Then 场景拆解。Given 和 When 作为场景上下文，每条 Then 拆为一个可勾选的 `[ ] Then: ...` 条目。引用验收路径编号（如 `[P01]`）。
+   - **覆盖的用户故事**：对应的 User Story 编号和能力 ID
 3. 每个工单必须包含**涉及模块**子节，列出该工单涉及的模块名（引用 architecture.md 第 2 节定义的模块名）。architecture.md 是强制前置，此子节必填。
 4. 如果设计标准存在，涉及界面的工单 Acceptance criteria 必须包含"对照 {设计文件} 结构一致"。
 5. 如果术语表存在，涉及界面的工单必须要求使用术语表中的界面文案。
@@ -78,7 +78,7 @@ INTENT.md 第 2 节标注轻量档时：
 
 ### Phase 3：用户确认
 
-1. 展示**完整工单草稿**（每个工单含 What to build、Acceptance criteria、Blocked by、User stories covered、涉及模块），不是只有标题摘要——与其他阶段的全文确认标准一致。
+1. 展示**完整工单草稿**（每个工单含 做什么、验收标准、前置依赖、覆盖的用户故事、涉及模块），不是只有标题摘要——与其他阶段的全文确认标准一致。
 2. 询问用户：
    - 粒度是否合适？（太粗 / 太细）
    - 依赖关系是否正确？
@@ -123,15 +123,17 @@ INTENT.md 第 2 节标注轻量档时：
 
 每个工单必须包含：
 
-1. What to build
-2. Acceptance criteria
-3. Blocked by
-4. User stories covered
+1. 做什么
+2. 验收标准
+3. 前置依赖
+4. 覆盖的用户故事
 5. 涉及模块
 
 文件末尾必须包含：
 
-5. Coverage Verification（覆盖验证）
+5. 覆盖核对
+
+> 段落标题以中文为准（2026-07-27 起）。历史文档中的旧英文标题（What to build 等）仍被校验器识别，无需迁移。
 
 ## 文件存放
 

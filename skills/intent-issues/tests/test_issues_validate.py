@@ -80,28 +80,28 @@ class TestValidFixture(unittest.TestCase):
 
 class TestRequiredSubsections(unittest.TestCase):
     def test_missing_what_to_build_fails(self):
-        content = _issues_content().replace("### What to build", "### X")
+        content = _issues_content().replace("### 做什么", "### X")
         result = _result(content, _intent_content(), "V2")
         self.assertEqual("FAIL", result[1])
-        self.assertIn("What to build", result[2])
+        self.assertIn("做什么", result[2])
 
     def test_missing_acceptance_criteria_fails(self):
-        content = _issues_content().replace("### Acceptance criteria", "### X")
+        content = _issues_content().replace("### 验收标准", "### X")
         result = _result(content, _intent_content(), "V2")
         self.assertEqual("FAIL", result[1])
-        self.assertIn("Acceptance criteria", result[2])
+        self.assertIn("验收标准", result[2])
 
     def test_missing_blocked_by_fails(self):
-        content = _issues_content().replace("### Blocked by", "### X")
+        content = _issues_content().replace("### 前置依赖", "### X")
         result = _result(content, _intent_content(), "V2")
         self.assertEqual("FAIL", result[1])
-        self.assertIn("Blocked by", result[2])
+        self.assertIn("前置依赖", result[2])
 
     def test_missing_user_stories_fails(self):
-        content = _issues_content().replace("### User stories covered", "### X")
+        content = _issues_content().replace("### 覆盖的用户故事", "### X")
         result = _result(content, _intent_content(), "V2")
         self.assertEqual("FAIL", result[1])
-        self.assertIn("User stories covered", result[2])
+        self.assertIn("覆盖的用户故事", result[2])
 
     def test_no_issues_fails(self):
         content = _issues_content().replace("## Issue 1:", "## X:")
@@ -139,10 +139,10 @@ class TestCapabilityCoverage(unittest.TestCase):
 
 class TestCoverageVerification(unittest.TestCase):
     def test_missing_coverage_section_fails(self):
-        content = _issues_content().replace("## Coverage Verification", "## X")
+        content = _issues_content().replace("## 覆盖核对", "## X")
         result = _result(content, _intent_content(), "V5")
         self.assertEqual("FAIL", result[1])
-        self.assertIn("Coverage Verification", result[2])
+        self.assertIn("覆盖核对", result[2])
 
     def test_missing_path_coverage_subsection_fails(self):
         content = _issues_content().replace("### 验收路径覆盖", "### X")
@@ -370,3 +370,17 @@ class TestTemplateSync(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestLegacyEnglishHeadings(unittest.TestCase):
+    """旧英文子节标题的工单文件仍被识别（2026-07-27 中文化的向后兼容）。"""
+
+    def test_legacy_english_issues_passes(self):
+        legacy = _issues_content()
+        for cn, en in [("### 做什么", "### What to build"), ("### 验收标准", "### Acceptance criteria"),
+                       ("### 前置依赖", "### Blocked by"), ("### 覆盖的用户故事", "### User stories covered"),
+                       ("## 覆盖核对", "## Coverage Verification")]:
+            legacy = legacy.replace(cn, en)
+        results = validate(legacy, _intent_content(), "", _ARCH_CONTENT)
+        fails = [r for r in results if r[1] == "FAIL"]
+        self.assertEqual([], fails, fails)

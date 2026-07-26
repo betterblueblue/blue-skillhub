@@ -35,7 +35,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
-    from markdown_parser import section, table_rows
+    from markdown_parser import (
+        PRD_HEADING_ALIASES,
+        normalize_legacy_headings,
+        section,
+        table_rows,
+    )
 finally:
     sys.path.pop(0)
 
@@ -45,11 +50,11 @@ RE_NEGATIVE_LINE = re.compile(
 )
 
 PRD_SECTIONS = [
-    "## Solution",
-    "## User Stories",
-    "## Implementation Decisions",
-    "## Acceptance Criteria",
-    "## Testing Decisions",
+    "## 方案",
+    "## 用户故事",
+    "## 实现决策",
+    "## 验收标准",
+    "## 测试决策",
 ]
 
 
@@ -75,7 +80,9 @@ def _regions(chain_dir: Path):
     """迭代 (文件名, 区域名, 区域文本)——只产出实现承载区。"""
     prd = chain_dir / "prd.md"
     if prd.exists():
-        text = RE_HTML_COMMENT.sub("", prd.read_text(encoding="utf-8"))
+        text = normalize_legacy_headings(
+            RE_HTML_COMMENT.sub("", prd.read_text(encoding="utf-8")), PRD_HEADING_ALIASES
+        )
         for heading in PRD_SECTIONS:
             body = section(text, heading)
             if body.strip():

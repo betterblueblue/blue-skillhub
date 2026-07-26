@@ -31,6 +31,8 @@ _COMMON_DIR = Path(__file__).resolve().parent.parent.parent / "_common"
 if str(_COMMON_DIR) not in sys.path:
     sys.path.insert(0, str(_COMMON_DIR))
 from markdown_parser import (
+    PRD_HEADING_ALIASES,
+    normalize_legacy_headings,
     section as _section,
     subsection as _subsection,
     table_rows as _table_rows,
@@ -39,14 +41,14 @@ from markdown_parser import (
 
 
 REQUIRED_SECTIONS = [
-    "## Problem Statement",
-    "## Solution",
-    "## User Stories",
-    "## Implementation Decisions",
-    "## Acceptance Criteria",
-    "## Testing Decisions",
-    "## Out of Scope",
-    "## Intent Verification",
+    "## 问题陈述",
+    "## 方案",
+    "## 用户故事",
+    "## 实现决策",
+    "## 验收标准",
+    "## 测试决策",
+    "## 范围外",
+    "## 意图核对",
 ]
 
 VERIFICATION_SUBSECTIONS = [
@@ -129,6 +131,7 @@ def _parse_security_requirements(intent_content: str) -> set[str]:
 
 
 def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]]:
+    prd_content = normalize_legacy_headings(prd_content, PRD_HEADING_ALIASES)
     """返回 (检查项, 结果, 说明)；结果为 PASS / FAIL。"""
     results: list[tuple[str, str, str]] = []
 
@@ -154,31 +157,31 @@ def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]
     non_negotiables = _parse_non_negotiables(intent_content)
 
     # V3: 保留能力出现在 User Stories 中
-    stories_section = _section(prd_content, "## User Stories")
+    stories_section = _section(prd_content, "## 用户故事")
     found_in_stories = set(CAPABILITY_ID_RE.findall(stories_section))
     missing_caps = retained_caps - found_in_stories
     if missing_caps:
         results.append((
             "V3", "FAIL",
-            f"保留能力未出现在 User Stories 中: {sorted(missing_caps)}",
+            f"保留能力未出现在「用户故事」中: {sorted(missing_caps)}",
         ))
     else:
-        results.append(("V3", "PASS", f"全部 {len(retained_caps)} 项保留能力出现在 User Stories 中"))
+        results.append(("V3", "PASS", f"全部 {len(retained_caps)} 项保留能力出现在「用户故事」中"))
 
     # V4: 验收路径出现在 Acceptance Criteria 中
-    criteria_section = _section(prd_content, "## Acceptance Criteria")
+    criteria_section = _section(prd_content, "## 验收标准")
     found_paths = set(PATH_ID_RE.findall(criteria_section))
     missing_paths = acceptance_paths - found_paths
     if missing_paths:
         results.append((
             "V4", "FAIL",
-            f"验收路径未出现在 Acceptance Criteria 中: {sorted(missing_paths)}",
+            f"验收路径未出现在「验收标准」中: {sorted(missing_paths)}",
         ))
     else:
-        results.append(("V4", "PASS", f"全部 {len(acceptance_paths)} 条验收路径出现在 Acceptance Criteria 中"))
+        results.append(("V4", "PASS", f"全部 {len(acceptance_paths)} 条验收路径出现在「验收标准」中"))
 
     # V5: 设计标准引用
-    impl_section = _section(prd_content, "## Implementation Decisions")
+    impl_section = _section(prd_content, "## 实现决策")
     if has_design:
         design_referenced = all(
             any(path in line for line in impl_section.splitlines())
@@ -193,7 +196,7 @@ def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]
 
     # V6: 术语表引用
     if has_terms:
-        terms_section = _subsection(impl_section, "Terminology Constraints")
+        terms_section = _subsection(impl_section, "术语约束")
         if terms_section:
             found_terms = sum(
                 1 for term in terms
@@ -204,12 +207,12 @@ def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]
             else:
                 results.append(("V6", "FAIL", f"术语引用不完整: {found_terms}/{len(terms)}"))
         else:
-            results.append(("V6", "FAIL", "INTENT.md 有术语表但 PRD 缺少 Terminology Constraints 子节"))
+            results.append(("V6", "FAIL", "INTENT.md 有术语表但 PRD 缺少「术语约束」子节"))
     else:
         results.append(("V6", "PASS", "INTENT.md 无术语表，不适用"))
 
     # V7: Intent Verification 子节
-    verification_section = _section(prd_content, "## Intent Verification")
+    verification_section = _section(prd_content, "## 意图核对")
     verification_errors: list[str] = []
     for sub in VERIFICATION_SUBSECTIONS:
         if sub not in verification_section:
@@ -248,7 +251,7 @@ def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]
     if verification_errors:
         results.append(("V7", "FAIL", "; ".join(verification_errors)))
     else:
-        results.append(("V7", "PASS", "Intent Verification 子节完整且与 INTENT.md 一致"))
+        results.append(("V7", "PASS", "意图核对子节完整且与 INTENT.md 一致"))
 
     # V8: 每条验收路径使用 Given/When/Then 结构
     gwt_errors: list[str] = []
@@ -277,9 +280,9 @@ def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]
     # V9: 性能要求引用检查
     perf_ids = _parse_perf_requirements(intent_content)
     if perf_ids:
-        perf_section = _subsection(impl_section, "Performance Requirements")
+        perf_section = _subsection(impl_section, "性能要求")
         if not perf_section:
-            results.append(("V9", "FAIL", "INTENT.md 有性能要求但 PRD 缺少 Performance Requirements 子节"))
+            results.append(("V9", "FAIL", "INTENT.md 有性能要求但 PRD 缺少「性能要求」子节"))
         else:
             found_perf = set(PERF_ID_RE.findall(perf_section))
             missing_perf = perf_ids - found_perf
@@ -293,9 +296,9 @@ def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]
     # V10: 安全要求引用检查
     security_ids = _parse_security_requirements(intent_content)
     if security_ids:
-        sec_section = _subsection(impl_section, "Security Requirements")
+        sec_section = _subsection(impl_section, "安全要求")
         if not sec_section:
-            results.append(("V10", "FAIL", "INTENT.md 有安全要求但 PRD 缺少 Security Requirements 子节"))
+            results.append(("V10", "FAIL", "INTENT.md 有安全要求但 PRD 缺少「安全要求」子节"))
         else:
             found_sec = set(SECURITY_ID_RE.findall(sec_section))
             missing_sec = security_ids - found_sec

@@ -327,8 +327,8 @@ class TestA8ExpensiveDetails(unittest.TestCase):
         """便宜决策不应该有详细说明。"""
         # 在第 6 节添加一个便宜条目的说明
         content = _arch_content().replace(
-            "## 6. 重要决策的详细说明\n\n无",
-            "## 6. 重要决策的详细说明\n\n### 文件格式\n\n这是一段说明。",
+            "## 6. 关键选型与代价（请重点核对）\n\n无",
+            "## 6. 关键选型与代价（请重点核对）\n\n### 文件格式\n\n这是一段说明。",
         )
         result = _result(content, _design_content(), _intent_content(), "A8")
         self.assertEqual("FAIL", result[1])

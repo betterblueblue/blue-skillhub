@@ -131,7 +131,7 @@ IntentAnchor 负责先把方向说清楚，"开工前调研开源项目"负责�
 ```text
 intent-anchor → intent.md（意图、能力、验收路径、设计标准、术语表、性能/安全要求）
     ↓ 强制输入
-intent-prd → prd.md（原生引用能力表和验收路径，Acceptance Criteria 用 Given/When/Then 结构）
+intent-prd → prd.md（原生引用能力表和验收路径，验收标准用 Given/When/Then 结构）
     ↓ 强制输入
 intent-design → architecture.md + design.md（架构决策外化为文件，假设表把过度设计变成显式决策）
     ↓ 强制输入
@@ -148,7 +148,7 @@ intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 条�
 
 之所以自己做而不直接用第三方 [to-prd](https://github.com/mattpocock/skills) 和 [to-issues](https://github.com/mattpocock/skills)，是因为第三方 Skill 不认识 `INTENT.md` 的结构。IntentAnchor 产出的设计标准、术语表、验收路径、性能要求和安全要求，如果交给第三方 Skill，只能靠交接 prompt 注入约束——下游 Skill 不会主动检查这些约束是否被遵守，传递不可靠。
 
-IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设计标准映射到 PRD 的 Implementation Decisions，把验收路径映射到 PRD 的 Acceptance Criteria，把术语表传递到工单的界面文案约束。IntentIssues 还会自动检查所有验收路径是否被至少一个工单覆盖。
+IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设计标准映射到 PRD 的「实现决策」，把验收路径映射到「验收标准」，把术语表传递到工单的界面文案约束。IntentIssues 还会自动检查所有验收路径是否被至少一个工单覆盖。
 
 两个 Skill 都强制要求 `INTENT.md` 作为输入；没有 `INTENT.md` 时，直接用原版 to-prd / to-issues 即可。
 

@@ -87,7 +87,7 @@ class TestD5Reintroduction(unittest.TestCase):
         )
         chain = _make_chain({"intent.md": _fixture("intent.md"), "prd.md": drifted_prd})
         passes, fails = check(chain)
-        self.assertTrue(any("C02" in f and "User Stories" in f for f in fails),
+        self.assertTrue(any("C02" in f and "用户故事" in f for f in fails),
                         f"应命中 User Stories 回流: {fails}")
 
     def test_issue_name_reintroduction_fails(self):

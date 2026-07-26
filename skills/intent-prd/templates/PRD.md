@@ -7,27 +7,22 @@
   PRD 不是自动执行授权，用户确认后才能进入任务拆分。
 -->
 
-## Problem Statement
-
+## 问题陈述
 {从 INTENT.md 第 1 节一句话意图推导，用用户视角描述问题}
 
-## Solution
-
+## 方案
 {从 INTENT.md 第 4 节保留能力和第 5 节不可妥协项推导，描述解决方案}
 
-## User Stories
-
+## 用户故事
 1. As a {角色}, I want {功能}, so that {收益} [C01]
 2. As a {角色}, I want {功能}, so that {收益} [C02]
 
 <!-- 每个保留能力至少对应一个 User Story，末尾标注能力 ID。 -->
 
-## Implementation Decisions
-
+## 实现决策
 {技术决策：模块、接口、schema、API contracts、交互}
 
-### Design Standards
-
+### 设计标准
 <!--
   如果 INTENT.md 第 12 节有设计素材，在此列出文件路径和验收范围。
   没有设计素材时删除本子节（与 tests/fixtures/valid-prd.md 的省略写法一致）。
@@ -37,8 +32,7 @@
 |---|---|---|
 | {类型} | {路径} | {覆盖哪些页面或交互} |
 
-### Terminology Constraints
-
+### 术语约束
 <!--
   如果 INTENT.md 第 13 节有术语表，在此列出界面文案约束。
   没有术语时删除本子节。
@@ -48,8 +42,7 @@
 |---|---|
 | {术语} | {界面上的文字} |
 
-### Performance Requirements
-
+### 性能要求
 <!--
   如果 INTENT.md 第 15 节有性能要求，在此逐条列出。
   引用要求 ID（如 PF01）。
@@ -60,8 +53,7 @@
 |---|---|---|
 | PF01 | {要求内容} | {C01} |
 
-### Security Requirements
-
+### 安全要求
 <!--
   如果 INTENT.md 第 16 节有安全要求，在此逐条列出。
   引用要求 ID（如 SF01）。
@@ -72,8 +64,7 @@
 |---|---|---|
 | SF01 | {要求内容} | {C01} |
 
-## Acceptance Criteria
-
+## 验收标准
 <!--
   从 INTENT.md 第 14 节验收路径推导。
   每条路径用 Given/When/Then 结构描述验收条件：
@@ -92,21 +83,18 @@
 - **Then** {预期结果，每条能回答是/否}
 - **And** {预期结果}
 
-## Testing Decisions
-
+## 测试决策
 - {测试策略：测什么、用什么缝、参考已有测试}
 - {测试范围}
 
-## Out of Scope
-
+## 范围外
 <!--
   从 INTENT.md 第 6 节推迟和放弃项推导，逐项列出并标注原因。
 -->
 
 - {能力}：{推迟/放弃}，原因：{INTENT.md 中的原因}
 
-## Intent Verification
-
+## 意图核对
 ### 保留能力覆盖
 
 | 能力 ID | 保留能力 | PRD 中的位置 | 状态 |

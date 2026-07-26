@@ -25,6 +25,48 @@ from __future__ import annotations
 import re
 
 
+# ---------------------------------------------------------------------------
+# 旧英文标题 → 新中文标题（2026-07-27 用户面表达专项）
+#
+# 章节标题以中文为唯一契约；旧英文标题在校验器入口归一化后仍被识别，
+# 已产出的历史文档（冒烟链、毕业考）无需迁移。模板只产出中文标题。
+# ---------------------------------------------------------------------------
+
+PRD_HEADING_ALIASES: list[tuple[str, str]] = [
+    (r"^##\s+Problem Statement\s*$", "## 问题陈述"),
+    (r"^##\s+Solution\s*$", "## 方案"),
+    (r"^##\s+User Stories\s*$", "## 用户故事"),
+    (r"^##\s+Implementation Decisions\s*$", "## 实现决策"),
+    (r"^##\s+Acceptance Criteria\s*$", "## 验收标准"),
+    (r"^##\s+Testing Decisions\s*$", "## 测试决策"),
+    (r"^##\s+Out of Scope\s*$", "## 范围外"),
+    (r"^##\s+Intent Verification\s*$", "## 意图核对"),
+    (r"^###\s+Design Standards\s*$", "### 设计标准"),
+    (r"^###\s+Terminology Constraints\s*$", "### 术语约束"),
+    (r"^###\s+Performance Requirements\s*$", "### 性能要求"),
+    (r"^###\s+Security Requirements\s*$", "### 安全要求"),
+]
+
+ISSUES_HEADING_ALIASES: list[tuple[str, str]] = [
+    (r"^###\s+What to build\s*$", "### 做什么"),
+    (r"^###\s+Acceptance criteria\s*$", "### 验收标准"),
+    (r"^###\s+Blocked by\s*$", "### 前置依赖"),
+    (r"^###\s+User stories covered\s*$", "### 覆盖的用户故事"),
+    (r"^##\s+Coverage Verification\s*$", "## 覆盖核对"),
+]
+
+ARCH_HEADING_ALIASES: list[tuple[str, str]] = [
+    (r"^##\s+6\.\s+重要决策的详细说明.*$", "## 6. 关键选型与代价（请重点核对）"),
+]
+
+
+def normalize_legacy_headings(content: str, aliases: list[tuple[str, str]]) -> str:
+    """把旧标题归一化为当前中文契约标题，使新旧文档同被识别。"""
+    for pattern, replacement in aliases:
+        content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
+    return content
+
+
 def section(content: str, heading: str, numbered: bool = False) -> str:
     """提取 ## 级章节的正文内容。
 
