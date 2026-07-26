@@ -76,21 +76,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 输出：通过结构校验的 PRD。
 
-### Phase 4：交接
+### Phase 4：完成
 
-给用户以下可直接传给下一会话的 Prompt，并替换真实路径：
-
-```text
-先读 intent-chain/{链路目录}/prd.md 和 intent.md，再完成任务拆分。
-
-下一步用 intent-design 做技术方案设计（写入同一链路目录下的 architecture.md 和 design.md）。它会把架构决策和功能设计外化为文件，便于后续检查过度设计。
-
-拆工单用 intent-issues（写入同一链路目录下的 issues.md）——它会原生读取 INTENT.md 和 PRD，自动处理设计标准、术语表和验收路径。intent-issues 会从 architecture.md 中提取模块定义并检查工单引用。如果使用第三方 skill，需手动检查这些约束是否被遵守。
-
-只把 User Stories 中标注的能力作为开发范围。
-
-发现遗漏、冲突或未经确认的新增项时停下来告诉我，不要自行改写原意。
-```
+`prd.md` 已写入 `intent-chain/{链路目录}/`。下一步参见 README「从零开始开发」的链路图。
 
 ## 强制规则
 

@@ -16,7 +16,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 - 不写 PRD（那是 intent-prd 的事）。
 - 不拆工单（那是 intent-issues 的事）。
 - 不做端到端验收（那是 intent-verify 的事）。
-- 不代替用户开发代码（用户写代码，skill 管流程和验证纪律）。
+- AI 写测试和功能代码，用户确认结果后写入项目。
 
 ## 前置条件
 
@@ -148,24 +148,13 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 输出：更新后的 dev-record.md。
 
-### Phase 3：交接
+### Phase 3：完成
 
 1. 确认所有工单都标 done。
 2. 如果任一工单未 done，停止，不允许交接。
 3. 运行 `dev_validate.py` 确认 dev-record 结构通过（需传入 dev-record.md 和 issues.md 两个路径），校验器会交叉检查工单编号是否匹配。
-4. 给用户以下提示：
 
-```text
-开发阶段完成。intent-chain/{链路目录}/dev-record.md 记录了每个工单的 TDD 过程和验证结果。
-
-下一步：使用 intent-verify 做端到端验收。提供以下文件：
-- intent-chain/{链路目录}/intent.md
-- intent-chain/{链路目录}/prd.md
-- intent-chain/{链路目录}/issues.md
-- intent-chain/{链路目录}/dev-record.md
-- intent-chain/{链路目录}/architecture.md
-- intent-chain/{链路目录}/design.md
-```
+`dev-record.md` 已写入 `intent-chain/{链路目录}/`。下一步参见 README「从零开始开发」的链路图。
 
 ## 强制规则
 
@@ -210,14 +199,13 @@ intent-chain/{链路目录}/dev-record.md
 Intent-Dev 能够：
 
 - 探索目标项目，发现真实的构建和测试命令。
-- 按 TDD 循环管理每个工单的开发过程。
+- 按 TDD 循环开发每个工单（写测试、写功能代码、运行验证）。
 - 实际运行验证命令，捕获真实输出。
 - 根据命令输出判定每条 Then 的验证等级。
 - 通过校验器检查 dev-record 的结构完整性和验证等级合规性。
 
 Intent-Dev 做不到：
 
-- 代替用户写代码和测试。
 - 做端到端验收（那是 intent-verify 的事）。
 - 强制用户修复未通过项（只阻止进下一个工单）。
 - 验证不在工单验收标准中的内容。

@@ -2,7 +2,7 @@
 """verify-record.md 结构校验与 INTENT.md 交叉引用校验。
 
 用法：
-  python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md /path/to/intent-chain/{链路目录}/intent.md /path/to/intent-chain/{链路目录}/architecture.md
+  python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md /path/to/intent-chain/{链路目录}/intent.md /path/to/intent-chain/{链路目录}/architecture.md [/path/to/intent-chain/{链路目录}/design.md]
 
 检查项：
   V1: 文件非空
@@ -12,7 +12,7 @@
   V5: 有条件性验证段（性能验证和安全验证，不适用也要标注）
   V6: 最终复核完整（回归汇总、保留能力核对、验收路径逐条验证含 Then 全通过、条件性汇总、漂移复核、结论）
   V7: 与 INTENT.md 交叉校验（路径 ID 一致、保留能力 ID 一致、性能/安全结论与 INTENT.md 要求一致）
-  V8: 最终复核包含技术漂移复核子节（强制检查 architecture.md）
+  V8: 最终复核包含技术漂移复核子节（强制检查 architecture.md；传了 design.md 时额外交叉检查模块一致性）
 
 本脚本不能验证 V3 证据是否真实，也不能证明验收结果符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -156,7 +156,7 @@ def _intent_has_security_requirements(intent_content: str) -> bool:
     return bool(rows)
 
 
-def validate(verify_content: str, intent_content: str, architecture_content: str = "") -> list[tuple[str, str, str]]:
+def validate(verify_content: str, intent_content: str, architecture_content: str = "", design_content: str = "") -> list[tuple[str, str, str]]:
     """返回 (检查项, 结果, 说明)。"""
     results: list[tuple[str, str, str]] = []
 
@@ -284,8 +284,13 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                         v6_errors.append(f"路径 {path_id} 的验证等级不是 V3: {verify_level}")
         if not _subsection(gate_section, CONDITIONAL_SUMMARY_HEADING).strip():
             v6_errors.append("缺少条件性验证结果汇总")
-        if not _subsection(gate_section, DRIFT_HEADING).strip():
+        drift_section = _subsection(gate_section, DRIFT_HEADING)
+        if not drift_section.strip():
             v6_errors.append("缺少漂移复核")
+        else:
+            drift_rows = _table_rows(drift_section, "模式")
+            if not drift_rows:
+                v6_errors.append("漂移复核缺少数据行")
         conclusion = _subsection(gate_section, CONCLUSION_HEADING)
         if not conclusion.strip():
             v6_errors.append("缺少结论")
@@ -381,19 +386,70 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
         if not tech_drift.strip():
             results.append(("V8", "FAIL", "最终复核缺少技术漂移复核子节"))
         else:
-            results.append(("V8", "PASS", "技术漂移复核子节存在"))
+            v8_errors: list[str] = []
+            drift_table_rows = _table_rows(tech_drift, "模块名")
+            if not drift_table_rows:
+                v8_errors.append("技术漂移复核缺少数据行（需要至少一行模块对照）")
+            else:
+                # 解析 architecture.md 的模块名
+                arch_module_section = _section(architecture_content, "## 2. 模块与边界")
+                arch_modules = {
+                    row[0]
+                    for row in _table_rows(arch_module_section, "模块")
+                    if row
+                }
+                for row in drift_table_rows:
+                    if len(row) < 2:
+                        v8_errors.append(f"技术漂移复核表行列数不足: {' | '.join(row)}")
+                        continue
+                    mod_name = row[0].strip()
+                    if mod_name and mod_name not in arch_modules:
+                        v8_errors.append(
+                            f"技术漂移复核引用了 architecture.md 中未定义的模块 '{mod_name}'"
+                        )
+            if v8_errors:
+                results.append(("V8", "FAIL", "; ".join(v8_errors)))
+            else:
+                # 如果提供了 design.md，额外检查技术漂移复核中的模块是否在 design.md 的涉及模块中出现
+                if design_content:
+                    design_section2 = _section(design_content, "## 2. 能力设计", numbered=True)
+                    design_modules: set[str] = set()
+                    for cap_match in re.finditer(r"###\s+\[(C\d{2,})\].*?(?=^###\s+|\Z)", design_section2, re.MULTILINE | re.DOTALL):
+                        cap_text = cap_match.group(0)
+                        mod_match = re.search(r"\*\*涉及模块\*\*[：:]\s*(.+)", cap_text)
+                        if mod_match:
+                            for token in re.split(r"[、，,\s→]+", mod_match.group(1).strip()):
+                                token = token.strip()
+                                if token and token != "无":
+                                    design_modules.add(token)
+                    # 检查技术漂移复核中是否有 design.md 未提及的模块
+                    for row in drift_table_rows:
+                        mod_name = row[0].strip()
+                        if mod_name and mod_name not in design_modules:
+                            # 模块在 architecture.md 中存在但不在 design.md 中——可能是新增模块
+                            v8_errors.append(
+                                f"技术漂移复核模块 '{mod_name}' 在 design.md 的涉及模块中未找到"
+                            )
+                if v8_errors:
+                    results.append(("V8", "FAIL", "; ".join(v8_errors)))
+                else:
+                    if design_content:
+                        results.append(("V8", "PASS", "技术漂移复核模块与 architecture.md 和 design.md 均一致"))
+                    else:
+                        results.append(("V8", "PASS", "技术漂移复核子节包含模块对照且模块名与 architecture.md 一致"))
 
     return results
 
 
 def main() -> int:
     if len(sys.argv) < 4:
-        print("用法: python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md /path/to/intent-chain/{链路目录}/intent.md /path/to/intent-chain/{链路目录}/architecture.md")
+        print("用法: python verify_validate.py /path/to/intent-chain/{链路目录}/verify-record.md /path/to/intent-chain/{链路目录}/intent.md /path/to/intent-chain/{链路目录}/architecture.md [/path/to/intent-chain/{链路目录}/design.md]")
         return 1
 
     verify_path = Path(sys.argv[1])
     intent_path = Path(sys.argv[2])
     arch_path = Path(sys.argv[3])
+    design_path = Path(sys.argv[4]) if len(sys.argv) >= 5 else None
 
     if not verify_path.exists():
         print(f"FAIL: VERIFY-RECORD 文件不存在: {verify_path}")
@@ -408,12 +464,15 @@ def main() -> int:
     verify_content = verify_path.read_text(encoding="utf-8")
     intent_content = intent_path.read_text(encoding="utf-8")
     architecture_content = arch_path.read_text(encoding="utf-8")
-    results = validate(verify_content, intent_content, architecture_content)
+    design_content = design_path.read_text(encoding="utf-8") if design_path and design_path.exists() else ""
+    results = validate(verify_content, intent_content, architecture_content, design_content)
 
     print(f"\n{'=' * 60}")
     print(f"VERIFY-RECORD 校验结果: {verify_path}")
     print(f"INTENT.md: {intent_path}")
     print(f"Architecture: {arch_path}")
+    if design_path:
+        print(f"Design: {design_path}")
     print(f"{'=' * 60}\n")
 
     fail_count = 0

@@ -161,19 +161,9 @@ intent-chain/{YYYY-MM-DD}-{NNN}-{意图名称}/intent.md
 
 输出：通过结构校验的 `INTENT.md`。
 
-### Phase 4：交接
+### Phase 4：完成
 
-给用户以下可直接传给下一会话的 Prompt，并替换真实路径：
-
-```text
-先读 intent-chain/{链路目录}/intent.md，再完成接下来的 [PRD / 任务拆分 / 开发]。
-
-生成 PRD 用 intent-prd（写入同一链路目录下的 prd.md），拆工单用 intent-issues（写入同一链路目录下的 issues.md）——它们会原生读取 INTENT.md，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
-
-只把“保留”的能力作为目标范围；“推迟”和“放弃”的能力不能悄悄加回来。
-
-发现遗漏、冲突或未经确认的新增项时停下来告诉我，不要自行改写原意。
-```
+`INTENT.md` 已写入 `intent-chain/{链路目录}/`。下一步参见 README「从零开始开发」的链路图。
 
 `templates/阶段核对表.md` 是可选的人工检查表，不是自动门禁。
 

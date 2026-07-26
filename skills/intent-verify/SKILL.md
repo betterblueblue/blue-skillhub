@@ -1,6 +1,6 @@
 ---
 name: intent-verify
-description: 所有工单开发完成后的整体验收。先跑全量测试确认老功能没被改坏，再按 INTENT.md 的验收路径逐条走通，核对保留能力是否都有证据，检查有没有偷偷丢掉或加上什么。如果 INTENT.md 有性能或安全要求，按要求验证。根据 architecture.md 做技术漂移复核。强制要求 INTENT.md、PRD、工单文件、dev-record、architecture.md 和 design.md 作为输入。
+description: 所有工单开发完成后的整体验收。先跑全量测试确认老功能没被改坏，再按 INTENT.md 的验收路径逐条走通，核对保留能力是否都有证据，检查有没有偷偷丢掉或加上什么。如果 INTENT.md 有性能或安全要求，按要求验证。根据 architecture.md 和 design.md 做技术漂移复核。强制要求 INTENT.md、PRD、工单文件、dev-record、architecture.md 和 design.md 作为输入。
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
@@ -108,24 +108,17 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 3. **验收路径逐条验证**：汇总 Phase 3 的结果，每条路径标 V3 和证据。
 4. **条件性验证结果**：汇总 Phase 4 的性能和安全验证结果。
 5. **漂移复核**：按 INTENT.md 第 7 节的 7 种漂移模式，检查是否有能力被静默降级、遗漏或重新加入。
-6. **技术漂移复核**：列出实际代码中的模块划分，与 architecture.md 第 2 节定义的模块对照。新增模块必须显式列出，缺失模块需说明原因。
+6. **技术漂移复核**：列出实际代码中的模块划分，与 architecture.md 第 2 节和 design.md 的涉及模块对照。新增模块必须显式列出，缺失模块需说明原因。
 7. **设计标准核对**：如果 INTENT.md 第 12 节有设计标准，检查 UI 是否对照设计文件通过。
 8. 在对话中展示完整的最终复核结果。
 9. 用户确认后，将结果写入 verify-record.md。
-10. 运行 `verify_validate.py` 确认 verify-record 结构通过（需传入 verify-record.md、intent.md 和 architecture.md 三个路径）。
+10. 运行 `verify_validate.py` 确认 verify-record 结构通过（需传入 verify-record.md、intent.md、architecture.md 和 design.md 四个路径）。
 
 输出：通过校验的 verify-record.md。
 
-### Phase 6：交接
+### Phase 6：完成
 
-给用户以下提示：
-
-```text
-验收完成。intent-chain/{链路目录}/verify-record.md 记录了端到端验收结果和最终复核结论。
-
-如果后续需要变更，使用 impact 做影响分析。
-如果需要新增功能，从 intent-anchor 重新开始。
-```
+`verify-record.md` 已写入 `intent-chain/{链路目录}/`。链路全部走完。后续如需变更，使用 impact 做影响分析；如需新增功能，从 intent-anchor 重新开始。
 
 ## 强制规则
 
@@ -137,7 +130,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 6. **保留能力必须逐项核对**：不能跳过。
 7. **漂移复核必须逐项检查**：7 种模式全部覆盖。
 8. **先确认再写文件**：在对话中展示结果草稿，得到确认后才写入。
-9. **结构校验必须通过**：写入后运行 `verify_validate.py`（需传入 verify-record.md、intent.md 和 architecture.md 三个路径），校验器会交叉检查路径 ID、保留能力 ID 和性能/安全结论是否与 INTENT.md 一致，并检查技术漂移复核子节是否存在。
+9. **结构校验必须通过**：写入后运行 `verify_validate.py`（需传入 verify-record.md、intent.md、architecture.md 和 design.md 四个路径），校验器会交叉检查路径 ID、保留能力 ID 和性能/安全结论是否与 INTENT.md 一致，检查技术漂移复核子节是否有数据行且模块名与 architecture.md 和 design.md 一致。
 
 ## verify-record.md 必需章节
 

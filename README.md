@@ -40,7 +40,7 @@ flowchart TD
 
 | 你现在的处境 | 现在先做什么 | 用完以后 |
 |---|---|---|
-| 只有一个模糊想法，还说不清给谁用、解决什么问题 | 用 [IntentAnchor](skills/intent-anchor/) 把目标、取舍和不可妥协项写进 `INTENT.md` | 目标明确后，用 [IntentPRD](skills/intent-prd/) 生成 PRD，再用 [IntentIssues](skills/intent-issues/) 拆工单，然后用 [IntentDev](skills/intent-dev/) 开发和 [IntentVerify](skills/intent-verify/) 验收；没有 `INTENT.md` 时用原版 to-prd / to-issues |
+| 只有一个模糊想法，还说不清给谁用、解决什么问题 | 用 [IntentAnchor](skills/intent-anchor/) 把目标、取舍和不可妥协项写进 `INTENT.md` | 目标明确后，用 [IntentPRD](skills/intent-prd/) 生成 PRD → [IntentDesign](skills/intent-design/) 做技术方案设计 → [IntentIssues](skills/intent-issues/) 拆工单 → [IntentDev](skills/intent-dev/) 开发 → [IntentVerify](skills/intent-verify/) 验收；没有 `INTENT.md` 时用原版 to-prd / to-issues |
 | 已经知道要做什么，但不确定架构和技术路线 | 用 [开工前调研开源项目](prompt/open-source-project-research.md) 比较真正相似的项目 | 看过证据并确认方案后再开始开发 |
 | 方向和方案已经明确，准备从零实现完整产品 | 完整流程选 [Superpowers](https://github.com/obra/superpowers)，按需组合选 [Skills for Real Engineers](https://github.com/mattpocock/skills) | 如果模型仍然常把简单需求做复杂，可以再用 [Ponytail](https://github.com/DietrichGebert/ponytail) 强化“简单优先” |
 | 刚接手一个陌生仓库，不知道入口和模块关系 | 用 [Pathfinder](skills/pathfinder/) 只读摸清项目 | 有具体改动时进入 ImpactRadar |
@@ -330,9 +330,9 @@ IntentDev 按 TDD 循环开发每个工单。它强制要求 INTENT.md、PRD、�
 
 [skills/intent-verify/](skills/intent-verify/)
 
-IntentVerify 在所有工单开发完成后做整体验收。它强制要求 INTENT.md、PRD、工单文件、dev-record、architecture.md 和 design.md 通过校验且所有工单标 done 作为输入。验收流程：先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，然后做条件性验证（性能和安全要求，有则逐项验证，没有标不适用），最后做最终复核（保留能力核对 + 漂移复核 + 技术漂移复核）。
+IntentVerify 在所有工单开发完成后做整体验收。它强制要求 INTENT.md、PRD、工单文件、dev-record、architecture.md 和 design.md 通过校验且所有工单标 done。验收流程：先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，然后做条件性验证（性能和安全要求，有则逐项验证，没有标不适用），最后做最终复核（保留能力核对 + 漂移复核 + 技术漂移复核）。
 
-`verify_validate.py` 运行 8 项检查，包括文件非空、回归验证段、验收路径的 Given/When/Then 和验证方式、每条路径有 V3 证据、条件性验证段、最终复核完整性、与 INTENT.md 交叉校验和技术漂移复核检查。
+`verify_validate.py` 运行 8 项检查，包括文件非空、回归验证段、验收路径的 Given/When/Then 和验证方式、每条路径有 V3 证据、条件性验证段、最终复核完整性（含漂移复核数据行检查）、与 INTENT.md 交叉校验和技术漂移复核检查（模块名与 architecture.md 对照；传入 design.md 时额外与 design.md 交叉检查）。
 
 ### VL 识图
 
