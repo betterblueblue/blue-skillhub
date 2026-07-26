@@ -17,14 +17,6 @@
 - 交接记录格式：Markdown，包含任务列表、当前进度、阻塞项和下一步
 - 存储位置：项目根目录的 handoff/ 目录
 
-### Design Standards
-
-无设计标准素材。
-
-### Terminology Constraints
-
-无术语约束。
-
 ### Security Requirements
 
 | 要求 ID | 安全要求 | 对应能力 |
