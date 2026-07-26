@@ -41,6 +41,10 @@ Copy-Item "claudecode行为规范\ruleblade\CLAUDE.md" "你的项目根目录\AG
 复制到 Codex skills 目录：
 
 ```powershell
+# 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
+"pathfinder","impact" |
+  ForEach-Object { Remove-Item "$env:USERPROFILE\.codex\skills\$_" -Recurse -Force -ErrorAction Ignore }
+
 Copy-Item "skills\pathfinder" "$env:USERPROFILE\.codex\skills\pathfinder" -Recurse -Force
 Copy-Item "skills\impact" "$env:USERPROFILE\.codex\skills\impact" -Recurse -Force
 ```
@@ -59,6 +63,10 @@ Copy-Item "skills\impact" "$env:USERPROFILE\.codex\skills\impact" -Recurse -Forc
 复制到 Claude skills 目录：
 
 ```powershell
+# 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
+"pathfinder","impact" |
+  ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
+
 Copy-Item "skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
 Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
 ```
@@ -85,6 +93,10 @@ claude --print -- "/impact 只做测试：请说明 impact 的适用范围，不
 Claude Code：
 
 ```powershell
+# 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
+"_common","intent-anchor","intent-prd","intent-design","intent-issues","intent-dev","intent-verify" |
+  ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
+
 Copy-Item "skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
 Copy-Item "skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
 Copy-Item "skills\intent-prd" "$env:USERPROFILE\.claude\skills\intent-prd" -Recurse -Force
@@ -106,6 +118,8 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。
 
 ```powershell
 New-Item "你的项目根目录\.claude" -ItemType Directory -Force
+# 升级重装时先删旧的 hooks 目录（同样的 Copy-Item 嵌套陷阱）
+Remove-Item "你的项目根目录\.claude\hooks" -Recurse -Force -ErrorAction Ignore
 Copy-Item ".claude\hooks" "你的项目根目录\.claude\hooks" -Recurse -Force
 ```
 
@@ -232,6 +246,7 @@ python skills\vl-vision\vl_vision.py path\to\image.png
 | Codegraph MCP 已连接但没有工具 | 不要用全局裸 `serve --mcp`；改用项目级 wrapper + `--path`，见 [下文排障](#codegraph-mcp-显示已连接但没有工具no-tools) 与 [§4](#4-安装-codegraph-mcp可选) |
 | MCP JSON 里还是旧路径 | 把 `args` 改成当前仓库的绝对路径 |
 | `/impact` 不生效 | 确认 skill 复制到了正确客户端目录，并重启客户端 |
+| 升级后 skill 行为还是旧版 | 目标目录已存在时 `Copy-Item` 会把新版嵌套进去而不是覆盖（产生 `skills\X\X\`）；先删旧目录再复制，各安装块已附删除命令 |
 | `/pathfinder` 不生效 | 确认 skill 复制到了正确客户端目录，并重启客户端 |
 | Claude Code `--print` 不识别 `/impact` | prompt 前加 `--`，例如 `claude --print -- "/impact ..."` |
 | 运行 MCP 缺 Chromium | 执行 `npx playwright install chromium` |
