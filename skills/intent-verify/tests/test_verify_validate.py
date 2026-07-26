@@ -328,6 +328,89 @@ class TestTechDriftCheck(unittest.TestCase):
         self.assertEqual("FAIL", v8[0][1])
         self.assertIn("技术漂移复核", v8[0][2])
 
+    def test_tech_drift_only_text_fails(self):
+        """技术漂移复核子节只有文字、没有表格行时 V8 返回 FAIL。"""
+        content = _content().replace(
+            "| 记录生成器 | 是 | 一致 | 代码实现与架构文档定义一致 |\n"
+            "| 文件存储 | 是 | 一致 | 代码实现与架构文档定义一致 |",
+            "已核对。",
+        )
+        results = validate(content, _intent(), _ARCH_CONTENT)
+        v8 = [r for r in results if r[0] == "V8"]
+        self.assertEqual(1, len(v8))
+        self.assertEqual("FAIL", v8[0][1])
+        self.assertIn("数据行", v8[0][2])
+
+    def test_tech_drift_undefined_module_fails(self):
+        """技术漂移复核引用了 architecture.md 中未定义的模块时 V8 返回 FAIL。"""
+        content = _content().replace(
+            "| 记录生成器 | 是 | 一致 | 代码实现与架构文档定义一致 |",
+            "| 不存在的模块 | 是 | 一致 | 代码实现与架构文档定义一致 |",
+        )
+        results = validate(content, _intent(), _ARCH_CONTENT)
+        v8 = [r for r in results if r[0] == "V8"]
+        self.assertEqual(1, len(v8))
+        self.assertEqual("FAIL", v8[0][1])
+        self.assertIn("未定义", v8[0][2])
+
+    def test_tech_drift_with_design_passes(self):
+        """传入 design.md 且模块一致时 V8 PASS。"""
+        design = (
+            "# 功能设计 - 测试\n\n"
+            "## 1. 设计概览\n\n覆盖 1 项能力。\n\n"
+            "## 2. 能力设计\n\n"
+            "### [C01] 生成交接记录\n\n"
+            "- **涉及模块**：记录生成器、文件存储\n"
+            "- **数据流转**：无\n"
+            "- **关键状态变化**：无\n"
+            "- **不做什么**：不做自动归档\n\n"
+            "## 3. 与架构文档的对照\n\n无\n"
+        )
+        results = validate(_content(), _intent(), _ARCH_CONTENT, design)
+        v8 = [r for r in results if r[0] == "V8"]
+        self.assertEqual(1, len(v8))
+        self.assertEqual("PASS", v8[0][1])
+
+    def test_tech_drift_undefined_in_design_fails(self):
+        """传入 design.md 且模块不在 design.md 中时 V8 FAIL。"""
+        design = (
+            "# 功能设计 - 测试\n\n"
+            "## 1. 设计概览\n\n覆盖 1 项能力。\n\n"
+            "## 2. 能力设计\n\n"
+            "### [C01] 生成交接记录\n\n"
+            "- **涉及模块**：记录生成器\n"
+            "- **数据流转**：无\n"
+            "- **关键状态变化**：无\n"
+            "- **不做什么**：不做自动归档\n\n"
+            "## 3. 与架构文档的对照\n\n无\n"
+        )
+        # design.md 只提了"记录生成器"，没提"文件存储"，但技术漂移复核包含"文件存储"
+        results = validate(_content(), _intent(), _ARCH_CONTENT, design)
+        v8 = [r for r in results if r[0] == "V8"]
+        self.assertEqual(1, len(v8))
+        self.assertEqual("FAIL", v8[0][1])
+        self.assertIn("design.md", v8[0][2])
+
+
+class TestDriftTableCheck(unittest.TestCase):
+    """V6: 漂移复核子节必须有数据行。"""
+
+    def test_drift_only_text_fails(self):
+        """漂移复核子节只有文字、没有表格行时 V6 返回 FAIL。"""
+        content = _content().replace(
+            "| D1 未确认新增 | 未命中 | 所有能力均来自 INTENT.md |\n"
+            "| D2 目标替换 | 未命中 | 目标始终是跨会话交接 |\n"
+            "| D3 能力降级 | 未命中 | C01 完整实现 |\n"
+            "| D4 保留项遗漏 | 未命中 | C01 已体现 |\n"
+            "| D5 推迟或放弃项被重新加入 | 未命中 | C02 和 C03 未出现 |\n"
+            "| D6 决策来源失真 | 未命中 | 决策来源与 INTENT.md 一致 |\n"
+            "| D7 交接信息丢失 | 未命中 | DEV-RECORD 和 VERIFY-RECORD 记录完整 |",
+            "已核对。",
+        )
+        result = _result(content, "V6")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("数据行", result[2])
+
 
 class TestCLI(unittest.TestCase):
     """CLI 参数变更测试：architecture.md 从可选改为强制。"""

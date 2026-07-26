@@ -116,6 +116,11 @@ def _starts_with_cost(cell: str) -> str | None:
     return None
 
 
+def _strip_html_comments(text: str) -> str:
+    """移除 HTML 注释 <!-- ... -->，防止用注释绕过检查。"""
+    return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+
+
 def _extract_design_cap_ids(design_section2: str) -> set[str]:
     """从 design.md 第 2 节的 ### [CXX] 标题中提取能力 ID。"""
     return set(re.findall(r"###\s+\[(C\d{2,})\]", design_section2))
@@ -278,7 +283,12 @@ def validate(
     no_evidence_items: list[str] = []
     expensive_assum: list[str] = []
     cheap_assum: list[str] = []
-    has_no_extra = "无额外结构" in assum_section
+    # 剥离 HTML 注释后检查"无额外结构"是否作为正文出现（不能藏在注释或表格单元格里）
+    stripped_assum = _strip_html_comments(assum_section)
+    has_no_extra = any(
+        "无额外结构" in line and not line.strip().startswith("|")
+        for line in stripped_assum.splitlines()
+    )
 
     if not has_no_extra:
         for row in assum_rows:
@@ -289,14 +299,28 @@ def validate(
             for word in FORBIDDEN_WORDS:
                 if word in row[1]:
                     assum_errors.append(f"假设表「为了解决什么情况」含禁用词 '{word}'（行: {row[0]}）")
-            # 证据列合规
+            # 证据列合规：只能是代码位置、用户原话（引号包裹）或"无依据，属于假设"
             evidence = row[2].strip()
             if evidence == "无依据，属于假设":
                 no_evidence_items.append(row[0])
             else:
-                for word in FORBIDDEN_WORDS:
-                    if word in evidence:
-                        assum_errors.append(f"假设表证据列含禁用词 '{word}'（行: {row[0]}）")
+                looks_like_code = bool(
+                    re.search(r"[/\\]\w+\.\w{1,5}", evidence)
+                    or re.search(r"\w+\.\w{1,5}:\d+", evidence)
+                )
+                looks_like_quote = bool(
+                    re.search(r'["「『"].+["」』"]', evidence)
+                )
+                if not looks_like_code and not looks_like_quote:
+                    assum_errors.append(
+                        f"假设表证据列不合规（行: {row[0]}）: "
+                        f"证据只能是代码位置（如 src/order/service.py:42）、"
+                        f"用户原话（用引号包裹）或\"无依据，属于假设\""
+                    )
+                else:
+                    for word in FORBIDDEN_WORDS:
+                        if word in evidence:
+                            assum_errors.append(f"假设表证据列含禁用词 '{word}'（行: {row[0]}）")
             # 代价列
             cost = _starts_with_cost(row[3])
             if cost is None:

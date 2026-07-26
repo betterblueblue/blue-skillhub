@@ -81,21 +81,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 输出：通过结构校验的 architecture.md 和 design.md。
 
-### Phase 5：交接
+### Phase 5：完成
 
-给用户以下可直接传给下一会话的 Prompt，并替换真实路径：
-
-```text
-先读 intent-chain/{链路目录}/prd.md 和 intent.md，再完成任务拆分。
-
-architecture.md 和 design.md 已生成在同一链路目录下，可作为技术参考。
-
-拆工单用 intent-issues（写入同一链路目录下的 issues.md）——它会原生读取 INTENT.md 和 PRD，自动处理设计标准、术语表和验收路径。如果使用第三方 skill，需手动检查这些约束是否被遵守。
-
-只把 User Stories 中标注的能力作为开发范围。
-
-发现遗漏、冲突或未经确认的新增项时停下来告诉我，不要自行改写原意。
-```
+`architecture.md` 和 `design.md` 已写入 `intent-chain/{链路目录}/`。下一步参见 README「从零开始开发」的链路图。
 
 ## 强制规则
 

@@ -167,6 +167,47 @@ class TestA7Assumptions(unittest.TestCase):
         result = _result(_arch_content(), _design_content(), _intent_content(), "A7")
         self.assertEqual("PASS", result[1])
 
+    def test_html_comment_bypass_fails(self):
+        """HTML 注释中的"无额外结构"不能跳过假设表检查。"""
+        content = _arch_content().replace(
+            '用户原话"放项目根目录"',
+            "模型判断确有必要",
+        )
+        content = content.replace(
+            "## 5. 额外结构与假设",
+            "## 5. 额外结构与假设\n\n<!-- 无额外结构 -->",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("FAIL", result[1])
+
+    def test_non_evidence_text_fails(self):
+        """证据列填不含文件路径或引号的文本应 FAIL。"""
+        content = _arch_content().replace(
+            '用户原话"放项目根目录"',
+            "模型判断确有必要",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("不合规", result[2])
+
+    def test_code_location_evidence_passes(self):
+        """证据列填代码位置（文件路径:行号）应 PASS。"""
+        content = _arch_content().replace(
+            '用户原话"放项目根目录"',
+            "src/handoff.js:42",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("PASS", result[1])
+
+    def test_no_extra_structure_as_text_passes(self):
+        """假设表为空、正文写"无额外结构"时 A7 应 PASS。"""
+        content = _arch_content().replace(
+            "| handoff/ 独立目录 | 多个项目复用时不冲突 | 用户原话\"放项目根目录\" | 便宜（改路径配置即可） |",
+            "无额外结构",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("PASS", result[1])
+
 
 class TestA8ExpensiveDetails(unittest.TestCase):
     def test_missing_expensive_detail_fails(self):
