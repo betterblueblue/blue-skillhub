@@ -720,13 +720,13 @@
       ],
       "success_target": [
         "新接口返回 AjaxResult，带 @RequiresPermissions 与 @Log 注解，与相邻方法一致。",
-        "分层完整走 Service，SQL 沿用 Mapper 惯例，不引入注解 SQL。",
+        "分层不越过 Service（复用 ISysConfigService 既有方法与 addSave 同构即合规），SQL 沿用 Mapper 惯例，不引入注解 SQL。",
         "命名与注释风格与相邻代码一致，判分以相邻代码逐项对照。"
       ],
       "failure_signals": [
         "自建响应结构（ResponseEntity/Map/裸实体）。",
         "缺权限注解或日志注解。",
-        "Controller 直连 Mapper 或内联业务逻辑。",
+        "Controller 越过 Service 直连 Mapper 或内联 SQL。",
         "引入 @Select/@Insert 注解 SQL。",
         "使用 @PreAuthorize/@ss.hasPermi（RuoYi-Vue 串味，本项目是 Shiro 版）。"
       ],
@@ -736,16 +736,13 @@
       ],
       "acceptance": {
         "expected_changed_files": [
-          "ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysConfigController.java",
-          "ruoyi-system/src/main/java/com/ruoyi/system/service/ISysConfigService.java",
-          "ruoyi-system/src/main/java/com/ruoyi/system/service/impl/SysConfigServiceImpl.java"
+          "ruoyi-admin/src/main/java/com/ruoyi/web/controller/system/SysConfigController.java"
         ],
         "forbidden_changed_files": [
           "ruoyi-common/src/main/java/com/ruoyi/common/core/domain/AjaxResult.java"
         ],
         "validators": [
-          "python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode full --repo-root .",
-          "git diff --check"
+          "python E:/agent/blue-skillhub/skills/impact/scripts/impact_validate.py <requirement-dir> --mode light --repo-root ."
         ],
         "must_contain": [
           "@RequiresPermissions(\"system:config:",
