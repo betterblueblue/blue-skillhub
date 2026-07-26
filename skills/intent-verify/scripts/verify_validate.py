@@ -413,7 +413,8 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                     cap_text = cap_match.group(0)
                     mod_match = re.search(r"\*\*涉及模块\*\*[：:]\s*(.+)", cap_text)
                     if mod_match:
-                        for token in re.split(r"[、，,\s→]+", mod_match.group(1).strip()):
+                        # 不按空白拆分——"CLI 入口"这类含空格的模块名是一个整体
+                        for token in re.split(r"[、，,→]+", mod_match.group(1).strip()):
                             token = token.strip()
                             if token and token != "无":
                                 design_modules.add(token)

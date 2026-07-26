@@ -470,13 +470,29 @@ class TestSecurityRequirements(unittest.TestCase):
 
 class TestOutputPath(unittest.TestCase):
     def test_valid_output_path(self):
-        path = Path("project/intent-anchor/2026-07-11-001-跨会话交接.md")
+        path = Path("project/intent-chain/2026-07-11-001-跨会话交接/intent.md")
         self.assertIsNone(_path_error(path))
 
-    def test_latest_or_root_file_is_not_accepted_as_output_path(self):
+    def test_legacy_intent_anchor_path_rejected(self):
+        """任务 D 之前的旧契约（intent-anchor/日期-序号-名称.md）不再接受。"""
+        self.assertIsNotNone(
+            _path_error(Path("project/intent-anchor/2026-07-11-001-跨会话交接.md"))
+        )
+
+    def test_wrong_filename_rejected(self):
         self.assertIsNotNone(_path_error(Path("INTENT.md")))
         self.assertIsNotNone(
-            _path_error(Path("project/intent-anchor/latest.md"))
+            _path_error(Path("project/intent-chain/2026-07-11-001-交接/INTENT.md"))
+        )
+
+    def test_wrong_directory_rejected(self):
+        # 链路目录名不合规
+        self.assertIsNotNone(
+            _path_error(Path("project/intent-chain/latest/intent.md"))
+        )
+        # 祖父目录不是 intent-chain
+        self.assertIsNotNone(
+            _path_error(Path("project/other/2026-07-11-001-交接/intent.md"))
         )
 
 

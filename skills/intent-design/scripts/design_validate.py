@@ -102,8 +102,12 @@ def _parse_acceptance_paths(intent_content: str) -> set[str]:
 
 
 def _split_tokens(cell: str) -> list[str]:
-    """按常见分隔符拆分单元格文本。"""
-    return [t.strip() for t in re.split(r"[、，,\s→]+", cell) if t.strip()]
+    """按分隔符（顿号/逗号/箭头）拆分模块引用。
+
+    不按空白拆分——"CLI 入口"这类含空格的中英混合模块名是一个整体，
+    多个模块之间必须用 、 ， , 或 → 分隔。
+    """
+    return [t.strip() for t in re.split(r"[、，,→]+", cell) if t.strip()]
 
 
 def _starts_with_cost(cell: str) -> str | None:
