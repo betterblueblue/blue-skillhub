@@ -1,0 +1,42 @@
+{
+  "id": "002-modify-user-create-flow",
+  "title": "修改用户创建流程：email 必填 + 格式校验 + 存量数据回填",
+  "skill": "impact",
+  "stack": "java-spring-mybatis",
+  "fixture": {
+    "project": "RuoYi-Vue",
+    "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
+    "commit": "41720e624c5a668c7d3777835e4c87095a7a1dfd"
+  },
+  "user_query": "修改用户创建流程：email 改成必填项（前端 + 后端双重校验），格式必须符合邮箱正则。**存量数据**要把 sys_user 表里 email 为空或 NULL 的行批量回填为 'unknown@local'。",
+  "expected_classification": "full",
+  "expected_iron_rules": ["#2", "#3"],
+  "expected_change_impact_name": "modify-user-create-flow-email-required",
+  "expected_doc_files": [
+    "000-context-pack.md",
+    "010-requirements.md",
+    "020-design.md",
+    "030-implementation.md",
+    "050-validation/001-backfill-empty-emails.sql",
+    "050-validation/002-validate-email-regex.sh",
+    "060-preflight.md",
+    "090-execution-record.md"
+  ],
+  "expected_modified_files_min": 4,
+  "expected_modified_files_max": 10,
+  "expected_new_files_min": 0,
+  "expected_compile_passes": true,
+  "evaluation_dimensions": [
+    "doc_completeness",
+    "doc_quality_non_placeholder",
+    "code_correctness",
+    "code_minimality_no_overscope",
+    "iron_rules_followed",
+    "compile_passes",
+    "style_consistency",
+    "unit_tests_present",
+    "performance_assessment"
+  ],
+  "evaluation_threshold": "all_dimensions_must_pass",
+  "scenario_specific_notes": "回填 SQL 必须生成到 050-validation/ 不直接执行（铁律 #3）。需要在修改前先 SELECT COUNT(*) 报告预计影响行数（铁律 #2 DDL/DML 预检）。email 校验应复用 jakarta.validation.constraints.Email 或自定义 regex。"
+}

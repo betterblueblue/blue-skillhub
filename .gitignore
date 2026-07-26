@@ -19,8 +19,8 @@ skills/*/tests/
 !skills/intent-verify/tests/
 !skills/pathfinder/tests/
 !skills/pathfinder/tests/fixtures/degradation-trap/.env
-!skills/impact/tests/e2e/
-!skills/impact/tests/test_scripts/
+!skills/impact/tests/
+skills/impact/tests/e2e/workdirs/
 test-projects/
 
 # === 控制变量实验临时产物(skill 提取 / 跑出的 map)===
