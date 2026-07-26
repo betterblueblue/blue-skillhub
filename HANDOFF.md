@@ -1,7 +1,20 @@
 # 交接文档
 
-> 写给完全没有上下文的新会话。最近更新：2026-07-26。
-> 本文档覆盖十三个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、impact V23/V24 可校验契约补丁（已完成）、intent-chain 评审修复 P0+P1+文档一致性（已完成，已强模型验证）、impact 评审缺点修复 V23 白名单+SKILL.md 精简+评测脚本修复（已完成，已强模型验证）、强模型验证+校验器盲区修复（任务 J，已完成，未提交）、blue-interview 优化（部分完成，待补测）。
+> 写给完全没有上下文的新会话。最近更新：2026-07-26（全天 7 个 commit，`2222124` → `a4c165f`，全部已推送）。
+> 本文档覆盖十五个独立任务。A-F、A7、H、I 是 intent-chain 六件套与 impact 的建设期记录（均已完成）；J-N 是 2026-07-26 单日完成的验证与收尾（详情见各任务节）；blue-interview 另册（部分完成，待补测）。
+
+## 当前状态与下一步（新会话从这里开始）
+
+**intent-chain 六件套**：阶段性收口。两轮真实冒烟通过（Sonnet 5 模拟用户），确认次数 21 → 15（-29%，预期再降至 ~12-13），校验器测试 311 → 329 零回归，轻量档已上线（可感知能力 ≤5 触发，B′ 方案）。链路跑批：`python skills/_common/chain_validate.py intent-chain/{链路目录}`。
+
+**发布主线（impact + pathfinder）**：距 release-gate 达标只剩 2 个 P0（见 `docs/skill-eval/release-gate.md` 和任务 N）：
+
+1. **P0**：impact 搜索指引补"配置迁移类变更必查被 gitignore 的 `.env` 和 `.github/` CI 引用（`rg --no-ignore --hidden`）"规则，然后复跑 D16 × gpt-5.4-mini 验证转绿
+2. **P0**：修 `docs/handoff-summary-2026-07-04.md` §6.5 与 D16 结果的矛盾（"分析场景可用"vs 实际 FAIL；"M3 只改 1 层"无数据支撑）
+
+P1：D16 补 M3 运行数据；D3 × M3 额度恢复后补跑（上次 403）；拍板 release-gate 标准 2"L 任务 ≤2 轮收敛"按 runner 还是按场景计。
+
+**其他待办**：W3 D5 漂移复核机械化（需先设计排除规则，见任务 L）；用户真实项目走一遍轻量档（毕业考）；发布收尾三件套（QUICKSTART、pathfinder CHANGELOG、版本化）。
 
 ---
 
@@ -414,10 +427,10 @@ Sonnet 5 子代理在 `E:\agent\intent-chain-smoke\todo-cli\`（仓库外）跑�
 
 七套件 315 passed；skills 目录 grep 无残留 README 死链。改动均为 SKILL.md/模板文案，未触碰校验器逻辑。
 
-### 后续（同日完成，见任务 L）
+### 后续（同日完成）
 
-- W5 chain_validate.py 跑批、W7 防漂移测试已落地
-- 轻量档二次冒烟已启动
+- W5 chain_validate.py 跑批、W7 防漂移测试已落地（任务 L）
+- 轻量档二次冒烟已完成并收尾（任务 M）
 
 ---
 
