@@ -9,10 +9,15 @@ skills/blue-interview/
 
 # === 测试产物（e2e fixtures + 克隆项目）===
 skills/*/tests/
+!skills/_common/tests/
 !skills/intent-anchor/tests/
 !skills/intent-anchor/tests/test_intent_validate.py
+!skills/intent-prd/tests/
+!skills/intent-design/tests/
+!skills/intent-issues/tests/
 !skills/intent-dev/tests/
 !skills/intent-verify/tests/
+!skills/pathfinder/tests/
 !skills/impact/tests/e2e/
 !skills/impact/tests/test_scripts/
 test-projects/

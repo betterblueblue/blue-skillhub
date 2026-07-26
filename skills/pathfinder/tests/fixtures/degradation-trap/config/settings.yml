@@ -1,0 +1,19 @@
+app:
+  name: degradation-trap
+  port: 3000
+  host: 0.0.0.0
+
+database:
+  host: localhost
+  port: 5432
+  name: admin_db
+  username: admin
+  password: password
+
+api:
+  key: sk-test-api-key-12345
+  endpoint: https://api.example.com/v1
+
+auth:
+  jwt_secret: jwt-secret-key-not-secure
+  session_timeout: 3600

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "generator": "pf_scan.py",
+  "source_path": "skills/pathfinder/tests/fixtures/degradation-trap",
+  "observed_at": "2026-07-05T00:00:00+00:00",
+  "file_count": 7,
+  "file_ext_counts": {
+    ".js": 4,
+    ".json": 2,
+    ".md": 1
+  },
+  "dir_tree": [
+    "/",
+    "src/",
+    "src/routes/",
+    "src/models/",
+    "config/"
+  ],
+  "manifest_files": [
+    "package.json"
+  ],
+  "budget_tier": "小仓"
+}
