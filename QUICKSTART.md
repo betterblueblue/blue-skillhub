@@ -13,6 +13,10 @@
 Claude Code 用户（Codex 用户把 `.claude\skills` 换成 `.codex\skills`）：
 
 ```powershell
+# 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
+"pathfinder","impact" |
+  ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
+
 Copy-Item "skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
 Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
 ```

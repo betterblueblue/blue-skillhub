@@ -64,6 +64,10 @@ flowchart TD
 1. 安装需要的 Skill。在克隆下来的仓库根目录执行：
 
 ```powershell
+# 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
+"_common","pathfinder","impact","intent-anchor","intent-prd","intent-design","intent-issues","intent-dev","intent-verify" |
+  ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
+
 Copy-Item "skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
 Copy-Item "skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
 Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
