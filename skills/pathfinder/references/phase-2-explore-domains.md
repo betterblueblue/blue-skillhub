@@ -1,4 +1,4 @@
-<!-- version: 2.0, last_updated: 2026-06-18, skill_commit: <TODO> -->
+<!-- version: 2.0, last_updated: 2026-06-18 -->
 # Phase 2: 并行专探
 
 > 本文件含 Phase 2 完整规则。5 路 explore 子 agent 分域扫描,替代原串行广度扫描。

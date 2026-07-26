@@ -1,4 +1,4 @@
-<!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
+<!-- version: 1.0, last_updated: 2026-06-15 -->
 # 跨平台执行说明(Pathfinder)
 
 > 适用:bash / Git-Bash / PowerShell / Windows cmd。Pathfinder 全程只读,跨平台问题主要在「统计项目大小」和「取时间戳/HEAD」两类命令。

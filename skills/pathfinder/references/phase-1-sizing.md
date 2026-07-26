@@ -1,4 +1,4 @@
-<!-- version: 1.0, last_updated: 2026-06-15, skill_commit: <TODO> -->
+<!-- version: 1.0, last_updated: 2026-06-15 -->
 # Phase 1: 体量测量 + 预算分档
 
 > 本文件含 Phase 1 完整规则。SKILL.md 正文只保留概要。

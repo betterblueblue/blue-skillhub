@@ -1,4 +1,4 @@
-<!-- version: 1.0, last_updated: 2026-06-17, skill_commit: <TODO> -->
+<!-- version: 1.0, last_updated: 2026-06-17 -->
 # Phase 3: 聚焦 + 预算深挖 / Phase 5: 扩展与刷新
 
 > 本文件含 Phase 3 各节深挖方法和 Phase 5 扩展与刷新规则。在 Phase 2 广度骨架上,按关注重点 + 预算填充核心 15 节。
