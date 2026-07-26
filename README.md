@@ -59,7 +59,7 @@ flowchart TD
 
 ## 3 分钟上手
 
-按你的场景选择最短路径。
+按你的场景选择最短路径。更完整的首次上手和排错指南（含"校验 FAIL 了怎么办"）见 [QUICKSTART.md](QUICKSTART.md)。
 
 1. 安装需要的 Skill。在克隆下来的仓库根目录执行：
 
@@ -256,7 +256,7 @@ Pathfinder 最重要的约束是不能把猜测写成事实。每条结论都要
 
 如果客户端提供只读的 code graph 或 repo-map MCP，Pathfinder 会先用索引查找入口和依赖关系，再回到源码核实。索引不可用、结果不完整或需要在项目里写缓存时，就改用普通文件扫描。
 
-Pathfinder 只会写自己管理的项目地图和 `facts` 文件，不会修改项目源码、配置或业务数据。设计复盘见 [Pathfinder 设计记录](docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md)。
+Pathfinder 只会写自己管理的项目地图和 `facts` 文件，不会修改项目源码、配置或业务数据。当前版本为 v1.0，版本历史见 [Pathfinder CHANGELOG](skills/pathfinder/CHANGELOG.md)，设计复盘见 [Pathfinder 设计记录](docs/archive/2026-06/2026-06-13-pathfinder-skill-design.md)。
 
 ### ImpactRadar
 
