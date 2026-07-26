@@ -2,6 +2,8 @@
 
 > 所有工单开发完成后的整体验收。先跑全量测试确认老功能没被改坏，再端到端走通验收路径，最后做条件性验证和最终复核。
 
+这是 intent-chain 六步链路的第 6 步，也是最后一步：intent-anchor → intent-prd → intent-design → intent-issues → intent-dev → **intent-verify**。
+
 ## 为什么需要它
 
 intent-dev 完成了每个工单的开发和工单级验证（零件合格），但零件合格不代表整机没问题。intent-verify 做的是：
@@ -10,6 +12,15 @@ intent-dev 完成了每个工单的开发和工单级验证（零件合格），
 2. **端到端验收**：按 INTENT.md 第 14 节的验收路径，逐条从头到尾走通，确认用户真正用的时候能用。
 3. **条件性验证**：如果 INTENT.md 或 PRD 中有性能或安全要求，逐项验证。没有就标不适用。
 4. **最终复核**：保留能力核对 + 漂移复核，确认没有偷偷丢掉或加上什么。
+
+## 快速开始
+
+```text
+/intent-verify
+对 intent-chain/todo-cli/ 做整体验收。
+```
+
+验收记录写入同一链路目录下的 `verify-record.md`，`verify_validate.py` 做 8 项检查（见下文）。验收通过，这条链路就算走完；发现问题就带着结果回 intent-dev 修复，再重新验收。
 
 ## 验证等级
 

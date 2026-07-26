@@ -1,12 +1,25 @@
 # Intent-Issues
 
-> 读取 INTENT.md、PRD、architecture.md 和 design.md，按垂直切片拆分工单，自动检查验收路径覆盖。
+> 把 PRD 和设计拆成一条条能独立开发、独立验证的工单，并自动检查没有任何验收路径被漏掉。
+
+这是 intent-chain 六步链路的第 4 步：intent-anchor → intent-prd → intent-design → **intent-issues** → intent-dev → intent-verify。
 
 ## 为什么需要它
 
-PRD 和设计文件生成后需要拆分为独立可抓取的工单。使用第三方 to-issues 时，验收路径约束只能通过交接 prompt 注入，工单的 Acceptance criteria 不会自动引用路径编号，也无法自动检查覆盖情况。如果没有 INTENT.md，直接用原版 to-issues 即可。
+PRD 和设计文件生成后需要拆分为独立可抓取的工单。第三方 to-issues 不认识这套结构：验收路径只能靠一段转述提示词带过去，工单的 Acceptance criteria 不会自动引用路径编号，覆盖情况也没人检查。如果没有 INTENT.md，直接用原版 to-issues 即可。
 
-Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance criteria 中自动引用路径编号，并在输出前自动检查所有路径被至少一个工单覆盖。
+Intent-Issues 直接读取 INTENT.md 的验收路径，在工单的 Acceptance criteria 中自动引用路径编号，并在输出前自动检查所有路径被至少一个工单覆盖。
+
+## 快速开始
+
+```text
+/intent-issues
+用 intent-chain/todo-cli/ 下的文档拆工单。
+```
+
+产出同一链路目录下的 `issues.md`，完整工单草稿经你确认后写入，写入前运行 `issues_validate.py` 的 11 项检查（见下文）。
+
+下一步：交给 [intent-dev](../intent-dev/) 逐工单开发。
 
 ## 什么时候使用
 
@@ -30,7 +43,7 @@ Intent-Issues 原生读取 INTENT.md 的验收路径，在工单的 Acceptance c
 
 ## 轻量档
 
-INTENT.md 第 2 节标注轻量档时，允许单工单直行：一个 AFK 工单覆盖全部验收路径，路径确认并入完整工单草稿的一次确认。路径覆盖检查不降级。
+轻量档是小项目的精简模式，由 intent-anchor 定档并标注在 INTENT.md 第 2 节（触发条件见其 README）。标注轻量档时，允许只拆一个 AFK 工单覆盖全部验收路径，路径确认并入完整工单草稿的一次确认。路径覆盖检查不降级。
 
 **上游已答不重问**：INTENT.md 或上游链路文档已记录的信息（技术偏好、无性能/安全要求、术语表等）直接引用使用，不再重复提问；仅当发现现状与记录冲突时才向用户确认。确认阶段展示的是完整工单草稿（含 What to build、Acceptance criteria、涉及模块等），不是只有标题的摘要。
 
@@ -75,7 +88,7 @@ intent-issues/
 
 Intent-Issues 能够：
 
-- 从 PRD 原生推导工单，按垂直切片拆分。
+- 直接从 PRD 推导工单，按垂直切片拆分。
 - 自动检查验收路径和保留能力的覆盖情况。
 - 把设计标准、术语表、性能和安全要求约束传递到工单。
 - 交叉检查 PRD 中每条验收路径的 Then/And 条件是否被工单覆盖。
