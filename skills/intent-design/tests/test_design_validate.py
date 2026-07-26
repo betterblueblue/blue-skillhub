@@ -208,6 +208,83 @@ class TestA7Assumptions(unittest.TestCase):
         result = _result(content, _design_content(), _intent_content(), "A7")
         self.assertEqual("PASS", result[1])
 
+    def test_bare_filename_evidence_passes(self):
+        """裸文件名（无路径、无行号）是合法代码位置证据。"""
+        content = _arch_content().replace(
+            '用户原话"放项目根目录"',
+            "package.json 已有 fs-extra 依赖",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("PASS", result[1])
+
+    def test_curly_quote_evidence_passes(self):
+        """弯引号包裹的用户原话是合法证据。"""
+        content = _arch_content().replace(
+            '用户原话"放项目根目录"',
+            "用户原话“放项目根目录”",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("PASS", result[1])
+
+    def test_no_evidence_with_trailing_period_counts_as_unconfirmed(self):
+        """"无依据，属于假设。"（带句尾标点）应按无依据项处理，不误判为不合规。"""
+        content = _arch_content().replace(
+            '用户原话"放项目根目录"',
+            "无依据，属于假设。",
+        )
+        content = content.replace(
+            "### 需要你确认的假设\n\n无",
+            "### 需要你确认的假设\n\n1. handoff/ 独立目录：多项目复用会发生吗？",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("PASS", result[1])
+
+    def test_quoted_forbidden_word_evidence_passes(self):
+        """用户原话里合法出现"为了性能"这类词，不应被禁用词误杀。"""
+        content = _arch_content().replace(
+            '用户原话"放项目根目录"',
+            '用户原话"为了性能，必须放根目录"',
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("PASS", result[1])
+
+    def test_negated_no_extra_is_not_declaration(self):
+        """"并非无额外结构"这类子串不构成声明，表格照常检查。"""
+        content = _arch_content().replace(
+            '用户原话"放项目根目录"',
+            "模型判断确有必要",
+        )
+        content = content.replace(
+            "## 5. 额外结构与假设",
+            "## 5. 额外结构与假设\n\n下面这些结构并非无额外结构：",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("不合规", result[2])
+
+    def test_declaration_with_rows_contradiction_fails(self):
+        """声明"无额外结构"但表格仍有数据行 → 矛盾 FAIL。"""
+        content = _arch_content().replace(
+            "## 5. 额外结构与假设",
+            "## 5. 额外结构与假设\n\n无额外结构",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("矛盾", result[2])
+
+    def test_commented_out_table_fails(self):
+        """整张表包在 HTML 注释里（渲染为空节）不能通过 A7。"""
+        content = _arch_content().replace(
+            "| 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再改的成本 |",
+            "<!--\n| 加了什么结构 | 为了解决什么情况 | 这种情况的依据 | 以后再改的成本 |",
+        )
+        content = content.replace(
+            "| handoff/ 独立目录 | 多个项目复用时不冲突 | 用户原话\"放项目根目录\" | 便宜（改路径配置即可） |",
+            "| handoff/ 独立目录 | 多个项目复用时不冲突 | 用户原话\"放项目根目录\" | 便宜（改路径配置即可） |\n-->",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A7")
+        self.assertEqual("FAIL", result[1])
+
 
 class TestA8ExpensiveDetails(unittest.TestCase):
     def test_missing_expensive_detail_fails(self):

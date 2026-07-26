@@ -121,6 +121,32 @@ def _strip_html_comments(text: str) -> str:
     return re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
 
 
+# "无额外结构"必须是独立声明行（可带加粗或句尾标点）；
+# "并非无额外结构"这类语句的子串不算声明
+RE_NO_EXTRA_LINE = re.compile(r"\**无额外结构\**[。．.！!]*")
+
+# 证据白名单：代码位置类特征。CJK 字符也算 \w，\b 在中英文交界处不可靠，
+# 所以边界用 ASCII 字母前后查（lookaround）表达。
+RE_EVIDENCE_CODE = re.compile(
+    r"[/\\]\w+\.\w{1,5}"          # 路径片段：src/service.py、src\a.java
+    r"|\w+\.\w{1,5}:\d+"          # 文件:行号
+    r"|\w+\.[A-Za-z]{2,5}"        # 裸文件名 / 方法引用：pom.xml、Service.login()
+    r"|第\s*\d+\s*行"              # 中文行号：第 45 行
+    r"|`[^`]+`"                   # 反引号代码片段：`sys_config`
+    r"|(?<![A-Za-z])[A-Za-z][a-z0-9]+[A-Z][A-Za-z0-9]*"  # camelCase / PascalCase 标识符
+    r"|[A-Za-z]\w*_\w+"           # snake_case 标识符：config_type
+    r"|(?<![A-Za-z])commit\s+[0-9a-f]{7,40}"             # git commit 哈希
+)
+# 引号包裹的用户原话：直引号、单引号、弯引号、方引号都接受
+RE_EVIDENCE_QUOTE = re.compile("[\"'「『“‘].+[\"'」』”’]")
+RE_QUOTED_SPAN = re.compile("[\"'「『“‘][^\"'」』”’]*[\"'」』”’]")
+
+
+def _is_placeholder_row(row: list[str]) -> bool:
+    """模板占位行（任一单元格含 {xxx}）不算真实数据行。"""
+    return any(_has_placeholder(cell) for cell in row)
+
+
 def _extract_design_cap_ids(design_section2: str) -> set[str]:
     """从 design.md 第 2 节的 ### [CXX] 标题中提取能力 ID。"""
     return set(re.findall(r"###\s+\[(C\d{2,})\]", design_section2))
@@ -278,19 +304,30 @@ def validate(
 
     # A7: 假设表
     assum_section = _section(arch_content, "## 5. 额外结构与假设", numbered=True)
-    assum_rows = _table_rows(assum_section, "加了什么结构")
+    # 剥离 HTML 注释后再解析——注释里的声明和整张表格都不参与检查
+    stripped_assum = _strip_html_comments(assum_section)
+    assum_rows = _table_rows(stripped_assum, "加了什么结构")
     assum_errors: list[str] = []
     no_evidence_items: list[str] = []
     expensive_assum: list[str] = []
     cheap_assum: list[str] = []
-    # 剥离 HTML 注释后检查"无额外结构"是否作为正文出现（不能藏在注释或表格单元格里）
-    stripped_assum = _strip_html_comments(assum_section)
+    # "无额外结构"必须是独立声明行（"并非无额外结构"这类子串和表格单元格不算）
     has_no_extra = any(
-        "无额外结构" in line and not line.strip().startswith("|")
+        RE_NO_EXTRA_LINE.fullmatch(line.strip())
         for line in stripped_assum.splitlines()
+        if line.strip() and not line.strip().startswith("|")
     )
+    real_rows = [row for row in assum_rows if not _is_placeholder_row(row)]
 
-    if not has_no_extra:
+    if not stripped_assum.strip():
+        assum_errors.append('第 5 节缺失或为空——没有额外结构时必须写"无额外结构"')
+    elif has_no_extra and real_rows:
+        assum_errors.append(
+            f'声明"无额外结构"但假设表仍有 {len(real_rows)} 行数据，两者矛盾'
+        )
+    elif not has_no_extra and not assum_rows:
+        assum_errors.append('第 5 节既没有声明"无额外结构"，也没有假设表数据行')
+    elif not has_no_extra:
         for row in assum_rows:
             if len(row) < 4:
                 assum_errors.append(f"假设表行不足 4 列: {row[0] if row else '?'}")
@@ -301,16 +338,11 @@ def validate(
                     assum_errors.append(f"假设表「为了解决什么情况」含禁用词 '{word}'（行: {row[0]}）")
             # 证据列合规：只能是代码位置、用户原话（引号包裹）或"无依据，属于假设"
             evidence = row[2].strip()
-            if evidence == "无依据，属于假设":
+            if evidence.startswith("无依据"):
                 no_evidence_items.append(row[0])
             else:
-                looks_like_code = bool(
-                    re.search(r"[/\\]\w+\.\w{1,5}", evidence)
-                    or re.search(r"\w+\.\w{1,5}:\d+", evidence)
-                )
-                looks_like_quote = bool(
-                    re.search(r'["「『"].+["」』"]', evidence)
-                )
+                looks_like_code = bool(RE_EVIDENCE_CODE.search(evidence))
+                looks_like_quote = bool(RE_EVIDENCE_QUOTE.search(evidence))
                 if not looks_like_code and not looks_like_quote:
                     assum_errors.append(
                         f"假设表证据列不合规（行: {row[0]}）: "
@@ -318,8 +350,10 @@ def validate(
                         f"用户原话（用引号包裹）或\"无依据，属于假设\""
                     )
                 else:
+                    # 禁用词只查引号之外的部分——用户原话里可以合法出现"为了性能"这类词
+                    evidence_unquoted = RE_QUOTED_SPAN.sub("", evidence)
                     for word in FORBIDDEN_WORDS:
-                        if word in evidence:
+                        if word in evidence_unquoted:
                             assum_errors.append(f"假设表证据列含禁用词 '{word}'（行: {row[0]}）")
             # 代价列
             cost = _starts_with_cost(row[3])
