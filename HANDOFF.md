@@ -7,14 +7,15 @@
 
 **intent-chain 六件套**：阶段性收口。两轮真实冒烟通过（Sonnet 5 模拟用户），确认次数 21 → 15（-29%，预期再降至 ~12-13），校验器测试 311 → 329 零回归，轻量档已上线（可感知能力 ≤5 触发，B′ 方案）。链路跑批：`python skills/_common/chain_validate.py intent-chain/{链路目录}`。
 
-**发布主线（impact + pathfinder）**：距 release-gate 达标只剩 2 个 P0（见 `docs/skill-eval/release-gate.md` 和任务 N）：
+**发布主线（impact + pathfinder）**：release-gate 五条硬标准 **4 达标 + 1 待核**（详见 `docs/skill-eval/release-gate.md`）。2026-07-26 收口动作：
 
-1. **P0（规则已补，剩复跑）**：impact 搜索盲区规则已落地（`phase-2-context-discovery.md` Step 2.3 第 9 条：配置键/环境变量类变更必查 `rg --no-ignore --hidden` 的 `.env` 和 `.github/` CI）——**剩余动作只有复跑 D16 × gpt-5.4-mini 验证转绿**（需评测环境和 runner 额度）
-2. **P0（已完成）**：`docs/handoff-summary-2026-07-04.md` §6.5 两处矛盾已更正（"分析场景可用"加配置迁移例外标注；"M3 只改 1 层"更正为无运行数据）
+1. **D16 已闭环**：搜索盲区规则落地（`phase-2-context-discovery.md` Step 2.3 第 9 条）后完成复跑验证——按用户决策放弃调用不可用的 gpt-5.4-mini / MiniMax M3，改由 Sonnet 模拟 runner 执行（2 试次全覆盖原漏项 `.env:16` + `.github` CI 核查，完整交付试次 `impact_validate` 31/0/0，判分方独立复跑一致），记录在 `eval/runs/real-projects/2026-07-26-sonnet-sim-d16/`；原 FAIL / 无数据记录保留披露。§6.5 矛盾更正同日完成。
+2. **标准 2 计法已拍板**：按场景计（至少一个 runner ≤2 轮修复内收敛即达标），标准 2 达标；D2/D3 的 composer FAIL 作为证据资产披露在支持矩阵。
+3. **D16 × M3、D3 × M3 补跑随口径修订销项**（M3 移出承诺范围）。
 
-P1：D16 补 M3 运行数据；D3 × M3 额度恢复后补跑（上次 403）；拍板 release-gate 标准 2"L 任务 ≤2 轮收敛"按 runner 还是按场景计。
+剩余唯一硬标准缺口：**pathfinder references 最后抽查**（P2，8 个文件对照 SKILL.md 引用）。
 
-**其他待办**：W3 D5 漂移复核机械化（需先设计排除规则，见任务 L）；用户真实项目走一遍轻量档（毕业考）；发布收尾三件套（QUICKSTART、pathfinder CHANGELOG、版本化）。
+**其他待办**：W3 D5 漂移复核机械化（需先设计排除规则，见任务 L）；用户真实项目走一遍轻量档（毕业考）；发布收尾三件套（QUICKSTART、pathfinder CHANGELOG、版本化）；sonnet-sim-d16 新发现两项待处理（V24 Check E 固定窗口假阳性、case prompt"先不要写代码"歧义，见该运行记录）。
 
 ---
 
@@ -500,7 +501,7 @@ Sonnet 5 子代理在 `E:\agent\intent-chain-smoke\todo-cli\`（仓库外）跑�
 
 **行动清单**：P0 ×2（impact 搜索指引补"配置迁移必查 --no-ignore 的 .env/.github"规则 + 复跑 D16；修 handoff-summary §6.5 与 D16 结果矛盾）；P1 ×3（D16 补 M3 数据、D3 M3 额度恢复后补跑、拍板 release-gate 标准 2"L 任务收敛"按 runner 还是按场景计）。
 
-**进展（同日）**：P0 的便宜部分已完成——搜索盲区规则落地 `phase-2-context-discovery.md` Step 2.3 第 9 条，handoff-summary §6.5 两处矛盾更正，release-gate.md 已记进展。**剩余：复跑 D16 × gpt-5.4-mini（需 runner 额度）+ 三个 P1。**
+**进展（同日）**：P0 的便宜部分已完成——搜索盲区规则落地 `phase-2-context-discovery.md` Step 2.3 第 9 条，handoff-summary §6.5 两处矛盾更正，release-gate.md 已记进展。P1 之一"拍板标准 2 计法"已完成（2026-07-26 定为按场景计，标准 2 转达标）。**剩余：复跑 D16 × gpt-5.4-mini（需 runner 额度）+ 两个 P1（D16 补 M3 数据、D3 × M3 补跑）。**
 
 ---
 
