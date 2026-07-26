@@ -521,6 +521,21 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 - `eval/real-projects/scripts/validate_real_projects.py`：exit 0（存量真实项目文档零误伤）
 - 证据分类探测样本 19/19 正确（校准前 10/19 分错）
 
+### v5.10（V13/V19 自伤误报修复，D21 风格陷阱首跑发现）
+
+`D21-java-style-trap-phase5`（RuoYi 复制参数）首次实跑（Sonnet ×2 并行）中，两个 runner 各自照模板/照实际改动如实记录，却撞上校验器自己和自己的规则打架。
+
+**改了什么**
+
+- V19：090 模板教"高风险未命中则决策依据写不涉及"，但模板强制携带的高风险清单表格本身含 DROP/DELETE 字面量，关键词扫描误把表格行当成"本 Step 含 DDL"，导致照模板填必吃一次假阳性——扫描时排除 Markdown 表格行，真实 DDL（操作内容里的 ALTER TABLE 等）不受影响
+- V13/V15：skill 自产的 `.git-baseline.json` 因 `.json` 扩展名命中源码/配置目标正则，文档 Step 如实列出该文件名即被误判为"文档+配置合并 Step"——匹配前中和该字面量，真实配置文件（如 `config/app.json`）不受影响
+
+**验证**
+
+- 新增 4 个测试（2 复现红转绿 + 2 守卫：真 DDL、真配置合并仍需 FAIL）
+- `python -m pytest skills/impact/tests/test_scripts/test_impact_validate.py`：100 passed（+4）
+- D21 两试次终态在修复后复跑仍 22 passed, 0 failed, 0 warnings；`check_delivery.py --run-validators` 均 PASS（11 checks）
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。
