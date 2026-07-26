@@ -2709,6 +2709,20 @@ def _extract_step_design_items_from_090(text: str) -> dict[str, set[str]]:
     return steps
 
 
+def _step_snippet(impl_text: str, start: int, limit: int = 500) -> str:
+    """取 Step 标题起的内容窗口，先截断到下一个 ##/### 标题再截 limit。
+
+    固定宽度窗口会在 Step 正文很短时越过节边界，把下一节（如 §3.2 方法
+    验证表）里的代码 token 误判成本 Step 的源码内容。
+    """
+    line_end = impl_text.find("\n", start)
+    if line_end == -1:
+        return impl_text[start:start + limit]
+    m = re.search(r"\n#{2,3}\s", impl_text[line_end:])
+    end = line_end + m.start() if m else len(impl_text)
+    return impl_text[start:min(end, start + limit)]
+
+
 def check_design_impl_mapping(req_dir: Path, mode: str) -> tuple[list[str], list[str], list[str]]:
     """V24: Check 020 Dxx ↔ 030 Step ↔ 090 Step bidirectional consistency."""
     passes: list[str] = []
@@ -2756,7 +2770,7 @@ def check_design_impl_mapping(req_dir: Path, mode: str) -> tuple[list[str], list
         # Check if 030 has source Steps
         has_source_steps = False
         for m in re.finditer(r"###\s*Step\s+(\d+)", impl_text, re.I):
-            snippet = impl_text[m.start():m.start() + 500]
+            snippet = _step_snippet(impl_text, m.start())
             if (RE_SOURCE_WRITE_TARGET.search(snippet) or
                 RE_SOURCE_CONTENT_WRITE_ACTION.search(snippet) or
                 RE_DML_KEYWORDS.search(snippet)):
@@ -2822,7 +2836,7 @@ def check_design_impl_mapping(req_dir: Path, mode: str) -> tuple[list[str], list
         step_num = m.group(1)
         step_key = f"Step {step_num}"
         items = step_design_items_030.get(step_key, set())
-        snippet = impl_text[m.start():m.start() + 500]
+        snippet = _step_snippet(impl_text, m.start())
 
         has_content = bool(
             RE_SOURCE_WRITE_TARGET.search(snippet) or
