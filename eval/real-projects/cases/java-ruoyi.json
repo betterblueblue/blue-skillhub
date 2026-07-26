@@ -395,7 +395,7 @@
       "verification": [
         "impact_validate.py <需求目录> --mode full --repo-root .",
         "git diff --check",
-        "新接口返回 AjaxResult、带 @PreAuthorize(\"@ss.hasPermi(...)\") 与 @Log 注解"
+        "新接口返回 AjaxResult、带 @RequiresPermissions(\"system:config:...\") 与 @Log 注解"
       ],
       "blocking_questions": [
         "复制出的参数 configType（系统内置）沿用原值还是重置为 N？"
@@ -405,7 +405,7 @@
       ],
       "expected": {
         "must_cover": [
-          "Controller 层：返回 AjaxResult，方法上有 @PreAuthorize(\"@ss.hasPermi('system:config:...')\") 权限注解和 @Log 操作日志注解，与相邻方法风格一致",
+          "Controller 层：返回 AjaxResult，方法上有 @RequiresPermissions(\"system:config:...\") 权限注解（Shiro，本项目全仓无 @PreAuthorize）和 @Log 操作日志注解，与相邻方法风格一致",
           "分层完整：Controller → ISysConfigService → SysConfigServiceImpl → SysConfigMapper，不在 Controller 里直接写业务或 SQL",
           "SQL 写法沿用项目惯例：复用已有 Mapper 方法（selectConfigById/insertConfig）或在 SysConfigMapper.xml 中新增，不使用 @Select/@Insert 注解 SQL",
           "命名与注释风格与 SysConfigController 相邻方法一致（驼峰、Javadoc 风格）"
@@ -449,13 +449,14 @@
           "git diff --check"
         ],
         "must_contain": [
-          "@ss.hasPermi('system:config:",
+          "@RequiresPermissions(\"system:config:",
           "public AjaxResult"
         ],
         "must_not_contain": [
           "ResponseEntity",
           "@Select(",
-          "@Insert("
+          "@Insert(",
+          "@PreAuthorize"
         ]
       }
     }

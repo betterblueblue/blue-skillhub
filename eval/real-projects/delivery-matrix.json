@@ -719,7 +719,7 @@
         "composer-25fast-subagent"
       ],
       "success_target": [
-        "新接口返回 AjaxResult，带 @PreAuthorize 与 @Log 注解，与相邻方法一致。",
+        "新接口返回 AjaxResult，带 @RequiresPermissions 与 @Log 注解，与相邻方法一致。",
         "分层完整走 Service，SQL 沿用 Mapper 惯例，不引入注解 SQL。",
         "命名与注释风格与相邻代码一致，判分以相邻代码逐项对照。"
       ],
@@ -727,7 +727,8 @@
         "自建响应结构（ResponseEntity/Map/裸实体）。",
         "缺权限注解或日志注解。",
         "Controller 直连 Mapper 或内联业务逻辑。",
-        "引入 @Select/@Insert 注解 SQL。"
+        "引入 @Select/@Insert 注解 SQL。",
+        "使用 @PreAuthorize/@ss.hasPermi（RuoYi-Vue 串味，本项目是 Shiro 版）。"
       ],
       "repair_loop": [
         "如果风格违约，把违约模式补进 case 的 failure_signals 后复跑。",
@@ -747,13 +748,14 @@
           "git diff --check"
         ],
         "must_contain": [
-          "@ss.hasPermi('system:config:",
+          "@RequiresPermissions(\"system:config:",
           "public AjaxResult"
         ],
         "must_not_contain": [
           "ResponseEntity",
           "@Select(",
-          "@Insert("
+          "@Insert(",
+          "@PreAuthorize"
         ]
       }
     }
