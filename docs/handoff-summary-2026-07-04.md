@@ -258,14 +258,14 @@ Composer 2.5 Fast 分析题批次结果（8 个）：
 
 | 模型 | 定位 | 说明 |
 |------|------|------|
-| GPT-5.4-mini | 分析场景可用，交付场景有风险 | 分析题批次（D3/D8/D11/D15/D17）表现好；D20 流程逃逸是 subagent 稳定失败面，不宜用于交付场景 |
+| GPT-5.4-mini | 分析场景大体可用（配置迁移类有覆盖缺口），交付场景有风险 | 分析题批次（D3/D8/D11/D15/D17）表现好；但 D16 配置迁移漏查被 gitignore 的 `.env` 和 `.github` CI（2026-07-26 归因确认，impact 搜索指引已补盲区规则，待复跑验证）；D20 流程逃逸是 subagent 稳定失败面，不宜用于交付场景 |
 | MiniMax M3 | 只读分析可用，删除类变更有风险 | D1 pathfinder 首过；D19 删除场景两次确定性复现 tagList 残留 + 造假 |
 | DeepSeek V4 Flash | 数据不足，暂不推荐 | 仅 D1 一个场景，需补测 |
 
 | 场景 | 唯一 PASS | 对比 |
 |------|-----------|------|
 | D11 Java MyBatis | **仅 Composer** | GPT/M3: 漏 `sys_user`/menu, 只改 1~2 页面 |
-| D16 Conda Copier | **仅 Composer** | GPT: 漏 `.env`, 只改 2 层; M3: 只改 1 层 |
+| D16 Conda Copier | **仅 Composer** | GPT: 漏 `.env`, 只改 2 层; M3: 无运行数据（原"只改 1 层"无 run record 支撑，2026-07-26 更正） |
 | D17 FastAPI 字段变更 | **仅 Composer** | GPT: lazy-trap 丢需求 |
 | D8/D15 多 page CRUD | **Composer > GPT > M3** | Composer: full; GPT: light/full; M3: light |
 | D3/D9/D12 配置变更 | **Composer = GPT** | 两模型都 full，但 Composer 路径稳定 |
