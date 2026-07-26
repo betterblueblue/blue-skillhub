@@ -61,6 +61,7 @@
 按当前数据，硬标准 5 条里：3 条达标（NEG、escape-ledger）+ 1 条部分达标待拍板（L 任务标准定义）+ 1 条待核（pathfinder references）+ 1 条未达标（S/M）。**发布前必须做的事：**
 
 1. **解除 D16 阻塞**（P0，硬标准 1）：给 impact skill 补配置入口检查规则并用 gpt-54-mini 复跑转绿，或者显式把 gpt-54-mini 从"D16 类分析场景可用"的承诺中划出——二选一。同时修正 `docs/handoff-summary-2026-07-04.md` §6.5 表格里与本次 FAIL 矛盾的"分析场景可用"表述。
+   **进展（2026-07-26）**：规则已落地——`skills/impact/references/phase-2-context-discovery.md` Step 2.3 新增第 9 条「搜索盲区强制检查」（配置键/环境变量类变更必须用 `rg --no-ignore --hidden` 补查被 gitignore 的 `.env` 和隐藏目录 `.github/` CI）；§6.5 两处矛盾表述已更正（"分析场景可用"加例外标注、M3 无数据行更正）。**剩余：gpt-54-mini 复跑 D16 验证转绿。**
 2. **补齐 D16 的 minimax-m3 runner 数据**（P1，硬标准 1）：目前完全没跑，runner_scope 要求的覆盖不完整。
 3. **拍板"L 任务收敛"标准的字面含义**（P1，硬标准 2）：是"至少一个 runner 收敛即可"还是"每个 runner 都要收敛"，直接决定 D2/D3 的 composer FAIL 算不算达标。
 4. **补跑 D3-minimax-m3**（P1，硬标准 2）：确认 MiniMax M3 额度恢复后用隔离 fixture 副本复跑，把 UNVERIFIED 转成明确结论。

@@ -9,8 +9,8 @@
 
 **发布主线（impact + pathfinder）**：距 release-gate 达标只剩 2 个 P0（见 `docs/skill-eval/release-gate.md` 和任务 N）：
 
-1. **P0**：impact 搜索指引补"配置迁移类变更必查被 gitignore 的 `.env` 和 `.github/` CI 引用（`rg --no-ignore --hidden`）"规则，然后复跑 D16 × gpt-5.4-mini 验证转绿
-2. **P0**：修 `docs/handoff-summary-2026-07-04.md` §6.5 与 D16 结果的矛盾（"分析场景可用"vs 实际 FAIL；"M3 只改 1 层"无数据支撑）
+1. **P0（规则已补，剩复跑）**：impact 搜索盲区规则已落地（`phase-2-context-discovery.md` Step 2.3 第 9 条：配置键/环境变量类变更必查 `rg --no-ignore --hidden` 的 `.env` 和 `.github/` CI）——**剩余动作只有复跑 D16 × gpt-5.4-mini 验证转绿**（需评测环境和 runner 额度）
+2. **P0（已完成）**：`docs/handoff-summary-2026-07-04.md` §6.5 两处矛盾已更正（"分析场景可用"加配置迁移例外标注；"M3 只改 1 层"更正为无运行数据）
 
 P1：D16 补 M3 运行数据；D3 × M3 额度恢复后补跑（上次 403）；拍板 release-gate 标准 2"L 任务 ≤2 轮收敛"按 runner 还是按场景计。
 
@@ -499,6 +499,8 @@ Sonnet 5 子代理在 `E:\agent\intent-chain-smoke\todo-cli\`（仓库外）跑�
 - `eval/real-projects/attribution-2026-07-26.md`——归因总表
 
 **行动清单**：P0 ×2（impact 搜索指引补"配置迁移必查 --no-ignore 的 .env/.github"规则 + 复跑 D16；修 handoff-summary §6.5 与 D16 结果矛盾）；P1 ×3（D16 补 M3 数据、D3 M3 额度恢复后补跑、拍板 release-gate 标准 2"L 任务收敛"按 runner 还是按场景计）。
+
+**进展（同日）**：P0 的便宜部分已完成——搜索盲区规则落地 `phase-2-context-discovery.md` Step 2.3 第 9 条，handoff-summary §6.5 两处矛盾更正，release-gate.md 已记进展。**剩余：复跑 D16 × gpt-5.4-mini（需 runner 额度）+ 三个 P1。**
 
 ---
 
