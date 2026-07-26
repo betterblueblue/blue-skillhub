@@ -2,17 +2,11 @@
 
 > 目的：让别人能按步骤把规则、Skill 和 MCP 真正装起来，而不是只看理念介绍。
 
-## 0. 先确认仓库绝对路径
+## 0. 先进入仓库根目录
 
-本文示例使用：
+本文的 PowerShell 命令默认在克隆下来的仓库根目录执行——先 `cd` 进去，再照抄命令即可。
 
-```text
-E:\agent\blue-skillhub
-```
-
-如果你的仓库不在这个位置，所有示例里的 `E:\agent\blue-skillhub` 都要替换成你本机的绝对路径。
-
-PowerShell 可用下面命令确认：
+只有 MCP 客户端配置这类必须写绝对路径的地方，示例里用 `E:\agent\blue-skillhub` 占位，请替换成你本机的实际路径。不确定当前路径时，可在仓库根目录执行：
 
 ```powershell
 Resolve-Path .
@@ -25,13 +19,13 @@ Resolve-Path .
 复制到 Claude Code 项目：
 
 ```powershell
-Copy-Item "E:\agent\blue-skillhub\claudecode行为规范\ruleblade\CLAUDE.md" "你的项目根目录\CLAUDE.md"
+Copy-Item "claudecode行为规范\ruleblade\CLAUDE.md" "你的项目根目录\CLAUDE.md"
 ```
 
 复制到 Codex 项目：
 
 ```powershell
-Copy-Item "E:\agent\blue-skillhub\claudecode行为规范\ruleblade\CLAUDE.md" "你的项目根目录\AGENT.md"
+Copy-Item "claudecode行为规范\ruleblade\CLAUDE.md" "你的项目根目录\AGENT.md"
 ```
 
 验证：
@@ -47,9 +41,8 @@ Copy-Item "E:\agent\blue-skillhub\claudecode行为规范\ruleblade\CLAUDE.md" "�
 复制到 Codex skills 目录：
 
 ```powershell
-Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.codex\skills\pathfinder" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.codex\skills\impact" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.codex\skills\impact-pro" -Recurse -Force
+Copy-Item "skills\pathfinder" "$env:USERPROFILE\.codex\skills\pathfinder" -Recurse -Force
+Copy-Item "skills\impact" "$env:USERPROFILE\.codex\skills\impact" -Recurse -Force
 ```
 
 重启 Codex 后验证：
@@ -57,19 +50,17 @@ Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.codex\sk
 ```text
 /pathfinder
 /impact
-/impact-pro
 ```
 
-`/pathfinder` 能进入陌生项目摸底流程，`/impact` / `/impact-pro` 能进入变更意图捕获流程即可。
+`/pathfinder` 能进入陌生项目摸底流程，`/impact` 能进入变更意图捕获流程即可。
 
 ### Claude Code
 
 复制到 Claude skills 目录：
 
 ```powershell
-Copy-Item "E:\agent\blue-skillhub\skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
-Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.claude\skills\impact-pro" -Recurse -Force
+Copy-Item "skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
+Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
 ```
 
 验证：
@@ -77,17 +68,35 @@ Copy-Item "E:\agent\blue-skillhub\skills\impact-pro" "$env:USERPROFILE\.claude\s
 ```powershell
 claude --print -- "/pathfinder 只做测试：请说明 pathfinder 的适用范围，不要写文件"
 claude --print -- "/impact 只做测试：请说明 impact 的适用范围，不要写文件"
-claude --print -- "/impact-pro 只做测试：请说明 impact-pro 的适用范围，不要写文件"
 ```
 
 预期：
 
 - `/pathfinder` 应说明它面向陌生现有项目的只读认知地图。
-- `/impact` 应说明它面向 Java/Spring/MyBatis/RuoYi 类现有系统。
-- `/impact-pro` 应说明它面向已验证 profile 覆盖范围内的多栈现有系统。
-- `/impact` 和 `/impact-pro` 都应强调写操作必须 `确认 Step N`。
+- `/impact` 应说明它面向多技术栈的现有系统变更（Java、Node.js、Python、Go、前端、.NET 等，按 `profiles/` 加载对应规则）。
+- `/impact` 应强调写操作必须 `确认 Step N`。
 
-如果 Claude Code 已配置只读 code graph / repo-map MCP，`/pathfinder`、`/impact` 和 `/impact-pro` 会按各自规则自动探测使用；没有配置也应诚实降级到 Read/Grep，不影响基本流程。Cursor 用户可按 [§4 安装 Codegraph MCP](#4-安装-codegraph-mcp可选) 配置；若 MCP 已连接但没有工具，见 [README FAQ：Codegraph MCP](../README.md#codegraph-mcp-显示已连接但没有工具no-tools)。
+如果 Claude Code 已配置只读 code graph / repo-map MCP，`/pathfinder` 和 `/impact` 会按各自规则自动探测使用；没有配置也应诚实降级到 Read/Grep，不影响基本流程。Cursor 用户可按 [§4 安装 Codegraph MCP](#4-安装-codegraph-mcp可选) 配置；若 MCP 已连接但没有工具，见 [README FAQ：Codegraph MCP](../README.md#codegraph-mcp-显示已连接但没有工具no-tools)。
+
+### intent-chain 六件套（0→1 链路，可选）
+
+从模糊想法到验收的六步链路：intent-anchor → intent-prd → intent-design → intent-issues → intent-dev → intent-verify。`_common` 是六件套共享的校验工具目录（含链路批量校验脚本 `chain_validate.py`），需要一并复制。
+
+Claude Code：
+
+```powershell
+Copy-Item "skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
+Copy-Item "skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
+Copy-Item "skills\intent-prd" "$env:USERPROFILE\.claude\skills\intent-prd" -Recurse -Force
+Copy-Item "skills\intent-design" "$env:USERPROFILE\.claude\skills\intent-design" -Recurse -Force
+Copy-Item "skills\intent-issues" "$env:USERPROFILE\.claude\skills\intent-issues" -Recurse -Force
+Copy-Item "skills\intent-dev" "$env:USERPROFILE\.claude\skills\intent-dev" -Recurse -Force
+Copy-Item "skills\intent-verify" "$env:USERPROFILE\.claude\skills\intent-verify" -Recurse -Force
+```
+
+Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。
+
+验证：`/intent-anchor` 能触发，并说明它只负责产出 `INTENT.md`、不直接写代码。
 
 ### 可选：启用 Claude Code 写前门禁 Hook
 
@@ -97,10 +106,10 @@ claude --print -- "/impact-pro 只做测试：请说明 impact-pro 的适用范�
 
 ```powershell
 New-Item "你的项目根目录\.claude" -ItemType Directory -Force
-Copy-Item "E:\agent\blue-skillhub\.claude\hooks" "你的项目根目录\.claude\hooks" -Recurse -Force
+Copy-Item ".claude\hooks" "你的项目根目录\.claude\hooks" -Recurse -Force
 ```
 
-把 `E:\agent\blue-skillhub\.claude\hooks\impact-write-gate.settings.example.json` 的 `PreToolUse` 配置合并到目标项目的 `.claude/settings.json` 或 `.claude/settings.local.json`，然后在目标项目根目录放一个空文件：
+把 `.claude\hooks\impact-write-gate.settings.example.json` 的 `PreToolUse` 配置合并到目标项目的 `.claude/settings.json` 或 `.claude/settings.local.json`，然后在目标项目根目录放一个空文件：
 
 ```powershell
 New-Item "你的项目根目录\.impact-protected" -ItemType File
@@ -113,7 +122,7 @@ New-Item "你的项目根目录\.impact-protected" -ItemType File
 进入 MCP 目录：
 
 ```powershell
-cd E:\agent\blue-skillhub\mcp\web-search-mcp
+cd mcp\web-search-mcp
 npm install
 npx playwright install chromium
 ```
@@ -154,14 +163,13 @@ MCP JSON 示例：
 
 ## 4. 安装 Codegraph MCP（可选）
 
-适用：Cursor 等支持 MCP 的客户端；给 Pathfinder / Impact / Impact-Pro 提供只读结构索引（入口、依赖边、callers 等）。不是前置必装项，未配置时会降级到 Read/Grep。
+适用：Cursor 等支持 MCP 的客户端；给 Pathfinder / Impact 提供只读结构索引（入口、依赖边、callers 等）。不是前置必装项，未配置时会降级到 Read/Grep。
 
 ### 4.1 建索引
 
 在**要打开的工作区根目录**执行（只需一次）：
 
 ```powershell
-cd E:\agent\blue-skillhub
 codegraph init
 ```
 
@@ -207,14 +215,14 @@ pip install requests
 查看模板：
 
 ```powershell
-python E:\agent\blue-skillhub\skills\vl-vision\vl_vision.py --list-templates
+python skills\vl-vision\vl_vision.py --list-templates
 ```
 
 配置 key 后测试：
 
 ```powershell
 $env:SILICONFLOW_API_KEY="sk-your-key"
-python E:\agent\blue-skillhub\skills\vl-vision\vl_vision.py path\to\image.png
+python skills\vl-vision\vl_vision.py path\to\image.png
 ```
 
 ## 6. 常见踩坑
@@ -251,10 +259,9 @@ Cursor 的 Shared MCP **不一定**会把当前 workspace 的工作目录传给�
 
 **解决办法（推荐：项目级 wrapper）**
 
-1. **先建索引**（目标仓库根目录，只需一次）：
+1. **先建索引**（cd 到目标仓库根目录，只需一次）：
 
 ```powershell
-cd E:\agent\blue-skillhub
 codegraph init
 ```
 
@@ -313,7 +320,7 @@ Pathfinder / Impact 在 MCP 不可用时会退回到 Read/Grep，不影响基本
 
 - RuleBlade 能被目标项目读取。
 - `/pathfinder` 能触发，且只说明只读摸底范围。
-- `/impact` 和 `/impact-pro` 能触发。
+- `/impact` 能触发。
 - Web Search MCP 服务能手动启动；MCP 客户端能看到 3 个 web-search 工具。
 - （可选）Codegraph MCP 客户端能看到 4 个 codegraph 工具。
-- `impact` / `impact-pro` 在只分析测试中不会写文件，并明确 `_active-state.md` 不能替代 `确认 Step N`。
+- `impact` 在只分析测试中不会写文件，并明确 `_active-state.md` 不能替代 `确认 Step N`。
