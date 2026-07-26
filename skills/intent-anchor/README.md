@@ -17,7 +17,7 @@ IntentAnchor 先把用户原话、候选能力和明确取舍写进文件。后�
 我想做一个帮助开发者整理跨会话工作进度的工具，但还没想清楚具体功能。
 ```
 
-IntentAnchor 会通过几轮对话把想法整理成 `INTENT.md` 草稿，经你全文确认后写入 `intent-chain/{链路目录}/intent.md`。链路目录是本次产品的专属输出目录，后续五个 Skill（PRD、设计、工单、开发、验收）的产物都放在同一目录。写入前会运行 `intent_validate.py` 的 14 项检查。
+IntentAnchor 会通过几轮对话把想法整理成 `INTENT.md` 草稿，经你全文确认后写入 `intent-chain/{链路目录}/intent.md`。链路目录是本次产品的专属输出目录，后续五个 Skill（PRD、设计、工单、开发、验收）的产物都放在同一目录。写入前会运行 `intent_validate.py` 的 15 项检查。
 
 下一步：把 `intent.md` 交给 [intent-prd](../intent-prd/) 生成 PRD。
 
@@ -100,7 +100,7 @@ Phase 2.5：语义复核
         ↓
 Phase 3：确认并写入
   先在对话中展示完整草稿，用户确认全文后才写文件
-  运行 14 项结构与交叉引用检查
+  运行 15 项结构与交叉引用检查
         ↓
 Phase 4：完成
   intent.md 已写入 intent-chain/{链路目录}/
@@ -113,7 +113,7 @@ Phase 4：完成
 
 **已答不重问**：用户在本会话已明确回答过的事项（如开场就说了"没有性能要求"），不再重复提问，直接引用原话记录；未回答过的事项仍必须主动询问。
 
-`intent_validate.py` 运行 14 项检查（V1-V14）：
+`intent_validate.py` 运行 15 项检查（V1-V15）：
 
 | 检查项 | 检查内容 |
 |---|---|
@@ -131,6 +131,7 @@ Phase 4：完成
 | V12 | 验收路径节存在且格式正确 |
 | V13 | 性能要求节存在且有用户确认 |
 | V14 | 安全要求节存在且有用户确认 |
+| V15 | 术语表原始术语不得出现在能力名（能力命名用人话侧，防止术语沿能力名繁殖到下游） |
 
 ## 后续阶段怎么核对
 
@@ -157,7 +158,7 @@ intent-anchor/
 │   ├── INTENT.md                     ← 当前输出模板
 │   └── 阶段核对表.md                 ← 可选人工检查表
 ├── scripts/
-│   └── intent_validate.py            ← 14 项结构与交叉引用检查
+│   └── intent_validate.py            ← 15 项结构与交叉引用检查
 └── tests/
     ├── fixtures/valid-intent.md       ← 当前契约的有效样本
     └── test_intent_validate.py        ← 行为回归测试

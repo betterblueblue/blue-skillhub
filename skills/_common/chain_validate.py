@@ -91,6 +91,7 @@ def main() -> int:
         sys.path.insert(0, str(Path(__file__).resolve().parent))
         try:
             from d5_check import check as d5_run
+            from term_check import check as term_run
         finally:
             sys.path.pop(0)
         d5_passes, d5_fails = d5_run(chain_dir)
@@ -99,8 +100,16 @@ def main() -> int:
             rows.append(("D5 漂移交叉检查", "FAIL", "; ".join(d5_fails[:3])))
         else:
             rows.append(("D5 漂移交叉检查", "PASS", d5_passes[0] if d5_passes else ""))
+        # 术语落地交叉检查：原始术语不得出现在前端源码用户可见内容（见 term_check.py）
+        term_passes, term_fails = term_run(chain_dir)
+        if term_fails:
+            exit_code = 1
+            rows.append(("术语落地交叉检查", "FAIL", "; ".join(term_fails[:3])))
+        else:
+            rows.append(("术语落地交叉检查", "PASS", term_passes[0] if term_passes else ""))
     else:
         rows.append(("D5 漂移交叉检查", "跳过", "intent.md 缺失"))
+        rows.append(("术语落地交叉检查", "跳过", "intent.md 缺失"))
 
     print(f"\n{'=' * 60}")
     print(f"intent-chain 链路校验: {chain_dir}")
