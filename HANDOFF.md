@@ -1,7 +1,7 @@
 # 交接文档
 
 > 写给完全没有上下文的新会话。最近更新：2026-07-26。
-> 本文档覆盖十一个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、impact V23/V24 可校验契约补丁（已完成）、intent-chain 评审修复 P0+P1+文档一致性（已完成，已强模型验证）、impact 评审缺点修复 V23 白名单+SKILL.md 精简+评测脚本修复（已完成，已强模型验证）、强模型验证+校验器盲区修复（任务 J，已完成，未提交）、blue-interview 优化（部分完成，待补测）。
+> 本文档覆盖十二个独立任务：intent-anchor 改造（已完成）、intent-prd / intent-issues 新建（已完成）、intent-dev / intent-verify 拆分与性能安全要求前移（已完成）、README 同步与输出目录/命名统一（已完成）、intent-chain 校验脚本重构（已完成）、intent-design 新建与下游消费（已完成）、impact V23/V24 可校验契约补丁（已完成）、intent-chain 评审修复 P0+P1+文档一致性（已完成，已强模型验证）、impact 评审缺点修复 V23 白名单+SKILL.md 精简+评测脚本修复（已完成，已强模型验证）、强模型验证+校验器盲区修复（任务 J，已完成，未提交）、blue-interview 优化（部分完成，待补测）。
 
 ---
 
@@ -380,6 +380,44 @@ Fable 5 对任务 H/I 的产出做对抗性验证，发现并直接修复了以�
 **追加修复（同日）**：verify_validate 的 design.md 从可选改为必传——CLI 缺第 4 个路径或文件不存在直接报错退出（不再静默降级）；validate() 的 design_content 为空时 V8 FAIL（与 architecture.md 同等待遇）。测试 55 passed（+3：缺 design FAIL、CLI 缺参数、CLI 路径不存在）。
 
 **遗留 TODO**：P3（真实 0→1 项目跑通 intent-chain 全链路）——用户确认暂不跑，V8 新语义（状态分流）等真实运行时一并检验。
+
+---
+
+## 任务 K：intent-chain 首次真实冒烟 + 确认粒度统一 + 轻量档（2026-07-26，已完成）
+
+### 冒烟测试
+
+Sonnet 5 子代理在 `E:\agent\intent-chain-smoke\todo-cli\`（仓库外）跑通六阶段全链（todo CLI，真实 pytest 10/10 绿，4 条路径 V3，六个校验器最终全 0）。31 分钟 / 35.8 万 token / 112 次工具调用。摩擦日志在该目录 `friction-log.md`。
+
+发现并已修复（P0，已提交 `218d809`）：
+- **A-1 路径契约矛盾**：任务 D 统一目录时漏改 `intent_validate.py` 的 `_path_error()`，旧契约卡死六阶段入口——已改为 `intent-chain/{链路目录}/intent.md` 新契约
+- **B-1 空格分词误杀**："CLI 入口"被 `[、，,\s→]` 拆散——design_validate `_split_tokens` 和 verify_validate V8 涉及模块解析去掉 `\s`
+
+### 确认粒度统一（P1，五条规则）
+
+实测总确认 21 次（严格字面 27 次），anchor 一阶段占 9 次。修复：
+- R1 已答不重问（anchor 强制规则 7 + 步骤 6/7/10/11；设计素材的目录检查保留）
+- R2 AFK 工单批量授权（dev Phase 2：开工列文件清单一次确认=写入授权；HITL 保持逐工单）——同时解决"确认结果后写入项目"与 TDD 需先落盘的时序矛盾
+- R3 issues Phase 3 从摘要级确认改为完整草稿全文确认
+- R4 六个 skill 统一："确认"两字即构成全文确认，"继续/嗯/可以"不算
+- R5 PRD 模板可选子节改为"没有则删除本子节"，与 SKILL.md「如果有」和 fixture 省略写法对齐
+
+顺带修复：四个 skill 的"下一步参见 README"死链改为直接点名下一个 skill 和输入文件；intent-issues Phase 5 遗留的旧式交接块（内容还是错的）同步清理；intent-dev allowed-tools 补 Edit。
+
+### 轻量档（B′ 方案）
+
+- 触发：anchor Phase 1 新增定档步骤，四条件（可感知能力≤5/单用户无权限/无 DB/无对外 API）全满足 + 用户确认；档位+依据+原话写入 INTENT.md 第 2 节（模板已加档位行）
+- 减负：prd/design 薄写法 + 路径确认并入草稿确认；issues 单 AFK 工单直行；verify 强度不降
+- 保险：升档单向（anchor 强制规则 8）；**校验器零改动**（档位行探测：函数级 14 PASS/0 FAIL，CLI 新路径契约退出码 0）
+
+### 验证
+
+七套件 315 passed；skills 目录 grep 无残留 README 死链。改动均为 SKILL.md/模板文案，未触碰校验器逻辑。
+
+### 遗留
+
+- 建议再跑一次冒烟（轻量档路径）实测确认次数降幅（预期 21 → 个位数）
+- 评审 W3（D5 漂移复核机械化）、W5（chain_validate.py 跑批）、W7（防漂移测试）仍在待办
 
 ---
 

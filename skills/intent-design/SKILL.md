@@ -24,6 +24,14 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. 必须存在通过 `intent_validate.py` 校验的 `INTENT.md`。没有则停止，提示用户先运行 intent-anchor。
 2. 必须存在通过 `prd_validate.py` 校验的 `PRD`。没有则停止，提示用户先运行 intent-prd。
 
+## 轻量档
+
+INTENT.md 第 2 节标注轻量档时：
+
+- 两份文档允许薄写法：架构概览两三句、各表每行一条、能力设计每能力 3-5 行。必需章节和表结构不变，`design_validate.py` 照常运行。
+- Phase 1 的路径确认并入草稿确认（草稿开头列出输入文件路径）。
+- 设计过程中发现需要数据库/权限/对外 API 时，触发升档单向规则：停下来告知用户升为标准档。
+
 ## 工作流程
 
 ### Phase 1：前置检查
@@ -83,7 +91,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 ### Phase 5：完成
 
-`architecture.md` 和 `design.md` 已写入 `intent-chain/{链路目录}/`。下一步参见 README「从零开始开发」的链路图。
+`architecture.md` 和 `design.md` 已写入 `intent-chain/{链路目录}/`。下一步：运行 intent-issues，输入 intent.md、prd.md 和本次产出的 architecture.md、design.md。
 
 ## 强制规则
 
@@ -92,7 +100,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 3. **每条验收路径必须出现在关键数据流中**：不得跳过。
 4. **额外结构必须写出具体场景和依据**：不许写"为了扩展性"这类抽象理由；依据只能是代码位置、用户原话或"无依据，属于假设"。
 5. **不写接口签名、字段类型、目录结构**：那些属于实现。
-6. **先确认再写文件**：在对话中展示完整草稿，得到明确确认后才写入。
+6. **先确认再写文件**：在对话中展示完整草稿，得到明确确认后才写入。用户回复“确认”即构成全文确认；“继续”“嗯”“可以”不算。
 7. **结构校验必须通过**：写入后运行 `design_validate.py`（需传入 architecture.md、design.md 和 intent.md 三个路径），校验器会交叉检查模块引用、能力覆盖、假设合规性。
 
 ## architecture.md 必需章节

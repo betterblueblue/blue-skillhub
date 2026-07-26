@@ -30,6 +30,10 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 - 偏好多个薄切片，而非少数厚切片。
 - 工单可以是 HITL（需人工交互）或 AFK（可自动完成）。优先 AFK。
 
+## 轻量档
+
+INTENT.md 第 2 节标注轻量档时，允许单工单直行：一个 AFK 工单覆盖全部验收路径（Acceptance criteria 引用所有路径编号，涉及模块列出全部涉及模块），Blocked by 写无。`issues_validate.py` 照常运行，路径覆盖检查不降级。
+
 ## 工单与验收路径的关系
 
 工单按垂直切片拆分，不按验收路径拆分。但每条验收路径必须被至少一个工单覆盖：
@@ -71,13 +75,13 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 ### Phase 3：用户确认
 
-1. 展示工单列表，每个工单显示标题、类型、依赖、覆盖的 User Stories。
+1. 展示**完整工单草稿**（每个工单含 What to build、Acceptance criteria、Blocked by、User stories covered、涉及模块），不是只有标题摘要——与其他阶段的全文确认标准一致。
 2. 询问用户：
    - 粒度是否合适？（太粗 / 太细）
    - 依赖关系是否正确？
    - 是否需要合并或拆分？
    - HITL / AFK 标记是否正确？
-3. 迭代直到用户确认。
+3. 迭代直到用户确认全文。用户回复“确认”即构成全文确认；“继续”“嗯”“可以”不算。
 
 输出：用户确认后的工单列表。
 
@@ -96,17 +100,9 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 输出：通过校验的工单文件。
 
-### Phase 5：交接
+### Phase 5：完成
 
-给用户以下提示：
-
-```text
-工单已生成。下一步用 intent-dev 开发——按 TDD 循环逐个工单开发，每个工单完成后实际运行验证。
-
-读取 intent-chain/{链路目录}/intent.md 和 prd.md，开始拆工单。工单写入同一目录下的 issues.md。全部工单开发完成后，用 intent-dev 做开发。
-
-architecture.md 和 design.md 是强制前置，开发时参照其中的模块边界和技术选型。
-```
+`issues.md` 已写入 `intent-chain/{链路目录}/`。下一步：运行 intent-dev，输入 intent.md、prd.md、issues.md、architecture.md 和 design.md，按依赖顺序逐工单开发。
 
 ## 强制规则
 
@@ -114,7 +110,7 @@ architecture.md 和 design.md 是强制前置，开发时参照其中的模块�
 2. **每条验收路径至少被一个工单覆盖**：未被覆盖的不得跳过。
 3. **工单的 Acceptance criteria 必须引用验收路径编号**，并用 Given/When/Then 结构拆解验收条件。
 4. **设计标准、术语表、性能和安全要求约束必须传递到工单**。性能要求引用 PF 编号，安全要求引用 SF 编号。
-5. **先确认再写文件**。
+5. **先确认再写文件**：展示完整工单草稿，用户回复“确认”即构成全文确认。
 6. **结构校验必须通过**：写入后运行 `issues_validate.py`（需传入 issues.md、intent.md、prd.md 和 architecture.md 四个路径），校验器会交叉检查验收路径、保留能力、设计标准、术语表、性能和安全要求是否与 INTENT.md 一致，以及 PRD 的 Then/And 条件是否被工单覆盖，以及工单的"涉及模块"是否引用了架构文档中定义的模块名。
 
 ## 工单必需段落
