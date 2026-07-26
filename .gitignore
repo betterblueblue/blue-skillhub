@@ -18,6 +18,7 @@ skills/*/tests/
 !skills/intent-dev/tests/
 !skills/intent-verify/tests/
 !skills/pathfinder/tests/
+!skills/pathfinder/tests/fixtures/degradation-trap/.env
 !skills/impact/tests/e2e/
 !skills/impact/tests/test_scripts/
 test-projects/
