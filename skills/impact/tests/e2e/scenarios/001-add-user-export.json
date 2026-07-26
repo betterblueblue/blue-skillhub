@@ -1,0 +1,41 @@
+{
+  "id": "001-add-user-export",
+  "title": "新增用户导出 Excel 功能（含权限控制 + 异步任务）",
+  "skill": "impact",
+  "stack": "java-spring-mybatis",
+  "fixture": {
+    "project": "RuoYi-Vue",
+    "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
+    "commit": "41720e624c5a668c7d3777835e4c87095a7a1dfd"
+  },
+  "user_query": "用户列表页要能导出 Excel，把选中的用户导出到 Excel，包含所有字段。要权限控制（仅 'system:user:export' 权限的能用），数据量大用异步任务处理。",
+  "expected_classification": "full",
+  "expected_iron_rules": ["#2"],
+  "expected_change_impact_name": "add-user-export-excel",
+  "expected_doc_files": [
+    "000-context-pack.md",
+    "010-requirements.md",
+    "020-design.md",
+    "030-implementation.md",
+    "050-validation/001-add-export-permission.sql",
+    "050-validation/002-export-flow.sh",
+    "060-preflight.md",
+    "090-execution-record.md"
+  ],
+  "expected_modified_files_min": 3,
+  "expected_modified_files_max": 12,
+  "expected_new_files_min": 1,
+  "expected_compile_passes": true,
+  "evaluation_dimensions": [
+    "doc_completeness",
+    "doc_quality_non_placeholder",
+    "code_correctness",
+    "code_minimality_no_overscope",
+    "iron_rules_followed",
+    "compile_passes",
+    "style_consistency",
+    "unit_tests_present",
+    "performance_assessment"
+  ],
+  "evaluation_threshold": "all_dimensions_must_pass"
+}
