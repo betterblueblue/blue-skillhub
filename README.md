@@ -157,9 +157,9 @@ intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 条�
 
 ### IntentPRD 和 IntentIssues：让 INTENT.md 的约束一路传到工单
 
-[IntentPRD](skills/intent-prd/) 和 [IntentIssues](skills/intent-issues/) 是 Blue SkillHub 自己开发的两个 Skill，分别负责从 `INTENT.md` 生成 PRD 和拆分工单。
+[IntentPRD](skills/intent-prd/) 和 [IntentIssues](skills/intent-issues/) 改造自 Matt Pocock 的 [to-spec](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spec) 和 [to-tickets](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-tickets)（MIT 许可；早期版本叫 to-prd / to-issues，有的人装的是旧名字），改成从 `INTENT.md` 生成 PRD 和拆分工单。
 
-之所以自己做而不直接用 Matt Pocock 的 [to-spec](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spec) 和 [to-tickets](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-tickets)（早期版本叫 to-prd / to-issues，有的人装的是旧名字），是因为第三方 Skill 不认识 `INTENT.md` 的结构。IntentAnchor 产出的设计标准、术语表、验收路径、性能要求和安全要求，如果交给第三方 Skill，只能靠交接 prompt 注入约束——下游 Skill 不会主动检查这些约束是否被遵守，传递不可靠。
+之所以要改而不是直接用原版，是因为原版不认识 `INTENT.md` 的结构。IntentAnchor 产出的设计标准、术语表、验收路径、性能要求和安全要求，如果交给第三方 Skill，只能靠交接 prompt 注入约束——下游 Skill 不会主动检查这些约束是否被遵守，传递不可靠。
 
 IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设计标准映射到 PRD 的「实现决策」，把验收路径映射到「验收标准」，把术语表传递到工单的界面文案约束。IntentIssues 还会自动检查所有验收路径是否被至少一个工单覆盖。
 
@@ -443,6 +443,8 @@ Pathfinder 和 ImpactRadar 共用一套真实项目回归测试；IntentAnchor �
 - [历史测试材料](docs/archive/2026-06/benchmarks/)：2026-06-09 之前的写入授权测试和模型能力测试，现已归档。
 
 ## 致谢
+
+IntentPRD 和 IntentIssues 改造自 Matt Pocock 的 [to-spec 和 to-tickets](https://github.com/mattpocock/skills)（早期版本叫 to-prd / to-issues）。原项目以 MIT 许可发布，版权归原作者所有；本仓库在其基础上改成原生解析 `INTENT.md`，并补上验收路径编号引用、覆盖检查和配套校验脚本。
 
 律刃最初参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后来根据中文编码任务和复杂变更测试不断调整。
 

@@ -6,7 +6,9 @@
 
 ## 为什么需要它
 
-intent-anchor 产出 `INTENT.md` 后，需要把意图转化为 PRD 才能进入任务拆分。第三方 to-prd 不认识 `INTENT.md` 的结构：设计标准、术语表这些约束只能靠一段转述提示词带过去，下游也不会检查它们有没有被遵守。如果没有 `INTENT.md`，直接用原版 to-prd 即可。
+本 Skill 改造自 Matt Pocock 的 [to-spec](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spec)（MIT 许可，版权归原作者；早期版本叫 to-prd）。
+
+intent-anchor 产出 `INTENT.md` 后，需要把意图转化为 PRD 才能进入任务拆分。原版不认识 `INTENT.md` 的结构：设计标准、术语表这些约束只能靠一段转述提示词带过去，下游也不会检查它们有没有被遵守。如果没有 `INTENT.md`，直接用原版即可。
 
 Intent-PRD 直接解析 `INTENT.md` 各节，把能力表、验收路径、设计标准和术语表映射到 PRD 对应段落，并用校验脚本自动检查覆盖情况。
 
