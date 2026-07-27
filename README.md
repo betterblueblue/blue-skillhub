@@ -51,7 +51,7 @@ flowchart TD
 
 | 你现在的处境 | 现在先做什么 | 用完以后 |
 |---|---|---|
-| 只有一个模糊想法，还说不清给谁用、解决什么问题 | 用 [IntentAnchor](skills/intent-anchor/) 把目标、取舍和不可妥协项写进 `INTENT.md` | 目标明确后，用 [IntentPRD](skills/intent-prd/) 生成 PRD → [IntentDesign](skills/intent-design/) 做技术方案设计 → [IntentIssues](skills/intent-issues/) 拆工单 → [IntentDev](skills/intent-dev/) 开发 → [IntentVerify](skills/intent-verify/) 验收；没有 `INTENT.md` 时用原版 to-prd / to-issues |
+| 只有一个模糊想法，还说不清给谁用、解决什么问题 | 用 [IntentAnchor](skills/intent-anchor/) 把目标、取舍和不可妥协项写进 `INTENT.md` | 目标明确后，用 [IntentPRD](skills/intent-prd/) 生成 PRD → [IntentDesign](skills/intent-design/) 做技术方案设计 → [IntentIssues](skills/intent-issues/) 拆工单 → [IntentDev](skills/intent-dev/) 开发 → [IntentVerify](skills/intent-verify/) 验收；没有 `INTENT.md` 时，用第三方 [to-spec](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spec) / [to-tickets](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-tickets) 即可 |
 | 已经知道要做什么，但不确定架构和技术路线 | 用 [开工前调研开源项目](prompt/open-source-project-research.md) 比较真正相似的项目 | 看过证据并确认方案后再开始开发 |
 | 方向和方案已经明确，准备从零实现完整产品 | 完整流程选 [Superpowers](https://github.com/obra/superpowers)，按需组合选 [Skills for Real Engineers](https://github.com/mattpocock/skills) | 如果模型仍然常把简单需求做复杂，可以再用 [Ponytail](https://github.com/DietrichGebert/ponytail) 强化“简单优先” |
 | 刚接手一个陌生仓库，不知道入口和模块关系 | 用 [Pathfinder](skills/pathfinder/) 只读摸清项目 | 有具体改动时进入 ImpactRadar |
@@ -131,9 +131,9 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方
 - **接手陌生项目并准备修改**：律刃 → Pathfinder → 需求仍然模糊时使用 IntentAnchor → ImpactRadar → 独立验收 → 提交前整理。
 - **熟悉项目中的明确改动**：律刃 → ImpactRadar → 验证 → 独立验收或提交前整理。不必为了流程完整强行运行 Pathfinder。
 - **开发中途需求改变**：先暂停修改 → 需求变更对账 → 目标变化时回到 IntentAnchor，改动范围变化时回到 ImpactRadar。
-- **问题久攻不下**：如果分不清哪些是事实、哪些是猜测，先卡住时重新梳理；如果 bug 本身很明确只是找不到根因，先按系统性排查造出可稳定复现的失败信号。有新线索就做一次针对性验证 → 仍无新方向时生成找外援材料并换模型。
+- **问题久攻不下**：如果分不清哪些是事实、哪些是猜测，先卡住时重新梳理；如果 bug 本身很明确只是找不到根因，先用 diagnosing-bugs 造出可稳定复现的失败信号。有新线索就做一次针对性验证 → 仍无新方向时生成找外援材料并换模型。
 - **跨会话继续工作**：旧会话生成 `HANDOFF.md` → 新会话读取并核对现场；没有交接文档时，改用无交接恢复现场。
-- **实现完成准备交付**：如果 diff 已经说不清，先整理改动；如果改动范围清楚，先独立验收。想在提交前把代码质量也过一遍，用 `/code-review` 这类工具（注意别和链路已有的检查重复，见下文）。验收发现问题就返回实现环节，最终提交前再检查一次工作区。
+- **实现完成准备交付**：如果 diff 已经说不清，先整理改动；如果改动范围清楚，先独立验收。想在提交前把代码质量也过一遍，用 `/code-review` 这类工具（注意别和链路已有的检查重复，见[代码评审](#代码评审)）。验收发现问题就返回实现环节，最终提交前再检查一次工作区。
 
 ## 从零开始开发
 
@@ -159,11 +159,11 @@ intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 条�
 
 [IntentPRD](skills/intent-prd/) 和 [IntentIssues](skills/intent-issues/) 是 Blue SkillHub 自己开发的两个 Skill，分别负责从 `INTENT.md` 生成 PRD 和拆分工单。
 
-之所以自己做而不直接用第三方 [to-prd](https://github.com/mattpocock/skills) 和 [to-issues](https://github.com/mattpocock/skills)，是因为第三方 Skill 不认识 `INTENT.md` 的结构。IntentAnchor 产出的设计标准、术语表、验收路径、性能要求和安全要求，如果交给第三方 Skill，只能靠交接 prompt 注入约束——下游 Skill 不会主动检查这些约束是否被遵守，传递不可靠。
+之所以自己做而不直接用 Matt Pocock 的 [to-spec](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spec) 和 [to-tickets](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-tickets)（早期版本叫 to-prd / to-issues，有的人装的是旧名字），是因为第三方 Skill 不认识 `INTENT.md` 的结构。IntentAnchor 产出的设计标准、术语表、验收路径、性能要求和安全要求，如果交给第三方 Skill，只能靠交接 prompt 注入约束——下游 Skill 不会主动检查这些约束是否被遵守，传递不可靠。
 
 IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设计标准映射到 PRD 的「实现决策」，把验收路径映射到「验收标准」，把术语表传递到工单的界面文案约束。IntentIssues 还会自动检查所有验收路径是否被至少一个工单覆盖。
 
-两个 Skill 都强制要求 `INTENT.md` 作为输入；没有 `INTENT.md` 时，直接用原版 to-prd / to-issues 即可。
+两个 Skill 都强制要求 `INTENT.md` 作为输入；没有 `INTENT.md` 时，直接用 to-spec / to-tickets 即可。
 
 **轻量档**：小项目（用户可感知能力 ≤5、单用户、无数据库、无对外 API）可以在 intent-anchor 定档为轻量——文档薄写、确认合并、工单单条直行，但验收路径、假设表、V2 证据和全部校验器不降级。档位记录在 `INTENT.md` 第 2 节，只允许轻量升标准，不允许反向降档。
 
@@ -327,7 +327,7 @@ ImpactRadar 会生成分析文档、要求逐步确认并运行自动检查。�
 
 如果客户端提供 code graph MCP，也可以先用它查找定义和引用；没有时就使用普通代码搜索。
 
-当前版本为 v5.9。完整机制、版本记录和评测数据见 [ImpactRadar README](skills/impact/README.md)。
+当前版本为 v5.10。完整机制、版本记录和评测数据见 [ImpactRadar README](skills/impact/README.md)。
 
 ### IntentAnchor 意图锚定
 
