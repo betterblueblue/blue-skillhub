@@ -434,6 +434,8 @@ Pathfinder 和 ImpactRadar 共用一套真实项目回归测试；IntentAnchor �
 
 [真实项目测试手册](eval/real-projects/runbook.md) 规定：评分必须以独立重跑检查脚本的结果为准，不能引用执行模型自己写的总结；每次运行也必须使用独立的项目副本。
 
+**一次端到端毕业考（2026-07-26）**：真人驾驶、相对弱一档的模型（Sonnet 5），用 intent-chain 六件套一晚交付企业信息撮合平台——后端 288 + 前端 46 个测试全绿，17 条验收路径在浏览器里实际走通，判分方独立复跑 `chain_validate` 7/7。这不是宣传摘要，是带发现清单的判卷报告，见 [毕业考判卷](docs/graduation-exam-2026-07-26.md)。
+
 后续待处理的问题统一记录在 [Skill 改进清单](docs/skill-iteration-backlog.md)，并按优先级说明当前状态和处理条件。
 
 截至 2026-07-04，在当时的模型版本和 56 条测试结果中，**Composer 2.5 Fast 是 Pathfinder 与 ImpactRadar 表现最稳定的低成本模型**。它共有 22 条结果：9 条 PASS、7 条 GATE-RECOVERED、3 条 PASS-WARN、2 条 FAIL、1 条 UNVERIFIED。
