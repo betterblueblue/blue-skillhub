@@ -17,7 +17,7 @@ flowchart TD
 
     B --> B1["需求模糊：IntentAnchor（Skill）"]
     B --> B2["目标明确、方案不明：开源项目调研（Prompt）"]
-    B1 --> B3["进入开发：IntentDev → IntentVerify（Skill）或第三方工具"]
+    B1 --> B3["进入开发：IntentDev → IntentVerify（Skill）或 Superpowers 等第三方"]
     B2 --> B3
     B3 -.-> B4["可选：Ponytail 强化简单优先（第三方）"]
 
@@ -29,12 +29,12 @@ flowchart TD
     D --> D2["越改越乱：卡住时重新梳理（Prompt）"]
     D --> D3["需要换模型：找外援排障（Prompt）"]
     D --> D4["会话已丢失：无交接恢复现场（Prompt）"]
-    D --> D5["找不到 bug 根因：系统性排查（第三方）"]
+    D --> D5["找不到 bug 根因：diagnosing-bugs（第三方）"]
     D2 --> D3
 
     E --> E1["稍后继续：跨会话交接（Prompt）"]
     E --> E2["功能做完：独立验收（Prompt）"]
-    E --> E3["代码过一遍：代码评审（自带 / 第三方）"]
+    E --> E3["代码过一遍：/code-review（自带）"]
     E --> E4["准备提交：提交前整理（Prompt）"]
 ```
 
@@ -44,7 +44,7 @@ flowchart TD
 |---|---|---|
 | **Skill** | 需要先安装，装好后在对话里用 `/技能名` 触发 | [skills/](skills/) 目录，安装方法见下面的「3 分钟上手」 |
 | **Prompt** | 不用安装，打开文件把内容复制给 AI 就行 | [prompt/](prompt/) 目录 |
-| **第三方** | 不属于本仓库，由各自作者维护 | 链接见后文对应章节 |
+| **第三方** | 不属于本仓库，由各自作者维护，安装和用法以上游为准 | 节点里写的就是它的原名，下面表格有直达上游仓库的链接 |
 | **自带** | AI 客户端本身提供的命令，不用装 | 见后文[代码评审](#代码评审)一节 |
 
 图只负责帮你找到入口。下面的表格里每一项都有直达链接，并写清楚什么时候用、用完以后去哪里。
@@ -58,12 +58,12 @@ flowchart TD
 | 已经熟悉项目，准备新增功能、修 Bug 或重构 | 用 [ImpactRadar](skills/impact/) 分析影响并逐步实施 | 完成后做独立验收和提交前整理 |
 | 开发中途需求变了，新旧说法可能混在一起 | 用 [需求变更对账](prompt/requirement-change-reconciliation.md) 找出当前仍然有效的要求 | 目标变了就回到 IntentAnchor；只是改动范围变化就回到 ImpactRadar |
 | 同一个问题反复修改，尝试越来越乱 | 用 [卡住时重新梳理](prompt/stuck-reassessment.md) 区分事实、猜测和已排除项 | 有新方向就继续验证；仍无方向再找外援 |
-| 有一个明确的 bug，但一直找不到根因 | 按[问题排查](#问题排查)先造出可稳定复现的失败信号，再往下查 | 修好后补一个回归测试，避免同样的问题再来一次 |
+| 有一个明确的 bug，但一直找不到根因 | 用第三方 [diagnosing-bugs](https://github.com/mattpocock/skills/tree/main/skills/engineering/diagnosing-bugs) 先造出可稳定复现的失败信号，再往下查（[怎么用](#问题排查)） | 修好后补一个回归测试，避免同样的问题再来一次 |
 | 当前模型已经绕了多轮，准备换更强的模型接手 | 用 [找外援排障](prompt/expert-escalation.md) 整理复现方法、失败尝试和现场 | 把生成的完整指令交给新模型 |
 | 会话快结束了，任务还要跨天或换会话继续 | 用 [跨会话交接](prompt/session-handoff.md) 生成 `HANDOFF.md` | 新会话先读取并核对交接文档 |
 | 原会话已经丢失，也没有可靠的交接记录 | 用 [无交接恢复现场](prompt/workspace-recovery.md) 从 Git 和项目文件还原进度 | 用户确认恢复结果后再继续修改 |
 | 实现会话说任务已经完成，想换个模型从头检查 | 用 [生成独立验收指令](prompt/independent-review-request.md) 准备完整验收材料 | 交给能访问同一工作区的新会话执行验收 |
-| 代码写完了，想在提交前把质量过一遍 | 按[代码评审](#代码评审)选一种方式，别和本仓库已有的检查重复 | 处理完结论再做提交前整理 |
+| 代码写完了，想在提交前把质量过一遍 | Claude Code 用户直接用自带的 `/code-review`，不用安装；另有第三方 [code-review](https://github.com/mattpocock/skills/tree/main/skills/engineering/code-review) 可选，但有一半和本仓库重复（[怎么选](#代码评审)） | 处理完结论再做提交前整理 |
 | 准备提交，但正式改动、调试残留和原有文件混在一起 | 用 [提交前整理改动](prompt/pre-commit-cleanup.md) 先划清提交范围 | 用户确认后再清理、暂存和提交 |
 | 任务依赖截图、设计稿、架构图或报错图片 | 用 [VL 识图](skills/vl-vision/) 提取图片中的信息 | 把结果交给当前主流程，并回到源码或原图核实关键结论 |
 | 需要查询 GitHub、官方文档或外部资料，而当前客户端不能联网 | 接入 [网搜 MCP](mcp/web-search-mcp/) | 打开原始页面核实关键结论，不要只看搜索摘要 |
@@ -241,7 +241,7 @@ Pathfinder 和 ImpactRadar 完成一次任务后，会在回复中附上一段�
 
 **先说一个很多人不知道的事：Claude Code 自带 `/code-review`，不用安装。** 它对当前改动做评审，查正确性 bug 和可以复用、简化的地方，可以按 low / medium / high / max 选强度（越高查得越广，但也会带上一些不太确定的结论），最高一档会派多个 agent 分头查。加 `--fix` 直接把结论应用到工作区，加 `--comment` 发成 PR 行内评论。另外还有 `/security-review` 专查安全问题，`/simplify` 只做简化不查 bug。这几个是 Claude Code 的命令，Codex 用户没有。
 
-如果想要一份可以自己修改的评审规则，可以看 [Skills for Real Engineers](https://github.com/mattpocock/skills/tree/main/skills/engineering) 里的 `code-review`。它从两个角度看代码：**写得规不规范**，以及**做出来的是不是当初说好的**。
+如果想要一份可以自己修改的评审规则，可以用 Matt Pocock 的 [code-review](https://github.com/mattpocock/skills/tree/main/skills/engineering/code-review)（出自 [Skills for Real Engineers](https://github.com/mattpocock/skills)）。它从两个角度看代码：**写得规不规范**，以及**做出来的是不是当初说好的**。
 
 **这里要注意和本仓库的重复**：上面第二个角度——做出来的是不是当初说好的——正是 intent-chain 和 ImpactRadar 已经在做的事，只是做法不同。第三方 Skill 是让模型读一遍代码给结论；本仓库是用校验脚本机械比对能力表、验收路径和模块引用，再由 IntentVerify 逐条走通用户路径确认。**两种选一种即可**，同时用只是重复劳动。
 
@@ -249,7 +249,7 @@ Pathfinder 和 ImpactRadar 完成一次任务后，会在回复中附上一段�
 
 ### 问题排查
 
-同一个仓库里的 `diagnosing-bugs`（有的版本装完叫 `diagnose`）是一套排查硬 bug 的流程：复现 → 缩小范围 → 提假设 → 加观测 → 修 → 补回归测试。
+[diagnosing-bugs](https://github.com/mattpocock/skills/tree/main/skills/engineering/diagnosing-bugs) 同样来自 Matt Pocock 的 [Skills for Real Engineers](https://github.com/mattpocock/skills)（有的版本装完名字是 `diagnose`），是一套排查硬 bug 的流程：复现 → 缩小范围 → 提假设 → 加观测 → 修 → 补回归测试。
 
 它最值得借鉴的是第一步：**先想办法造出一个快、稳定、AI 能自己反复跑的通过/失败信号**，然后再谈别的。有了这个信号，二分查找、验证假设、加日志都只是在消费它；没有这个信号，盯着代码看再久也找不出来。造信号的办法按优先级大致是：写一个会失败的测试 → curl 打接口 → 命令行跑固定输入比对输出 → 用 Playwright 驱动浏览器 → 回放抓下来的真实请求 → 搭一个最小复现环境。
 
