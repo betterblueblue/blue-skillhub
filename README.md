@@ -19,6 +19,10 @@ Blue SkillHub 是一套面向 AI 编码助手的工作流工具。无论是把�
 
 输出是 `chain_validate.py` 的实际运行结果。两张图都是重演而非屏幕录像，出处、完整输出和重新生成方法见 [docs/assets](docs/assets/)。
 
+这三条线共用同一套底层机制——意图写进文件、脚本机械校验、写入门禁——它们的全景关系是这样：
+
+![Blue SkillHub 全景图](docs/assets/overview.png)
+
 ## 先看这里：你现在遇到了什么情况？
 
 不用先研究所有 Skill 和 Prompt。找到最接近你当前处境的一行，从推荐的入口开始即可。
