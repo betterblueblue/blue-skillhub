@@ -6,7 +6,9 @@
 
 ## 为什么需要它
 
-PRD 和设计文件生成后需要拆分为独立可抓取的工单。第三方 to-issues 不认识这套结构：验收路径只能靠一段转述提示词带过去，工单的 Acceptance criteria 不会自动引用路径编号，覆盖情况也没人检查。如果没有 INTENT.md，直接用原版 to-issues 即可。
+本 Skill 改造自 Matt Pocock 的 [to-tickets](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-tickets)（MIT 许可，版权归原作者；早期版本叫 to-issues）。
+
+PRD 和设计文件生成后需要拆分为独立可抓取的工单。原版不认识这套结构：验收路径只能靠一段转述提示词带过去，工单的 Acceptance criteria 不会自动引用路径编号，覆盖情况也没人检查。如果没有 INTENT.md，直接用原版即可。
 
 Intent-Issues 直接读取 INTENT.md 的验收路径，在工单的 Acceptance criteria 中自动引用路径编号，并在输出前自动检查所有路径被至少一个工单覆盖。
 
