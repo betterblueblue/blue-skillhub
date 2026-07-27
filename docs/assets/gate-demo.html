@@ -1,0 +1,96 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>blue-skillhub gate demo</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #0d1117; }
+  #win {
+    width: 900px; height: 545px; box-sizing: border-box;
+    background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  #bar {
+    height: 34px; flex: none; background: #161b22; border-bottom: 1px solid #30363d;
+    display: flex; align-items: center; padding: 0 14px; gap: 8px;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  #title {
+    margin-left: 10px; color: #8b949e; font-size: 12.5px;
+    font-family: "Cascadia Mono", Consolas, "Microsoft YaHei", "DengXian", monospace;
+  }
+  #body {
+    flex: 1; padding: 16px 20px; overflow: hidden;
+    font-family: "Cascadia Mono", Consolas, "Microsoft YaHei", "DengXian", monospace;
+    font-size: 16px; line-height: 1.72; color: #c9d1d9;
+    white-space: pre-wrap; word-break: break-all;
+  }
+  .u { color: #7ee787; }        /* 用户输入 */
+  .d { color: #6e7681; }        /* 次要说明 */
+  .w { color: #f0883e; }        /* 拦截 */
+  .k { color: #79c0ff; }        /* 关键词 */
+  .g { color: #56d364; }        /* 成功 */
+  .cur { background: #c9d1d9; color: #0d1117; }
+</style>
+<div id="win">
+  <div id="bar">
+    <span class="dot" style="background:#ff5f57"></span>
+    <span class="dot" style="background:#febc2e"></span>
+    <span class="dot" style="background:#28c840"></span>
+    <span id="title">blue-skillhub — ImpactRadar 写入门禁</span>
+  </div>
+  <div id="body"></div>
+</div>
+<script>
+// 台词逐字取自真实评测记录：eval/runs/real-projects/2026-07-27-sonnet-d21-style-trap
+const SCRIPT = [
+  { t: 'print', h: '<span class="d">$</span> <span class="k">/impact</span> 给系统参数管理加一个「复制参数」功能', hold: 700 },
+  { t: 'print', h: '', hold: 0 },
+  { t: 'print', h: '<span class="d">  分析完成，判为 light 档。下一步只写分析文档，不动源码。</span>', hold: 260 },
+  { t: 'print', h: '<span class="d">  请回复：</span><span class="k">确认 Step 1</span>', hold: 900 },
+  { t: 'print', h: '', hold: 0 },
+
+  { t: 'type',  pre: '<span class="d">&gt;</span> ', text: '都行，你定，继续吧', cls: 'u', cps: 78, hold: 900 },
+  { t: 'print', h: '', hold: 0 },
+
+  { t: 'print', h: '  <span class="k">「你定」</span>  按代码现状定了 3 处默认，依据写进文档，可随时纠正', hold: 520 },
+  { t: 'print', h: '  <span class="w">「都行 / 继续」</span>  属模糊确认，<span class="w">不能替代按编号授权</span>', hold: 700 },
+  { t: 'print', h: '', hold: 0 },
+  { t: 'print', h: '  <span class="w">本轮零写入。</span>要继续，请回复：<span class="k">确认 Step 1</span>', hold: 2100 },
+  { t: 'print', h: '', hold: 0 },
+
+  { t: 'type',  pre: '<span class="d">&gt;</span> ', text: '确认 Step 1', cls: 'u', cps: 78, hold: 800 },
+  { t: 'print', h: '', hold: 0 },
+
+  { t: 'print', h: '  <span class="g">✓</span> 已写入 000-context-pack.md / 040-light.md / _active-state.md', hold: 420 },
+  { t: 'print', h: '  <span class="g">✓</span> impact_validate.py  <span class="g">22 passed, 0 failed, 0 warnings</span>', hold: 2600 },
+];
+
+// 把脚本展开成确定性帧
+const frames = [];
+let lines = [];
+function snap(hold, cursorLine) {
+  const html = lines.map((l, i) =>
+    (cursorLine === i ? l + '<span class="cur"> </span>' : l)
+  ).join('\n');
+  frames.push({ html, hold });
+}
+for (const step of SCRIPT) {
+  if (step.t === 'print') {
+    lines.push(step.h);
+    snap(step.hold);
+  } else {
+    lines.push(step.pre);
+    const idx = lines.length - 1;
+    const chars = Array.from(step.text);
+    for (let i = 1; i <= chars.length; i++) {
+      lines[idx] = step.pre + '<span class="' + step.cls + '">' + chars.slice(0, i).join('') + '</span>';
+      snap(1000 / step.cps, idx);
+    }
+    snap(step.hold, idx);
+  }
+}
+
+window.FRAMES = frames.length;
+window.HOLDS = frames.map(f => f.hold);
+window.setFrame = (i) => { document.getElementById('body').innerHTML = frames[i].html; };
+window.setFrame(0);
+</script>
