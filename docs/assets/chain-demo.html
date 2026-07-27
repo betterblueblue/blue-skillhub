@@ -1,0 +1,93 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>blue-skillhub chain demo</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #0d1117; }
+  #win {
+    width: 900px; height: 545px; box-sizing: border-box;
+    background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  #bar {
+    height: 34px; flex: none; background: #161b22; border-bottom: 1px solid #30363d;
+    display: flex; align-items: center; padding: 0 14px; gap: 8px;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  #title {
+    margin-left: 10px; color: #8b949e; font-size: 12.5px;
+    font-family: "Cascadia Mono", Consolas, "Microsoft YaHei", "DengXian", monospace;
+  }
+  #body {
+    flex: 1; padding: 16px 20px; overflow: hidden;
+    font-family: "Cascadia Mono", Consolas, "Microsoft YaHei", "DengXian", monospace;
+    font-size: 15.5px; line-height: 1.66; color: #c9d1d9;
+    white-space: pre-wrap; word-break: break-all;
+  }
+  .u { color: #7ee787; }
+  .d { color: #6e7681; }
+  .w { color: #f0883e; }
+  .k { color: #79c0ff; }
+  .g { color: #56d364; }
+  .cur { background: #c9d1d9; color: #0d1117; }
+</style>
+<div id="win">
+  <div id="bar">
+    <span class="dot" style="background:#ff5f57"></span>
+    <span class="dot" style="background:#febc2e"></span>
+    <span class="dot" style="background:#28c840"></span>
+    <span id="title">blue-skillhub — intent-chain 链路交叉校验</span>
+  </div>
+  <div id="body"></div>
+</div>
+<script>
+// 输出逐字取自 chain_validate.py 的真实运行结果（多条失败原因用 … 省略，完整输出见 docs/assets/README.md）
+const SCRIPT = [
+  { t: 'print', h: '<span class="d">$</span> 在 <span class="k">intent.md</span> 里加一条验收路径 <span class="k">P02</span>「导出为 Markdown 文件」', hold: 620 },
+  { t: 'print', h: '<span class="d">  下游六份文档一个字没动</span>', hold: 1100 },
+  { t: 'print', h: '', hold: 0 },
+  { t: 'type',  pre: '<span class="d">$</span> ', text: 'python skills/_common/chain_validate.py intent-chain/…', cls: 'u', cps: 55, hold: 800 },
+  { t: 'print', h: '', hold: 0 },
+
+  { t: 'print', h: '  <span class="g">[PASS]</span> intent.md', hold: 300 },
+  { t: 'print', h: '  <span class="w">[FAIL]</span> prd.md — V4: 验收路径未出现在「验收标准」中: [\'P02\'] <span class="d">…</span>', hold: 380 },
+  { t: 'print', h: '  <span class="w">[FAIL]</span> architecture.md + design.md — A6: 缺少验收路径: [\'P02\']', hold: 380 },
+  { t: 'print', h: '  <span class="w">[FAIL]</span> issues.md — V3: 验收路径未被任何工单覆盖: [\'P02\'] <span class="d">…</span>', hold: 380 },
+  { t: 'print', h: '  <span class="g">[PASS]</span> dev-record.md', hold: 300 },
+  { t: 'print', h: '  <span class="w">[FAIL]</span> verify-record.md — V7: 验收路径缺少 INTENT.md 中的路径: [\'P02\']', hold: 380 },
+  { t: 'print', h: '  <span class="g">[PASS]</span> D5 漂移交叉检查 <span class="d">— 推迟/放弃项未回流到实现</span>', hold: 300 },
+  { t: 'print', h: '  <span class="g">[PASS]</span> 术语落地交叉检查', hold: 500 },
+  { t: 'print', h: '', hold: 0 },
+  { t: 'print', h: '  PASS: 4  跳过: 0  <span class="w">FAIL: 4</span>', hold: 1500 },
+  { t: 'print', h: '', hold: 0 },
+  { t: 'print', h: '  <span class="k">上游改一行，下游谁过期了、为什么过期，一条命令说清楚。</span>', hold: 2800 },
+];
+
+const frames = [];
+let lines = [];
+function snap(hold, cursorLine) {
+  const html = lines.map((l, i) =>
+    (cursorLine === i ? l + '<span class="cur"> </span>' : l)
+  ).join('\n');
+  frames.push({ html, hold });
+}
+for (const step of SCRIPT) {
+  if (step.t === 'print') {
+    lines.push(step.h);
+    snap(step.hold);
+  } else {
+    lines.push(step.pre);
+    const idx = lines.length - 1;
+    const chars = Array.from(step.text);
+    for (let i = 1; i <= chars.length; i++) {
+      lines[idx] = step.pre + '<span class="' + step.cls + '">' + chars.slice(0, i).join('') + '</span>';
+      snap(1000 / step.cps, idx);
+    }
+    snap(step.hold, idx);
+  }
+}
+
+window.FRAMES = frames.length;
+window.HOLDS = frames.map(f => f.hold);
+window.setFrame = (i) => { document.getElementById('body').innerHTML = frames[i].html; };
+window.setFrame(0);
+</script>
