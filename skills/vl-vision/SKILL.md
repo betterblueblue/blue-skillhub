@@ -44,7 +44,7 @@ python vl_vision.py ./images/ --batch
 python vl_vision.py photo.png --json
 
 # 指定模型
-python vl_vision.py photo.png --model Qwen/Qwen3-VL-32B-Instruct
+python vl_vision.py photo.png --model qwen3.8-max
 
 # 查看可用模板
 python vl_vision.py --list-templates
@@ -147,18 +147,28 @@ python vl_vision.py chart.png --prompt "读取图表数据，用 CSV 格式输�
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `VL_PROVIDER` | `siliconflow` | 默认 Provider |
+| `VL_PROVIDER` | `tokenrhythm` | 默认 Provider（可用 `siliconflow` 切换备用渠道） |
 | `VL_MODEL` | （由 Provider 决定） | 默认模型 |
-| `SILICONFLOW_API_KEY` | — | 硅基流动 API Key（必须） |
+| `VL_OPENAI_API_KEY` | — | tokenrhythm 聚合网关 API Key（默认渠道，必须） |
+| `VL_OPENAI_BASE_URL` | `https://tokenrhythm.studio/v1` | tokenrhythm 网关地址（换中转时覆盖） |
+| `SILICONFLOW_API_KEY` | — | 硅基流动 API Key（备用渠道） |
 
 ### .env 文件
 
 在项目根目录创建 `.env` 文件：
 
 ```
-SILICONFLOW_API_KEY=sk-your-key-here
-VL_PROVIDER=siliconflow
-VL_MODEL=Qwen/Qwen3-VL-32B-Instruct
+VL_OPENAI_API_KEY=sk-your-tokenrhythm-key
+VL_PROVIDER=tokenrhythm
+VL_MODEL=qwen3.8-max
+```
+
+### 备用渠道（硅基流动）
+
+如需切回硅基流动，设置 `VL_PROVIDER=siliconflow` 并配置：
+
+```
+SILICONFLOW_API_KEY=sk-your-siliconflow-key
 ```
 
 ## 依赖

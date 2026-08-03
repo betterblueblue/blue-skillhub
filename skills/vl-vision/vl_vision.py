@@ -139,7 +139,7 @@ def main():
     parser.add_argument("--template", "-t", help="Prompt 模板名称")
     parser.add_argument("--prompt", "-p", help="自定义 prompt（覆盖模板）")
     parser.add_argument("--batch", "-b", action="store_true", help="批量模式：分析目录下所有图片")
-    parser.add_argument("--provider", default=None, help="VL Provider（默认: siliconflow）")
+    parser.add_argument("--provider", default=None, help="VL Provider（默认: tokenrhythm）")
     parser.add_argument("--model", "-m", default=None, help="模型标识")
     parser.add_argument("--json", action="store_true", help="以 JSON 格式输出")
     parser.add_argument("--list-models", action="store_true", help="列出可用模型")
