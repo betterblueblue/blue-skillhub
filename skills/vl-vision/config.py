@@ -2,9 +2,11 @@
 vl-vision 配置管理
 
 通过环境变量或 .env 文件配置，支持：
-- VL_PROVIDER: 默认 Provider（默认 siliconflow）
+- VL_PROVIDER: 默认 Provider（默认 tokenrhythm）
 - VL_MODEL: 默认模型（默认由 Provider 决定）
-- SILICONFLOW_API_KEY: 硅基流动 API Key
+- VL_OPENAI_API_KEY: tokenrhythm 聚合网关 API Key（默认渠道，必须）
+- VL_OPENAI_BASE_URL: tokenrhythm 网关地址（可选，默认 https://tokenrhythm.studio/v1）
+- SILICONFLOW_API_KEY: 硅基流动 API Key（备用渠道）
 """
 
 import os
@@ -35,7 +37,7 @@ def load_env():
 
 
 # 默认配置
-DEFAULT_PROVIDER = "siliconflow"
+DEFAULT_PROVIDER = "tokenrhythm"
 
 
 def get_default_provider() -> str:

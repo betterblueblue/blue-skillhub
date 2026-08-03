@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "codegraph": {
-      "command": "E:/agent/blue-skillhub/.cursor/codegraph-mcp.cmd",
-      "args": []
-    }
-  }
-}
