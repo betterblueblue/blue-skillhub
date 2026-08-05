@@ -529,10 +529,10 @@ pip install requests
 python skills/vl-vision/vl_vision.py --list-templates
 ```
 
-配置 `VL_OPENAI_API_KEY` 后，选择一张图片进行测试：
+配置 `STEP_API_KEY` 后，选择一张图片进行测试：
 
 ```powershell
-$env:VL_OPENAI_API_KEY="sk-your-key"
+$env:STEP_API_KEY="sk-your-key"
 python skills/vl-vision/vl_vision.py path/to/image.png
 ```
 

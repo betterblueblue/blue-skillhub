@@ -235,7 +235,7 @@ python skills\vl-vision\vl_vision.py --list-templates
 配置 key 后测试：
 
 ```powershell
-$env:VL_OPENAI_API_KEY="sk-your-key"
+$env:STEP_API_KEY="sk-your-key"
 python skills\vl-vision\vl_vision.py path\to\image.png
 ```
 

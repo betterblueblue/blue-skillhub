@@ -10,13 +10,13 @@ VL Vision 会调用外部视觉语言模型 API，分析本地图片并返回文
 - 既能在命令行手动使用，也能由 AI 编码助手调用。
 - 支持批量分析目录中的图片。
 - API 调用失败时最多重试 3 次。
-- 默认内置 tokenrhythm 聚合网关（OpenAI 兼容），硅基流动作为备用渠道，也可以通过适配器增加其他服务。
+- 默认接入阶跃星辰（OpenAI 兼容），tokenrhythm 聚合网关、硅基流动作为备用渠道，也可以通过适配器增加其他服务。
 
 ## 快速开始
 
 ```bash
 # 1. 配置 API Key
-export VL_OPENAI_API_KEY=sk-your-tokenrhythm-key
+export STEP_API_KEY=sk-your-stepfun-key
 # 或创建 .env 文件
 
 # 2. 安装依赖
@@ -56,7 +56,8 @@ vl-vision/
 └── providers/
     ├── __init__.py       # Provider 注册表
     ├── base.py           # Provider 抽象基类
-    ├── tokenrhythm.py    # tokenrhythm 聚合网关适配器（默认渠道）
+    ├── stepfun.py        # 阶跃星辰适配器（默认渠道）
+    ├── tokenrhythm.py    # tokenrhythm 聚合网关适配器（备用渠道）
     └── siliconflow.py    # 硅基流动适配器（备用渠道）
 ```
 
