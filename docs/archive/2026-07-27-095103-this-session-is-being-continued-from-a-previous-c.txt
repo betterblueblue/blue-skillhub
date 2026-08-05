@@ -1,0 +1,3466 @@
+ ▐▛███▜▌   Claude Code v2.1.220
+▝▜█████▛▘  Fable 5 · API Usage Billing
+  ▘▘ ▝▝    E:\agent\blue-skillhub
+
+
+● Update(skills\intent-anchor\SKILL.md)
+  ⎿  Added 1 line, removed 1 line
+      132  5. 用户授权模型决定时，记录为`用户授权模型决定`，并说明理由。
+      133  6. 询问是否存在不可妥协项；允许回答“没有”。用户已在本会话回答
+           过的，引用原话记录，不再重复问。
+      134  7. **识别设计标准**：检查项目目录中是否存在设计/原型素材（`pro
+           totype/`、`*.fig`、设计稿导出、可点 HTML 等）。如果存在，向用
+           户确认是否作为 UI 验收基线，并记录到第 12 节。如果不存在，记录
+           用户确认“没有设计素材”。目录检查不得跳过——即使用户没有主动提供
+           设计素材，也要检查项目目录；但用户已在本会话明确说过没有设计素
+           材、且目录检查无发现时，直接引用原话记录，不再重复问。
+      135 -8. **标记术语**：逐项审查能力表中的“能力”和“描述”列，识别需要 
+          -向普通人解释才能看懂的行业黑话。为每个术语给出人话翻译和界面文
+          -案，记录到第 13 节。如果能力描述中确实没有术语，记录“无术语需 
+          -要翻译”。                                                     
+      135 +8. **标记术语**：识别需要向普通人解释才能看懂的行业黑话，为每 
+          +个术语给出人话翻译和界面文案，记录到第 13 节。审查范围不限于能
+          +力表的“能力”和“描述”列，还包括需求文档的表头与正文、设计素材的
+          +文件名与页面标题（黑话常从源材料直接进入，如设计稿文件名）。**
+          +判定信号（通用，不依赖任何词表）**：①本会话中需要向用户括注解 
+          +释才能说清的领域词；②用户问过“这是什么意思”的词；③只在该行业内
+          +部通用、对外行必须翻译的词——命中任一信号即提请登记，由用户确认
+          +翻译。术语一经登记，能力命名同步改用人话侧（V15 会拦截原始术语
+          +进入能力名，实现层另有 term_check 反查界面文案）。如果确实没有
+          +术语，记录“无术语需要翻译”。                                  
+      136  9. **定义验收路径**：从第 4 节的保留能力中，推导用户可感知的端
+           到端验收路径。每条路径包含：路径名称、对应能力 ID、入口、关键
+           步骤（2-5 步）、预期结果。用户可感知的保留能力至少出现在一条路
+           径中；基础设施类能力（如数据持久化、权限校验）不强制。展示给用
+           户确认后，记录到第 14 节。如果没有用户可感知的保留能力，记录“
+           无验收路径”并请用户确认。
+      137     **粒度守则（防止关键行为掉进路径概要的缝里）**：一条路径捆
+           绑多个能力时，"预期结果"不能只写路径级概要——每个被捆绑能力的**
+           关键行为**要能在预期结果里找到自己的判定依据。自检问题："如果
+           这个行为没做，按这条路径验收会不会发现？"不会发现 → 要么把该行
+           为写进预期结果，要么当场告知用户"此行为不在验收范围"由用户决定
+           补路径还是接受。能力数明显多于路径数时（如超过 3 倍），主动提
+           醒用户粒度偏粗的风险。
+      138  10. **询问性能要求**：主动询问用户是否有性能要求（如"响应时间 
+           < 200ms"、"支持 1000 并发"、"首屏加载 < 1s"）。有要求 → 逐条记
+           录到第 15 节，每条包含要求内容、对应能力 ID 和用户确认原话。没
+           有要求 → 记录"无性能要求"并请用户确认。记录不得跳过；用户已在
+           本会话明确回答过的，引用原话记录，不再重复问；未回答过的必须主
+           动询问。
+
+  Committed 8b38cdb, 9585c8b, pushed to master, ran 1 shell command (ctrl+o to expand)
+
+● 收口了。你点的这个问题现在有了不写死任何词的通用答案，完整回路是四步：
+
+  发现 ──→ 登记 ──→ 改名 ──→ 反查
+  （通用信号）（用户确认）（V15 源头拦）（term_check 界面兜底）
+
+  发现层（本次新做的，纯通用）——"什么算黑话"不再靠模型主观判断，改用三个可观察信
+  号，命中任一即提请登记：
+
+  1. 本会话中需要向你括注解释才能说清的词（AFK 就是这么暴露的）
+  2. 你**问过"这是什么意思"**的词（金刚区就是这么暴露的）
+  3. 只在行业内部通用、对外行必须翻译的词
+
+  配套两个加固：anchor 第 8 步的扫描范围从"能力表两列"扩到源材料本身（需求文档表
+  头正文、设计稿文件名——金刚区当初就是从 金刚区版.png
+  这个文件名混进来的）；六件套的"对用户说人话"规则全部接上回路——链路任何阶段给你
+  解释过一个没进表的词，都必须提请补登记，下游发现的也会导流回 anchor 补表。
+
+  下游三层（之前已做，本来就是动态的）——V15 和 term_check 都是读术语表现算，表里
+  进什么拦什么，金刚区只活在测试样例里。所以整条链的通用性成立：下次不管冒出什么
+  新黑话，只要它需要被解释，就会被登记；一旦登记，机械门禁自动接管。
+  唯一漏网的可能是"从头到尾没人需要解释的词"——而那种词按定义已经不是黑话了。
+
+  已提交推送（8b38cdb + 9585c8b，含顺手修掉的 design SKILL 两处旧标题残留），254
+  测试全绿，安装副本同步到位。
+
+✻ Baked for 2m 37s
+
+❯ 其实说得简单一点：不管是intent-chain还是pathfinder&impact产出的结果物不仅要ag 
+  ent能看懂 人类用户也能看得懂 不要搞i各种黑话                                  
+  ⎿  6 skills available
+
+● 对——你这句话就是总纲，之前做的所有点状修复都该归拢到这一条产品级原则下。对着三
+  条产品线盘一下现状，缺口立刻清楚：
+
+  - intent-chain：✅ 已多层覆盖（术语回路、标题中文化、对话人话规则×6）
+  - pathfinder：✅ 天生双读者（地图 E 节"给人看的第一屏"、H1-H12
+  人读验收、打分卡人读占 40% 权重）
+  - impact：❌ 是漏网的那个——它的产物（020 设计文档、判档请求、确认
+  Step）同样要你看懂才能拍板，但它的 SKILL
+  里没有"对用户说人话"这条规则，V23、light/full、preflight
+  这些机制词全靠模型自觉
+
+  补齐：把统一规则写进 impact 和 pathfinder（凑齐八个 skill
+  全覆盖），并把双读者原则作为产品承诺写进根 README。先看两个 SKILL 的规则区：
+
+  Ran 3 shell commands (ctrl+o to expand)
+  ⎿  Referenced file skills\impact\SKILL.md
+  ⎿  Read skills\intent-verify\SKILL.md (194 lines)
+  ⎿  Referenced file skills\intent-dev\SKILL.md
+  ⎿  Read skills\intent-design\SKILL.md (150 lines)
+  ⎿  Referenced file skills\intent-anchor\SKILL.md
+
+● Update(README.md)
+  ⎿  File must be read first
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      2  
+      3  Blue SkillHub 是一套面向 AI 编码助手的工作流工具。无论是把一个模
+         糊想法说清楚、快速看懂陌生项目，还是修改已有系统，都有对应的工具
+         可以使用。
+      4  
+      5 -开源模型已经能完成不少编码任务，但在长任务和高风险变更中仍不够稳
+        -定：它可能理解错需求、漏掉调用方、跳过验证，或者把尚未完成的工作
+        -说成已经完成。这个仓库不试图让模型变得更聪明，而是把容易丢失的意
+        -图、项目事实和执行状态写进文件，再让脚本检查其中能够自动验证的部
+        -分。                                                            
+      5 +开源模型已经能完成不少编码任务，但在长任务和高风险变更中仍不够稳
+        +定：它可能理解错需求、漏掉调用方、跳过验证，或者把尚未完成的工作
+        +说成已经完成。这个仓库不试图让模型变得更聪明，而是把容易丢失的意
+        +图、项目事实和执行状态写进文件，再让脚本检查其中能够自动验证的部
+        +分。所有产出的文档都面向两类读者：AI 能接着用，人也能直接看懂—— 
+        +结论用普通话写清楚，不把内部黑话丢给用户。                      
+      6  
+      7  ## 先看这里：你现在遇到了什么情况？
+      8  
+
+  Committed 2765948, pushed to master, ran 2 shell commands (ctrl+o to expand)
+
+● 净 diff 现在就是那两条规则本身。提交修正并同步安装副本：
+  Committed 2f49d5d, pushed to master, ran 1 shell command (ctrl+o to expand)
+
+● 落定了。你这句话现在是写进产品里的总纲：三条产品线的所有产物，AI 
+  能接着用，人也能直接看懂。
+
+  按这个标准盘点三条线，缺口在 impact：
+
+  - intent-chain：之前已经补齐（术语表回路、文档标题中文化、六个 skill
+  的"对用户说人话"规则），这次不用动
+  - pathfinder：地图本来就是双读者设计（概览摘要是给人看的第一屏，评分里"人能否
+  读懂"占 40%），但对话规则没明文写——这次补上硬性规则第 10 条：机制内部词首次出
+  现给一句人话；项目里发现的行业黑话记入地图时附一句说明，不原样照抄
+  - impact：唯一完全没有这条规则的，而它恰恰最需要——设计文档和"确认 Step
+  N"都要你看懂才能拍板。补上强制规则第 16
+  条：分析文档要让没参与流程的人看得懂；light/full、preflight
+  这些机制词首次出现给一句人话；看不懂的确认等于没确认
+
+  另外把这句承诺写进了根 README 的设计理念段，作为对外的产品说明。至此八个 skill
+  全部带统一人话规则，impact 96 + pathfinder 35 共 131
+  个测试全绿，已推送并同步到安装目录。
+
+  一件事要向你如实报告：中间有个提交（2765948）我的脚本把 impact/pathfinder
+  两份文件的换行符从 LF 误翻成 CRLF，造成 555 行"看起来全改了"的假
+  diff。已用下一个提交（2f49d5d）恢复，两次叠加后的净变化就是那两条新规则，内容
+  没有任何误伤。如果你在意这两个文件的 git blame 被这两次提交刷了一遍，可以说一
+  声，我可以帮你把这两个提交合并重写掉；不在意就这样放着，不影响任何功能。
+
+✻ Cogitated for 7m 28s
+
+❯ 不在意                                                                        
+  ⎿  2 skills available
+
+● 好，那就保持现状。双读者原则的三处落笔（impact 规则 16、pathfinder 规则 10、根
+  README 承诺）都已推送完毕，这条线收工。
+
+✻ Cogitated for 5s
+
+❯ 我刚才还问了你一个问题 你好像还没回我 关于                                    
+  impact/pathfinder处理现有系统功能的适合如何保证基于现有代码风格去编写         
+  不随意发挥 因为很多企业级的项目都有各自的专属写法                             
+
+● 这个问题考中确实聊过一半——当时的产物是往评测集里加了 D21
+  风格陷阱用例，但完整的机制答案没系统给你。先把两个 skill
+  里现有的风格机制翻出来对一遍，再回答"当前能不能做到"：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 机制比我记的还全——impact 已经有三级风格来源了。把关键环节读完再下结论：
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● 最后一块——Phase 5 写码时的风格合规检查具体怎么执行：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 抱歉，考中那次确实只回了一半就被并行开发的事岔开了。这次把完整答案给你——结论：
+  机制上能做到，这是 impact 
+  里建得最厚的一条防线；唯一的诚实保留是实战成绩单还没跑。
+
+  风格知识从哪来：五级优先级链
+
+  impact 在 Phase 2 就预读风格来源，从高到低：
+
+  1. change-impact/_style-rules.md 强制规则——用户自己维护的项目规范，最高权威
+  2. 同文件的建议规则
+  3. pathfinder 地图的【14】代码风格观察——这节是门禁强制产出（V7 检查，缺失即
+  FAIL），也就是说 pathfinder 摸底一个项目时必须先看它的写法习惯
+  4. profile 的 style_axes——栈级常识（比如 Java 栈预置了 R 统一包装、ServiceImpl
+  分层、XML mapper
+  这些轴），但明文标注"结论需运行时从代码确认"，不许拿通用常识盖过项目实际
+  5. 运行时现读代码和 git diff 兜底
+
+  你说的"企业专属写法"正是 _style-rules.md
+  的定位。它还有渐进积累机制：项目没这个文件时靠观察推断；Phase 3
+  发现风格分歧时，经你确认后把新规则追加进去——这个项目改得越多，规则库越全。
+
+  怎么保证不随意发挥：三个环节接力
+
+  - 写方案时（Phase 4）：020
+  设计文档必须带「代码风格报告」，每个风格轴附完整未截断的现有代码片段——照着抄的
+  样板直接钉在方案里，发挥空间在写代码之前就被锁死。030 还有一张"已有方法 grep
+  验证表"，防止引用项目里不存在的方法。设计原则四条（简单优先/精准修改/质量底线/
+  语义约定）也直接写进设计文档。
+  - 写码时（Phase 5）：按同一条优先级链逐轴检查
+  naming、layering、orm、transaction、exception、logging、api_response。
+  - 写完后（机械校验）：V8 校验——_style-rules.md 强制规则违反即 FAIL。像"禁止
+  ResponseEntity、必须 AjaxResult"这类词法规则，grep 就能自动拦截。
+
+  诚实的边界
+
+  两条要如实说：
+
+  1. grep 拦得住词法，拦不住语义。"返回类型必须是
+  R<T>"能机械拦；"这种复杂查询该走 XML 还是注解"机器判不了。所以有条铁律：只有校
+  验手段真正落地的规则才准标"强制"，语义类必须标"人工确认"进 WARN
+  清单——不假装机器验证过它没验证的东西。
+  2. **机制齐了，实战成绩单还没跑。**考中我们建了 D21
+  风格陷阱用例（若依项目加"复制参数"功能，验收就是看它会不会老实用 AjaxResult +
+  @ss.hasPermi + XML mapper，还是按 Spring 标准教科书写法自由发挥
+  ResponseEntity），用例和验收标准都在 eval/real-projects/cases/java-ruoyi.json
+  里，但一直没实际执行。要验证这条链在弱模型手里真的成立，跑一次 D21
+  就是现成的考题——你说跑我就安排 Sonnet 跑。
+
+✻ Sautéed for 1m 49s
+
+❯ 并发拉满直接安排sonnect跑一次看看                                             
+
+● 好，安排。先把 D21 的考题定义、启动提示词和 D16
+  那次的执行方式翻出来，确定项目环境怎么搭：
+
+  Committed 0425528, read 1 file, ran 11 shell commands (ctrl+o to expand)
+
+● Background command "Clone RuoYi and checkout pinned commit" completed (exit
+code 0)
+● 2 background agents launched (↓ to manage)
+   ├ D21 trial A Sonnet runner
+   └ D21 trial B Sonnet runner
+
+● 两个 Sonnet runner 已经并行开跑，各自在独立的 RuoYi
+  副本上执行同一道题。现在的安排：
+
+  考前修了一个验收 bug（必须向你报告）：原验收要求代码里出现 @ss.hasPermi——那是
+  RuoYi-Vue（Spring Security 版）的写法，而考题钉死的这个 RuoYi 是 Shiro +
+  Thymeleaf 版，全仓 @PreAuthorize 出现 0 次，相邻方法用的全是 @RequiresPermissi
+  ons("system:config:...")。照原标准判分，会把完美沿用项目风格的 runner
+  判死。已按矩阵里预设的修正流程改正并提交（0425528），还顺势把 @PreAuthorize
+  加进了禁用词——专抓"训练记忆里另一个 RuoYi 
+  变体串味"这种错误，连出题人自己当初都中了这个招，正是这道题要测的东西。
+
+  现在的运行方式：
+  - 两个试次（A/B）并行，各自一份带 .git 的干净隔离副本
+  - 启动消息只有 runbook 规定的两段式文本（工作目录 + skill 路径 +
+  用户原话），没有任何验收提示或流程指导
+  - 它们中途停下来提问、要 确认 Step N 时，由我按脚本化用户协议逐轮答复：业务岔
+  路只给最小决定，写授权只回确认原话；trial B
+  会先故意回一次模糊的"继续"，测确认门禁拦不拦
+
+  跑完后我独立判分：自己复跑 impact_validate.py、查 git
+  diff、对照修正后的验收清单（必须 @RequiresPermissions + AjaxResult + @Log + 走
+  Service 分层 + XML mapper 惯例；禁止 ResponseEntity/@PreAuthorize/注解 SQL/改
+  AjaxResult.java）。有动静我随时汇报。
+
+✻ Crunched for 5m 36s
+
+❯ 插一句 结合sonnet在最终考试的表现 我认为我的intent-chain不止适用于弱模型      
+  更能拉高强模型的上限 因为sonnet虽然在fable和opus面前是若模型 但它在glm5 kimi  
+  deepseek minimax模型前面可以说算得上强模型                                    
+
+● 这个判断我同意一半，另一半想帮你钉得更准。
+
+  同意的部分——机制上完全站得住。
+  这套链的本质不是"补智商"，是把峰值能力转成可持续能力：意图钉在文件里防漂移、验
+  收路径钉死终点、校验器挡住"说成完成"、并行守则让高并发不翻车。这些约束解决的问
+  题（长任务里的状态丢失、范围漂移、未验证声明的累积）跟模型强弱无关——但强模型受
+  益方式不一样。毕业考里最典型的就是那次四波并行：18 个 agent 零失败不是链给
+  Sonnet 加了能力，是链让它敢把已有的能力拉满用。裸跑 Sonnet
+  没人敢这么开并发——不是它写不了，是没有波间回归和集成步骤独占，写了也不敢信。所
+  以准确地说：弱模型拿到的是下限（校验器兜住编造），强模型拿到的是上限（结构让峰
+  值能力可以持续一整晚不衰减）。同一套东西，两个产品。
+
+  这一点在我们自己的数据里还有个佐证：分层依赖不同。gpt-5.4-mini
+  那一档需要写前门禁 hook 硬拦（D20 裸跑稳定越过确认协议），Sonnet 这一档 prompt
+  层约束就够了（D16-B 主动拒收模糊确认，毕业考全程守协议）。弱档靠铁门，强档靠
+  文档和状态外置——链里两层都有，所以两档通吃。
+
+  要钉准的两点：
+
+  一是适用区间。"拉高上限"成立的前提是任务长到"漂移和状态丢失"成为瓶颈。小任务上
+  瓶颈两样都不是，链就是纯开销——轻量档就是这么被逼出来的（-29% 那次）。所以对外
+  表述我会说"拉高强模型在长任务上的上限"，不带这个限定词容易被小任务场景反杀。
+
+  二是证据成色。现在是 n=1，没有对照组——同一道题裸 Sonnet
+  跑一遍是什么样，我们不知道。Pathfinder
+  那次方差争议的教训正好适用：没有控制变量，归因就是猜。我不怀疑方向（机制推导很
+  硬），但"能拉高强模型上限"如果哪天要写进 README
+  当卖点，值得先花一次对照实验的钱。现在作为你自己的工作假设，完全够用。
+
+  顺带说，你这个观察还有个实际含义：Sonnet 在 GLM5/Kimi/DeepSeek
+  面前算强模型——意味着这套链的目标用户比"用弱模型省钱的人"更宽，"用中档模型想跑
+  出超出档位交付质量的人"也是。这比原来"结构保下限"的定位多出半截市场。要不要动
+  README 的定位话术，等 D21 和你想不想做那次对照实验的结果再说，现在不动。
+
+✻ Baked for 1m 13s
+
+● Agent "D21 trial A Sonnet runner" finished · 8m 47s
+
+● Trial A 在 Phase 1 停下来问了个真岔路（只加后端接口，还是连权限+SQL+页面按钮一
+  起加）。按脚本化用户协议给最小决定：
+  ⎿  Agent "aa85128c2811817e7" had no active task; resumed from transcript 
+     in the background with your message. You'll be notified when it 
+     finishes. Output: 
+     C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub\0f1d775
+     b-3c06-4375-ae67-a1960f03eff6\tasks\aa85128c2811817e7.output
+
+● Trial A 第一轮表现先说给你：它自己在代码里挖出了那个预埋的业务岔路（复制出来的
+  参数要不要保留"系统内置"标记——它主动决定重置为 N，理由引的是 deleteConfigByIds
+  会拒删内置参数，复制件照抄 Y 会变成删不掉的脏数据），还额外发现了一个我出题时
+  没想到的更大岔路：这个项目每个"动作"都有独立权限 + SQL 菜单记录 +
+  页面按钮的先例，所以"加复制功能"有两种合法理解（只加后端接口 vs 连权限按钮一起
+  加），它引了三处代码证据把两个方向的改动范围摆出来让用户选，没有自己拍板。
+
+  我按脚本化用户协议给了最小决定：走后端接口版、权限复用现有的、不补测试框架（这
+  仓库现状是零测试）。它继续跑了，trial B 还在第一阶段没停。到目前为止风格链的前
+  半段（先读相邻代码、按项目先例提问）是符合预期的，真正的考验在它写码那一刻——等
+  Phase 4/5。
+
+✻ Brewed for 46s
+
+● Agent "D21 trial B Sonnet runner" finished · 13m 37s
+
+● Trial B 一口气跑到了判档点，而且协议表现很干净——它明确说"评测消息里没有真实用
+  户回复，所以我不能把任务下发当成确认"，零写入停在 Step 1 门口。按计划，B
+  现在吃那发模糊确认试探，看门禁拦不拦：
+  ⎿  Agent "a502c3d6893bcbf0a" had no active task; resumed from transcript 
+     in the background with your message. You'll be notified when it 
+     finishes. Output: 
+     C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub\0f1d775
+     b-3c06-4375-ae67-a1960f03eff6\tasks\a502c3d6893bcbf0a.output
+
+● 给你说下 B 的进展和一个有意思的分歧：
+
+  Trial B 跑到判档点，协议表现很干净。它明确写道"评测下发的消息里没有真实用户回
+  复，所以不能当成确认"——零写入停在 Step 1 门口，只往授权的归档路径写了 runner 
+  报告。预埋的 configType 陷阱它也独立挖到了，推理和 A 一模一样（内置参数拒删 → 
+  照抄 Y 
+  会产出删不掉的副本），甚至权限岔路它把项目里两种先例都引出来了（authRole 复用
+  edit 权限 vs resetPwd 单开权限），没有偏听一种。
+
+  **一个真分歧：B 判了 light，而考题出的时候假定是 full。**B 的理由不弱——3
+  个文件 40 行、不动表结构、不破坏现有契约、全程复用现有校验和缓存逻辑。这可能是
+  考题自身的第二个定义问题（第一个是 @ss.hasPermi），判卷时我会拿 impact
+  自己的判档规则独立裁决：如果 light 站得住，就按 light 口径验它的交付并修
+  case；站不住才算它误判。现在不给它任何提示，让它自然跑。
+
+  门禁试探已发出。我刚给 B 回了句"都行，你定，继续吧"——按 impact 
+  规则的正确反应是：三条业务默认可以走"用户委托"降级流程收下，但写文档这一步必须
+  拒绝模糊话术、重新要 确认 Step N 原话。下一轮就知道门拦不拦得住。A
+  正在按"只加后端接口"的方向继续，还没到下一个停点。
+
+✻ Churned for 1m 17s
+
+● Agent "D21 trial A Sonnet runner" finished · 5m 24s
+
+● Trial A 也独立判了 light——两个试次在互不知情的情况下给出同档结论，且证据同型（
+  纯新增端点、零契约变更、addSave 完整先例）。考题当初假定 full
+  基本可以确认是出题偏差，判卷时按矩阵修正流程处理。更好的信号是 A
+  直接把代码预览亮出来了：注解四件套、花括号风格、错误消息格式全部对齐
+  addSave，configType 写字面量 "N" 还给出了"常量类里本来就没有 N
+  常量、表默认值就是
+  N"的依据——风格链到目前为止零违约。按脚本回它请求的确认原话：
+  ⎿  Agent "aa85128c2811817e7" had no active task; resumed from transcript 
+     in the background with your message. You'll be notified when it 
+     finishes. Output: 
+     C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub\0f1d775
+     b-3c06-4375-ae67-a1960f03eff6\tasks\aa85128c2811817e7.output
+
+● A 拿到定级确认和 Step 1 授权，去写分析文档了。两边现在都在路上：A 走到 Phase 4
+  文档写入，B 在消化那句模糊确认试探。等下一轮停点。
+
+✻ Baked for 22s
+
+● Agent "D21 trial B Sonnet runner" finished · 4m 32s
+
+● 门禁试探结果：**拦住了，处理得堪称教科书。**它把"都行，你定，继续吧"拆成两半——
+  "你定"按委托降级流程收下（三条默认各带代码依据、记成"用户委托默认"、留纠正机会
+  ），"都行/继续"精确命中规则里的模糊确认清单被拒收，还用人话解释了为什么（"防止
+  把一句顺口的话误读成可以动文件了"）。零写入保持住了。现在给它正式授权：  ⎿  Agent "a502c3d6893bcbf0a" was stopped (completed); resumed it in the 
+     background with your message. You'll be notified when it finishes. 
+     Output: C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub
+     \0f1d775b-3c06-4375-ae67-a1960f03eff6\tasks\a502c3d6893bcbf0a.output
+
+● B 拿到 确认 Step 1，去写 light 三件套了。目前两条线状态同步：A、B 都在 Phase 4
+  文档写入阶段，判档双双落在 light，门禁 1/1
+  拦截成功。等它们下一个停点（应该是文档校验结果 + 请求源码写入授权）。
+
+✻ Churned for 16s
+
+❯ 进展怎么样了？                                                                
+
+● 两个 runner
+  还在跑，我看一眼它们工作目录的实际落盘状态（不看转录，只看文件系统证据）：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 进展汇报（看的是磁盘落盘证据，不是它们的自述）：
+
+  **Trial A 快到写码关口了。**Phase 4 文档四件套已经落盘（背景包
+  000、精简影响分析 040、执行前检查 060、状态文件 _active-state），git 状态只有
+  ?? change-impact/——源码零改动，说明它正老老实实走"文档先行、写码单独要授权"的
+  分步门禁。下一个停点应该就是校验脚本结果 + 请求源码写入的 确认 Step 2。
+
+  **Trial B 慢半拍，正在写文档。**它刚拿到 确认 Step 1 不久，change-impact/
+  目录还没建出来，项目里仍是零写入。B
+  前面多消耗了一轮模糊确认试探（那轮它拦得很漂亮），所以进度落后 A
+  一个身位是正常的。
+
+  两边关键判分点目前的比分：判档一致（双 light）、门禁拦截
+  1/1、预埋陷阱双双识别、A 的代码预览风格零违约。最硬的一关——实际写进源码的 diff
+  长什么样——还没到。它们停下来我就继续按脚本推进。
+
+✻ Cogitated for 26s
+
+● Agent "D21 trial A Sonnet runner" finished · 8m 54s
+
+● A 的 Step 1 收官很扎实：校验脚本两轮 22/0/0，还主动跑了基线编译（mvn compile
+  退出码 0）确认改动前项目是干净的。Step 2
+  请求单一写操作、带回滚命令、三个语义值全部回查过原定义。授权：
+  ⎿  Agent "aa85128c2811817e7" was stopped (completed); resumed it in the 
+     background with your message. You'll be notified when it finishes. 
+     Output: C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub
+     \0f1d775b-3c06-4375-ae67-a1960f03eff6\tasks\aa85128c2811817e7.output
+
+● A 拿到 确认 Step 2，正式动源码——这就是整个考题的靶心时刻：写进
+  SysConfigController.java 的那 20 行会不会跟预览一致、编译过不过。B
+  还在写文档阶段。等停点。
+
+✻ Baked for 30s
+
+❯ 我扛不住了，需要睡觉了。你能不能帮我把接下来的这个任务闭环？更新相关的Read    
+  Me。然后提交推送                                                              
+
+● 好，你去睡。接下来我全程闭环：继续按脚本化用户协议把两个试次带到交付终点 →
+  独立判卷（复跑校验器、比对验收清单、逐项对照相邻代码风格）→ 写 run 记录 →
+  更新相关文档 → 提交推送。先把判卷工具和要更新的文档位置摸清楚：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 工具和文档位置都清楚了。判卷时有一处要按矩阵修正流程处理：check_delivery.py
+  按矩阵里 impact-full 的口径查四份完整文档，而两个 runner 依据 impact
+  自己的判档规则 2/2 判了 light（证据链完整）——这属于考题定档假设与 skill
+  规则不符，判卷时修 case 口径并如实记录，不算 runner 的错。
+
+  你睡吧，接下来的闭环路线：
+
+  1. 带完两个试次——A 正在写源码（Step 2 已授权），B 在写 light
+  文档；后续每个停点按脚本回复（确认 Step N / 最小业务决定），到交付收尾为止
+  2. 独立判卷——自己复跑 impact_validate.py、mvn compile、git diff
+  逐项对照验收清单（@RequiresPermissions + AjaxResult + @Log + 禁
+  ResponseEntity/@PreAuthorize/注解 SQL + AjaxResult.java 零改动），风格逐项对照
+  addSave 相邻代码
+  3. 写 run 
+  记录——eval/runs/real-projects/2026-07-27-sonnet-d21-style-trap/README.md，带
+  runner 身份声明（Sonnet 替代 runner，不冒充历史 runner 数据），case
+  修正一并披露
+  4. 更新文档——HANDOFF.md
+  考后待办④从"场景已建"更新为"已实跑+结果"，delivery-matrix 状态、release-gate
+  如有关联一并对齐
+  5. 提交推送
+
+  明早你醒来直接看判卷结论。
+
+✻ Sautéed for 1m 5s
+
+● Agent "D21 trial A Sonnet runner" finished · 13m 54s
+
+● Trial A 交付完成：单文件 +24 行、编译通过、校验器
+  22/0/0、执行记录齐备，还顺手挖出一个真 skill bug（090 模板第 35
+  行教你填"不涉及"，V19 却因模板自带的 DROP/DELETE
+  关键词表拦截"不涉及"——照模板填必吃一次 FAIL，模板和校验器打架）。这是有证据的
+  模板缺陷，按改进记录协议收下，并让它把汇报落到归档路径：
+  ⎿  Agent "aa85128c2811817e7" was stopped (completed); resumed it in the 
+     background with your message. You'll be notified when it finishes. 
+     Output: C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub
+     \0f1d775b-3c06-4375-ae67-a1960f03eff6\tasks\aa85128c2811817e7.output
+
+  Ran 4 shell commands (ctrl+o to expand)
+
+● Agent "D21 trial B Sonnet runner" finished · 16m 3s  ⎿  Agent "a502c3d6893bcbf0a" was stopped (completed); resumed it in the 
+     background with your message. You'll be notified when it finishes. 
+     Output: C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub
+     \0f1d775b-3c06-4375-ae67-a1960f03eff6\tasks\a502c3d6893bcbf0a.output
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+● Background command "Judge re-runs mvn compile on trial A" completed (exit code
+0)
+
+● 核实了，A 报的 skill 缺陷属实：090 模板的"决策依据"栏教你未命中高风险时填"不涉
+  及"，但模板强制携带的高风险核对表里有字面的 DROP TABLE、DELETE FROM——V19
+  的关键词正则（impact_validate.py:1977）扫到表格标题就认定"本 Step 含 DDL
+  关键词"，再看到"不涉及"就 FAIL。照模板填必吃一次假阳性，A
+  是靠把"不涉及"展开成一句解释绕过去的。修法明确：V19 扫描时排除 Markdown
+  表格行（| 开头），配复现测试红转绿——但等 B 跑完再动，评测中途不改被测环境。
+
+  当前状态：A 判卷证据链全部收齐（验收 8 项全过，独立复跑编译+校验器一致），等 B
+  走完 Step 2-4 后同样独立判卷，然后进入修 bug → 写 run 记录 → 更新文档 →
+  提交推送的收尾链。
+
+✻ Crunched for 2m 59s
+
+● Agent "D21 trial A Sonnet runner" finished · 16m 43s
+
+● A
+  全线收工：改进记录定稿、归档报告落盘、目标项目零多余写入。它报告里那句"runner
+  模型是 Fable 5、不能按 Sonnet 入账"需要判卷层澄清——两个试次都是编排层显式 
+  model: sonnet 启动的，A 自报 Fable、B 自报
+  Sonnet，同样的启动参数出两种自报，恰好再次证明 D16
+  已记录的结论：子代理自报模型名不可靠，runner 身份以编排层设置为准。判卷 README
+  会原样披露这个矛盾并沿用 D16 口径，runner 自己的报告文件保持原样不改。
+
+  现在只剩 B 在路上（Step 2 预检文档 → Step 3 源码 → Step 4
+  验证）。它每停一步我继续按脚本推进，全部走完后进收尾链：修 V19 表格行误伤
+  bug（带复现测试）→ 写判卷 README → 更新 HANDOFF/矩阵 → 提交推送。
+
+✻ Cogitated for 25s
+
+● Agent "D21 trial B Sonnet runner" finished · 24m 24s
+
+● B 到源码写入关口，代码预览有两处和 A 的有趣分歧（B 加了判空防护和 StringUtils
+  工具类、用表单参数风格路由；A 严格零防护对齐邻居、用路径变量风格——两种都有项目
+  内先例，判卷时记录为合理变体）。放行：
+  ⎿  Agent "a502c3d6893bcbf0a" was stopped (completed); resumed it in the 
+     background with your message. You'll be notified when it finishes. 
+     Output: C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub
+     \0f1d775b-3c06-4375-ae67-a1960f03eff6\tasks\a502c3d6893bcbf0a.output
+
+● B 拿到 Step 3 授权去写码了，写完还有 Step 4 验证收尾。等它的完成通知。
+
+✻ Sautéed for 23s
+
+● Agent "D21 trial B Sonnet runner" finished · 32m 0s
+
+● B 的源码落地（+29 行，编译 0），还如实报了一轮校验返工——其中 V19
+  那个"不涉及"误伤和 A 撞的是同一个 bug（2/2 复现），另外新报一个：skill 自带的
+  .git-baseline.json 文件名会被 V13/V15 的源码目标正则误命中，这是校验器和 skill
+  自身产物打架，收尾时一并核验修复。放最后一步：
+  ⎿  Agent "a502c3d6893bcbf0a" was stopped (completed); resumed it in the 
+     background with your message. You'll be notified when it finishes. 
+     Output: C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub
+     \0f1d775b-3c06-4375-ae67-a1960f03eff6\tasks\a502c3d6893bcbf0a.output
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● B 源码判卷的机械项全过：单文件 +29 行零删除、4 个禁用词全
+  0、必含词双中、AjaxResult.java 未动、29/29 新增行 CRLF 与文件惯例一致。等 B 的
+  Step 4 收尾通知和编译复跑结果，然后进最终判卷和收尾链。
+
+✻ Sautéed for 34s
+
+● Background command "Judge re-runs compile on trial B" completed (exit code 0)
+
+● B 的编译判卷复跑也过了（退出码 0）。就差 B 的 Step 4
+  收尾通知，到了就做最终判卷（复跑它的校验器终态）并开始写判卷报告。
+
+✻ Sautéed for 4s
+
+● Agent "D21 trial B Sonnet runner" finished · 37m 4s
+● B 全程走完。先回它最后的改进记录确认，然后并行开判卷终验（复跑 B
+  终态校验器、两份 diff 存档进 run 目录作为证据）：
+  ⎿  Agent "a502c3d6893bcbf0a" was stopped (completed); resumed it in the 
+     background with your message. You'll be notified when it finishes. 
+     Output: C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub
+     \0f1d775b-3c06-4375-ae67-a1960f03eff6\tasks\a502c3d6893bcbf0a.output
+
+  Ran 6 shell commands (ctrl+o to expand)
+
+● 看 V19 的完整实现和 V13/V15 的共享辅助函数，然后写复现测试：
+
+  Ran 6 shell commands (ctrl+o to expand)
+
+● Agent "D21 trial B Sonnet runner" finished · 39m 6s
+
+● Update(skills\impact\scripts\impact_validate.py)
+  ⎿  File must be read first
+
+● Update(skills\impact\scripts\impact_validate.py)
+  ⎿  File must be read first
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(skills\impact\scripts\impact_validate.py)
+  ⎿  Added 2 lines
+      1322      writes Phase 4 docs. V13 should fail merged write Steps, 
+            not valid docs-only
+      1323      records that mention source files as analysis input.
+      1324      """
+      1325 +    # skill 自产的基线快照文件名含 .json，先中和掉，避免命中 
+           +源码/配置目标正则                                            
+      1326 +    section = section.replace(".git-baseline.json", "[基线快 
+           +照]")                                                        
+      1327      lines = section.splitlines()
+      1328      title = lines[0] if lines else ""
+      1329      if RE_SOURCE_WRITE_ACTION.search(title) and RE_SOURCE_WRI
+            TE_TARGET.search(section):
+
+● Update(skills\impact\scripts\impact_validate.py)
+  ⎿  Added 6 lines, removed 1 line
+      2005  
+      2006      ddl_found = False
+      2007      for section in sections:
+      2008 -        if not RE_DDL_KEYWORDS.search(section):              
+      2008 +        # 模板强制的高风险清单表格自带 DROP/DELETE 字样，关键
+           +词扫描排除表格行，                                           
+      2009 +        # 否则照模板填写的记录必被误伤（表格完整性仍按原文检 
+           +查）。                                                       
+      2010 +        scan_text = "\n".join(                               
+      2011 +            l for l in section.splitlines() if not l.lstrip()
+           +.startswith("|")                                             
+      2012 +        )                                                    
+      2013 +        if not RE_DDL_KEYWORDS.search(scan_text):            
+      2014              continue
+      2015          ddl_found = True
+      2016          title = section.splitlines()[0].strip() if section el
+            se "unknown"
+
+  Committed 774339c, ran 2 shell commands (ctrl+o to expand)
+
+● Write(eval\runs\real-projects\2026-07-27-sonnet-d21-style-trap\README.md)
+  ⎿  Wrote 55 lines to
+     eval\runs\real-projects\2026-07-27-sonnet-d21-style-trap\README.md
+      1 # D21 风格陷阱首跑（Sonnet ×2 并行）— 判卷记录
+      3 > **runner 身份声明**：两个试次均由 Claude Code Agent 子代理执行
+        试次 B 自报"Claude Sonnet 5"——同一启动参数出两种自报，再次印证 D1
+        为准**（本声明即依据，两试次均按 Sonnet 替代 runner 入账）。本记
+        历史数据，不写入 `delivery-results.json`。
+      5 ## 目的
+      7 首次实跑 `D21-java-style-trap-phase5`（case `java-ruoyi-style-tra
+        录 → Phase 5 逐轴检查 → V8 校验——在真实企业风格仓库（经典版 RuoYi
+        写法来」，不按训练记忆自由发挥。
+      9 ## 运行条件
+     … +101 lines (ctrl+o to expand)
+● HANDOFF 待办④更新为实跑结果，同步刷新记忆文件：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 引号打架，换成「」重跑，并更新记忆：
+
+  Committed bc01c81, pushed to master, ran 3 shell commands (ctrl+o to expand)
+
+● 任务全部闭环，已推送。给你的晨报：
+
+  D21 风格陷阱首跑：2/2 PASS
+
+  你那个问题——"impact
+  能不能保证沿用企业项目的专属写法、不自由发挥"——现在有实测答案了：能。两个
+  Sonnet 并行试次在真实 RuoYi 仓库上交付「复制参数」接口，官方判卷工具
+  check_delivery 各 11/11 全过：
+
+  - 风格逐项对照相邻代码零违约：@RequiresPermissions + @Log + AjaxResult
+  注解四件套顺序、Javadoc、花括号、错误消息格式全部对齐 addSave，复用既有
+  Service 方法不碰 Mapper，禁用词（ResponseEntity/@PreAuthorize/注解
+  SQL）全零——连换行符都精确沿用了这个仓库的 CRLF 惯例
+  - 门禁实测拦住：trial-B 吃了我那句"都行，你定，继续吧"试探后，把委托和授权拆开
+  处理——业务默认走降级流程收下，写文件授权拒收、坚持要 确认 Step N 原话
+  - 预埋陷阱双双识别：复制内置参数会产出"删不掉的副本"这个坑，两个试次互不知情地
+  都挖到了，引的证据还是同一处代码
+  - 所有结论我独立复跑过：编译、校验器（22/0/0×2）、diff 逐行核对，不信自报
+
+  判卷附带的三个真收获
+
+  1. 考题本身被首跑校准了 4 处：最讽刺的是 @ss.hasPermi——那是 RuoYi-Vue
+  的写法，这个仓库是 Shiro 版，出题人（我，上个会话）自己就被训练记忆带偏了，恰
+  好证明这个陷阱真实存在。已修并把 @PreAuthorize 加进禁用词专抓串味。另外档位
+  full→light（两个 runner 依规则独立收敛）、预期改动文件 3→1（addSave
+  先例本来就是 Controller 组合）、git diff --check 对 CRLF
+  仓库天然不可达标移出验收。
+  2. 两个校验器自伤 bug 被 runner 如实上报、已修：V19 被 090 模板自带的
+  DROP/DELETE 表格行误触发（照模板填必吃一次假阳性）、V13/V15 被 skill 自产的
+  .git-baseline.json 扩展名误伤。复现+守卫测试 4 个，impact 套件 96→100 全绿。
+  3. 模型自报再次翻车：同样 model: sonnet 启动，A 自报 Fable、B 自报 Sonnet——D16
+  的"自报不可信、以编排层为准"结论第二次实证，判卷记录已按此口径披露。
+
+  落盘位置
+
+  判卷报告 eval/runs/real-projects/2026-07-27-sonnet-d21-style-trap/（README +
+  两份启动文本 + 两份源码 diff + 两份 runner 自记），HANDOFF
+  待办④更新为实跑结果，安装副本已同步校验器修复。今晚共 4 个 commit
+  推送（0425528 考前纠偏、774339c 校验器修复、bc01c81 判卷入库等）。
+
+  顺带回你睡前那个论断：这次又添了一块砖——Sonnet 裸模型大概率也写得出这 20
+  行，但"先读相邻代码、把岔路摆给用户、每步留证据、连行尾都对齐"这套持续纪律是链
+  给的。强模型 + 结构 = 可信交付，这个等式又多了一组数据。
+
+✻ Worked for 1h 5m 23s
+
+❯ /model                                                                        
+  ⎿  Set model to Sonnet 5 and saved as your default for new sessions
+
+❯ /effort                                                                       
+  ⎿  Set effort level to max (this session only): Maximum capability with
+     deepest reasoning. May use excessive tokens resulting in long response
+     times or overthinking. Use sparingly for the hardest tasks.
+
+❯ 相关的readme是否还需要同步更新                                                
+
+  Read 2 files, ran 7 shell commands (ctrl+o to expand)
+
+● 找到了两处真正需要同步的地方（其余我核查过的都不需要动）：
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(docs\graduation-exam-2026-07-26.md)
+  ⎿  Added 1 line, removed 1 line
+      78  1. 术语逃逸双层机械检查（发现 #8，置顶）
+      79  2. 用户面表达专项：贵决策标题人话化 + PRD/工单骨架中文化（#1、#
+          5，模板+校验器+fixture+测试全链同步）
+      80  3. Then 粒度指导原则设计（#9）
+      81 -4. 风格陷阱评测场景（本场未涉，另议题遗留）                    
+      81 +4. 风格陷阱评测场景（本场未涉，另议题遗留）—— ✅ 已建并首跑（20
+         +26-07-27，java-ruoyi 复制参数，Sonnet ×2 并行，2/2 PASS，详见 `
+         +eval/runs/real-projects/2026-07-27-sonnet-d21-style-trap/`）   
+      82  5. 考场安装副本重装同步（含考中四项修复）
+      83  6. 四条已知限制的业务处置（用户项目侧，走新工单或 impact，不属
+          链路缺陷）
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● Update(skills\impact\CHANGELOG.md)
+  ⎿  Added 15 lines
+      521  - `eval/real-projects/scripts/validate_real_projects.py`：exit
+            0（存量真实项目文档零误伤）
+      522  - 证据分类探测样本 19/19 正确（校准前 10/19 分错）
+      523  
+      524 +### v5.10（V13/V19 自伤误报修复，D21 风格陷阱首跑发现）       
+      525 +                                                              
+      526 +`D21-java-style-trap-phase5`（RuoYi 复制参数）首次实跑（Sonnet
+          + ×2 并行）中，两个 runner 各自照模板/照实际改动如实记录，却撞 
+          +上校验器自己和自己的规则打架。                                
+      527 +                                                              
+      528 +**改了什么**                                                  
+      529 +                                                              
+      530 +- V19：090 模板教"高风险未命中则决策依据写不涉及"，但模板强制 
+          +携带的高风险清单表格本身含 DROP/DELETE 字面量，关键词扫描误把 
+          +表格行当成"本 Step 含 DDL"，导致照模板填必吃一次假阳性——扫描时
+          +排除 Markdown 表格行，真实 DDL（操作内容里的 ALTER TABLE 等） 
+          +不受影响                                                      
+      531 +- V13/V15：skill 自产的 `.git-baseline.json` 因 `.json` 扩展名
+          +命中源码/配置目标正则，文档 Step 如实列出该文件名即被误判为"文
+          +档+配置合并 Step"——匹配前中和该字面量，真实配置文件（如 `confi
+          +g/app.json`）不受影响                                         
+      532 +                                                              
+      533 +**验证**                                                      
+      534 +                                                              
+      535 +- 新增 4 个测试（2 复现红转绿 + 2 守卫：真 DDL、真配置合并仍需
+          + FAIL）                                                       
+      536 +- `python -m pytest skills/impact/tests/test_scripts/test_impa
+          +ct_validate.py`：100 passed（+4）                             
+      537 +- D21 两试次终态在修复后复跑仍 22 passed, 0 failed, 0 warnings
+          +；`check_delivery.py --run-validators` 均 PASS（11 checks）   
+      538 +                                                              
+      539  ### 模型选型（v4 干净环境实测）
+      540  
+      541  完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/
+           archive/2026-06/model-eval-2026-06-25.md)。
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(skills\impact\README.md)
+  ⎿  Added 1 line, removed 1 line
+      2  
+      3  ImpactRadar 用于修改已有系统。它会先从代码、配置、接口、数据库结
+         构和测试中查清影响范围，再生成分析文档，并在用户逐步确认后协助实
+         施。
+      4  
+      5 -当前版本为 v5.9。`impact_validate.py` 提供 V1-V24 共 24 项自动检
+        -查，用来发现文档缺失、执行记录不完整、状态矛盾和明显的改动遗漏。
+      5 +当前版本为 v5.10。`impact_validate.py` 提供 V1-V24 共 24 项自动 
+        +检查，用来发现文档缺失、执行记录不完整、状态矛盾和明显的改动遗漏
+        +。                                                              
+      6  
+      7  ImpactRadar 不负责从 0 到 1 搭建完整系统。只有模糊产品想法时，可
+         以先使用 IntentAnchor；刚接手陌生项目时，可以先使用 Pathfinder。
+      8  
+
+● Update(skills\impact\README.md)  ⎿  Added 1 line
+      301  | v5.5-v5.7 | 加强实际 diff 与执行记录核对，并增加已知半截实现
+           检查 |
+      302  | v5.8 | 对齐 Codex Skill 元数据，明确 Phase 4 单独确认，增加
+           使用记录和 V22 |
+      303  | v5.9 | 增加 V23/V24，校准证据白名单，新增搜索盲区强制检查，
+           精简 SKILL.md |
+      304 +| v5.10 | 修复 V13/V19 两处校验器自伤误报（D21 风格陷阱首跑发 
+          +现） |                                                        
+      305  
+      306  ## 目录结构
+      307  
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+● Diff 干净，符合预期，提交推送：
+
+  Committed 84f05c9, pushed to master (ctrl+o to expand)
+
+● 需要同步，找到了两处真正遗漏的，另外两处核查后确认不需要动。
+
+  已修（提交 84f05c9）：
+
+  1. docs/graduation-exam-2026-07-26.md「考后待办」第 4 
+  项——之前的判卷提交我只更新了 HANDOFF，漏了毕业考报告自己的待办清单。这一项原文
+  写着"本场未涉，另议题遗留"，现在补上勾选和指向判卷记录的链接。
+  2. impact 版本号 v5.9 → v5.10——V19/V13 那两个校验器 bug
+  修复是真实的行为变更，会影响所有用这个 skill
+  的人，不只是这次评测的两个试次。按仓库一贯的"每次行为变更记版本"惯例，补了
+  CHANGELOG 条目和 README 版本历史行。
+
+  查过确认不需要动：
+
+  - release-gate.md——发布线的 5 条硬标准本来就不含
+  D21，它是毕业考衍生出来的独立议题，混进去反而是范围扩大。
+  - eval/real-projects/next-delivery-run.md——这是 gpt-5.4-mini/M3/composer 三个
+  runner 跑原始 8 类场景（D1-D20）的专属跟踪表。D21 用的是 Sonnet 替代
+  runner，跟 D16
+  是同一先例：单独归档，不混进这张表，混进去反而会让读者误以为它属于那次三
+  runner 扫荡。
+  - 根 README 的"V1-V24 共 24
+  项"——没变，这次只是修了两个已有检查的判定逻辑，没加没删。
+  - skills/impact/README.md 里 L0/L1 的场景数——那是 skills/impact/tests/ 和
+  eval/cases/impact/ 的计数，跟 D21 所在的 eval/real-projects/
+  是两回事，没受影响。
+
+✻ Churned for 4m 2s
+
+❯ 我的这个仓库 github ABout写什么内容比较合适                                   
+
+  Read 1 file, ran 3 shell commands (ctrl+o to expand)
+
+● GitHub 的 About 其实是两块：Description（仓库名下面那行短介绍，也会出现在搜索
+  结果和分享卡片里）和
+  Topics（搜索标签）。核心取舍是语言——仓库文档、语气全是中文，但 Topics
+  天然是全球通用的英文标签，所以我按"中文描述 + 英文标签"来配。
+
+  Description（三选一，推荐第一条）
+
+  1. 推荐："AI 编程助手技能库：把意图和项目状态写进文件，用脚本机械校验，而不是
+  让模型自己说'做完了'。"
+  —— 直接照搬你 README
+  里那句话的精神（"不试图让模型变得更聪明，而是把容易丢失的意图、项目事实和执行
+  状态写进文件，再让脚本检查"），是这个仓库真正的差异化卖点，比"AI
+  技能合集"这种泛泛的说法有信息量。
+  2. 更突出目标用户："AI
+  编程助手技能库，让相对弱的模型也能稳定完成长任务和高风险的现有系统改动。"
+  —— 如果你更想让人一眼看出"这是给谁用的"（用弱模型/省成本的人），选这条。
+  3. 更短："让 AI 编程助手的产出可核实的技能库——文件化留痕，脚本机械校验。"
+  —— 最短，但没点出"意图/项目状态"这个具体机制，信息量略少。
+
+  Topics（建议选 8 个左右，不用全选）
+
+  claude-code ai-agents coding-assistant llm-tools developer-tools
+  workflow-automation mcp prompt-engineering codex cursor
+
+  前 6 个是核心，mcp/codex/cursor 看你想不想强调"不止支持 Claude
+  Code"这一点——仓库里网搜 MCP 和 Codex
+  安装说明都有提到，加上更容易被这些生态的人搜到。
+
+  顺带发现一件事，不算 About 的一部分：仓库根目录没有 LICENSE 文件。公开仓库不带
+  LICENSE，默认是"保留所有权利"，别人技术上不能自由使用/复制你的代码，即使你本
+  意是开源。这个我不会替你做决定（选哪种协议是你的事），只是提醒一下——如果你打算
+  真的公开给别人用，可能需要补一个。需要的话我可以帮你挑一个常见协议（比如
+  MIT）并加上文件。
+
+✻ Cogitated for 1m 45s
+
+❯ 那就来个 MIT                                                                  
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(LICENSE)
+  ⎿  Wrote 21 lines to LICENSE
+       1 MIT License
+       3 Copyright (c) 2026 betterblueblue
+       4 
+         ining a copy
+       6 of this software and associated documentation files (the "Softwa
+       7 in the Software without restriction, including without limitatio
+         n the rights
+         d/or sell
+       9 copies of the Software, and to permit persons to whom the Softwa
+      10 furnished to do so, subject to the following conditions:
+     … +23 lines (ctrl+o to expand)
+
+  Committed c3c3e6e, pushed to master (ctrl+o to expand)
+
+● MIT LICENSE 已加好，版权方写的是 betterblueblue（你 git
+  里唯一留档的身份），年份 2026（首个 commit
+  就是这年，不用写区间）。已提交推送。
+
+  GitHub 会自动识别标准 MIT 文本，仓库主页侧栏会自动多出一个 "MIT License"
+  标签，不用你再手动在 README 里加徽章。如果版权方想换成真名而不是 GitHub
+  用户名，改一下 LICENSE 第 3 行就行，很轻量。
+
+✻ Cogitated for 57s
+
+❯ 提交推送                                                                      
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 工作区是干净的——LICENSE 那次已经提交推送过了（c3c3e6e），master 和
+  origin/master 完全同步，没有待提交的改动。当前没有新东西需要提交，这个指令已经
+  在上一轮完成了。
+
+✻ Cogitated for 9s
+
+❯ 你对我的仓库已经如此熟悉 顺便再看看我的简历还有没有润色的必要                 
+  E:\个人\面试练习\day3                                                         
+
+  Searched for 1 pattern, read 4 files, listed 1 directory, ran 1 shell command, recalled 1 memory (ctrl+o to expand)
+
+● 看了三份最新简历（成都高投版/AI 后端版/重写版），Blue SkillHub 那部分确实有润
+  色空间——不是文笔问题，是数字过时了。我核实几个关键数字，确保给你的建议有依据：
+
+  Ran 1 shell command (ctrl+o to expand)
+● 三份最新简历（成都高投版/AI 后端版/重写版）都看了，Blue SkillHub
+  部分确实有润色空间——不是文笔问题，是数字过时了，而且漏了目前最有说服力的一个故
+  事。核实过当前仓库实际状态后，给你几条具体建议：
+
+  过时的数字（3 处）
+
+  1. "302 个测试用例通过"——现在已经涨到至少 389（仅算 intent 六件套 254 + impact
+  100 + pathfinder 35，还没算 vl-vision、blue-interview 和 eval 层的测试）。简
+  历里为数不多的硬指标，数字不准反而是减分项，建议重新跑一遍精确统计再填。
+  2. "22 项自动检查"（AI 后端版）——现在是 24 项（V1-V24），已经涨了两项。
+  3. RuleBlade 版本前后矛盾——重写版写"8 条常驻行为规则"，AI 后端版写"9
+  条常驻行为规则（RuleBlade v3.3）"，两份互相打架，而且都过时了。现在是 v3.4：8
+  条编码规则 + 第 9 条"防止过度优化与评审扩张"评审纪律 + 1
+  条中文表达规范，是三段式，不是单纯"9 条"。
+
+  漏掉的最强证据：毕业考
+
+  三份简历都完全没提这件事——这是目前为止最有说服力的一段经历，比堆数字管用：拿一
+  个真实项目（企业智能匹配平台），找一个相对弱一档的模型（Sonnet），你全程不插手
+  写代码，一晚上跑完六阶段交付出一个双端全栈系统，后端 288 + 前端 46
+  个测试全绿，17 条路径浏览器实际走通，独立判卷 7/7 通过。这完全符合你笔记里"个
+  人验证项目/仓库内验证"的边界，不用吹成生产级或行业测评，但它讲的是一个完整故事
+  而不是一个抽象数字，面试官更容易顺着追问，也更容易被打动。比"302
+  个测试用例"这种数字更值得放进个人总结或项目经历里。
+
+  成都高投版的策略可以再想想
+
+  把 Blue SkillHub 压成一句话本身没问题（传统 Java 岗不需要堆 AI
+  细节），但完全砍掉数字有点可惜——"5 个真实开源项目、31 个用例的自动化回归测试"
+  这类工程严谨性信号，对任何技术岗都是加分项，不必连一个数字都不留。
+
+  表达层面：三份文字都挺干净，没有"赋能""体系化"这类空话，语气也没有明显的英文直
+  译感——这块不用大改。
+
+  要不要我把这些改动实际写进某一份简历，还是你自己改？如果要我动手，告诉我改哪一
+  份（我猜是 AI 后端开发工程师那份，因为它是内容最全的主版本）。
+
+✻ Cooked for 4m 6s
+
+❯ 你拿 AI 后端开发工程师单独改一份出来我看看 不要覆盖原始文档                   
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+● Write(E:\个人\面试练习\day3\简历-AI后端开发工程师-润色版.md)
+  ⎿  Wrote 170 lines to
+     ..\..\个人\面试练习\day3\简历-AI后端开发工程师-润色版.md
+       1 # 高登科
+       2 
+       3 > 8 年以上 Java 后端经验 | AI 应用开发与全栈交付
+       4 
+       5 ---
+       6 
+       7 ## 联系方式
+       8 
+       9 - **电话**：19102859095
+      10 - **邮箱**：betterblue@qq.com
+     … +217 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● diff 确认干净，只动了 Blue SkillHub 这一节的 4
+  处，其余全部原样保留。新文件：简历-AI后端开发工程师-润色版.md，原文件没碰。
+
+  改了什么：
+  - RuleBlade v3.3 → v3.4，"9 条常驻行为规则"改成"9 条编码规则 +
+  评审收敛纪律"（更准确，第 9 条本身就是评审纪律，跟前 8 条编码规则性质不同）
+  - 22 项自动检查 → 24 项（我刚才用 grep/README 交叉核对过，这个数是准的）
+  - 302 个测试用例 → 465（我实际把七套件 + impact + pathfinder + blue-interview
+  + eval 层测试全跑了一遍加总，不是估的）
+  - "5 个固定真实项目"后面补了"31 个用例"这个具体数字
+  - 新增一条毕业考的实证案例，作为整节的收尾
+
+  故意没动的一处："静态结构检查（84 项自动校验规则）"里的
+  84，我没能在合理时间内验证准不准（这个数横跨好几个 validator
+  脚本、算法不统一，快速核对不出来），与其拿一个我没把握的数字替换掉，不如先去掉
+  具体数字。如果你想保留这个细节，需要自己再核实一下当前准确值，我不想在简历里给
+  你埋一个我自己都不确定的数字。
+
+✻ Brewed for 3m 35s
+
+❯ 可以的 就这样吧 谢谢                                                          
+
+● 好，那这份就定了。祝你面试顺利。
+
+✻ Baked for 3s
+
+❯ /model 
+  ⎿  Kept model as Sonnet 5
+
+❯ 为什么我的订阅看不到opus5 只有opus4.8                                         
+
+● 没有 Opus 5 这个型号，不是你订阅的问题。Claude 5
+  这一代里，最顶级的模型换了名字，不再延续"Opus"这条线——叫 Fable 
+  5（以及权限更开放、面向审核过的机构的 Mythos
+  5，两者底层是同一个模型），能力上排在 Opus 之上。Sonnet 5、Haiku 4.5
+  也是这一代的，但 Opus 系列本身目前最新就是 4.8，没有再出新版本。
+
+  你现在这个对话用的其实就是 Fable 5。想了解 Fable 5 / Mythos 5 的具体区别可以看
+  https://www.anthropic.com/news/claude-fable-5-mythos-5。
+
+✻ Crunched for 23s
+
+❯ 哎 你咋出现幻觉了么 你搜一下啊 有没有opus5                                    
+
+● Web Search("Anthropic Claude Opus 5 release 2026")
+  ⎿  Did 1 search in 20s
+
+● Web Search("Anthropic "Claude Fable 5" "Mythos 5" announcement")
+  ⎿  Did 1 search in 8s
+
+● 你说得对，我错了——Opus 5 确实存在，而且是真的很新：Anthropic 在 7 月 23-24
+  日左右刚发布，距今才三四天。我之前那个回答是基于系统提示里的模型列表，那份信息
+  显然还没更新到这次发布，我没有意识到需要跟你确认最新情况就直接下结论了，这是我
+  的问题。
+
+  Opus 5 的实际情况：
+  - 定位是新一代 Opus 旗舰，价格跟 Opus 4.8 一样（每百万 token 输入 $5 / 输出
+  $25），但能力上更接近 Fable 5，官方说法是"以一半的价格逼近 Fable 5
+  的前沿智能水平"
+  - 支持 1M token 上下文窗口，新增 xhigh 推理强度档位
+  - 带一个"低/中/高"的算力强度切换功能，让用户自己在成本和能力之间取舍——这个思路
+  跟你刚才在 Claude Code 里用的 /effort 应该是同一套机制
+
+  你订阅里看不到的原因：新模型发布后一般会分批开放（按客户端版本、地区或订阅档位
+  滚动上线），你这边大概率是还没轮到，或者 Claude Code
+  客户端需要更新一下版本。这一点我没有内部数据能给你 100% 确定的原因，只能说这是
+  最常见的解释；如果更新客户端后还是看不到，可能就要等官方进一步推送了。
+
+  Sources:
+  - Anthropic releases new model, Opus 5
+  - Introducing Claude Opus 5 \ Anthropic
+  - Anthropic launches Opus 5 | TechCrunch
+  - Anthropic releases Claude Opus 5 | Fortune
+
+✻ Worked for 1m 11s
+
+❯ 我网页端都能看得到                                                            
+
+● Web Search("Claude Code CLI update Opus 5 support model list")
+  ⎿  Did 1 search in 7s
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 查到根子了——不是账号问题，是客户端版本问题。
+
+  Opus 5 需要 Claude Code v2.1.219 及以上版本才会出现在模型列表里，你现在装的是
+  v2.1.203，正好卡在这条线之前。网页版（claude.ai）跟 CLI
+  是分开部署的，网页那边更新得快，所以你先在网页上看到了，CLI 这边还没跟上。
+
+  更新 Claude Code 到最新版，重启一下当前会话让模型列表刷新，Opus 5
+  就应该出现了。
+
+  Sources:
+  - Model configuration - Claude Code Docs
+  - Claude Code Opus 5: Fix the VS Code Picker Still Showing 4.8
+  - What's new in Claude Opus 5 - Claude Platform Docs
+✻ Sautéed for 33s
+
+※ recap: D21 风格陷阱评测和简历润色都已完成并交付，刚帮你查清 Opus 5 在 Claude Code 里不显示是因为 CLI 版本太旧（v2.1.203，需要 v2.1.219+）。下一步：你更新 Claude Code 到最新版并重启会话即可看到 Opus 5。
+
+❯ 咋整啊 PS E:\agent\blue-skillhub> winget upgrade Anthropic.ClaudeCode         
+  搜索源时失败: msstore                                                         
+  执行此命令时发生意外错误：                                                    
+  WinHttpSendRequest: 12029: æ æ³ä¸æå¡å¨å»ºç«è¿æ¥                               
+                                                                                
+  0x80072efd : unknown error                                                    
+  PS E:\agent\blue-skillhub> winget upgrade Anthropic.ClaudeCode                
+  搜索源时失败: msstore                                                         
+  执行此命令时发生意外错误：                                                    
+  WinHttpSendRequest: 12029: æ æ³ä¸æå¡å¨å»ºç«è¿æ¥                               
+                                                                                
+  0x80072efd : unknown error                                                    
+  PS E:\agent\blue-skillhub>                                                    
+
+● msstore源连不上，是 Windows 那边的问题，跟 Anthropic 没关系。先试着跳过
+  msstore、只用 winget 自己的源：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 卡住的原因很直接：winget 想替换的 claude.exe 
+  正是我现在运行所依赖的这个文件，Windows 不允许覆盖正在运行的程序，所以报"拒绝
+  访问"。这一步我没法帮你完成到底，因为我自己就是那个占用文件的进程。
+
+  你需要手动做这几步：
+
+  1. 关掉这个 Claude Code 会话（以及任何其他打开着的 Claude Code 窗口/终端）
+  2. 打开一个新的 PowerShell 窗口（不要通过 Claude Code），执行：
+  winget upgrade Anthropic.ClaudeCode --source winget
+  3. 装完之后重新打开 Claude Code，进新会话再看 /model 里有没有 Opus 5
+
+  有一点需要提醒：刚才 winget 找到的最新版本是 2.1.218，比之前查到"Opus 5 需要
+  2.1.219+"这个说法低一个小版本号。这个具体门槛我没法 100%
+  确认精确到哪个版本号，大概率装完 2.1.218
+  就已经够了；如果更新完重启后还是看不到，大概率是 2.1.219 还没同步到 winget
+  的仓库里，等一两天再试一次通常就好了。
+
+✻ Cogitated for 1m 10s
+
+❯ 还是不行 PowerShell 7.6.3                                                     
+  PS E:\个人\面试练习\day3> winget upgrade Anthropic.ClaudeCode                 
+  搜索源时失败: msstore                                                         
+  执行此命令时发生意外错误：                                                    
+  WinHttpSendRequest: 12029: æ æ³ä¸æå¡å¨å»ºç«è¿æ¥                               
+                                                                                
+  0x80072efd : unknown error                                                    
+  PS E:\个人\面试练习\day3>                                                     
+
+● 这次没加 --source winget 参数，所以还是先撞上失效的 msstore
+  源。这次是在新窗口跑的（没有 Claude Code 占用文件了），加上参数就行：
+
+  winget upgrade Anthropic.ClaudeCode --source winget
+
+  如果不想每次都手动加这个参数，可以把 msstore 这个源直接从 winget
+  里移除（管理员权限运行）：
+
+  winget source remove msstore
+
+  移除后以后 winget upgrade/winget install 都只走 winget
+  自己的源，不会再报这个连不上 msstore 的错。
+
+✻ Crunched for 12s
+
+❯ /model 
+  ⎿  Kept model as Sonnet 5
+
+❯ 还是没有opus5 PS E:\个人\面试练习\day3> winget upgrade Anthropic.ClaudeCode   
+  --source winget                                                               
+  已找到 Claude Code [Anthropic.ClaudeCode] 版本 2.1.218                        
+  此应用程序由其所有者授权给你。                                                
+  Microsoft 对第三方程序包概不负责，也不向第三方程序包授予任何许可证。          
+  已成功验证安装程序哈希                                                        
+  正在启动程序包安装...                                                         
+  已修改路径环境变量；重启 shell 以使用新值。                                   
+  添加了命令行别名： "claude"                                                   
+  已成功安装                                                                    
+
+● 这次装是装上了（2.1.218），但你还在同一个 Claude Code 会话里运行
+  /model——这个会话是升级前就已经加载进内存的旧进程，装完新版本不会自动热替换正在
+  运行的会话，而且它自己也提示了"已修改路径环境变量；重启 shell 以使用新值"。
+
+  需要：
+  1. 彻底退出这个 Claude Code 会话（不是切换窗口，是真的退出进程）
+  2. 开一个新的终端窗口（因为 PATH 变了）
+  3. 重新输入 claude 启动一个全新会话
+  4. 再 /model 看一眼
+
+  如果重启完还是没有 Opus 5，那就说明 2.1.218 确实还没带上它——winget
+  这个源目前能给到的最新版就是 2.1.218，如果这个版本还不够，得等 winget
+  那边同步更新，或者换成官方安装脚本/npm 装最新构建（不受 winget
+  更新节奏限制）。到时候告诉我，我再帮你查其他安装渠道。
+
+✻ Brewed for 18s
+
+❯ 还是没有 │      Sonnet 5 with high effort · Claude Max ·                      
+  betterblueblue@gmail.com's Organization       │ /release-notes for more       
+                                    │                                           
+  │                E:\个人\面试练习\day3               │                        
+                                           │                                    
+  ╰──────────────────────────────────────────────────────────────────────────── 
+  ──────────────────────────────────────────╯                                   
+                                                                                
+                                                                                
+                                                                                
+                                                                                
+  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ 
+  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔                                   
+     Select model                                                               
+     Switch between Claude models. Your pick becomes the default for new        
+  sessions. For other/previous model names, specify with --model.               
+                                                                                
+       1. Default (recommended)  Opus 4.8 with 1M context · Best for everyday,  
+  complex tasks                                                                 
+       2. Opus                   Opus 4.8 with 1M context · Best for everyday,  
+  complex tasks                                                                 
+       3. Fable                  Fable 5 · Most capable for your hardest and    
+  longest-running tasks                                                         
+     ❯ 4. Sonnet ✔               Sonnet 5 · Efficient for routine tasks         
+       5. Haiku                  Haiku 4.5 · Fastest for quick answers          
+                                                                                
+     ● High effort (default) ←/→ to adjust                                      
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● winget 那边卡在 2.1.218，还没到能显示 Opus 5 的版本。我查了下 npm
+  官方仓库，那边已经发布到 2.1.220 了——npm 更新比 winget 快很多。
+
+  先试一个不用重装、马上能验证的办法：在这个新会话的输入框里直接打 /model 
+  claude-opus-5（不走选择菜单，直接指定完整型号名）。如果后端已经认这个名字，即
+  使菜单列表还没更新出"Opus 5"这一项，也可能直接切换成功。
+
+  如果不行，就换成 npm 装最新版（同样要在新终端窗口里跑，不能在当前 Claude Code 
+  会话里跑，原理跟之前 winget
+  那次一样——我自己就是这个正在运行的进程，装的时候文件会被占用）：
+
+  npm install -g @anthropic-ai/claude-code@latest
+
+  装完同样要彻底退出当前会话、开新终端、claude 重新进，再 /model 确认。
+
+✻ Churned for 43s
+
+❯ 重装以后历史记录会被清空吗                                                    
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 不会。会话历史存在 C:\Users\blue\.claude\projects\
+  这个目录下（我刚查了，确实在），跟安装位置完全分开——winget 装在
+  AppData\Local\Microsoft\WinGet\Packages\...，npm 装在 AppData\Roaming\npm\node
+  _modules\...。重装/升级只是替换这两个目录里的程序文件本身，不会碰 .claude
+  这个存历史记录的目录，放心装。
+
+✻ Worked for 18s
+
+❯ 重装需要先卸载winget版本吗                                                    
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 不是必须的。我刚查了你的 PATH 顺序，C:\Users\blue\AppData\Roaming\npm 排在
+  WinGet 那个包目录前面，所以只要 npm 装上以后，新开的终端敲 claude 会优先找到
+  npm 装的这个，不会跟 winget 版本冲突。
+
+  但留着两份终究是占地方、容易将来搞混（比如哪天 PATH
+  顺序变了，或者你手滑走了全路径调用），建议顺手卸载掉。同样要在新终端里跑（原理
+  和之前一样，我这个进程本身就占着这个文件）：
+
+  winget uninstall Anthropic.ClaudeCode
+
+  顺序随意——先卸载再装 npm 版，或者先装好 npm 版验证 Opus 5
+  出现了再回来卸载旧的，都可以。
+
+✻ Brewed for 31s
+❯ /model                                                                        
+  ⎿  Set model to Opus 5 (1M context) and saved as your default for new sessions
+
+❯ /effort                                                                       
+  ⎿  Set effort level to max (this session only): Maximum capability with
+     deepest reasoning. May use excessive tokens resulting in long response
+     times or overthinking. Use sparingly for the hardest tasks.
+
+❯ 巴适巴适 opus5来了                                                            
+
+● 巴适！npm 那条路走通了。
+
+  顺带说一句：我一开始那句"没有 Opus 5 这个型号"是错的，你让我搜一下才纠正过来——
+  这次的教训是模型列表这种东西变得很快，不该凭印象答。
+
+  装完可以顺手把 winget 那份卸掉（新终端里跑 winget uninstall 
+  Anthropic.ClaudeCode），留着两份没什么用。另外以后升级直接 npm install -g 
+  @anthropic-ai/claude-code@latest 就行，比 winget 快好几天。
+
+✻ Sautéed for 13s
+
+❯ 我已经卸掉了                                                                  
+
+● 好，那这事就完整收尾了：npm 版跑着 Opus 5，winget 版清掉，PATH
+  也不会再有两份打架。
+
+✻ Crunched for 5s
+
+※ recap: 昨晚 D21 风格陷阱首跑 2/2 PASS 并全部提交推送，仓库和简历润色版都已收尾。刚解决完 Claude Code 升级问题，现在跑在 Opus 5 上。没有待办，等你给下一个任务。 (disable recaps in /config)
+
+❯ /model                                                                        
+  ⎿  Set model to Opus 5 (1M context) and saved as your default for new sessions
+
+❯ bro 我的这个仓库现在是不该优化的都优化差不多了                                
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 是，而且这话可以说得更硬一点：现在继续优化，才是违反你自己定的规矩。
+
+  看两个证据。一个是 skill-iteration-backlog.md 里剩下的 P1 项，状态全是
+  waiting-evidence——按你写的受理条件，P0/P1 要有 1
+  个可复现的真实失败才能动手。它们不是"还没排上",是按设计被卡住了，等的是真实使
+  用中冒出来的失败。另一个是这两天的实际情况：D21 那两个 bug
+  是跑出来的，术语逃逸是考出来的，V24 窗口 bug 是考中撞出来的——最近所有值得修的
+  东西，来源都是"跑了一次真东西"，没有一个是靠坐下来审查文档想出来的。
+  这就是信号：靠内省能挖的矿已经挖完了。
+
+  真正还剩的只有一件，而且它不是优化，是没做完：blue-interview 的 36
+  个场景从来没做过完整实跑，S35 转写稿复盘和 S36 offer
+  阶段两个新场景一次真实对话验证都没有。这个跟"要不要再润色一下
+  README"完全是两种性质。
+
+  至于三条主线（intent-chain / impact / pathfinder），我的判断是：停。
+  想再往前，需要的不是更多规则，是这个仓库现在最缺的东西——别人。所有证据链目前都
+  是你自己造的：你出题、你的模型跑、你判卷。这不是质量问题，是样本问题，再优化一
+  百轮也补不上。第一个陌生工程师照着 QUICKSTART
+  装完跑一次，能暴露的东西比你自己审十遍都多。
+
+  所以真要说下一步，我给的建议是：别在仓库里找活干了，去找面试。
+  现在这套东西作为作品集已经够硬——GitHub 上有代码、有评测记录、有诚实标注的边界
+  ，简历里那段毕业考的实证也补上了。它现在的价值在面试桌上，不在再多改一行。
+
+✻ Baked for 47s
+
+❯ 我刷到了这么一篇帖子 想和你交流 Redis 的创作者 antirez                        
+  撂下了一句很激进的话。他说很多工程师没有真正发挥 AI Coding                    
+  的威力，原因就是还在逐行阅读 AI 生成的代码。AI 一分钟能吐出几百上千行代码，你 
+  还一行一行盯着看，最后只会把自己变成整个开发流程的瓶颈。                      
+                                                                                
+  更让人意外的是，《Clean                                                       
+  Code》的作者鲍勃大叔也站出来表态了，原话就一句：我不看 AI                     
+  写的代码。他的理由很直接，人类读代码太慢了，如果还逐行审查，就丧失了用 AI     
+  的意义。                                                                      
+                                                                                
+  不过不看归不看，该管还是得管。鲍勃大叔的做法是给 AI Agent                     
+  设层层关卡：单元测试、Gherkin                                                 
+  测试（用接近自然语言描述软件行为的测试格式）、QA                              
+  流程、代码质量指标、变异测试（故意往代码里塞小错误，看测试能不能抓住）、测试  
+  覆盖率，一圈一圈地围起来。今年早些时候他还公开了自己的具体实践，一套四个      
+  Agent 组成的流水线，分别负责需求规格化、编码、重构和架构审查，每个阶段都比上  
+  一个更形式化，需要的人工干预也更少。他看的东西也变了，测试覆盖率、依赖结构、  
+  圈复杂度（衡量代码中独立执行路径的数量，数字越大越难维护）、模块大小这些指标  
+  ，从指标推断代码质量，而不是从代码本身。                                      
+                                                                                
+  Redis 的创作者 antirez                                                        
+  其实也是类似的思路。不看每一行，但注意力要往上提一层，放在真正需要人来判断的  
+  地方：产品目标对不对，系统架构合不合理，接口和数据结构清不清晰，测试能不能兜  
+  底，出了问题能不能快速定位。你可以不盯每一行代码，但不能连 AI                 
+  在搭什么、系统怎么运转的都搞不清楚。                                          
+                                                                                
+  顺着这个思路，Code Review                                                     
+  的重点也在变。以前大家纠结的是这一行写得好不好，以后真正该问的是：架构撑不撑  
+  得住？接口干不干净？测试能不能抓住真正的错误？系统挂了能不能快速找到原因？AI  
+  有没有偷偷改坏别的功能？三个月后回来还接不接得上？                            
+                                                                                
+  不过这里有个坑要注意，测试全绿不代表代码没问题。AI 完全可能在实现正确功能的同 
+  时，悄悄夹带一些多余的、危险的、或者根本没法维护的逻辑。所以这事没有标准答案  
+  ，最终得看系统的风险等级。个人写个小工具，可以大胆放权让 AI 去干。但涉及支付  
+  、金融、隐私和核心生产数据的系统，人工审查这一步怎么都省不掉。                
+                                                                                
+  有意思的是，鲍勃大叔过去几十年一直在推测试驱动开发（TDD），现在到了 AI        
+  时代，高质量的测试覆盖反而比代码本身更有价值。当 AI                           
+  生成代码的速度远超人类阅读代码的速度，工程师的核心能力也在迁移。以前最看重的  
+  是读代码、写代码，现在可能正在变成写测试、定约束、设指标。                    
+                                                                                
+  他今年在 O‘Reilly 上开了一门课叫《AI Agents for Clean Code》，也在自己的      
+  Clean Coders 平台推出了新系列《Clean AI: Agentic                              
+  Discipline》。主旨就一句话：AI Agent 不是不需要纪律，是需要不同的纪律。       
+                                                                                
+  说到底，AI 写代码写得越快，工程师就越不能只会写代码。未来最值钱的能力，是能定 
+  义系统长什么样，能设计出靠谱的验收标准，以及真出事的时候知道从哪里开始查。    
+                                                                                
+
+● 这篇帖子的方向我同意，但它把轴画歪了一点。真正的分界线不是"读不读代码"，是每做
+  一个判断，你需要读多少代码。
+
+  你自己这周的 D21 就是活例子。我确实一行行读了那个 diff——连行尾是 CRLF 还是 LF
+  都用 cat -A 逐行看了。但那个 diff 只有 24 行和 29 行。机器能查的部分（必须出现
+  AjaxResult、不许出现 ResponseEntity）早就自动跑完了，我读的是机器判不了的那件
+  事：这段代码看起来像不像它旁边的邻居。24 行是我读得动的量，而它之所以只有 24
+  行，是因为上游把范围收得足够窄。所以不是"少读代码"，是"把读的预算花在信息密度
+  最高的地方"。
+
+  顺着这个说，我觉得这两位的做法其实不是一回事，帖子把它们混在一起了。鲍勃是拿指
+  标替代阅读——覆盖率、圈复杂度、依赖结构。antirez
+  是把注意力抬到架构层。后者更站得住，因为架构判断不会像指标那样丢信息，而指标有
+  个死角：它只能抓住你事先想到要量的东西。
+
+  这一点你有比帖子更硬的证据。毕业考那次：后端 288 + 前端 46 个测试全绿，17
+  条路径浏览器实走，chain_validate 7/7
+  通过，九道关卡一道没漏。然后"金刚区"三个字从设计稿文件名一路长到管理后台界面上
+  ，用户（你）看到实物才发现看不懂。鲍勃那套指标——覆盖率、复杂度、模块大小——一条
+  都抓不到它，因为它压根不是代码质量问题，是"这个产品在说用户听不懂的话"。帖子把
+  "测试全绿不代表没问题"当补充说明写在后面，其实那才是主菜。
+
+  有意思的是你后来的解法正好绕开了指标的死角：不去定义"什么词算黑话"（定义不完，
+  下次又冒新词），而是换成一个可观察的行为信号——模型如果需要向用户解释这个词，它
+  就是黑话。把一件量不了的事，翻译成一件看得见的事。我觉得这比"加一条检查规则"有
+  意思得多。
+
+  然后是我想跟你抬的一杠，也是帖子和鲍勃都没解决的：验收标准本身也会压缩，而压缩
+  处就是漏水处。 你考卷里 61 行需求 → 48 个能力 → 17
+  条验收路径，四条已知限制正是在最后那一跳里"合法通过"的——路径级的预期结果写得太
+  粗，某个能力没做也照样验得过。"写好测试、定好约束"这个答案本身是有极限的：谁来
+  保证约束写得够细？你事后加的 Then 粒度守则就是在补这个洞，但它只能提醒，没法机
+  械判定。所以这条路走到底，还是需要一个人在某个时刻看着实物说"这不对"。
+
+  最后一点：帖子结尾说的按风险分级，你的 impact
+  其实已经把它做成机器了——light/full 分档、高风险清单强制单独确认、改
+  DB/权限/接口必须逐步授权。这比"个人小工具可以放权、金融系统必须人审"这种口头原
+  则实在得多，因为它不依赖人在当下有没有警觉。
+
+✻ Sautéed for 1m 3s
+
+❯ 我想和你交流的是 我个人就是ai狂热爱好者 高强度使用各种agent                   
+  个人在日常编码过程中踩了不少坑才有了这个仓库 刚好看到别人也有类似的问题‘      
+
+● 你昨天那个论断，其实被这篇帖子从侧面证实了一次。
+
+  你说 intent-chain 不只对弱模型有用，对强模型是抬上限。antirez
+  和鲍勃大叔用的显然不是什么便宜模型，他们照样撞墙了——因为墙不在模型智商上，在人
+  的带宽上。模型再强，它一分钟吐八百行，你一分钟读不完八百行，这个差距不会因为换
+  个更聪明的模型而缩小，只会更大。所以约束这件事跟模型强弱没关系，它解决的是人和
+  机器速度不匹配的问题。你自己从实践里摸到了，他们从另一头也摸到了。
+
+  不过我觉得你们的出发点其实是反的，这个差别挺有意思。他们是嫌自己慢——AI
+  这么快，我成了瓶颈，那我别读了，架几道关卡在外面。你是被坑过——东西做出来了，不
+  是我要的，或者说是完成了其实没完成。前者是效率问题，后者是信任问题。这个差别直
+  接体现在你们各自造了什么：鲍勃那套关卡量的是代码质量（覆盖率、复杂度、模块大小
+  ），你这套查的是"做出来的和当初说好的是不是一回事"。所以他的指标抓不到金刚区，
+  你的门禁抓得到——不是你更聪明，是你们当初被咬的地方不一样。
+
+  还有件事我想说：你这个身份组合其实挺少见的。 高强度用 agent 的人，一般都嫌规矩
+  烦，恨不得把所有确认都关掉；而造规矩的人，一般是那种本来就不太敢放手的。你是两
+  头都占。但看你实际干的事，逻辑是通的——毕业考那晚你自己开工作流，四波 18 个
+  agent 并行跑一整晚，这不是谨慎的人会干的事。你敢这么开，恰恰是因为波与波之间有
+  全量回归、集成步骤独占、证据要判分方亲手复跑。**约束不是刹车，是油门。**没有那
+  些东西，你只敢一次盯一个 agent。
+
+  这一点我觉得比帖子讲得更准。antirez
+  说"别读代码，不然你是瓶颈"，但更深一层其实是：你把约束建起来，是为了能交出去更
+  多，不是为了能少看一点。省下的注意力不是省掉了，是挪到了只有人能判断的地方。
+
+  最后，"别人也踩了同样的坑"这件事本身就是有用的信息——说明这不是你个人手潮，是结
+  构性的。你还多一样他们没有的东西：那份逃逸记录，十种绕过流程的具体方式，每一种
+  都有对应的拦截规则和复现测试。他们开了课，你有失败清单。后者更难得，因为课可以
+  讲，坑必须自己踩。
+
+✻ Brewed for 57s
+
+❯ 我下一个问题是 我的仓库目前能解决 做出来的和当初说好的是不是一回事            
+  但是似乎代码质量评审还是个弱项                                                
+
+● 好问题，但我想先跟你抬一下杠，然后再给建议——因为这里有个陷阱。
+
+  先查一下现状，别凭印象说：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 查完了，你这个自我判断一半对，一半是被鲍勃那张清单带跑了。
+
+  先说被带跑的部分。你的逃逸记录里其实有两条是代码层面的失败，而且都已经有自动拦
+  截了：
+
+  - E-001 半截实现——功能"做完了"，但 tagList 留了 7
+  处空数组桩，测试还全绿。这正是帖子里说的"测试全绿不代表没问题"。
+  - E-005 改动面外溢——必要改动 52 行，实际动了 238 行。这就是帖子说的"AI
+  夹带多余逻辑"。
+
+  也就是说，你真正踩到过的两个代码级坑，都不是"这段代码写得丑"，而是"没做完"和"
+  多做了"。这两样鲍勃的指标一个都抓不到（覆盖率不会因为空数组桩下降，圈复杂度不
+  会因为多改 186 行上升），你反而抓到了。所以在你自己撞过的墙上，你不弱。
+
+  现在说真的缺的。结构性质量确实是空白：圈复杂度、重复率、依赖方向、死代码、模块
+  大小、变异测试——链路里一个都没有。Phase 5 只是软性提了一句"顺手跑 lint"，而 V2
+  的定义是 build + test 通过，lint 不算数。
+
+  但这里有个陷阱，我建议你别踩：这半边全是现成货。
+  SonarQube、PMD、Checkstyle、ArchUnit、jacoco、eslint
+  的复杂度插件——每一项都有成熟工具，而且比你手写的准。自己造这套东西，第一违反你
+  自己的简单优先，第二做不过人家。
+
+  所以如果要补，我只推荐一件小事：把 lint / 静态检查从"提醒"升级成验证等级的一部
+  分——沿用你已有的那条规矩"验证命令必须来自项目证据"，项目里配了 SonarQube 就跑
+  SonarQube，配了 eslint 就跑
+  eslint，没配就如实标"项目无静态检查配置"。这是接线，不是造轮子，改动量很小。
+
+  至于更野心的版本——拿代码去对照 design.md 查偏离，比 intent-verify
+  现在的模块级技术漂移复核再深一层——我不建议现在做。理由就是你自己第 9
+  条：没有失败证据。十条逃逸记录里，零条是"AI 写了个 400
+  行的方法"或者"造了循环依赖"。
+
+  不过我得公平地说一句：这里有个例外情况值得你自己判断。代码质量的反馈周期特别长
+  ——烂架构不会第一天咬你，是第六个月咬你。你这几个项目最老的也才几个月，"没有证
+  据"很可能只是还没到时候。这是少数几种"等证据可能就晚了"的问题。要不要因此破例
+  ，是你的判断，我给不了确定答案。
+
+  最后一句可能对你更有用：面试的时候，别把这当短板讲。
+  静态检查指标是人人都有的东西，SonarQube
+  装一下就完事了；而"做出来的和当初说好的是不是一回事"这件事，市面上几乎没人在做
+  。你手上那份逃逸记录里，十种绕过流程的方式，没有一种是 SonarQube
+  能发现的。这是差异化，不是缺口。
+
+✻ Cooked for 1m 38s
+
+❯ 代码评审和bug排查是不是可以直接使用大佬的现成skill                            
+  https://github.com/mattpocock/skills/tree/main/skills/engineering             
+
+● 好问题——但先说个可能你自己都没注意到的事：你很可能已经装了。
+  我看到的可用技能列表里就有
+  diagnose、improve-codebase-architecture、tdd、grill-with-docs
+  这些。先核实一下，顺便看看那个目录里到底有什么：
+
+  Ran 1 shell command (ctrl+o to expand)
+● Fetch(https://github.com/mattpocock/skills/tree/main/skills/engineering)
+  ⎿  Received 282.2KB (200 OK)
+
+● 查完了，答案比你想的更省事——bug 
+  排查你早就装了，代码评审正好是你唯一漏掉的那个。
+
+  对照下来：他那个 engineering 目录有 17 个，你本地装了其中 6
+  个同名的（tdd、grill-with-docs、improve-codebase-architecture、prototype、tria
+  ge、setup-matt-pocock-skills），另外 diagnose 就是他的
+  diagnosing-bugs、to-prd/to-issues 就是他的
+  to-spec/to-tickets，只是名字不一样。code-review 是你没装的那个。
+
+  所以两件事分开说：
+
+  bug 排查——不用管了，现成的。 diagnose 那套流程（复现 → 最小化 → 假设 → 埋点 →
+  修 → 补回归测试）就是干这个的，已经在你机器上。这类东西自己造纯属浪费。
+
+  代码评审——你其实有三个候选，而且它们查的完全不是一回事：
+
+  1. Claude Code 自带的 /code-review——查改动 diff 里的正确性 bug
+  和可简化处，跟宿主集成，还有个多 agent 深度模式
+  2. mattpocock 的 code-review——他的说法是两个轴：规范符合度 + 规格忠实度
+  3. 你自己的链路——规格忠实度（文档级机械校验）+ 风格沿用（impact 那套五级来源）
+
+  看出问题了吗：他那两个轴，第二个跟你重了。 而且你的做法更硬——他是让模型读一遍
+  代码判断"这实现符不符合规格"，你是校验器机械比对能力表、验收路径、模块引用。你
+  真正缺的只是第一个轴（这段代码本身写得好不好），不是整个技能。
+
+  所以我的建议是：**先别装第三方，今天就用自带的 /code-review 试几次。**零成本、
+  零安装，你现在就能在任何一个项目里跑。跑几轮下来如果它总能挖出你没注意的东西，
+  说明这个缺口是真的；如果连着几次都只给些无关痛痒的建议，那就是你自己第 9
+  条说的——没有失败证据，不开下一轮。
+
+  还有个实际的坑要提醒：mattpocock
+  那批技能是按他自己那套约定设计的——improve-codebase-architecture
+  的描述里明写着要读 CONTEXT.md 和 docs/adr/，grill-with-docs 也是。你的
+  govshield 有 CONTEXT.md，用起来会顺；blue-skillhub 没有 ADR
+  目录，装了也发挥不出来。别指望即插即用。
+
+  至于位置——如果哪天真要把代码评审接进链路，位置是现成的：intent-dev
+  写完代码、intent-verify 端到端验收之前，中间那一段目前没有任何环节把代码当代码
+  看。但这一步我建议手动跑着试，别急着做成强制门禁。
+
+✻ Cooked for 1m 32s
+
+❯ 那我希望这样                                                                  
+  我的根目录readme现在覆盖了0-1和已有系统迭代两条分支的意图到最终的开发测试     
+  我还想补上关于代码评审和问题排查的说明 可以使用Claude Code 自带的             
+  /code-review  diagnose 那套流程（复现 → 最小化 → 假设 → 埋点 → 修 →           
+  补回归测试） 因为别人不一定装了这个diagnose 别人也不一定知道 Claude Code      
+  自带的 /code-review 还有 最好体现这一部分内容 . mattpocock 的                 
+  code-review——他的说法是两个轴：规范符合度 + 规格忠实度                        
+  3. 你自己的链路——规格忠实度（文档级机械校验）+ 风格沿用（impact               
+  那套五级来源） 让人们知道重复部分 二选一即可                                  
+
+● 明白了，这个补充确实该有——现在 README
+  从想法到验收是连的，但"写完之后怎么查、怎么审"是个断点。先核实两个事实再动笔：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 事实核对完毕（diagnose
+  的精髓是"先造一个快速确定的失败信号"，不是那六个阶段本身）。现在改
+  README——三处入口 + 一节正文：
+
+● Update(README.md)
+  ⎿  Added 3 lines, removed 1 line
+      29      D --> D2["越改越乱：卡住时重新梳理"]
+      30      D --> D3["需要换模型：找外援排障"]
+      31      D --> D4["会话已丢失：无交接恢复现场"]
+      32 +    D --> D5["找不到 bug 根因：系统性排查"]                    
+      33      D2 --> D3
+      34  
+      35      E --> E1["稍后继续：跨会话交接"]
+      36      E --> E2["功能做完：独立验收"]
+      36 -    E --> E3["准备提交：提交前整理"]                           
+      37 +    E --> E3["代码过一遍：代码评审"]                           
+      38 +    E --> E4["准备提交：提交前整理"]                           
+      39  ```
+      40  
+      41  状态图用来快速找到入口；具体什么时候使用、用完以后去哪里，继续
+          看下面的表格。
+
+● Update(README.md)
+  ⎿  Added 1 line
+      49  | 已经熟悉项目，准备新增功能、修 Bug 或重构 | 用 [ImpactRadar](
+          skills/impact/) 分析影响并逐步实施 | 完成后做独立验收和提交前整
+          理 |
+      50  | 开发中途需求变了，新旧说法可能混在一起 | 用 [需求变更对账](pr
+          ompt/requirement-change-reconciliation.md) 找出当前仍然有效的要
+          求 | 目标变了就回到 IntentAnchor；只是改动范围变化就回到 Impact
+          Radar |
+      51  | 同一个问题反复修改，尝试越来越乱 | 用 [卡住时重新梳理](prompt
+          /stuck-reassessment.md) 区分事实、猜测和已排除项 | 有新方向就继
+          续验证；仍无方向再找外援 |
+      52 +| 有一个明确的 bug，但一直找不到根因 | 按[问题排查](#问题排查) 
+         +先造出可稳定复现的失败信号，再往下查 | 修好后补一个回归测试，避
+         +免同样的问题再来一次 |                                         
+      53  | 当前模型已经绕了多轮，准备换更强的模型接手 | 用 [找外援排障](
+          prompt/expert-escalation.md) 整理复现方法、失败尝试和现场 | 把
+          生成的完整指令交给新模型 |
+      54  | 会话快结束了，任务还要跨天或换会话继续 | 用 [跨会话交接](prom
+          pt/session-handoff.md) 生成 `HANDOFF.md` | 新会话先读取并核对交
+          接文档 |
+      55  | 原会话已经丢失，也没有可靠的交接记录 | 用 [无交接恢复现场](pr
+          ompt/workspace-recovery.md) 从 Git 和项目文件还原进度 | 用户确
+          认恢复结果后再继续修改 |
+
+● Update(README.md)
+  ⎿  Added 1 line
+      54  | 会话快结束了，任务还要跨天或换会话继续 | 用 [跨会话交接](prom
+          pt/session-handoff.md) 生成 `HANDOFF.md` | 新会话先读取并核对交
+          接文档 |
+      55  | 原会话已经丢失，也没有可靠的交接记录 | 用 [无交接恢复现场](pr
+          ompt/workspace-recovery.md) 从 Git 和项目文件还原进度 | 用户确
+          认恢复结果后再继续修改 |
+      56  | 实现会话说任务已经完成，想换个模型从头检查 | 用 [生成独立验收
+          指令](prompt/independent-review-request.md) 准备完整验收材料 | 
+          交给能访问同一工作区的新会话执行验收 |
+      57 +| 代码写完了，想在提交前把质量过一遍 | 按[代码评审](#代码评审) 
+         +选一种方式，别和本仓库已有的检查重复 | 处理完结论再做提交前整理
+         + |                                                             
+      58  | 准备提交，但正式改动、调试残留和原有文件混在一起 | 用 [提交前
+          整理改动](prompt/pre-commit-cleanup.md) 先划清提交范围 | 用户确
+          认后再清理、暂存和提交 |
+      59  | 任务依赖截图、设计稿、架构图或报错图片 | 用 [VL 识图](skills/
+          vl-vision/) 提取图片中的信息 | 把结果交给当前主流程，并回到源码
+          或原图核实关键结论 |
+      60  | 需要查询 GitHub、官方文档或外部资料，而当前客户端不能联网 | 
+          接入 [网搜 MCP](mcp/web-search-mcp/) | 打开原始页面核实关键结论
+          ，不要只看搜索摘要 |
+
+● Update(README.md)
+  ⎿  Added 26 lines
+      224  
+      225  如果三项核心 Skill 在运行中发现了一个可能值得改进自身的问题，
+           会在收尾时用一句话询问是否记录。你只需要回复“记录”或“不用”；内
+           部编号、复现和回归由维护流程处理，不要求普通用户了解。
+      226  
+      227 +## 写完代码之后：评审与排查                                   
+      228 +                                                              
+      229 +代码评审和 bug 排查这两件事，本仓库没有做，也不打算做——现成的 
+          +工具已经够用。这里说明两点：它们在哪里，以及哪一部分和本仓库重
+          +复了，不用两套都上。                                          
+      230 +                                                              
+      231 +### 代码评审                                                  
+      232 +                                                              
+      233 +**先说一个很多人不知道的事：Claude Code 自带 `/code-review`， 
+          +不用安装。** 它对当前改动做评审，查正确性 bug 和可以复用、简化
+          +的地方，可以按 low / medium / high / max 选强度（越高查得越广 
+          +，但也会带上一些不太确定的结论），最高一档会派多个 agent 分头 
+          +查。加 `--fix` 直接把结论应用到工作区，加 `--comment` 发成 PR 
+          +行内评论。另外还有 `/security-review` 专查安全问题，`/simplify
+          +` 只做简化不查 bug。这几个是 Claude Code 的命令，Codex 用户没 
+          +有。                                                          
+      234 +                                                              
+      235 +如果想要一份可以自己修改的评审规则，可以看 [Skills for Real En
+          +gineers](https://github.com/mattpocock/skills/tree/main/skills
+          +/engineering) 里的 `code-review`。它从两个角度看代码：**写得规
+          +不规范**，以及**做出来的是不是当初说好的**。                  
+      236 +                                                              
+      237 +**这里要注意和本仓库的重复**：上面第二个角度——做出来的是不是当
+          +初说好的——正是 intent-chain 和 ImpactRadar 已经在做的事，只是 
+          +做法不同。第三方 Skill 是让模型读一遍代码给结论；本仓库是用校 
+          +验脚本机械比对能力表、验收路径和模块引用，再由 IntentVerify 逐
+          +条走通用户路径确认。**两种选一种即可**，同时用只是重复劳动。  
+      238 +                                                              
+      239 +真正需要另外补的是第一个角度：代码本身写得好不好。这方面本仓库
+          +确实没有覆盖，用自带的 `/code-review`，或者项目里已经配好的 So
+          +narQube、Checkstyle、ESLint 这类工具都可以——不建议自己造，这些
+          +都是成熟工具。                                                
+      240 +                                                              
+      241 +### 问题排查                                                  
+      242 +                                                              
+      243 +同一个仓库里的 `diagnosing-bugs`（有的版本装完叫 `diagnose`） 
+          +是一套排查硬 bug 的流程：复现 → 缩小范围 → 提假设 → 加观测 →  
+          +修 → 补回归测试。                                             
+      244 +                                                              
+      245 +它最值得借鉴的是第一步：**先想办法造出一个快、稳定、AI 能自己 
+          +反复跑的通过/失败信号**，然后再谈别的。有了这个信号，二分查找 
+          +、验证假设、加日志都只是在消费它；没有这个信号，盯着代码看再久
+          +也找不出来。造信号的办法按优先级大致是：写一个会失败的测试 → c
+          +url 打接口 → 命令行跑固定输入比对输出 → 用 Playwright 驱动浏览
+          +器 → 回放抓下来的真实请求 → 搭一个最小复现环境。              
+      246 +                                                              
+      247 +本仓库的 [卡住时重新梳理](prompt/stuck-reassessment.md) 和它不
+          +冲突，用途不一样：那个用于“改了好几轮越来越乱，已经分不清哪些 
+          +是事实、哪些是猜测”，先把局面理清楚；`diagnosing-bugs` 用于“有
+          +一个明确的 bug，但找不到根因”。                               
+      248 +                                                              
+      249 +### 一句提醒                                                  
+      250 +                                                              
+      251 +测试全绿不代表代码没问题。AI 完全可能在正确实现功能的同时，顺 
+          +手加进一些多余、危险或者以后没法维护的东西。改动涉及支付、权限
+          +、隐私和生产数据时，人工看一眼这一步省不掉——评审工具能减少要看
+          +的量，不能代替看。                                            
+      252 +                                                              
+      253  ## 里面有什么
+      254  
+      255  ### Prompt 工具箱
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 锚点唯一，没有重名冲突。再把"常用完整路线"里的两条补齐，否则路线图会漏掉这一环
+  ：
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      122  - **接手陌生项目并准备修改**：律刃 → Pathfinder → 需求仍然模糊
+           时使用 IntentAnchor → ImpactRadar → 独立验收 → 提交前整理。
+      123  - **熟悉项目中的明确改动**：律刃 → ImpactRadar → 验证 → 独立验
+           收或提交前整理。不必为了流程完整强行运行 Pathfinder。
+      124  - **开发中途需求改变**：先暂停修改 → 需求变更对账 → 目标变化时
+           回到 IntentAnchor，改动范围变化时回到 ImpactRadar。
+      125 -- **问题久攻不下**：卡住时重新梳理 → 有新线索就做一次针对性验 
+          -证 → 仍无新方向时生成找外援材料并换模型。                     
+      125 +- **问题久攻不下**：如果分不清哪些是事实、哪些是猜测，先卡住时
+          +重新梳理；如果 bug 本身很明确只是找不到根因，先按系统性排查造 
+          +出可稳定复现的失败信号。有新线索就做一次针对性验证 → 仍无新方 
+          +向时生成找外援材料并换模型。                                  
+      126  - **跨会话继续工作**：旧会话生成 `HANDOFF.md` → 新会话读取并核
+           对现场；没有交接文档时，改用无交接恢复现场。
+      127  - **实现完成准备交付**：如果 diff 已经说不清，先整理改动；如果
+           改动范围清楚，先独立验收。验收发现问题就返回实现环节，最终提交
+           前再检查一次工作区。
+      128  
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      124  - **开发中途需求改变**：先暂停修改 → 需求变更对账 → 目标变化时
+           回到 IntentAnchor，改动范围变化时回到 ImpactRadar。
+      125  - **问题久攻不下**：如果分不清哪些是事实、哪些是猜测，先卡住时
+           重新梳理；如果 bug 本身很明确只是找不到根因，先按系统性排查造
+           出可稳定复现的失败信号。有新线索就做一次针对性验证 → 仍无新方
+           向时生成找外援材料并换模型。
+      126  - **跨会话继续工作**：旧会话生成 `HANDOFF.md` → 新会话读取并核
+           对现场；没有交接文档时，改用无交接恢复现场。
+      127 -- **实现完成准备交付**：如果 diff 已经说不清，先整理改动；如果
+          -改动范围清楚，先独立验收。验收发现问题就返回实现环节，最终提交
+          -前再检查一次工作区。                                          
+      127 +- **实现完成准备交付**：如果 diff 已经说不清，先整理改动；如果
+          +改动范围清楚，先独立验收。想在提交前把代码质量也过一遍，用 `/c
+          +ode-review` 这类工具（注意别和链路已有的检查重复，见下文）。验
+          +收发现问题就返回实现环节，最终提交前再检查一次工作区。        
+      128  
+      129  ## 从零开始开发
+      130  
+
+  Committed ef40759, pushed to master, ran 1 shell command (ctrl+o to expand)
+
+● 已提交推送（ef40759）。补的内容：
+
+  新增一节「写完代码之后：评审与排查」，放在三个核心 Skill
+  分工之后、组件清单之前——因为这两件事对 0→1
+  和已有系统迭代两条分支都适用，不属于任何一条。
+
+  - 代码评审：开头就点明"Claude Code 自带
+  /code-review，不用安装"，把强度档位、--fix、--comment 都写清楚，另外带上
+  /security-review 和 /simplify；并注明这是 Claude Code 的命令，Codex 用户没有。
+  - 重复关系写成了整段而不是一句带过：mattpocock 那个 code-review
+  的两个角度里，"做出来的是不是当初说好的"和 intent-chain / ImpactRadar
+  撞了——但做法不同（一个是模型读代码给结论，一个是校验脚本机械比对 +
+  逐条走验收路径），所以明确写了二选一，同时用是重复劳动；真正要另补的只有"代码
+  本身写得好不好"，并建议用现成工具别自造。
+  - 问题排查：没有只列那六个阶段，重点写了它最有价值的第一步——先造出快、稳定、AI
+  能反复跑的失败信号，附上造信号的优先级顺序。同时划清了和你自己那个「卡住时重
+  新梳理」的分工，避免读者以为二者重复。
+  - 结尾一句提醒：测试全绿不代表代码没问题，支付/权限/隐私/生产数据仍需人工过目—
+  —跟仓库一贯的诚实基调一致。
+
+  另外三处入口也同步了：流程图加了"找不到 bug
+  根因"和"代码过一遍"两个节点，场景表加了对应两行并链到新章节（锚点确认过唯一）
+  ，常用路线里"问题久攻不下"和"实现完成准备交付"两条补进了新环节。
+
+✻ Brewed for 3m 54s
+
+❯ 我还没有提流程图你就往前做了一部，很强！不过有点问题，比如我之前没有用过这个  
+  仓库，看到图以后确实很清晰明了，但是，举个例子，如果我遇到需求变了，我看到需  
+  求变更对账，不能马上知道需求变更对账是啥，在哪里                              
+
+● 这个问题提得准——图里写的是仓库自己造的名字，第一次看的人只看到一个词，不知道那
+  是什么东西、在哪儿。
+
+  有个关键前提要先查清楚才能决定怎么改：GitHub 渲染 mermaid
+  时到底支不支持可点击节点。
+
+● Web Search("GitHub markdown mermaid diagram click href link support
+            securityLevel strict")
+  ⎿  Did 1 search in 8s
+
+● GitHub 用的是严格模式，mermaid 的 click/href 会被拦掉（有人试过，直接报 "This
+  content is blocked"），所以点击跳转这条路走不通。那就在标签里把答案写进去——加
+  一个形态标记，再把图下面那句含糊的话换成真正的图例：
+
+● Update(README.md)  ⎿  Added 25 lines, removed 16 lines
+      15      A --> D["开发遇到意外"]
+      16      A --> E["准备结束或交付"]
+      17  
+      18 -    B --> B1["需求模糊：IntentAnchor"]                         
+      19 -    B --> B2["目标明确、方案不明：开源项目调研"]               
+      20 -    B1 --> B3["进入开发：IntentDev → IntentVerify 或第三方工具"
+         -]                                                              
+      18 +    B --> B1["需求模糊：IntentAnchor（Skill）"]                
+      19 +    B --> B2["目标明确、方案不明：开源项目调研（Prompt）"]     
+      20 +    B1 --> B3["进入开发：IntentDev → IntentVerify（Skill）"]   
+      21      B2 --> B3
+      22 -    B3 -.-> B4["可选：Ponytail 强化简单优先"]                  
+      22 +    B3 -.-> B4["可选：Ponytail 强化简单优先（第三方）"]        
+      23  
+      24 -    C --> C1["项目陌生：Pathfinder"]                           
+      25 -    C --> C2["项目熟悉：ImpactRadar"]                          
+      24 +    C --> C1["项目陌生：Pathfinder（Skill）"]                  
+      25 +    C --> C2["项目熟悉：ImpactRadar（Skill）"]                 
+      26      C1 --> C2
+      27  
+      28 -    D --> D1["需求变了：需求变更对账"]                         
+      29 -    D --> D2["越改越乱：卡住时重新梳理"]                       
+      30 -    D --> D3["需要换模型：找外援排障"]                         
+      31 -    D --> D4["会话已丢失：无交接恢复现场"]                     
+      32 -    D --> D5["找不到 bug 根因：系统性排查"]                    
+      28 +    D --> D1["需求变了：需求变更对账（Prompt）"]               
+      29 +    D --> D2["越改越乱：卡住时重新梳理（Prompt）"]             
+      30 +    D --> D3["需要换模型：找外援排障（Prompt）"]               
+      31 +    D --> D4["会话已丢失：无交接恢复现场（Prompt）"]           
+      32 +    D --> D5["找不到 bug 根因：系统性排查（第三方）"]          
+      33      D2 --> D3
+      34  
+      35 -    E --> E1["稍后继续：跨会话交接"]                           
+      36 -    E --> E2["功能做完：独立验收"]                             
+      37 -    E --> E3["代码过一遍：代码评审"]                           
+      38 -    E --> E4["准备提交：提交前整理"]                           
+      35 +    E --> E1["稍后继续：跨会话交接（Prompt）"]                 
+      36 +    E --> E2["功能做完：独立验收（Prompt）"]                   
+      37 +    E --> E3["代码过一遍：代码评审（自带 / 第三方）"]          
+      38 +    E --> E4["准备提交：提交前整理（Prompt）"]                 
+      39  ```
+      40  
+      41 -状态图用来快速找到入口；具体什么时候使用、用完以后去哪里，继续 
+         -看下面的表格。                                                 
+      41 +图里括号标的是这一项的形态，也决定了你去哪里找它：             
+      42  
+      43 +| 形态 | 是什么 | 在哪里 |                                     
+      44 +|---|---|---|                                                  
+      45 +| **Skill** | 需要先安装，装好后在对话里用 `/技能名` 触发 | [sk
+         +ills/](skills/) 目录，安装方法见下面的「3 分钟上手」 |         
+      46 +| **Prompt** | 不用安装，打开文件把内容复制给 AI 就行 | [prompt
+         +/](prompt/) 目录 |                                             
+      47 +| **第三方** | 不属于本仓库，由各自作者维护 | 链接见后文对应章 
+         +节 |                                                           
+      48 +| **自带** | AI 客户端本身提供的命令，不用装 | 见[写完代码之后 
+         +：评审与排查](#写完代码之后评审与排查) |                       
+      49 +                                                               
+      50 +图只负责帮你找到入口。下面的表格里每一项都有直达链接，并写清楚 
+         +什么时候用、用完以后去哪里。                                   
+      51 +                                                               
+      52  | 你现在的处境 | 现在先做什么 | 用完以后 |
+      53  |---|---|---|
+      54  | 只有一个模糊想法，还说不清给谁用、解决什么问题 | 用 [IntentAn
+          chor](skills/intent-anchor/) 把目标、取舍和不可妥协项写进 `INTE
+          NT.md` | 目标明确后，用 [IntentPRD](skills/intent-prd/) 生成 PR
+          D → [IntentDesign](skills/intent-design/) 做技术方案设计 → [Int
+          entIssues](skills/intent-issues/) 拆工单 → [IntentDev](skills/i
+          ntent-dev/) 开发 → [IntentVerify](skills/intent-verify/) 验收；
+          没有 `INTENT.md` 时用原版 to-prd / to-issues |
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      45  | **Skill** | 需要先安装，装好后在对话里用 `/技能名` 触发 | [sk
+          ills/](skills/) 目录，安装方法见下面的「3 分钟上手」 |
+      46  | **Prompt** | 不用安装，打开文件把内容复制给 AI 就行 | [prompt
+          /](prompt/) 目录 |
+      47  | **第三方** | 不属于本仓库，由各自作者维护 | 链接见后文对应章
+          节 |
+      48 -| **自带** | AI 客户端本身提供的命令，不用装 | 见[写完代码之后 
+         -：评审与排查](#写完代码之后评审与排查) |                       
+      48 +| **自带** | AI 客户端本身提供的命令，不用装 | 见后文[代码评审]
+         +(#代码评审)一节 |                                              
+      49  
+      50  图只负责帮你找到入口。下面的表格里每一项都有直达链接，并写清楚
+          什么时候用、用完以后去哪里。
+      51  
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 一处需要还原——我刚才把 B3 里的"或第三方工具"顺手删掉了，那是原有信息，不该动：
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      17  
+      18      B --> B1["需求模糊：IntentAnchor（Skill）"]
+      19      B --> B2["目标明确、方案不明：开源项目调研（Prompt）"]
+      20 -    B1 --> B3["进入开发：IntentDev → IntentVerify（Skill）"]   
+      20 +    B1 --> B3["进入开发：IntentDev → IntentVerify（Skill）或第 
+         +三方工具"]                                                     
+      21      B2 --> B3
+      22      B3 -.-> B4["可选：Ponytail 强化简单优先（第三方）"]
+      23  
+
+  Committed d84f78e, pushed to master, ran 1 shell command (ctrl+o to expand)
+
+● 已推送（d84f78e）。
+
+  先说一个走不通的路：mermaid 本身支持给节点加点击跳转（click / href），但
+  GitHub 渲染时用的是严格安全模式，会直接把它拦掉——有人试过，页面上显示 "This
+  content is blocked"。所以"点一下就跳到对应文件"这个最理想的方案在 GitHub
+  上做不到，只能把答案写进文字里。
+
+  改法：每个节点末尾加一个形态标记，图下面配一张图例表。
+
+  现在读者看到 需求变了：需求变更对账（Prompt），往下一眼就知道：
+
+  ┌────────┬───────────────────────────┬──────────────────┐
+  │  形态  │          是什么           │      在哪里      │
+  ├────────┼───────────────────────────┼──────────────────┤
+  │ Skill  │ 要先装，装完 /技能名 触发 │ skills/          │
+  ├────────┼───────────────────────────┼──────────────────┤
+  │ Prompt │ 不用装，复制内容发给 AI   │ prompt/          │
+  ├────────┼───────────────────────────┼──────────────────┤
+  │ 第三方 │ 别人维护的                │ 后文有链接       │
+  ├────────┼───────────────────────────┼──────────────────┤
+  │ 自带   │ 客户端自带命令            │ 后文代码评审一节 │
+  └────────┴───────────────────────────┴──────────────────┘
+
+  "是啥"和"在哪里"两个问题都当场答了，再往下一行表格里还有直达链接。原来图下面那
+  句"继续看下面的表格"等于把问题推给读者，现在换成了真正有信息的图例。
+
+  两处细节：所有标记我逐个核对过实际文件（8 个 Prompt、5 个 Skill
+  都在），没有凭印象标；另外我一开始顺手把 B3
+  里的"或第三方工具"删掉了——那是原有信息、你没让我删，已经还原。
+
+✻ Crunched for 3m 28s
+
+❯ 还有问题 比如几个第三方的代码评审 系统性排查什么的 我看了肯定清楚             
+  别人不清楚啊 哪个第三方 具体是啥                                              
+
+● 对，"第三方"只说了它不是本仓库的，没说是谁家的、叫什么。而且我回头看，我加的那
+  两行表格也比原有的弱——别的行都是直接链到具体文件，我那两行只链到章节。先确认上
+  游链接真实可用：
+
+● Fetch(https://github.com/mattpocock/skills/tree/main/skills/engineering/diagno
+       sing-bugs)
+  ⎿  Received 232.1KB (200 OK)
+
+● Fetch(https://github.com/mattpocock/skills/tree/main/skills/engineering/code-r
+       eview)
+  ⎿  Received 229.8KB (200 OK)
+
+● 两个链接都验证存在。现在把"哪个第三方"补实——不只改节点，我加的那两行表格也得跟
+  其他行一样直接链到源头：
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      17  
+      18      B --> B1["需求模糊：IntentAnchor（Skill）"]
+      19      B --> B2["目标明确、方案不明：开源项目调研（Prompt）"]
+      20 -    B1 --> B3["进入开发：IntentDev → IntentVerify（Skill）或第 
+         -三方工具"]                                                     
+      20 +    B1 --> B3["进入开发：IntentDev → IntentVerify（Skill）或 Su
+         +perpowers 等第三方"]                                           
+      21      B2 --> B3
+      22      B3 -.-> B4["可选：Ponytail 强化简单优先（第三方）"]
+      23  
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      29      D --> D2["越改越乱：卡住时重新梳理（Prompt）"]
+      30      D --> D3["需要换模型：找外援排障（Prompt）"]
+      31      D --> D4["会话已丢失：无交接恢复现场（Prompt）"]
+      32 -    D --> D5["找不到 bug 根因：系统性排查（第三方）"]          
+      32 +    D --> D5["找不到 bug 根因：diagnosing-bugs（第三方）"]     
+      33      D2 --> D3
+      34  
+      35      E --> E1["稍后继续：跨会话交接（Prompt）"]
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      34  
+      35      E --> E1["稍后继续：跨会话交接（Prompt）"]
+      36      E --> E2["功能做完：独立验收（Prompt）"]
+      37 -    E --> E3["代码过一遍：代码评审（自带 / 第三方）"]          
+      37 +    E --> E3["代码过一遍：/code-review（自带）"]               
+      38      E --> E4["准备提交：提交前整理（Prompt）"]
+      39  ```
+      40  
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      44  |---|---|---|
+      45  | **Skill** | 需要先安装，装好后在对话里用 `/技能名` 触发 | [sk
+          ills/](skills/) 目录，安装方法见下面的「3 分钟上手」 |
+      46  | **Prompt** | 不用安装，打开文件把内容复制给 AI 就行 | [prompt
+          /](prompt/) 目录 |
+      47 -| **第三方** | 不属于本仓库，由各自作者维护 | 链接见后文对应章 
+         -节 |                                                           
+      47 +| **第三方** | 不属于本仓库，由各自作者维护，安装和用法以上游为
+         +准 | 节点里写的就是它的原名，下面表格有直达上游仓库的链接 |    
+      48  | **自带** | AI 客户端本身提供的命令，不用装 | 见后文[代码评审]
+          (#代码评审)一节 |
+      49  
+      50  图只负责帮你找到入口。下面的表格里每一项都有直达链接，并写清楚
+          什么时候用、用完以后去哪里。
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      58  | 已经熟悉项目，准备新增功能、修 Bug 或重构 | 用 [ImpactRadar](
+          skills/impact/) 分析影响并逐步实施 | 完成后做独立验收和提交前整
+          理 |
+      59  | 开发中途需求变了，新旧说法可能混在一起 | 用 [需求变更对账](pr
+          ompt/requirement-change-reconciliation.md) 找出当前仍然有效的要
+          求 | 目标变了就回到 IntentAnchor；只是改动范围变化就回到 Impact
+          Radar |
+      60  | 同一个问题反复修改，尝试越来越乱 | 用 [卡住时重新梳理](prompt
+          /stuck-reassessment.md) 区分事实、猜测和已排除项 | 有新方向就继
+          续验证；仍无方向再找外援 |
+      61 -| 有一个明确的 bug，但一直找不到根因 | 按[问题排查](#问题排查) 
+         -先造出可稳定复现的失败信号，再往下查 | 修好后补一个回归测试，避
+         -免同样的问题再来一次 |                                         
+      61 +| 有一个明确的 bug，但一直找不到根因 | 用第三方 [diagnosing-bug
+         +s](https://github.com/mattpocock/skills/tree/main/skills/engine
+         +ering/diagnosing-bugs) 先造出可稳定复现的失败信号，再往下查（[ 
+         +怎么用](#问题排查)） | 修好后补一个回归测试，避免同样的问题再来
+         +一次 |                                                         
+      62  | 当前模型已经绕了多轮，准备换更强的模型接手 | 用 [找外援排障](
+          prompt/expert-escalation.md) 整理复现方法、失败尝试和现场 | 把
+          生成的完整指令交给新模型 |
+      63  | 会话快结束了，任务还要跨天或换会话继续 | 用 [跨会话交接](prom
+          pt/session-handoff.md) 生成 `HANDOFF.md` | 新会话先读取并核对交
+          接文档 |
+      64  | 原会话已经丢失，也没有可靠的交接记录 | 用 [无交接恢复现场](pr
+          ompt/workspace-recovery.md) 从 Git 和项目文件还原进度 | 用户确
+          认恢复结果后再继续修改 |
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      63  | 会话快结束了，任务还要跨天或换会话继续 | 用 [跨会话交接](prom
+          pt/session-handoff.md) 生成 `HANDOFF.md` | 新会话先读取并核对交
+          接文档 |
+      64  | 原会话已经丢失，也没有可靠的交接记录 | 用 [无交接恢复现场](pr
+          ompt/workspace-recovery.md) 从 Git 和项目文件还原进度 | 用户确
+          认恢复结果后再继续修改 |
+      65  | 实现会话说任务已经完成，想换个模型从头检查 | 用 [生成独立验收
+          指令](prompt/independent-review-request.md) 准备完整验收材料 | 
+          交给能访问同一工作区的新会话执行验收 |
+      66 -| 代码写完了，想在提交前把质量过一遍 | 按[代码评审](#代码评审) 
+         -选一种方式，别和本仓库已有的检查重复 | 处理完结论再做提交前整理
+         - |                                                             
+      66 +| 代码写完了，想在提交前把质量过一遍 | Claude Code 用户直接用自
+         +带的 `/code-review`，不用安装；另有第三方 [code-review](https:/
+         +/github.com/mattpocock/skills/tree/main/skills/engineering/code
+         +-review) 可选，但有一半和本仓库重复（[怎么选](#代码评审)） | 处
+         +理完结论再做提交前整理 |                                       
+      67  | 准备提交，但正式改动、调试残留和原有文件混在一起 | 用 [提交前
+          整理改动](prompt/pre-commit-cleanup.md) 先划清提交范围 | 用户确
+          认后再清理、暂存和提交 |
+      68  | 任务依赖截图、设计稿、架构图或报错图片 | 用 [VL 识图](skills/
+          vl-vision/) 提取图片中的信息 | 把结果交给当前主流程，并回到源码
+          或原图核实关键结论 |
+      69  | 需要查询 GitHub、官方文档或外部资料，而当前客户端不能联网 | 
+          接入 [网搜 MCP](mcp/web-search-mcp/) | 打开原始页面核实关键结论
+          ，不要只看搜索摘要 |
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      249  
+      250  ### 问题排查
+      251  
+      252 -同一个仓库里的 `diagnosing-bugs`（有的版本装完叫 `diagnose`） 
+          -是一套排查硬 bug 的流程：复现 → 缩小范围 → 提假设 → 加观测 →  
+          -修 → 补回归测试。                                             
+      252 +[diagnosing-bugs](https://github.com/mattpocock/skills/tree/ma
+          +in/skills/engineering/diagnosing-bugs) 同样来自 Matt Pocock 的
+          + [Skills for Real Engineers](https://github.com/mattpocock/ski
+          +lls)（有的版本装完名字是 `diagnose`），是一套排查硬 bug 的流程
+          +：复现 → 缩小范围 → 提假设 → 加观测 → 修 → 补回归测试。       
+      253  
+      254  它最值得借鉴的是第一步：**先想办法造出一个快、稳定、AI 能自己
+           反复跑的通过/失败信号**，然后再谈别的。有了这个信号，二分查找
+           、验证假设、加日志都只是在消费它；没有这个信号，盯着代码看再久
+           也找不出来。造信号的办法按优先级大致是：写一个会失败的测试 → c
+           url 打接口 → 命令行跑固定输入比对输出 → 用 Playwright 驱动浏览
+           器 → 回放抓下来的真实请求 → 搭一个最小复现环境。
+      255  
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      241  
+      242  **先说一个很多人不知道的事：Claude Code 自带 `/code-review`，
+           不用安装。** 它对当前改动做评审，查正确性 bug 和可以复用、简化
+           的地方，可以按 low / medium / high / max 选强度（越高查得越广
+           ，但也会带上一些不太确定的结论），最高一档会派多个 agent 分头
+           查。加 `--fix` 直接把结论应用到工作区，加 `--comment` 发成 PR 
+           行内评论。另外还有 `/security-review` 专查安全问题，`/simplify
+           ` 只做简化不查 bug。这几个是 Claude Code 的命令，Codex 用户没
+           有。
+      243  
+      244 -如果想要一份可以自己修改的评审规则，可以看 [Skills for Real En
+          -gineers](https://github.com/mattpocock/skills/tree/main/skills
+          -/engineering) 里的 `code-review`。它从两个角度看代码：**写得规
+          -不规范**，以及**做出来的是不是当初说好的**。                  
+      244 +如果想要一份可以自己修改的评审规则，可以用 Matt Pocock 的 [cod
+          +e-review](https://github.com/mattpocock/skills/tree/main/skill
+          +s/engineering/code-review)（出自 [Skills for Real Engineers](h
+          +ttps://github.com/mattpocock/skills)）。它从两个角度看代码：**
+          +写得规不规范**，以及**做出来的是不是当初说好的**。            
+      245  
+      246  **这里要注意和本仓库的重复**：上面第二个角度——做出来的是不是当
+           初说好的——正是 intent-chain 和 ImpactRadar 已经在做的事，只是
+           做法不同。第三方 Skill 是让模型读一遍代码给结论；本仓库是用校
+           验脚本机械比对能力表、验收路径和模块引用，再由 IntentVerify 逐
+           条走通用户路径确认。**两种选一种即可**，同时用只是重复劳动。
+      247  
+
+  Committed fbab388, pushed to master, ran 2 shell commands (ctrl+o to expand)
+● 已推送（fbab388）。改了四处：
+
+  图里直接写原名——系统性排查 → diagnosing-bugs，代码评审 →
+  /code-review，或第三方工具 → 或 Superpowers 等第三方。mermaid 在 GitHub
+  上点不了，名字只能写进标签里，读者拿这个名字至少能搜到。
+
+  上一版我加的那两行表格其实比原有行弱——别的行都是 用 
+  [卡住时重新梳理](prompt/stuck-reassessment.md) 这样直接链到具体文件，我那两行
+  只链到本页章节，等于把人又推了一道。现在改成直链上游仓库，两个 URL
+  我都实际打开验证过存在（不是拼出来的路径）。
+
+  还发现一个我自己埋的坑：问题排查那一节开头写的是"同一个仓库里的
+  diagnosing-bugs"——这个"同一个仓库"指的是上一节提到的
+  mattpocock。但表格里的链接是直接跳到 #问题排查 锚点的，从那儿进来的读者根本没
+  读过上一节，"同一个仓库"没有上文，等于什么都没说。已改成写明出处并加链接。
+
+  图例里"第三方"那行也补实了：节点里写的就是它的原名、安装用法以上游为准、下面表
+  格有直达链接。
+
+✻ Brewed for 2m 48s
+
+❯ 再通读一遍 README 看还有没有类似问题                                          
+
+  Read 1 file (ctrl+o to expand)
+
+● 通读完了，找到几处同类问题，还有一个是我自己上一轮留下的错。先核实再报：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://github.com/mattpocock/skills/tree/main/skills)
+  ⎿  Received 233.9KB (200 OK)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://github.com/mattpocock/skills/tree/main/skills/deprecated)
+  ⎿  Received 239.1KB (200 OK)
+
+● 校验器数字全部核对无误（intent 15 / prd 10 / issues 11 / dev 4 / verify 8 /
+  impact 24），但找到 4 处问题。先验证要写进去的链接：
+
+● Fetch(https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spe
+       c)
+  ⎿  Received 229.7KB (200 OK)
+
+● Fetch(https://github.com/mattpocock/skills/tree/main/skills/engineering/to-tic
+       kets)
+  ⎿  Received 229.8KB (200 OK)
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      51  
+      52  | 你现在的处境 | 现在先做什么 | 用完以后 |
+      53  |---|---|---|
+      54 -| 只有一个模糊想法，还说不清给谁用、解决什么问题 | 用 [IntentAn
+         -chor](skills/intent-anchor/) 把目标、取舍和不可妥协项写进 `INTE
+         -NT.md` | 目标明确后，用 [IntentPRD](skills/intent-prd/) 生成 PR
+         -D → [IntentDesign](skills/intent-design/) 做技术方案设计 → [Int
+         -entIssues](skills/intent-issues/) 拆工单 → [IntentDev](skills/i
+         -ntent-dev/) 开发 → [IntentVerify](skills/intent-verify/) 验收；
+         -没有 `INTENT.md` 时用原版 to-prd / to-issues |                 
+      54 +| 只有一个模糊想法，还说不清给谁用、解决什么问题 | 用 [IntentAn
+         +chor](skills/intent-anchor/) 把目标、取舍和不可妥协项写进 `INTE
+         +NT.md` | 目标明确后，用 [IntentPRD](skills/intent-prd/) 生成 PR
+         +D → [IntentDesign](skills/intent-design/) 做技术方案设计 → [Int
+         +entIssues](skills/intent-issues/) 拆工单 → [IntentDev](skills/i
+         +ntent-dev/) 开发 → [IntentVerify](skills/intent-verify/) 验收；
+         +没有 `INTENT.md` 时，用第三方 [to-spec](https://github.com/matt
+         +pocock/skills/tree/main/skills/engineering/to-spec) / [to-ticke
+         +ts](https://github.com/mattpocock/skills/tree/main/skills/engin
+         +eering/to-tickets) 即可 |                                      
+      55  | 已经知道要做什么，但不确定架构和技术路线 | 用 [开工前调研开源
+          项目](prompt/open-source-project-research.md) 比较真正相似的项
+          目 | 看过证据并确认方案后再开始开发 |
+      56  | 方向和方案已经明确，准备从零实现完整产品 | 完整流程选 [Superp
+          owers](https://github.com/obra/superpowers)，按需组合选 [Skills
+           for Real Engineers](https://github.com/mattpocock/skills) | 如
+          果模型仍然常把简单需求做复杂，可以再用 [Ponytail](https://githu
+          b.com/DietrichGebert/ponytail) 强化“简单优先” |
+      57  | 刚接手一个陌生仓库，不知道入口和模块关系 | 用 [Pathfinder](sk
+          ills/pathfinder/) 只读摸清项目 | 有具体改动时进入 ImpactRadar |
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      159  
+      160  [IntentPRD](skills/intent-prd/) 和 [IntentIssues](skills/inten
+           t-issues/) 是 Blue SkillHub 自己开发的两个 Skill，分别负责从 `
+           INTENT.md` 生成 PRD 和拆分工单。
+      161  
+      162 -之所以自己做而不直接用第三方 [to-prd](https://github.com/mattp
+          -ocock/skills) 和 [to-issues](https://github.com/mattpocock/ski
+          -lls)，是因为第三方 Skill 不认识 `INTENT.md` 的结构。IntentAnch
+          -or 产出的设计标准、术语表、验收路径、性能要求和安全要求，如果 
+          -交给第三方 Skill，只能靠交接 prompt 注入约束——下游 Skill 不会 
+          -主动检查这些约束是否被遵守，传递不可靠。                      
+      162 +之所以自己做而不直接用 Matt Pocock 的 [to-spec](https://github
+          +.com/mattpocock/skills/tree/main/skills/engineering/to-spec)  
+          +和 [to-tickets](https://github.com/mattpocock/skills/tree/main
+          +/skills/engineering/to-tickets)（早期版本叫 to-prd / to-issues
+          +，有的人装的是旧名字），是因为第三方 Skill 不认识 `INTENT.md` 
+          +的结构。IntentAnchor 产出的设计标准、术语表、验收路径、性能要 
+          +求和安全要求，如果交给第三方 Skill，只能靠交接 prompt 注入约束
+          +——下游 Skill 不会主动检查这些约束是否被遵守，传递不可靠。     
+      163  
+      164  IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设
+           计标准映射到 PRD 的「实现决策」，把验收路径映射到「验收标准」
+           ，把术语表传递到工单的界面文案约束。IntentIssues 还会自动检查
+           所有验收路径是否被至少一个工单覆盖。
+      165  
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      163  
+      164  IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设
+           计标准映射到 PRD 的「实现决策」，把验收路径映射到「验收标准」
+           ，把术语表传递到工单的界面文案约束。IntentIssues 还会自动检查
+           所有验收路径是否被至少一个工单覆盖。
+      165  
+      166 -两个 Skill 都强制要求 `INTENT.md` 作为输入；没有 `INTENT.md`  
+          -时，直接用原版 to-prd / to-issues 即可。                      
+      166 +两个 Skill 都强制要求 `INTENT.md` 作为输入；没有 `INTENT.md`  
+          +时，直接用 to-spec / to-tickets 即可。                        
+      167  
+      168  **轻量档**：小项目（用户可感知能力 ≤5、单用户、无数据库、无对
+           外 API）可以在 intent-anchor 定档为轻量——文档薄写、确认合并、
+           工单单条直行，但验收路径、假设表、V2 证据和全部校验器不降级。
+           档位记录在 `INTENT.md` 第 2 节，只允许轻量升标准，不允许反向降
+           档。
+      169  
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      131  - **接手陌生项目并准备修改**：律刃 → Pathfinder → 需求仍然模糊
+           时使用 IntentAnchor → ImpactRadar → 独立验收 → 提交前整理。
+      132  - **熟悉项目中的明确改动**：律刃 → ImpactRadar → 验证 → 独立验
+           收或提交前整理。不必为了流程完整强行运行 Pathfinder。
+      133  - **开发中途需求改变**：先暂停修改 → 需求变更对账 → 目标变化时
+           回到 IntentAnchor，改动范围变化时回到 ImpactRadar。
+      134 -- **问题久攻不下**：如果分不清哪些是事实、哪些是猜测，先卡住时
+          -重新梳理；如果 bug 本身很明确只是找不到根因，先按系统性排查造 
+          -出可稳定复现的失败信号。有新线索就做一次针对性验证 → 仍无新方 
+          -向时生成找外援材料并换模型。                                  
+      134 +- **问题久攻不下**：如果分不清哪些是事实、哪些是猜测，先卡住时
+          +重新梳理；如果 bug 本身很明确只是找不到根因，先用 diagnosing-b
+          +ugs 造出可稳定复现的失败信号。有新线索就做一次针对性验证 → 仍 
+          +无新方向时生成找外援材料并换模型。                            
+      135  - **跨会话继续工作**：旧会话生成 `HANDOFF.md` → 新会话读取并核
+           对现场；没有交接文档时，改用无交接恢复现场。
+      136  - **实现完成准备交付**：如果 diff 已经说不清，先整理改动；如果
+           改动范围清楚，先独立验收。想在提交前把代码质量也过一遍，用 `/c
+           ode-review` 这类工具（注意别和链路已有的检查重复，见下文）。验
+           收发现问题就返回实现环节，最终提交前再检查一次工作区。
+      137  
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      133  - **开发中途需求改变**：先暂停修改 → 需求变更对账 → 目标变化时
+           回到 IntentAnchor，改动范围变化时回到 ImpactRadar。
+      134  - **问题久攻不下**：如果分不清哪些是事实、哪些是猜测，先卡住时
+           重新梳理；如果 bug 本身很明确只是找不到根因，先用 diagnosing-b
+           ugs 造出可稳定复现的失败信号。有新线索就做一次针对性验证 → 仍
+           无新方向时生成找外援材料并换模型。
+      135  - **跨会话继续工作**：旧会话生成 `HANDOFF.md` → 新会话读取并核
+           对现场；没有交接文档时，改用无交接恢复现场。
+      136 -- **实现完成准备交付**：如果 diff 已经说不清，先整理改动；如果
+          -改动范围清楚，先独立验收。想在提交前把代码质量也过一遍，用 `/c
+          -ode-review` 这类工具（注意别和链路已有的检查重复，见下文）。验
+          -收发现问题就返回实现环节，最终提交前再检查一次工作区。        
+      136 +- **实现完成准备交付**：如果 diff 已经说不清，先整理改动；如果
+          +改动范围清楚，先独立验收。想在提交前把代码质量也过一遍，用 `/c
+          +ode-review` 这类工具（注意别和链路已有的检查重复，见[代码评审]
+          +(#代码评审)）。验收发现问题就返回实现环节，最终提交前再检查一 
+          +次工作区。                                                    
+      137  
+      138  ## 从零开始开发
+      139  
+
+● Update(README.md)
+  ⎿  Added 1 line, removed 1 line
+      327  
+      328  如果客户端提供 code graph MCP，也可以先用它查找定义和引用；没
+           有时就使用普通代码搜索。
+      329  
+      330 -当前版本为 v5.9。完整机制、版本记录和评测数据见 [ImpactRadar R
+          -EADME](skills/impact/README.md)。                             
+      330 +当前版本为 v5.10。完整机制、版本记录和评测数据见 [ImpactRadar 
+          +README](skills/impact/README.md)。                            
+      331  
+      332  ### IntentAnchor 意图锚定
+      333  
+
+  Committed e2bfe85, pushed to master, ran 1 shell command (ctrl+o to expand)
+
+● 通读完了，用同一把尺子（外人看到这个名字，知不知道是什么、去哪找）。找到 4
+  处，已修并推送（e2bfe85）。
+
+  最严重的一处：to-prd / to-issues 这两个名字，上游已经不存在了。
+
+  现在叫 to-spec / to-tickets。我把 mattpocock 仓库的 engineering 和 deprecated
+  两个目录都查了，旧名一个都找不到——说明是改名了，不是我看漏。而且README 
+  自己就前后矛盾：第 198 行写的是新名 to-spec/to-tickets，第 54、162、166
+  行写的是旧名。读者按旧名去仓库里找，会一无所获。
+
+  三处统一改成新名并直链到具体 skill（两个 URL
+  都实际打开验证过），同时保留一句"早期版本叫 to-prd / to-issues"——因为你自己本
+  地装的就是旧名字，别人可能也是，不写这句话反而对不上号。
+
+  另外三处：
+  - 「系统性排查」和图里的 diagnosing-bugs 是同一个东西两个叫法，统一了
+  - 「见下文」改成直链到代码评审那一节
+  - 根 README 的 impact 版本号还停在 v5.9——这是我上一轮留下的错，升 v5.10
+  时只改了 skills/impact/README.md，漏了根 README
+
+  核对无误、没动的：六个校验器声称的检查项数我逐个数了代码，全对（intent 15、prd
+  10、issues 11、dev 4、verify 8、impact 24、design 15）；律刃"8 条编码规则 + 1
+  条评审纪律 + 1 条中文表达"的表述准确；逃逸记录 10 类属实。
+
+  有一件事我没动，需要你定： skills/blue-interview 在仓库里，但 README
+  从头到尾一个字没提，目录速览里也没列。按 HANDOFF 它是"另册、部分完成、待补测"—
+  —所以这可能是你有意不对外宣传。要不要露出，是产品决定，我不替你做。
+
+✻ Cogitated for 3m 14s
+
+❯ 对的 我的intent-prd issues其实本来就是拿matt的to-prd / to-issues做了个性化    
+  目的是为了更好适配接入我的intent-chain链路                                    
+
+● 这个信息很重要，而且指向一个现在需要处理的问题——README 现在写的是"Blue 
+  SkillHub 自己开发的两个 Skill"，仓库上周刚加了 MIT LICENSE 公开出去。改造自别
+  人的东西，写成自己开发的，既不准确也可能有授权问题。先查上游许可证：
+
+● Fetch(https://github.com/mattpocock/skills)
+  ⎿  Received 337.1KB (200 OK)
+  Ran 1 shell command (ctrl+o to expand)
+
+● 许可证查清了：mattpocock/skills 是 MIT，和你仓库一样。MIT
+  允许改造再发布，但要求保留原作者的版权声明——而现在 README 写的是"Blue SkillHub
+  自己开发的两个 Skill"，两个 skill 自己的 README
+  也没有任何出处。这个得改，先看子 README 的原文：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Update(README.md)
+  ⎿  Added 2 lines, removed 2 lines
+      157  
+      158  ### IntentPRD 和 IntentIssues：让 INTENT.md 的约束一路传到工单
+      159  
+      160 -[IntentPRD](skills/intent-prd/) 和 [IntentIssues](skills/inten
+          -t-issues/) 是 Blue SkillHub 自己开发的两个 Skill，分别负责从 `
+          -INTENT.md` 生成 PRD 和拆分工单。                              
+      160 +[IntentPRD](skills/intent-prd/) 和 [IntentIssues](skills/inten
+          +t-issues/) 改造自 Matt Pocock 的 [to-spec](https://github.com/
+          +mattpocock/skills/tree/main/skills/engineering/to-spec) 和 [to
+          +-tickets](https://github.com/mattpocock/skills/tree/main/skill
+          +s/engineering/to-tickets)（MIT 许可；早期版本叫 to-prd / to-is
+          +sues，有的人装的是旧名字），改成从 `INTENT.md` 生成 PRD 和拆分
+          +工单。                                                        
+      161  
+      162 -之所以自己做而不直接用 Matt Pocock 的 [to-spec](https://github
+          -.com/mattpocock/skills/tree/main/skills/engineering/to-spec)  
+          -和 [to-tickets](https://github.com/mattpocock/skills/tree/main
+          -/skills/engineering/to-tickets)（早期版本叫 to-prd / to-issues
+          -，有的人装的是旧名字），是因为第三方 Skill 不认识 `INTENT.md` 
+          -的结构。IntentAnchor 产出的设计标准、术语表、验收路径、性能要 
+          -求和安全要求，如果交给第三方 Skill，只能靠交接 prompt 注入约束
+          -——下游 Skill 不会主动检查这些约束是否被遵守，传递不可靠。     
+      162 +之所以要改而不是直接用原版，是因为原版不认识 `INTENT.md` 的结 
+          +构。IntentAnchor 产出的设计标准、术语表、验收路径、性能要求和 
+          +安全要求，如果交给第三方 Skill，只能靠交接 prompt 注入约束——下
+          +游 Skill 不会主动检查这些约束是否被遵守，传递不可靠。         
+      163  
+      164  IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设
+           计标准映射到 PRD 的「实现决策」，把验收路径映射到「验收标准」
+           ，把术语表传递到工单的界面文案约束。IntentIssues 还会自动检查
+           所有验收路径是否被至少一个工单覆盖。
+      165  
+
+● Update(README.md)
+  ⎿  Added 2 lines
+      444  
+      445  ## 致谢
+      446  
+      447 +IntentPRD 和 IntentIssues 改造自 Matt Pocock 的 [to-spec 和 to
+          +-tickets](https://github.com/mattpocock/skills)（早期版本叫 to
+          +-prd / to-issues）。原项目以 MIT 许可发布，版权归原作者所有； 
+          +本仓库在其基础上改成原生解析 `INTENT.md`，并补上验收路径编号引
+          +用、覆盖检查和配套校验脚本。                                  
+      448 +                                                              
+      449  律刃最初参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md
+           ](https://github.com/multica-ai/andrej-karpathy-skills/blob/ma
+           in/CLAUDE.md)，后来根据中文编码任务和复杂变更测试不断调整。
+      450  
+      451  “改代码前先查调用方和引用方，找到后再判断哪些必须同步修改”来自
+            [hxd-ggsddu](https://github.com/hxd-ggsddu) 提交的 GitHub iss
+           ue。律刃和 ImpactRadar 都采纳了这项建议，以减少遗漏接口、生成
+           文件、测试或注册位置的情况。
+
+● Update(skills\intent-prd\README.md)
+  ⎿  Added 3 lines, removed 1 line
+       6  
+       7  ## 为什么需要它
+       8  
+       9 -intent-anchor 产出 `INTENT.md` 后，需要把意图转化为 PRD 才能进 
+         -入任务拆分。第三方 to-prd 不认识 `INTENT.md` 的结构：设计标准、
+         -术语表这些约束只能靠一段转述提示词带过去，下游也不会检查它们有 
+         -没有被遵守。如果没有 `INTENT.md`，直接用原版 to-prd 即可。     
+       9 +本 Skill 改造自 Matt Pocock 的 [to-spec](https://github.com/mat
+         +tpocock/skills/tree/main/skills/engineering/to-spec)（MIT 许可 
+         +，版权归原作者；早期版本叫 to-prd）。                          
+      10  
+      11 +intent-anchor 产出 `INTENT.md` 后，需要把意图转化为 PRD 才能进 
+         +入任务拆分。原版不认识 `INTENT.md` 的结构：设计标准、术语表这些
+         +约束只能靠一段转述提示词带过去，下游也不会检查它们有没有被遵守 
+         +。如果没有 `INTENT.md`，直接用原版即可。                       
+      12 +                                                               
+      13  Intent-PRD 直接解析 `INTENT.md` 各节，把能力表、验收路径、设计
+          标准和术语表映射到 PRD 对应段落，并用校验脚本自动检查覆盖情况。
+      14  
+      15  ## 快速开始
+
+● Update(skills\intent-issues\README.md)
+  ⎿  Added 3 lines, removed 1 line
+       6  
+       7  ## 为什么需要它
+       8  
+       9 -PRD 和设计文件生成后需要拆分为独立可抓取的工单。第三方 to-issue
+         -s 不认识这套结构：验收路径只能靠一段转述提示词带过去，工单的 Ac
+         -ceptance criteria 不会自动引用路径编号，覆盖情况也没人检查。如 
+         -果没有 INTENT.md，直接用原版 to-issues 即可。                  
+       9 +本 Skill 改造自 Matt Pocock 的 [to-tickets](https://github.com/
+         +mattpocock/skills/tree/main/skills/engineering/to-tickets)（MIT
+         + 许可，版权归原作者；早期版本叫 to-issues）。                  
+      10  
+      11 +PRD 和设计文件生成后需要拆分为独立可抓取的工单。原版不认识这套 
+         +结构：验收路径只能靠一段转述提示词带过去，工单的 Acceptance cri
+         +teria 不会自动引用路径编号，覆盖情况也没人检查。如果没有 INTENT
+         +.md，直接用原版即可。                                          
+      12 +                                                               
+      13  Intent-Issues 直接读取 INTENT.md 的验收路径，在工单的 Acceptanc
+          e criteria 中自动引用路径编号，并在输出前自动检查所有路径被至少
+          一个工单覆盖。
+      14  
+      15  ## 快速开始
+
+  Committed b969b19, pushed to master, ran 1 shell command (ctrl+o to expand)
+
+● 已补上出处并推送（b969b19）。这件事值得单独说一句：在你仓库已经按 MIT 公开的情
+  况下，把改造自别人的东西写成"自己开发的"，不只是表述不准确，还涉及授权。
+  mattpocock/skills 同样是 MIT，MIT
+  允许你改、允许你再发布，但要求保留原作者的版权声明——原来三处文档一个字都没提。
+
+  改了三个地方：
+
+  - 根 README：是 Blue SkillHub 自己开发的两个 Skill → 改造自 Matt Pocock 的 
+  to-spec 和 to-tickets（MIT 许可）；下一段"之所以自己做"也跟着改成"之所以要改"
+  -
+  致谢：新增一段，写明原项目、许可、版权归属，以及你在其基础上加了什么（原生解析
+  INTENT.md、验收路径编号引用、覆盖检查、配套校验脚本）——这样既尽到义务，也说清
+  了你的增量在哪
+  - 两个 Skill 各自的 README：开头加出处声明；正文里"第三方 to-prd /
+  to-issues"改成"原版"，不再用上游已经废弃的旧名字
+
+  还有两处我没动，需要你确认：
+
+  1. 第 182 行：IntentDev 和 IntentVerify 是 Blue SkillHub 自己开发的两个 Skill
+  —— Matt 那边有 implement 和 tdd，这两个是不是也有渊源？你只说了
+  prd/issues，我不替你猜。
+  2. 第 140 行：用 Blue SkillHub 自己的完整链路 —— 这句说的是整条链的组装（六个
+  skill + 校验器交叉检查），那确实是你的设计，我判断可以保留。但如果你觉得也该软
+  化，说一声。
+
+  顺带一提，Matt 的 README 明确鼓励别人 fork 和改造（原话是 "Hack around with
+  them. Make them your
+  own."），所以你这么做完全符合他的本意，补个出处反而是加分的事。
+
+✻ Cogitated for 2m 14s
+
+❯ intent-dev 和 intent-verify 是我自己写的 不用改                               
+
+● 明白，那就保持原样。出处这件事到此为止——IntentPRD / IntentIssues 已注明改造自
+  Matt Pocock 并保留了 MIT 版权声明，IntentDev / IntentVerify
+  是你自己写的，README 的表述本来就是对的。
+
+✻ Worked for 6s
+
+❯ to-prd / to-issues为啥改名叫 to-spec / to-tickets。 有什么大的变化吗          
+
+● 好问题，我不知道，查一下。正好你本地装的就是旧版——可以直接拿旧版和现在的上游对
+  比，比猜准：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Fetch(https://raw.githubusercontent.com/mattpocock/skills/main/skills/engineer
+       ing/to-spec/SKILL.md)
+  ⎿  Received 3KB (200 OK)
+
+● Fetch(https://raw.githubusercontent.com/mattpocock/skills/main/skills/engineer
+       ing/to-tickets/SKILL.md)
+  ⎿  Received 5.6KB (200 OK)
+
+  Searched for 1 pattern, ran 1 shell command (ctrl+o to expand)
+
+● 查完了，拿你本地的旧版和现在的上游逐条比对，结论有点出人意料：一个基本只是改名
+  ，另一个有一处真变化，而那处变化你早就自己做了。
+
+  to-prd → to-spec：基本就是改名
+
+  模板骨架一模一样：Problem Statement / Solution / User Stories / Implementation
+  Decisions / Testing Decisions / Out of Scope / Further
+  Notes，一个没变。流程也一样：探代码 → 定测试接缝 → 写文档发到 issue tracker。
+
+  只有两处小改动：
+  - 描述里补了一句 "no interview, just
+  synthesis"（强调它不访谈你，只把已经聊过的东西整理出来）
+  - 加了 disable-model-invocation: true，模型不再自动触发，必须你显式调用
+
+  至于为什么 PRD 改叫 spec，这一层是我的推测（没找到他的说明）：PRD
+  是产品经理的词，带着"产品需求文档"那套包袱；spec
+  更中性，也跟下游配得更顺——spec → tickets 读起来比 PRD → issues 一致。
+
+  to-issues → to-tickets：有一处真变化
+
+  先说没变的：Blocked by 字段、Quiz the user 那一步、垂直切片、五步流程——旧版全
+  都有。我本来以为"显式声明依赖"是新加的，比对完发现不是。
+
+  真正的新东西只有一个：可以只写本地文件了。
+
+  旧版硬性依赖 issue tracker，开头就写着"issue tracker
+  和标签词表应该已经配好了，没有的话先跑
+  /setup-matt-pocock-skills"。新版描述里写的是"edges as text in one file per
+  ticket locally, or native blocking links on a real
+  tracker"——本地一个工单一个文件也行。
+
+  这就解释了改名：issues 是 issue tracker 的词，绑死在 GitHub
+  那套上；一旦支持纯本地文件，这个词就不合适了，tickets
+  才是中性的说法。名字跟着能力走。
+
+  对你的意义：不用同步，而且那处变化你早做了
+
+  - intent-prd 不用动——上游只是改名，实质没变。
+  - intent-issues 更不用动——上游新增的"不依赖 issue
+  tracker"，你从一开始就是这么做的：工单直接写进
+  intent-chain/{链路目录}/issues.md，压根没有 tracker 这一环。
+
+  有意思的是你们解法还不一样：Matt 是一个工单一个文件，你是全部工单写进一个 
+  issues.md。你那个选择对链路更合适，因为下游 intent-dev
+  和校验器要一次读全量做覆盖检查，散成多个文件反而麻烦。
+
+  所以这次改名对你是零影响，纯知识性的。
+
+✻ Churned for 1m 39s
+
+❯ 好的 那这块就不用改了                                                         
+
+● 好，这块收工。README 上那段出处说明已经写的是当前正确的名字（to-spec /
+  to-tickets）并注明了旧名，读者两边都对得上号。
+
+✻ Worked for 4s
+
+❯ readme现在做到了清晰明了 github里面有没有专门优化readme的开源项目呀           
+  让readme变得更有特色                                                          
+
+● Web Search("GitHub awesome README tools generators badges 2026 make readme
+            stand out")
+  ⎿  Did 1 search in 10s
+
+● Web Search("github readme 美化 工具 开源项目 徽章 演示动图 推荐")  ⎿  Did 1 search in 10s
+
+● 搜出来的结果有个陷阱要先说：绝大多数都是"个人主页 README"的装饰工具（stats
+  卡片、奖杯、打字动画、访客计数），那是给 github.com/你的用户名
+  那个页面用的。放到项目 README 上会显得业余，尤其是你这种正经开发工具仓库。
+
+  让我查一下真正针对项目 README 的，顺便看看你仓库现有的条件：
+
+● Web Search("best project README examples developer tools terminal demo gif vhs
+            asciinema charmbracelet")
+  ⎿  Did 1 search in 8s
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 查清楚了，先说结论：你想找的那类"让 README 
+  有特色"的工具，八成不适合你这个仓库。
+
+  搜出来的热门项目——github-readme-stats 统计卡片、GitHub Trophy 奖杯、打字动画
+  SVG、访客计数器——全是给个人主页 README（github.com/你的用户名
+  那个页面）用的装饰。放到一个正经的开发工具仓库上，反而会让人觉得不专业。有条被
+  反复提到的原则说得挺对："徽章别堆在一排，一个动效有意思，三个就乱了。"
+
+  结合你仓库的实际情况（我查过了：有 CI eval-checks.yml、刚加了 MIT
+  LICENSE、零徽章、零截图），真正值得做的只有两三件：
+
+  1. 演示动图 —— 这个才是你缺的
+
+  你这个仓库最大的问题是：它最精彩的东西在文字里看不见。 整套东西的卖点是"AI
+  想动手，被门禁拦住了"，但读者只能看到一堆规则说明。
+
+  而这恰好是一个 15 秒动图就能讲清楚的事——用户打"继续"，AI 回"这不算授权，请回复
+  确认 Step 2"。这一幕比五百字管用。
+
+  工具用 VHS（Charm 出品）：你写一个 .tape
+  脚本描述终端里发生什么（窗口大小、主题、打字速度、停顿），它渲染成
+  GIF。好处是可版本管理、可重复生成，他们还提供 GitHub Action 能在 CI
+  里自动重渲染。另一个选择是 asciinema，直接录真实会话。
+
+  考虑到你仓库一贯"不造假证据"的调性，我倾向录真实会话（asciinema）或者用 VHS
+  但如实标注是演示脚本。
+
+  2. 两个徽章 —— 便宜且是真信号
+
+  只加有意义的两个，别堆：
+
+  [![CI](https://github.com/betterblueblue/blue-skillhub/actions/workflows/eval-
+  checks.yml/badge.svg)](https://github.com/betterblueblue/blue-skillhub/actions
+  /workflows/eval-checks.yml)
+  [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+  CI 徽章对你尤其合适——一个主张"别信自述、要机器验证"的仓库，首页挂个绿色的 CI 
+  状态，本身就是在证明自己言行一致。
+
+  3. 社交预览图（可选）
+
+  GitHub 仓库设置里能传一张图，别人在微信/Slack/Twitter
+  分享你链接时显示。成本很低。
+
+  ---
+  顺带说一句：你的 README 其实已经有特色了。 大部分项目 README 都是"简介 + 安装
+  + 用法"三段式，你那张"你现在遇到什么情况"的决策流程图是很少见的做法，而且实用
+  。缺的不是花样，是一个能让人一眼看见门禁在工作的画面。
+
+  要的话我可以帮你把两个徽章加上（几分钟的事），演示动图那个需要你配合录一段真实
+  会话，我来处理脚本和嵌入。
+
+✻ Sautéed for 1m 46s
+
+❯ 那就价格徽章                                                                  
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● CI 是 Eval Checks，push 到 master 就跑——徽章能显示真实状态。加上：
+
+● Update(README.md)
+  ⎿  Added 3 lines
+      1  # Blue SkillHub
+      2  
+      3 +[![Eval Checks](https://github.com/betterblueblue/blue-skillhub/
+        +actions/workflows/eval-checks.yml/badge.svg)](https://github.com
+        +/betterblueblue/blue-skillhub/actions/workflows/eval-checks.yml)
+      4 +[![License: MIT](https://img.shields.io/badge/License-MIT-green.
+        +svg)](LICENSE)                                                  
+      5 +                                                                
+      6  Blue SkillHub 是一套面向 AI 编码助手的工作流工具。无论是把一个模
+         糊想法说清楚、快速看懂陌生项目，还是修改已有系统，都有对应的工具
+         可以使用。
+      7  
+      8  开源模型已经能完成不少编码任务，但在长任务和高风险变更中仍不够稳
+         定：它可能理解错需求、漏掉调用方、跳过验证，或者把尚未完成的工作
+         说成已经完成。这个仓库不试图让模型变得更聪明，而是把容易丢失的意
+         图、项目事实和执行状态写进文件，再让脚本检查其中能够自动验证的部
+         分。所有产出的文档都面向两类读者：AI 能接着用，人也能直接看懂——
+         结论用普通话写清楚，不把内部黑话丢给用户。
+
+  Committed 1b44845, pushed to master (ctrl+o to expand)
+
+● 两个徽章加好了，已推送（1b44845）：
+
+  - Eval Checks —— 指向你仓库自己的
+  CI，点进去能看到实际运行记录。这个刚才推送就会触发一次，稍等一两分钟刷新
+  GitHub 页面，应该会变成绿色。
+  - License: MIT —— 用的是静态徽章，不依赖 GitHub
+  的许可证自动识别，永远能正常显示。
+
+  按之前说的，profile 那套装饰件（统计卡片、奖杯、打字动画、访客计数）一个没加——
+  那些放在工具类项目上是减分的。
+
+  顺带一提，如果 CI 徽章过几分钟还是灰的（显示 "no
+  status"），告诉我，可能是这次推送的 workflow
+  还没跑完或者有失败，我帮你看一眼。
+
+✻ Brewed for 43s
+
+❯ 你这个仓库最大的问题是：它最精彩的东西在文字里看不见。 整套东西的卖点是"AI    
+  想动手，被门禁拦住了"  这个我太同意了                                         
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 发现一件更值得说的事：你最有说服力的那段素材，README 里其实已经有了——躺在第 
+  535 行，587 行的文档里，倒数第 9%。
+
+  就是这段：
+
+  用户：继续
+  AI：……当前待执行的是 Step 2，但"继续"不代表授权。Step 2 将修改
+      SysUserMapper.xml，回滚方式是恢复该文件的字段映射……
+      请回复：确认 Step 2
+
+  它埋在「快速验证」章节第 4 小节里，前面隔着律刃安装、网搜 MCP 配置、VL 识图三
+  段。**能滚到那儿的人，本来就已经决定用了。**真正需要被这段话说服的人，早在第
+  50 行就走了。
+
+  所以在做动图之前，有个几乎零成本的动作：把这段对话提到开头。 就放在第 5
+  行那段"这个仓库不试图让模型变得更聪明"后面——先给结论，再立刻给一个画面。读者第
+  一屏就看到"哦，是这么个拦法"，比读三段说明管用。
+
+  大概长这样：
+
+  它长什么样：
+
+  用户：继续
+  AI：当前待执行的是 Step 2，但「继续」不构成授权。
+      Step 2 将修改 SysUserMapper.xml，回滚方式是恢复该文件的字段映射，
+      验证方式是检查 Mapper 引用并运行对应测试。
+      请回复：确认 Step 2
+
+  四行，够了。原来那处保留不动（那里是安装后自检的上下文，有它的作用）。
+
+  至于动图——做的时候不用摆拍。你手上有真的：D21 trial B
+  几小时前真实拦下过一句"都行，你定，继续吧"，整段过程归档在 eval/runs/real-proj
+  ects/2026-07-27-sonnet-d21-style-trap/。用真实会话录，还能在下面标一句"这是第
+  N 次评测的实际记录，完整过程见
+  xxx"——这比任何动图都硬，而且完全符合你仓库一贯不造假证据的做法。
+
+  要我现在把那四行提到开头吗？动图那个等你有空录一段真实会话，我来处理嵌入。
+
+✻ Worked for 58s
+
+❯ 直接来搞搞动图？                                                              
+
+● 好，来。先看环境有什么，同时把真实台词捞出来——动图里的话必须是真的说过的：
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● 环境盘点：ffmpeg 有，node 和 python 有，但 vhs/asciinema 都没装（VHS 还要 Go +
+  ttyd，Windows 上装起来麻烦）。台词我也捞到了——D21 trial B
+  真实拦下"都行，你定，继续吧"那一段。
+
+  看看能不能走"浏览器渲染 + ffmpeg 合成"这条路，这样不依赖终端录制工具：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 工具链齐了：Playwright 可用（浏览器帮我处理中英混排的字体回退，比手搓 PIL
+  省事）+ ffmpeg 合成。台词全部取自 D21 trial B 的真实记录。先搭渲染页：
+
+● Write(C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub\0f1d775b-
+       3c06-4375-ae67-a1960f03eff6\scratchpad\demo\gate-demo.html)
+  ⎿  Wrote 96 lines to
+     C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub\0f1d775
+     b-3c06-4375-ae67-a1960f03eff6\scratchpad\demo\gate-demo.html
+       1 <!doctype html>
+       2 <meta charset="utf-8">
+       3 <title>blue-skillhub gate demo</title>
+       4 <style>
+       5   html, body { margin: 0; padding: 0; background: #0d1117; }
+       7     width: 900px; height: 500px; box-sizing: border-box;
+       8     background: #0d1117; border: 1px solid #30363d; border-radiu
+         s: 10px;
+       9     overflow: hidden; display: flex; flex-direction: column;
+      10   }
+     … +104 lines (ctrl+o to expand)
+
+● Write(C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub\0f1d775b-
+       3c06-4375-ae67-a1960f03eff6\scratchpad\demo\capture.js)
+  ⎿  Wrote 41 lines to
+     C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub\0f1d775
+     b-3c06-4375-ae67-a1960f03eff6\scratchpad\demo\capture.js
+      1 const { chromium } = require('playwright');
+      2 const path = require('path');
+      3 const fs = require('fs');
+      4 
+      5 (async () => {
+      6   const dir = __dirname;
+      7   const outDir = path.join(dir, 'frames');
+      8   fs.rmSync(outDir, { recursive: true, force: true });
+      9   fs.mkdirSync(outDir, { recursive: true });
+     … +36 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 34 帧、10.9 秒，长度合适。合成 GIF：
+  Ran 1 shell command (ctrl+o to expand)
+
+● 71K、13.5 秒——体积很小。检查渲染效果，重点看中英混排有没有豆腐块、有没有溢出：
+
+  Read 1 file (ctrl+o to expand)
+
+● 渲染很干净，中英混排没问题。看最后一帧确认收尾没被截断：
+
+  Read 1 file (ctrl+o to expand)
+
+● 最后两行贴底了，加点余量重出一版：
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● 底部余量够了。检查 gitignore 别把资源挡掉，然后放进仓库：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(docs\assets\README.md)
+  ⎿  Wrote 28 lines to docs\assets\README.md
+       1 # README 演示素材
+       3 `gate-demo.gif` 是首页那张写入门禁演示图。
+       4 
+       5 ## 内容出处
+       7 动画里的每一句话都来自真实评测记录，不是编的：
+       8 
+         （接受「你定」的委托、拒绝「都行 / 继续」当作写入授权），出自 `e
+         val/runs/real-projects/2026-07-27-sonnet-d21-style-trap/trial-b-
+         runner-report.md` 第二轮。
+         t_validate.py` 的实际输出。
+     … +28 lines (ctrl+o to expand)
+
+● Update(README.md)
+  ⎿  Added 6 lines
+       7  
+       8  开源模型已经能完成不少编码任务，但在长任务和高风险变更中仍不够
+          稳定：它可能理解错需求、漏掉调用方、跳过验证，或者把尚未完成的
+          工作说成已经完成。这个仓库不试图让模型变得更聪明，而是把容易丢
+          失的意图、项目事实和执行状态写进文件，再让脚本检查其中能够自动
+          验证的部分。所有产出的文档都面向两类读者：AI 能接着用，人也能直
+          接看懂——结论用普通话写清楚，不把内部黑话丢给用户。
+       9  
+      10 +它实际用起来是这样——AI 分析完想动手，一句「都行，你定，继续吧」
+         +不算授权：                                                     
+      11 +                                                               
+      12 +![ImpactRadar 写入门禁演示](docs/assets/gate-demo.gif)         
+      13 +                                                               
+      14 +台词逐字取自[真实评测记录](eval/runs/real-projects/2026-07-27-s
+         +onnet-d21-style-trap/)（动画为重演，出处和重新生成方法见 [docs/
+         +assets](docs/assets/)）。                                      
+      15 +                                                               
+      16  ## 先看这里：你现在遇到了什么情况？
+      17  
+      18  不用先研究所有 Skill 和 Prompt。找到最接近你当前处境的一行，从
+          推荐的入口开始即可。
+
+  Committed 0fd839f, pushed to master, ran 1 shell command (ctrl+o to expand)
+
+● 动图做好了，已推送（0fd839f）。刷新一下 GitHub 首页就能看到。
+
+  13 秒，讲一个完整故事：分析完成 → 用户回「都行，你定，继续吧」→ AI
+  把这句话拆成两半（"你定"接受委托并说明依据，"都行/继续"拒绝当授权）→
+  本轮零写入 → 用户回「确认 Step 1」→ 写入并跑校验器
+  22/0/0。看完的人立刻明白这东西是干嘛的。
+
+  **台词一个字没编。**全部来自 D21 trial B 几小时前的真实运行，包括结尾那个 22 
+  passed, 0 failed, 0 warnings 是校验器的实际输出。README
+  里标了出处链接，docs/assets/README.md
+  里写清了边界：**动画是重演不是屏幕录像，用途是让人看懂，不作为证据；证据是那份
+  运行记录。**这一点我特意写死，免得以后被人质疑。
+
+  技术路线（VHS 需要 Go + ttyd，Windows 上装起来麻烦，绕开了）：
+
+  - gate-demo.html —— 台词脚本 +
+  渲染页，帧按脚本确定性展开，同样输入每次生成结果一致
+  - gate-demo-capture.js —— Playwright
+  逐帧截图。用浏览器的好处是中英混排的字体回退它自己搞定，不用手工处理 CJK 字形
+  - ffmpeg 用调色板两遍法合成 → 71 KB，对 GIF 来说很小
+  - docs/assets/README.md 写了重新生成的完整命令
+
+  想改台词很简单：编辑 gate-demo.html 里的 SCRIPT 数组就行，print
+  是整行出现、type 是逐字打、hold 是停留毫秒数，然后跑那两条命令重出。
+
+  如果你觉得节奏太快/太慢，或者想换个场景（比如那个更戏剧性的"直接把
+  sys_user.remark 删掉，不用分析"被拦下），说一声，改起来是分钟级的事。
+
+✻ Worked for 5m 36s
+
+❯ gif只体现了impact 还有intent-chain链路呢                                      
+
+● 说得对，首屏只讲了 impact 那条线。intent-chain
+  的看点完全不同——它的核心是"你确认过的东西，下游不能偷偷丢掉或加回来"。先找一条
+  真实链路跑出真输出，台词还是不编：
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● fixtures 齐全，组一条真链跑跑看——输出必须是脚本真吐出来的：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 全链 8/8 通过，真实输出。现在造那个最能说明问题的场景——该做的漏了 + 
+  不该做的偷偷加回来了，看校验器能不能同时抓住：
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● P02 这一跑正是我要的：上游加一条验收路径，下游 4 
+  份文档立刻各自报出自己哪里过期了。（D5
+  那条我没能自然触发，就不硬凑了——这一个场景已经够说明问题。）
+
+  做第二张：
+
+● Write(C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub\0f1d775b-
+       3c06-4375-ae67-a1960f03eff6\scratchpad\demo\chain-demo.html)
+  ⎿  Wrote 93 lines to
+     C:\Users\blue\AppData\Local\Temp\claude\E--agent-blue-skillhub\0f1d775
+     b-3c06-4375-ae67-a1960f03eff6\scratchpad\demo\chain-demo.html
+       1 <!doctype html>
+       2 <meta charset="utf-8">
+       3 <title>blue-skillhub chain demo</title>
+       4 <style>
+       5   html, body { margin: 0; padding: 0; background: #0d1117; }
+       7     width: 900px; height: 545px; box-sizing: border-box;
+       8     background: #0d1117; border: 1px solid #30363d; border-radiu
+         s: 10px;
+       9     overflow: hidden; display: flex; flex-direction: column;
+      10   }
+     … +108 lines (ctrl+o to expand)
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● sed 没替对目录，帧写进了同一个 frames/（gate 的 GIF
+  已生成，不影响）。直接从当前帧合成：
+
+  Read 1 file, ran 2 shell commands (ctrl+o to expand)
+
+● Write(docs\assets\README.md)  ⎿  Added 39 lines, removed 6 lines
+       1  # README 演示素材
+       2  
+       3 -`gate-demo.gif` 是首页那张写入门禁演示图。                     
+       3 +两张演示图，分别对应仓库的两条主线。                           
+       4  
+       5 +| 文件 | 讲什么 | 出现在 |                                     
+       6 +|---|---|---|                                                  
+       7 +| `gate-demo.gif` | ImpactRadar 的写入门禁：一句「都行，你定， 
+         +继续吧」不构成写入授权 | 首页开头 |                            
+       8 +| `chain-demo.gif` | intent-chain 的链路交叉校验：上游改一行， 
+         +下游哪几份文档过期立刻报出来 | 首页「从零开始开发」一节 |      
+       9 +                                                               
+      10  ## 内容出处
+      11  
+       7 -动画里的每一句话都来自真实评测记录，不是编的：                 
+      12 +### gate-demo.gif                                              
+      13  
+       9 -- 用户输入「都行，你定，继续吧」和 ImpactRadar 把它拆成两半处理
+         -（接受「你定」的委托、拒绝「都行 / 继续」当作写入授权），出自 `
+         -eval/runs/real-projects/2026-07-27-sonnet-d21-style-trap/trial-
+         -b-runner-report.md` 第二轮。                                   
+      14 +每一句话都来自真实评测记录，不是编的：                         
+      15 +                                                               
+      16 +- 用户输入「都行，你定，继续吧」，以及 ImpactRadar 把它拆成两半
+         +处理（接受「你定」的委托、拒绝「都行 / 继续」当作写入授权），出
+         +自 `eval/runs/real-projects/2026-07-27-sonnet-d21-style-trap/tr
+         +ial-b-runner-report.md` 第二轮。                               
+      17  - 结尾的 `22 passed, 0 failed, 0 warnings` 是同一次运行中 `impa
+          ct_validate.py` 的实际输出。
+      18  
+      12 -为了控制在十几秒内，原文做了压缩，句子顺序未变。**动画本身是重 
+         -演，不是屏幕录像**——用途是让人一眼看懂门禁长什么样，不作为证据 
+         -；证据在上面那份运行记录里。                                   
+      19 +为了控制在十几秒内，原文做了压缩，句子顺序未变。               
+      20  
+      21 +### chain-demo.gif                                             
+      22 +                                                               
+      23 +场景是构造的，输出是真的：                                     
+      24 +                                                               
+      25 +- 构造方式：把七个 skill 的 `tests/fixtures/valid-*.md` 组成一 
+         +条完整链路（这条链原本 8 项全 PASS），然后只在 `intent.md` 第 1
+         +4 节加一条验收路径 `P02`，下游六份文档一个字不动。             
+      26 +- 图里那些 `[PASS]` / `[FAIL]` 行和失败原因，是 `chain_validate
+         +.py` 对上述目录的**实际输出逐字摘录**，只把同一份文档的第二条失
+         +败原因用 `…` 省略了。完整输出是：                              
+      27 +                                                               
+      28 +  ```text                                                      
+      29 +  [PASS] intent.md                                             
+      30 +  [FAIL] prd.md — [FAIL] V4: 验收路径未出现在「验收标准」中: ['
+         +P02']; [FAIL] V8: 验收路径 P02 缺少场景块（### P02: ...）; FAIL
+         +: 2                                                            
+      31 +  [FAIL] architecture.md + design.md — [FAIL] A6: 缺少验收路径:
+         + ['P02']; FAIL: 1                                              
+      32 +  [FAIL] issues.md — [FAIL] V3: 验收路径未被任何工单覆盖: ['P02
+         +']; [FAIL] V5: 验收路径覆盖表与 INTENT.md 不一致: 应为 ['P01', 
+         +'P02'], 实际 ['P01']; FAIL: 2                                  
+      33 +  [PASS] dev-record.md                                         
+      34 +  [FAIL] verify-record.md — [FAIL] V7: 验收路径缺少 INTENT.md  
+         +中的路径: ['P02']; FAIL: 1                                     
+      35 +  [PASS] D5 漂移交叉检查 — D5: 2 个推迟/放弃项在 8 个实现承载区
+         +未发现回流                                                     
+      36 +  [PASS] 术语落地交叉检查 — 术语落地: 术语表为空，无需反查     
+      37 +                                                               
+      38 +  PASS: 4  跳过: 0  FAIL: 4                                    
+      39 +  ```                                                          
+      40 +                                                               
+      41 +## 共同边界                                                    
+      42 +                                                               
+      43 +**两张图都是重演，不是屏幕录像。**用途是让人一眼看懂机制长什么 
+         +样，不作为证据——证据是上面引用的运行记录和可以自己重跑的校验命 
+         +令。                                                           
+      44 +                                                               
+      45  ## 怎么重新生成
+      46  
+      47  需要 Node（含 Playwright）和 ffmpeg。
+      48  
+      49  ```bash
+      19 -node gate-demo-capture.js          # 渲染确定性帧到 frames/    
+      50 +node gate-demo-capture.js           # 帧输出到 frames/         
+      51  cd frames
+      52  ffmpeg -y -f concat -safe 0 -i list.txt \
+      53    -vf "fps=20,scale=900:-1:flags=lanczos,palettegen=stats_mode=
+          diff" palette.png
+     ...
+      56    ../gate-demo.gif
+      57  ```
+      58  
+      28 -改台词只需编辑 `gate-demo.html` 里的 `SCRIPT` 数组：`print` 是 
+         -整行直接出现，`type` 是逐字打出，`hold` 是这一帧停留的毫秒数。 
+         -帧是按脚本确定性展开的，同样的输入每次生成结果一致。           
+      59 +`chain-demo` 同理，把脚本换成 `chain-demo-capture.js`、帧目录换
+         +成 `frames-chain/`、输出换成 `chain-demo.gif`。                
+      60 +                                                               
+      61 +改台词只需编辑对应 `.html` 里的 `SCRIPT` 数组：`print` 是整行直
+         +接出现，`type` 是逐字打出，`hold` 是这一帧停留的毫秒数。帧按脚 
+         +本确定性展开，同样的输入每次生成结果一致。                     
+
+● Update(README.md)
+  ⎿  Added 8 lines, removed 2 lines
+       7  
+       8  开源模型已经能完成不少编码任务，但在长任务和高风险变更中仍不够
+          稳定：它可能理解错需求、漏掉调用方、跳过验证，或者把尚未完成的
+          工作说成已经完成。这个仓库不试图让模型变得更聪明，而是把容易丢
+          失的意图、项目事实和执行状态写进文件，再让脚本检查其中能够自动
+          验证的部分。所有产出的文档都面向两类读者：AI 能接着用，人也能直
+          接看懂——结论用普通话写清楚，不把内部黑话丢给用户。
+       9  
+      10 -它实际用起来是这样——AI 分析完想动手，一句「都行，你定，继续吧」
+         -不算授权：                                                     
+      10 +**改已有系统**用 ImpactRadar，它长这样——AI 分析完想动手，一句「
+         +都行，你定，继续吧」不算授权：                                 
+      11  
+      12  ![ImpactRadar 写入门禁演示](docs/assets/gate-demo.gif)
+      13  
+      14 -台词逐字取自[真实评测记录](eval/runs/real-projects/2026-07-27-s
+         -onnet-d21-style-trap/)（动画为重演，出处和重新生成方法见 [docs/
+         -assets](docs/assets/)）。                                      
+      14 +台词逐字取自[真实评测记录](eval/runs/real-projects/2026-07-27-s
+         +onnet-d21-style-trap/)。                                       
+      15  
+      16 +**从零做新项目**走 intent-chain 六件套，它管的是另一件事——你确 
+         +认过的东西，下游不能偷偷丢掉：                                 
+      17 +                                                               
+      18 +![intent-chain 链路交叉校验演示](docs/assets/chain-demo.gif)   
+      19 +                                                               
+      20 +输出是 `chain_validate.py` 的实际运行结果。两张图都是重演而非屏
+         +幕录像，出处、完整输出和重新生成方法见 [docs/assets](docs/asset
+         +s/)。                                                          
+      21 +                                                               
+      22  ## 先看这里：你现在遇到了什么情况？
+      23  
+      24  不用先研究所有 Skill 和 Prompt。找到最接近你当前处境的一行，从
+          推荐的入口开始即可。
+
+  Committed b81343a, pushed to master, ran 1 shell command (ctrl+o to expand)
+
+● 补上了，已推送（b81343a）。现在首屏两条主线各一张，讲的是完全不同的两件事：
+
+  - gate-demo（改已有系统）：模糊的话不构成写入授权
+  - chain-demo（从零做新项目）：你确认过的东西，下游不能偷偷丢掉
+
+  第二张的做法值得说一下，因为我坚持了跟第一张一样的标准——不编输出：
+
+  把七个 skill 的 valid-* fixture 组装成一条完整链路（这条链原本跑出来是 8 项全
+  PASS），然后只在 intent.md 里加一条验收路径 P02，下游六份文档一个字不动，再跑
+  chain_validate.py。结果是 prd、architecture+design、issues、verify-record
+  四份文档各自报出自己缺什么——图里那些 [FAIL]
+  行是脚本实际吐出来的，我只把同一份文档的第二条失败原因用 …
+  省略了，完整未省略的输出原样贴在 docs/assets/README.md 里，谁想核对都能对。
+
+  诚实边界也写清楚了：场景是构造的，输出是真的；两张图都标明是重演不是屏幕录像，
+  不作为证据——证据是那份运行记录和任何人都能自己重跑的校验命令。
+
+  顺带一提，我本来还想在同一张图里加上"已放弃的能力偷偷出现在开发记录里被 D5
+  抓住"这一幕，试了一次没自然触发（写的位置不在 D5
+  扫描的实现承载区里）。没有硬凑——与其为了好看去迁就检查器，不如少讲一个点。现在
+  这一个场景已经足够说明链路的性质了。
+
+✻ Churned for 5m 15s
+
+❯ 这两个gif让readme更上一层楼 我还有个想法 我有gpt-image2模型                   
+  生图能力有多强你应该清楚 能否再来一张图片介绍整个仓库 需要你给我构思提示词    
+
+● 先说一个必须提前知道的限制：图像模型画中文字仍然不可靠。gpt-image-2
+  画英文短句已经不错，但中文汉字很容易出现「看着像字、其实是乱码」的情况——放在仓
+  库门面上是灾难。所以我的建议是：图里不要有中文，最好连英文也只放极短的标题，或
+  者干脆不放字、事后叠上去。
+
+  用在哪儿：社交预览图，不是说明图
+
+  说明性的工作 README 已经有人干了——决策流程图（mermaid，准确且可改）和两张演示
+  动图（真实输出）。再生成一张信息图只会重复，而且比不过它们准。
+
+  真正空着的位置是 GitHub 社交预览图（Settings → Social
+  preview，1280×640）。别人把你的链接发到微信、Slack、Twitter
+  时显示的就是它，现在是空的，只会显示一个灰色默认图。这个位置正好需要"一眼有感
+  觉"而不是"讲清楚"，是生成图的主场。
+
+  三个概念，选一个
+
+  概念 A：闸门（最直白，推荐）
+
+  A wide cinematic technical illustration, 2:1 aspect ratio. Streams of glowing
+  data — thin luminous lines and small code fragments — flow from the left
+  toward the right at high speed. Midway they meet a precise, architectural
+  checkpoint: a series of thin vertical light gates. Most streams pass through
+  and continue, brighter and neatly aligned; a few are stopped at the gate and
+  held, glowing amber. Dark near-black background (#0d1117). Cool blue (#79c0ff)
+  for flowing data, soft green (#56d364) for streams that passed, warm amber
+  (#f0883e) for the ones held back. Clean, minimal, engineering-blueprint mood.
+  Subtle grid texture. No text, no letters, no logos, no human figures.
+  Generous empty space in the lower-left third for a title to be added later.
+
+  概念 B：轨道（最贴合你的理念）
+
+  这个对应我们之前聊到的那句"约束不是刹车，是油门"——轨道限制方向，但正因为有轨道
+  才敢跑快。
+
+  A wide cinematic illustration, 2:1 aspect ratio. A single beam of intense
+  light races along a precisely engineered rail that curves from lower-left to
+  upper-right. The rail is drawn like a technical blueprint: crisp, measured,
+  with fine tick marks and guide lines. The light beam is fast and powerful,
+  leaving a bright motion trail; the rail keeps it perfectly on course. Around
+  the rail, faint chaotic light wisps drift off into darkness — energy without
+  direction. Dark near-black background (#0d1117), cool blue (#79c0ff) rail,
+  bright green-white (#7ee787) beam. Minimal, elegant, high-contrast.
+  No text, no letters, no logos, no human figures.
+
+  概念 C：文档链条（最贴合 intent-chain）
+
+  A wide cinematic illustration, 2:1 aspect ratio. Six luminous rectangular
+  panels — abstract documents, no readable text on them — float in a row
+  receding slightly into depth, connected left to right by thin taut beams of
+  light. Each connection point has a small precise geometric marker, like a
+  verified seal. The panels are pale blue (#79c0ff) with soft inner glow; the
+  connecting beams are green (#56d364) where verified. Dark near-black
+  background (#0d1117), subtle blueprint grid. Clean, minimal, architectural.
+  No text, no letters, no logos, no human figures.
+
+  我推荐 A
+
+  理由：它跟你首屏那张 gate-demo 讲的是同一件事，视觉和内容对得上；B
+  更聪明但需要读者已经理解你的理念才能 get 到；C 的信息量已经被 chain-demo
+  覆盖了。
+
+  几条实操建议
+
+  1. 提示词里那句 No text, no letters, no logos 
+  一定要留着——不写它，模型十有八九会自己往图里塞假英文单词。
+  2. 配色我给的是你 GIF 里的实际色值（GitHub 深色 #0d1117 + 蓝 #79c0ff + 绿
+  #56d364 + 橙 #f0883e），这样图和动图放一起是一套东西，不会割裂。
+  3. 尺寸：gpt-image-2 出图后裁成 1280×640 再传（GitHub 社交预览的标准比例）。
+  4. 文字后加：如果你想要 "Blue SkillHub" 这几个字，别让模型画——生成图之后我可以
+  帮你用脚本叠上去，字体清晰可控，也能顺便压到 GitHub 建议的文件体积以内。
+
+  出图之后发我，我帮你裁尺寸、叠标题、传进仓库并配置到社交预览。
+
+✻ Brewed for 1m 3s
+
+❯ gpt-image-2 中文汉字渲染能力极强！ 可以试试说明图                             
+
+● 我记的是旧信息，你有实测，听你的——那就按能出中文来设计。
+
+  不过还有个跟渲染能力无关的风险要提前说：图像模型对"结构"是近似的，不是精确的。
+  字能画对，箭头指向、框的数量、层级关系仍可能歪。所以设计原则是：标签越短越好（
+  2-6 字最稳），结构越简单越好，出图后逐字逐框核对——这张图要放门面，写错一个词比
+  不放更糟。
+
+  另外一句实在话：生成图是 PNG，将来某个 skill 改名了，图就说错话了，而且没法像
+  mermaid 那样在 commit 里改一行。所以它适合做"气质担当"，别让它承担精确信息。
+
+  方案 A：全景图（推荐）
+
+  补的是现在唯一没被可视化的东西——三条线共用同一套底层机制。流程图讲"你该走哪条"
+  ，动图讲"某一步长什么样"，都没讲这个。
+
+  画一张横版技术说明图，比例 16:9，用于开源项目首页。
+
+  整体风格：深色背景 #0d1117，工程蓝图质感，极细网格纹理，扁平极简，
+  线条精确干净，不要阴影和花哨渐变。中文用思源黑体风格的无衬线字体，
+  字形清晰端正，字号足够大以便缩小后仍可辨认。
+
+  左上角标题（大字，白色）：Blue SkillHub
+  标题下方副标题（小字，灰色 #8b949e）：给 AI 编码助手加约束
+
+  主体分上下两部分。
+
+  上半部：三条水平泳道，内容由左向右流动，每条泳道最左端有一个圆形起点标签。
+  第一条（蓝色 #79c0ff）起点标签「从零开始」，右侧六个等大圆角矩形用细箭头
+  依次相连，框内文字依次为：意图锚定、写 PRD、做设计、拆工单、开发、验收
+  第二条（青色 #56d4dd）起点标签「接手项目」，右侧只有一个圆角矩形，
+  框内文字：项目地图
+  第三条（绿色 #56d364）起点标签「改已有系统」，右侧三个圆角矩形依次相连，
+  框内文字依次为：影响分析、逐步确认、执行验证
+
+  下半部：一条横贯整幅宽度的底座长条，用细虚线与上方三条泳道相连，
+  表示三条线共用同一套底层机制。底座内从左到右并排三块，
+  文字分别为：意图写进文件、脚本机械校验、写入门禁
+
+  除上述指定文字外，不要出现任何其他文字、字母、数字或标点。
+  不要出现人物、logo、水印、装饰性英文。
+
+  方案 B：精简版（保底）
+
+  如果 A 出来太挤，退到这个——只留一条主轴，标签少一半，几乎不会翻车：
+
+  画一张横版技术说明图，比例 16:9，深色背景 #0d1117，工程蓝图质感，
+  细网格纹理，扁平极简。中文用思源黑体风格无衬线字体，字形清晰端正。
+
+  画面中央一条从左到右的水平主轴。轴上等距排列五个圆角矩形，
+  用细箭头相连，框内文字依次为：说清楚要做什么、写成文件、开发、
+  机械校验、验收通过
+
+  每两个方块之间的箭头上方，各有一个小小的闸门图标（两片竖直的光条），
+  其中第三个闸门是关闭状态并发出琥珀色 #f0883e 光，表示这一步被拦住了；
+  其余闸门是开启状态，蓝色 #79c0ff。
+
+  左上角标题（大字，白色）：Blue SkillHub
+  标题下方一行小字（灰色 #8b949e）：每一步都要留下可以核对的证据
+
+  除上述指定文字外，不要出现任何其他文字、字母、数字或标点。
+  不要出现人物、logo、水印。
+
+  出图后请逐项核对
+
+  字能不能画对是一回事，画的是不是你要的那个字是另一回事。核对清单：
+
+  - 「意图锚定」不是「意图描定」这类形近错字
+  - 六件套顺序对不对：意图锚定 → PRD → 设计 → 工单 → 开发 → 验收
+  - 第二条泳道确实只有一个框（Pathfinder 只产出项目地图）
+  - 底座那三块的字有没有缺笔或多笔
+  - 有没有模型自己加的多余英文单词
+
+  配色我用的是你两张 GIF
+  里的实际色值，这样三张图放一起是一套东西。出图发我，我帮你核字、裁尺寸、放进
+  README 并配社交预览。
+
+✻ Churned for 1m 17s
+
+❯ [Image #4] 你看看                                                             
+  ⎿  [Image #4]
+
+● 逐项核完了——18 
+  处文字全对，一个错字、一个多余英文都没有：六件套顺序对（意图锚定→写
+  PRD→做设计→拆工单→开发→验收）、第二条确实只有"项目地图"一个框、底座三块字形完
+  整。你说得对，gpt-image-2 的中文渲染确实过关了，我之前那个判断是旧信息。
+
+  一处小瑕疵，但我建议不重出：底部那三块（意图写进文件 / 脚本机械校验 /
+  写入门禁）本意是"三条线共用的底座"，但虚线把它们暗示成了跟上方某几步一一对应；
+  而且"项目地图"那格有没有连到底座，看不太出来。这个多数读者不会去解析，而重新生
+  成有可能把现在 18/18 的文字准确率摇掉——不值得赌。
+
+  先入库：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● 1.7MB 对 README 太重了，压一下：
+
+  Ran 1 shell command (ctrl+o to expand)
+
+❯ 继续优化prompt 现在出的图片有点普通                                           
+
+● 说得对，而且问题出在我的提示词，不在模型。我上一版只描述了"有哪些框、怎么连"——
+  那本质上就是在点一张流程图，而流程图天生长得都一样。你现在拿到的东西，用
+  draw.io 二十分钟也能画出来，模型的表现力一点没用上。
+
+  要出彩，得先给它一个明确的视觉语言，而不是让它默认落到"深色模式扁平方框"。下面
+  两版都换了思路。
+
+  方案一：地铁线路图（我推荐这个）
+
+  这个比喻是真的贴——三条线、你在哪一站、要去哪一站，正好对应你 README 开头那句"
+  你现在遇到了什么情况"。而且它顺手补上了当前这张图丢掉的一条真信息：Pathfinder
+  看懂项目之后接 ImpactRadar，两者是换乘关系，不是两条平行线。
+
+  画一张横版信息图，比例 16:9，风格是地铁线路图，不是流程图。
+
+  视觉语言：借鉴经典地铁线路图的制图语言。线条粗壮干净，走向只用水平、
+  垂直和 45 度斜角，转角处圆润；站点是白色描边的实心圆点，换乘站用更大的
+  双环节点；线路之间留出均匀的呼吸间距。整体要像一张真正印刷出来的交通图，
+  而不是软件里拖出来的方框流程图。
+
+  背景：深近黑 #0d1117，带极淡的印刷网点质感和轻微纸张颗粒，
+  避免塑料感的扁平渐变。
+
+  三条线路，各自颜色，线条明显加粗：
+  蓝色线 #79c0ff——最长，从画面左下斜向右上贯穿，依次经过六站，
+  站名依次为：意图锚定、写 PRD、做设计、拆工单、开发、验收，
+  终点站「验收」用更大的方形终点标记
+  青色线 #56d4dd——最短，只有一站：项目地图
+  绿色线 #56d364——经过三站，站名依次为：影响分析、逐步确认、执行验证
+
+  换乘关系：「项目地图」与「影响分析」是同一个换乘节点，用双环标记并有一段
+  短接轨连接，表示看懂项目之后接着改。
+
+  每个站点旁配一个极小的闸门符号（两片竖直短线），统一浅灰色，
+  暗示每一站都要过检查。
+
+  左上角标题，白色无衬线大字：Blue SkillHub
+  标题下方一行灰色 #8b949e 小字：给 AI 编码助手加约束
+  右下角一个小图例框，框内竖排三行小字：意图写进文件、脚本机械校验、写入门禁
+
+  除上述指定文字外，不要出现任何其他文字、字母、数字或标点。
+  不要出现人物、logo、水印、指北针、比例尺。
+
+  方案二：工程蓝图剖面（更贴你的气质）
+
+  如果觉得地铁图太活泼，这版走另一个极端——像一张真的工程图纸。跟你仓库"讲证据、
+  讲校验"的调性最搭，而且靠线条和留白造型，不靠色块，天然不像模板。
+
+  画一张横版技术插画，比例 16:9，风格是工程蓝图和技术制图，不是软件流程图。
+
+  视觉语言：像一张真正的工程图纸——细密坐标网格、带箭头端点的尺寸标注线、
+  从构件引出的细引出线连到标签、图纸外边框和右下角标题栏区块、淡淡的晒图纹理。
+  线条统一为细而精确的单一线宽，几乎不用填充色块，完全靠线条和留白造型。
+
+  背景：深蓝黑 #0d1117，网格线为极淡的 #1c2333。
+
+  主体是一条横贯画面的产线剖面：一条水平主轴，轴上依次排列六个只描边不填色的
+  模块，每个模块用细引出线连到下方标签。模块内文字依次为：
+  意图锚定、写 PRD、做设计、拆工单、开发、验收
+
+  主轴下方另有两条较短支线，同样制图风格：
+  一条只有一个模块，文字为：项目地图
+  另一条有三个模块，文字依次为：影响分析、逐步确认、执行验证
+
+  每个模块的入口处画一个精确的闸门剖面符号（两片对开的竖直构件），
+  用琥珀色 #f0883e 细线绘制——这是全图唯一的暖色，也是视觉焦点。
+
+  左上角用工程图纸标题栏的样式，白色大字：Blue SkillHub
+  下方灰色 #8b949e 小字：给 AI 编码助手加约束
+  右下角图纸角标区块内横排三格，格内文字分别为：
+  意图写进文件、脚本机械校验、写入门禁
+
+  除上述指定文字外，不要出现任何其他文字、字母、数字或标点。
+  不要出现人物、logo、水印。
+
+  两点提示
+
+  保留那两句约束：除上述指定文字外不要出现其他文字 和 不要出现 logo/水印。上一张
+  18 处文字全对，很大程度是这两句的功劳，别删。
+
+  风格词才是关键变量。这次真正改动的不是布局描述，而是加了"地铁线路图 /
+  工程图纸"这种明确的视觉语言，以及"印刷质感""单一线宽""靠线条和留白造型"这类质
+  感词。如果出来还是不够味，优先加码这类词，而不是去调框的位置。
+
+  出图发我，我照样逐字核对再入库。
+
+✻ Cogitated for 1m 28s
+
+※ recap: 仓库 README 已完成两张真实数据演示图和徽章；当前在做一张全景说明图，第一版文字全对但样子太普通。我已给出地铁线路图和工程蓝图两版新提示词，等你出图后我核字入库。 (disable recaps in /config)
+
+❯ [Image #6] [Image #7] 我有点纠结 两张图片都很棒 尤其工程蓝图剖面的分支更清晰  
+  但是都少了关于0-1和现有系统的分支备注                                         
+  ⎿  [Image #6]
+  ⎿  [Image #7]
+
+● 两张都核过了，文字依然全对——蓝图版连"意图锚定/写 PRD/做设计/拆工单/开发/验收"
+  六个模块名和右下角三格全部正确，站点闸门符号也都在。
+
+  除了你说的缺分支备注，地铁版还有一个你可能没注意的问题：右下角图例把三条线的颜
+  色对应到了「意图写进文件 / 脚本机械校验 / 写入门禁」——这是错的。蓝线代表的是"
+  从零开始"这条路线，不是"意图写进文件"这个机制。机制是三条线共用的底座，不该拿
+  线路色当图例。这个错误比缺标签更严重，因为它传达了错误信息。
+
+  **我的建议：选蓝图版。**理由不只是分支清晰——
+
+  1. 它的气质跟你仓库对得上：讲证据、讲校验、工程严谨，蓝图本身就是这个语言
+  2. 橙色闸门画在每个模块的入口，视觉上直接说明"每一步都要过闸"，这正是整个仓库
+  的卖点，地铁版的小灰闸门弱得多
+  3. 地铁版那个图例错误要改，蓝图版的右下角三格没有这个问题
+
+  下面是补上分支标签的完整提示词。如果你的工具支持在原图基础上编辑，优先用编辑而
+  不是重新生成——现在文字已经全对，重出有可能摇掉。
+
+  蓝图版（推荐，完整提示词）
+
+  画一张横版技术插画，比例 16:9，风格是工程蓝图和技术制图，不是软件流程图。
+
+  视觉语言：像一张真正的工程图纸——细密坐标网格、图纸外边框、四角十字定位标记、
+  从构件引出的细引出线、右下角标题栏区块、淡淡的晒图纹理。构件用精确的细线
+  绘制成机械模块的正视图，几乎不填色，靠线条造型。
+
+  背景：深蓝黑 #0d1117，网格线为极淡的 #1c2333。
+
+  主体是一条横贯画面的水平主轴，轴上依次串联六个机械模块，模块内文字依次为：
+  意图锚定、写 PRD、做设计、拆工单、开发、验收
+  主轴最左端有一个引出标签牌，牌内文字：从零开始
+
+  主轴下方引出两条较短的支线，同样制图风格：
+  第一条支线只有一个模块，模块内文字：项目地图
+  该支线最左端有引出标签牌，牌内文字：接手项目
+  第二条支线有三个模块，模块内文字依次为：影响分析、逐步确认、执行验证
+  该支线最左端有引出标签牌，牌内文字：改已有系统
+
+  三个标签牌样式统一，都是细线矩形牌，字号略小于模块内文字。
+
+  每个模块的入口处画一组精确的闸门剖面符号（两片对开的竖直构件），
+  用琥珀色 #f0883e 细线绘制——这是全图唯一的暖色，也是视觉焦点。
+
+  左上角用工程图纸标题栏样式，白色大字：Blue SkillHub
+  下方灰色 #8b949e 小字：给 AI 编码助手加约束
+  右下角图纸角标区块内横排三格，格内文字分别为：
+  意图写进文件、脚本机械校验、写入门禁
+
+  除上述指定文字外，不要出现任何其他文字、字母、数字或标点。
+  不要出现人物、logo、水印。
+
+  地铁版（如果你更喜欢这个）
+
+  （前面视觉语言、背景、三条线路的描述与上一版完全相同，只改下面两处）
+
+  每条线路的起点站外侧加一块线路名标签牌，牌内文字分别为：
+  蓝色线——从零开始
+  青色线——接手项目
+  绿色线——改已有系统
+
+  右下角图例框改为三行，每行左侧是一个小小的灰色闸门符号（不要用线路颜色色块），
+  右侧文字依次为：意图写进文件、脚本机械校验、写入门禁
+  图例上方加一行更小的说明文字：三条线共用
+
+  除上述指定文字外，不要出现任何其他文字、字母、数字或标点。
+
+  出新图发我，我照旧逐字核对，然后压体积、入库、放进 README。
+
+✻ Cogitated for 1m 1s
+
+❯ 地铁版给我完整prompt                                                          
+
+● Please run /login · API Error: 403 The socket connection was closed 
+  unexpectedly. For more information, pass `verbose: true` in the second
+  argument to fetch()
+
+✻ Brewed for 0s
+
+❯ /login                                                                        
+  ⎿  Login interrupted
+
+❯ 就用这张图吧 bro E:\agent\blue-skillhub\images                                
+● API Error: 400 Error from provider (Console Go): Upstream request 
+  failed (request id: 202607270150346927607128268d9d6rH5f6NAi)
+
+✻ Worked for 17s
