@@ -1,8 +1,10 @@
 from .base import VLProvider
 from .siliconflow import SiliconFlowProvider
+from .stepfun import StepFunProvider
 from .tokenrhythm import TokenRhythmProvider
 
 PROVIDERS: dict[str, type[VLProvider]] = {
+    "stepfun": StepFunProvider,
     "tokenrhythm": TokenRhythmProvider,
     "siliconflow": SiliconFlowProvider,
 }

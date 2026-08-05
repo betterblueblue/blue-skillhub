@@ -17,7 +17,7 @@ vl-vision - 通用 VL 识图工具
     python vl_vision.py ./images/ --batch
 
     # 指定模型
-    python vl_vision.py photo.png --model Qwen/Qwen3-VL-32B-Instruct
+    python vl_vision.py photo.png --model step-3.7-flash
 
     # JSON 输出
     python vl_vision.py photo.png --json
@@ -132,14 +132,14 @@ def main():
   python vl_vision.py photo.png --template ocr
   python vl_vision.py photo.png --prompt "描述图中人物的穿着"
   python vl_vision.py ./images/ --batch
-  python vl_vision.py photo.png --model Qwen/Qwen3-VL-32B-Instruct --json
+  python vl_vision.py photo.png --model step-3.7-flash --json
         """,
     )
     parser.add_argument("image", nargs="?", help="图片文件路径或目录路径")
     parser.add_argument("--template", "-t", help="Prompt 模板名称")
     parser.add_argument("--prompt", "-p", help="自定义 prompt（覆盖模板）")
     parser.add_argument("--batch", "-b", action="store_true", help="批量模式：分析目录下所有图片")
-    parser.add_argument("--provider", default=None, help="VL Provider（默认: tokenrhythm）")
+    parser.add_argument("--provider", default=None, help="VL Provider（默认: stepfun）")
     parser.add_argument("--model", "-m", default=None, help="模型标识")
     parser.add_argument("--json", action="store_true", help="以 JSON 格式输出")
     parser.add_argument("--list-models", action="store_true", help="列出可用模型")
