@@ -21,6 +21,7 @@ skills/*/tests/
 !skills/pathfinder/tests/fixtures/degradation-trap/.env
 !skills/impact/tests/
 skills/impact/tests/e2e/workdirs/
+!skills/whydump/tests/
 test-projects/
 
 # === 控制变量实验临时产物(skill 提取 / 跑出的 map)===
@@ -28,6 +29,7 @@ test-projects/
 
 # === 会话日志(本地保留,不入库)+ IDE 临时 ===
 sessions/
+skills/whydump/评审prompt.txt
 .mimocode/
 .claude/worktrees/
 .playwright-mcp/

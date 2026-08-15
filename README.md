@@ -111,6 +111,14 @@ Copy-Item "skills\intent-dev" "$env:USERPROFILE\.claude\skills\intent-dev" -Recu
 Copy-Item "skills\intent-verify" "$env:USERPROFILE\.claude\skills\intent-verify" -Recurse -Force
 ```
 
+需要排查 Java OOM / 内存问题时，另装工具型 utility：
+
+```powershell
+Copy-Item "skills\whydump" "$env:USERPROFILE\.claude\skills\whydump" -Recurse -Force
+```
+
+> 说明：`whydump`（Java OOM 排查）和 `vl-vision`（识图）是工具型 utility，不属于核心 Skill、不参与评测体系；也可以不装，直接在仓库根目录用 `python skills/whydump/scripts/analyze.py <histo.txt>` 调用。注意：这种直接调用只适合手里已经有直方图文本（`jmap -histo` 的输出）的情况；正常排查从 `/whydump` 进，由它先引导取证、再调脚本。
+
 Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方式见 [安装与验证清单](docs/install-and-verify-checklist.md)。
 
 2. 根据任务选择入口。
