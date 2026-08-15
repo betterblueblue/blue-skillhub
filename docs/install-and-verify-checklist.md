@@ -110,6 +110,19 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。
 
 验证：`/intent-anchor` 能触发，并说明它只负责产出 `INTENT.md`、不直接写代码。
 
+### 工具型 Utility（可选，不在核心评测体系内）
+
+`whydump`（Java OOM 排查）与 `vl-vision`（识图）是 utility，不作为核心 Skill 参与评测，按需安装：
+
+- **从仓库直接跑**（推荐）：在仓库根目录执行 `python skills/whydump/scripts/analyze.py <histo.txt>`，不装进 skills 目录。前提是已经有直方图文本（`jmap -histo` 的输出）；正常排查从 `/whydump` 进，由它先引导取证。
+- **装进 `.claude\skills` 以便 `/whydump` 触发**（与核心 skill 同方式）：
+
+```powershell
+Copy-Item "skills\whydump" "$env:USERPROFILE\.claude\skills\whydump" -Recurse -Force
+```
+
+验证：`/whydump` 能触发并说明排查流程。
+
 ### 可选：启用 Claude Code 写前门禁 Hook
 
 适用：希望把 `确认 Step N` 从 prompt 纪律补强为工具执行前检查的 Claude Code 项目。
