@@ -67,6 +67,31 @@ TRUNCATED_HISTO = """\
 Total         10000         1000000
 """
 
+# --compare 用：同一进程间隔一段时间抓两份，[B 实例数从 1200 涨到 48000
+GROWING_HISTO = """\
+ num     #instances         #bytes  class name
+-------------------------------------------------------
+   1:          1200       1258291200  [B
+   2:          3000         24000000  com.example.User
+   3:           800          4800000  java.lang.String
+Total    :        5000       1287091200
+"""
+
+GROWN_HISTO = """\
+ num     #instances         #bytes  class name
+-------------------------------------------------------
+   1:         48000     50331648000  [B
+   2:          3000         24000000  com.example.User
+   3:           800          4800000  java.lang.String
+Total    :       51800       50360448000
+"""
+
+# jhsdb 口径：byte[] 而不是 [B，混着对比会全 miss
+JHSDB_STYLE_HISTO = """\
+   1:         48000     50331648000  byte[]
+   2:          3000         24000000  com.example.User
+"""
+
 
 class TestParseHisto(unittest.TestCase):
     def test_parses_standard_rows(self):
@@ -166,6 +191,45 @@ class TestClassify(unittest.TestCase):
         self.assertGreater(diag["max_ratio"], 0.9)
 
 
+class TestCompare(unittest.TestCase):
+    def test_growth_suspect_when_class_grows(self):
+        diag = analyze.compare_histos(
+            analyze.parse_histo(GROWING_HISTO),
+            analyze.parse_histo(GROWN_HISTO),
+        )
+        self.assertEqual(diag["category"], "growth-suspect")
+        self.assertEqual(diag["top_growth"]["name"], "[B")
+        self.assertEqual(diag["top_growth"]["delta_i"], 48000 - 1200)
+        self.assertFalse(diag["mismatch"])
+
+    def test_no_growth_when_identical(self):
+        a = analyze.parse_histo(SMALL_HISTO)
+        diag = analyze.compare_histos(a, a)
+        self.assertEqual(diag["category"], "no-clear-growth")
+        self.assertEqual(diag["inst_delta"], 0)
+        self.assertTrue(diag["hint"])  # 总量没变 → 提示间隔可能太短
+
+    def test_mismatch_when_class_name_convention_differs(self):
+        # jmap 的 [B vs jhsdb 的 byte[]：能对上的字节太少 → 必须短路成
+        # compare-mismatch，不能照常给 growth-suspect 结论
+        diag = analyze.compare_histos(
+            analyze.parse_histo(GROWING_HISTO),
+            analyze.parse_histo(JHSDB_STYLE_HISTO),
+        )
+        self.assertTrue(diag["mismatch"])
+        self.assertLess(diag["matched_ratio"], 0.8)
+        self.assertEqual(diag["category"], "compare-mismatch")
+        self.assertIsNone(diag["top_growth"])
+        self.assertIn("重抓", diag["verdict"])
+
+    def test_growth_suspect_dominance_ratio(self):
+        # 增量主导占比 >= 30% 才判增长型泄漏
+        a = analyze.parse_histo(GROWING_HISTO)
+        b = analyze.parse_histo(GROWN_HISTO)
+        diag = analyze.compare_histos(a, b)
+        self.assertGreaterEqual(diag["top_growth"]["delta_i"] / diag["inst_delta"], 0.3)
+
+
 class TestCli(unittest.TestCase):
     """跑真实 CLI（含 stdin / json / 退出码）端到端验证。"""
 
@@ -214,6 +278,65 @@ class TestCli(unittest.TestCase):
         d = json.loads(r.stdout)
         self.assertFalse(d["truncated"])
         self.assertAlmostEqual(d["parsed_ratio"], 1.0)
+
+    def test_compare_cli_json(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as fa, \
+             tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as fb:
+            fa.write(GROWING_HISTO)
+            fb.write(GROWN_HISTO)
+            path_a, path_b = fa.name, fb.name
+        try:
+            r = self._run(["--compare", path_a, path_b, "--json"])
+            self.assertEqual(r.returncode, 0)
+            d = json.loads(r.stdout)
+            self.assertEqual(d["category"], "growth-suspect")
+            self.assertEqual(d["top"][0]["name"], "[B")
+        finally:
+            os.unlink(path_a)
+            os.unlink(path_b)
+
+    def test_compare_missing_second_file_returns_1(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as fa:
+            fa.write(GROWING_HISTO)
+            path_a = fa.name
+        try:
+            r = self._run(["--compare", path_a])
+            self.assertEqual(r.returncode, 1)
+            self.assertIn("两份直方图", r.stderr)
+        finally:
+            os.unlink(path_a)
+
+    def test_compare_mismatch_cli_json(self):
+        # 混比 jmap/jhsdb 口径：JSON 的 category 必须是 compare-mismatch，
+        # 不能是 growth-suspect——调用方只读 category 也不该被误导
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as fa, \
+             tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as fb:
+            fa.write(GROWING_HISTO)
+            fb.write(JHSDB_STYLE_HISTO)
+            path_a, path_b = fa.name, fb.name
+        try:
+            r = self._run(["--compare", path_a, path_b, "--json"])
+            self.assertEqual(r.returncode, 0)
+            d = json.loads(r.stdout)
+            self.assertEqual(d["category"], "compare-mismatch")
+            self.assertIsNone(d["top_growth"])
+            self.assertIn("重抓", d["verdict"])
+        finally:
+            os.unlink(path_a)
+            os.unlink(path_b)
+
+    def test_flags_missing_degrades_not_fatal(self):
+        # flags 文件读不到 → 降级为「堆配置未知」，直方图照常分析，不整体退出
+        with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as f:
+            f.write(LEAK_HISTO)
+            path = f.name
+        try:
+            r = self._run([path, "--flags", "no-such-flags.txt"])
+            self.assertEqual(r.returncode, 0)
+            self.assertIn("堆配置未知", r.stderr)
+            self.assertIn("leak-suspect", r.stdout)
+        finally:
+            os.unlink(path)
 
 
 if __name__ == "__main__":
