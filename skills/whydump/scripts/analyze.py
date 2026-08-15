@@ -3,7 +3,8 @@
 """whydump analyze — 解析 JDK 工具输出的堆分析脚本（单文件，零第三方依赖）。
 
 输入是 JDK 自带工具产生的文本，不是二进制：
-  - `jmap -histo:live <pid>`（或 `jhsdb jmap --histo --pid <pid>`）→ 类直方图
+  - `jcmd <pid> GC.class_histogram -all`（JDK 9+，零停顿）/
+    `jmap -histo:live <pid>`（本地低峰）或 `jhsdb jmap --histo --pid <pid>` → 类直方图
   - `jcmd <pid> VM.flags` → 堆参数（可选，用于展示 MaxHeapSize 等）
 
 输出是「数字层 + 判断层」：
@@ -17,8 +18,13 @@
   python analyze.py histo.txt --json       # 结构化输出
   python analyze.py histo.txt --top 20
   python analyze.py histo.txt --leak-threshold 0.5
+  python analyze.py --compare histo_a.txt histo_b.txt [--flags vmflags.txt]
+                                           # 对比两份直方图（间隔 ≥10 分钟抓取），
+                                           # 按实例数增量识别增长主导类
 
 退出码：0 成功（无论判定为泄漏还是堆小）；1 输入无法解析（没有任何有效行）。
+单张直方图分不清「泄漏」和「合法大缓存」——看增长才是实锤：
+同一进程间隔一段时间抓两份，实例数持续增长的类才是泄漏候选。
 """
 
 import argparse
@@ -154,6 +160,123 @@ def classify(entries: list[ClassEntry], leak_threshold: float) -> dict:
     }
 
 
+def compare_histos(entries_a: list[ClassEntry], entries_b: list[ClassEntry],
+                   n: int = 10) -> dict:
+    """对比两份直方图，按实例数增量识别「增长主导类」。
+
+    单张直方图分不清「泄漏」和「合法大缓存」：只有隔一段时间抓两张，
+    实例数持续增长的类才是泄漏候选；不涨的是静态占用（缓存/业务大表）。
+
+    规则（机械可判，结论仍是疑似）：
+      - 每个类 delta_i = 第二份实例数 - 第一份实例数，按 delta_i 降序取 Top N
+      - growth-suspect：增量最大且为正的类，增量 >= 100、字节没有缩水、
+        且占全部正增量 >= 30% —— 疑似增长型泄漏，指向该类
+      - 否则 no-clear-growth：没有明显单点增长，倾向静态占用/分布增长
+    类名口径不一致（jmap 的 [B vs jhsdb 的 byte[]）时返回 compare-mismatch：
+    不给增长结论、只提示重抓——脚本契约不背书不可信的对比。
+    """
+    ta_i = sum(e.instances for e in entries_a)
+    ta_b = sum(e.bytes for e in entries_a)
+    tb_i = sum(e.instances for e in entries_b)
+    tb_b = sum(e.bytes for e in entries_b)
+
+    by_class: dict[str, list] = {}
+    for e in entries_a:
+        by_class.setdefault(e.name, [None, None])[0] = e
+    for e in entries_b:
+        by_class.setdefault(e.name, [None, None])[1] = e
+
+    rows = []
+    matched_bytes_a = 0
+    for name, (ea, eb) in by_class.items():
+        ia = ea.instances if ea else 0
+        ib = eb.instances if eb else 0
+        ba = ea.bytes if ea else 0
+        bb = eb.bytes if eb else 0
+        if ea is not None and eb is not None:
+            matched_bytes_a += ba
+        rows.append({
+            "name": name,
+            "instances_a": ia, "instances_b": ib,
+            "bytes_a": ba, "bytes_b": bb,
+            "delta_i": ib - ia, "delta_b": bb - ba,
+        })
+    rows.sort(key=lambda r: (-r["delta_i"], -r["delta_b"]))
+
+    # 类名口径检测：第一份里能对上的字节占比。jmap 的 [B 和 jhsdb 的 byte[]
+    # 写法不同，混着对比会全 miss，此时结论不可信。
+    # mismatch 时必须短路成 compare-mismatch：不给 growth 结论、不背书，
+    # 不能指望调用方（agent/脚本）都去读文本里的警告行。
+    matched_ratio = matched_bytes_a / ta_b if ta_b else 1.0
+    mismatch = matched_ratio < 0.8
+
+    inst_delta = tb_i - ta_i
+    byte_delta = tb_b - ta_b
+
+    if mismatch:
+        return {
+            "category": "compare-mismatch",
+            "verdict": ("两份直方图类名匹配率低（jmap 的 [B 与 jhsdb 的 byte[] 写法不同，"
+                        "或混用了不同 pid/工具），对比不可靠：先确认同一种工具、同一个 pid "
+                        "重抓，再下结论"),
+            "total_a": {"instances": ta_i, "bytes": ta_b},
+            "total_b": {"instances": tb_i, "bytes": tb_b},
+            "inst_delta": inst_delta,
+            "byte_delta": byte_delta,
+            "mismatch": True,
+            "matched_ratio": matched_ratio,
+            "hint": "先重抓：同一轮排查用同一种工具、同一个 pid，间隔 ≥10 分钟",
+            "top_growth": None,
+            "top": rows[:n],
+        }
+
+    pos_sum = sum(max(r["delta_i"], 0) for r in rows)
+    top = rows[0] if rows and rows[0]["delta_i"] > 0 else None
+
+    growth = False
+    if top and pos_sum > 0:
+        growth = (top["delta_i"] >= 100
+                  and top["delta_i"] / pos_sum >= 0.3
+                  and top["delta_b"] >= 0)
+
+    if growth:
+        category = "growth-suspect"
+        verdict = (
+            f"疑似泄漏：{top['name']} 实例数从 {top['instances_a']:,} "
+            f"涨到 {top['instances_b']:,}（+{top['delta_i']:,}，"
+            f"占全部正增量的 {top['delta_i'] / pos_sum:.0%}），"
+            f"字节 {top['bytes_a']:,} → {top['bytes_b']:,}"
+        )
+    else:
+        category = "no-clear-growth"
+        verdict = ("两次采样没有类的实例数出现显著单点增长，"
+                   "倾向静态占用（缓存/业务大表）或分布增长，不是增长型泄漏；"
+                   "若仍 OOM，结合 GC 日志看堆峰值与 Full GC 频率")
+        if top:
+            verdict += f"（增量最大类：{top['name']} +{top['delta_i']:,}）"
+
+    inst_delta = tb_i - ta_i
+    byte_delta = tb_b - ta_b
+    hint = ""
+    if abs(inst_delta) <= max(ta_i * 0.05, 1) and (top is None or top["delta_i"] < 100):
+        hint = ("两次采样总量几乎没变，可能间隔太短看不出增长；"
+                "建议间隔 ≥ 10 分钟再抓一份对比")
+
+    return {
+        "category": category,
+        "verdict": verdict,
+        "total_a": {"instances": ta_i, "bytes": ta_b},
+        "total_b": {"instances": tb_i, "bytes": tb_b},
+        "inst_delta": inst_delta,
+        "byte_delta": byte_delta,
+        "mismatch": mismatch,
+        "matched_ratio": matched_ratio,
+        "hint": hint,
+        "top_growth": top,
+        "top": rows[:n],
+    }
+
+
 # ---------------------------------------------------------------------------
 # 输出
 # ---------------------------------------------------------------------------
@@ -209,16 +332,125 @@ def render_report(entries, top_n, flags, diag) -> str:
     return "\n".join(lines)
 
 
+def render_compare_report(diag: dict, top_n: int, flags: dict) -> str:
+    lines = []
+    if diag["mismatch"]:
+        lines.append("!! 两份直方图类名匹配率低（jmap 的 [B 和 jhsdb 的 byte[] 写法不同），"
+                     "对比可能不可靠：先确认两份是同一种工具抓的，再下结论。")
+        lines.append("")
+    ta, tb = diag["total_a"], diag["total_b"]
+    lines.append("== 两次采样对比 ==")
+    lines.append(f"第一份: 实例 {ta['instances']:,}, 字节 {ta['bytes']:,} ({_fmt_bytes(ta['bytes'])})")
+    lines.append(f"第二份: 实例 {tb['instances']:,}, 字节 {tb['bytes']:,} ({_fmt_bytes(tb['bytes'])})")
+    lines.append(f"实例增量: {diag['inst_delta']:+,}    字节增量: {diag['byte_delta']:+,} "
+                 f"({_fmt_bytes(abs(diag['byte_delta']))})")
+    if flags:
+        for key, val in flags.items():
+            lines.append(f"{key}: {_fmt_bytes(val)} ({val} 字节)")
+
+    lines.append("")
+    lines.append(f"== Top {top_n} 增长类（按实例数增量）==")
+    lines.append(f"{'#':>3}  {'类名':<28}  {'A实例':>11}  {'B实例':>11}  {'+增量':>10}  "
+                 f"{'增幅':>7}  {'A字节':>13}  {'B字节':>13}")
+    for i, r in enumerate(diag["top"], 1):
+        if r["instances_a"] == 0:
+            pct_s = "新出现"
+        else:
+            pct_s = f"{r['delta_i'] / r['instances_a']:+.0%}"
+        lines.append(
+            f"{i:>3}  {r['name']:<28}  {r['instances_a']:>11,}  {r['instances_b']:>11,}  "
+            f"{r['delta_i']:>+10,}  {pct_s:>7}  {r['bytes_a']:>13,}  {r['bytes_b']:>13,}"
+        )
+
+    lines.append("")
+    lines.append("== 结论 ==")
+    lines.append(f"[{diag['category']}] {diag['verdict']}")
+    if diag["category"] == "growth-suspect" and diag["top_growth"]:
+        lines.append("  建议: 回代码查这个类的写入点；若持续增长且无淘汰 → 基本坐实泄漏。")
+    elif diag["category"] == "compare-mismatch":
+        lines.append("  建议: 先重抓（同一种工具、同一个 pid、间隔 ≥10 分钟），不要基于这份对比下结论。")
+    else:
+        lines.append("  建议: 两次对比没看到增长型泄漏，先看 GC 日志（Full GC 频率/堆峰值），"
+                     "再决定调 -Xmx 还是继续查代码。")
+    if diag["hint"]:
+        lines.append(f"  提示: {diag['hint']}")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
+
+def _read_file(path: str) -> str | None:
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return f.read()
+    except OSError as e:
+        print(f"whydump: 无法读取 {path}: {e}", file=sys.stderr)
+        return None
+
+
+def _load_flags(path: str | None) -> dict[str, int]:
+    """读取 VM.flags；失败时降级为空 dict 并告警，不中断直方图分析。"""
+    if not path:
+        return {}
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return parse_flags(f.read())
+    except OSError as e:
+        print(f"whydump: 无法读取 {path}: {e}（直方图继续分析，堆配置未知）",
+              file=sys.stderr)
+        return {}
+
+
+def _main_compare(args) -> int:
+    if args.histo == "-" or not args.histo2:
+        print("whydump: --compare 需要两份直方图文件路径（不支持 stdin）",
+              file=sys.stderr)
+        return 1
+    text_a = _read_file(args.histo)
+    text_b = _read_file(args.histo2)
+    if text_a is None or text_b is None:
+        return 1
+    entries_a = parse_histo(text_a)
+    entries_b = parse_histo(text_b)
+    if not entries_a or not entries_b:
+        print("whydump: 对比输入里至少有一份没有可解析的直方图行",
+              file=sys.stderr)
+        return 1
+    flags = _load_flags(args.flags)
+    diag = compare_histos(entries_a, entries_b, args.top)
+    if args.json:
+        out = {
+            "category": diag["category"],
+            "verdict": diag["verdict"],
+            "total_a": diag["total_a"],
+            "total_b": diag["total_b"],
+            "inst_delta": diag["inst_delta"],
+            "byte_delta": diag["byte_delta"],
+            "mismatch": diag["mismatch"],
+            "matched_ratio": diag["matched_ratio"],
+            "hint": diag["hint"],
+            "top_growth": diag["top_growth"],
+            "flags": flags,
+            "top": diag["top"],
+        }
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+    else:
+        print(render_compare_report(diag, args.top, flags))
+    return 0
+
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(
         description="解析 JDK 工具（jmap/jcmd）输出的堆分析，给出分类诊断。",
     )
     ap.add_argument("histo", nargs="?", default="-",
-                    help="jmap -histo:live 输出文件路径，或 - 表示 stdin")
+                    help="jmap/jcmd 直方图输出文件路径，或 - 表示 stdin")
+    ap.add_argument("histo2", nargs="?", default=None,
+                    help="第二份直方图文件路径（仅 --compare 模式）")
+    ap.add_argument("--compare", action="store_true",
+                    help="对比两份直方图，按实例数增量识别增长主导类")
     ap.add_argument("--flags", default=None,
                     help="jcmd <pid> VM.flags 输出文件路径（可选）")
     ap.add_argument("--top", type=int, default=10, help="Top N 类，默认 10")
@@ -226,6 +458,9 @@ def main(argv=None) -> int:
                     help="单类占比达到该值判定为疑似泄漏，默认 0.5")
     ap.add_argument("--json", action="store_true", help="以 JSON 输出")
     args = ap.parse_args(argv)
+
+    if args.compare:
+        return _main_compare(args)
 
     if args.histo == "-":
         histo_text = sys.stdin.read()
@@ -249,8 +484,8 @@ def main(argv=None) -> int:
             with open(args.flags, encoding="utf-8", errors="replace") as f:
                 flags = parse_flags(f.read())
         except OSError as e:
-            print(f"whydump: 无法读取 {args.flags}: {e}", file=sys.stderr)
-            return 1
+            print(f"whydump: 无法读取 {args.flags}: {e}（直方图继续分析，堆配置未知）",
+                  file=sys.stderr)
 
     diag = classify(entries, args.leak_threshold)
 
