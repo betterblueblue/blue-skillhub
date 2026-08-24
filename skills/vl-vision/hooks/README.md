@@ -148,8 +148,12 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"C:/x/main.py"}}' \
 
 ## 边界与已知限制
 
-- 只拦 `Read` 工具读图片这条路径——这是历次翻车的唯一入口。若未来出现别的
-  渠道把图片塞进主模型(如某个 MCP 截图工具直传),需要另加拦截。
+- 拦两条通道:
+  1. **`Read` 工具读图片文件** → `PreToolUse` hook(`block-image-read.py`)
+  2. **用户直接把图片粘贴进对话**(显示为 `[Image #N]`)→ `UserPromptSubmit`
+     hook(`block-image-attachment.py`)——这条不走 Read 工具,PreToolUse 拦不到,
+     图片会直接塞进主模型触发 400,所以单独拦。
 - hook 判断依赖 `ANTHROPIC_MODEL` 环境变量;读不到时按"不支持"处理(安全优先),
   可能误拦,用上面的显式开关解除。
 - hook 自身出错时放行(解析失败返回 0),不会因为门禁坏了卡住整个工作流。
+- 若未来出现别的渠道把图片塞进主模型(如某个 MCP 截图工具直传),需要另加拦截。
