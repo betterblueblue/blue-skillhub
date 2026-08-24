@@ -1,17 +1,22 @@
 """
-PreToolUse hook — 阻断不支持 vision 的模型直接 Read 图片文件
+PreToolUse hook — 拦阻纯文本模型直接 Read 图片文件
 
-背景:全局规则 CLAUDE.md 第 0 条要求识图必须走 vl-vision skill,
-禁止用模型自身能力直接"看"图。但规则只靠模型自觉执行,弱模型
-(如 deepseek-v4-flash)看到图片时本能走 Read 工具,把图片塞给主模型,
-而该模型不支持 vision,API 直接报 400 卡死(典型表现:会话结尾
-"API Error: 400 当前模型不支持该能力:vision" + 长时间死循环)。
+背景:全局规则 CLAUDE.md 第 0 条要求识图必须走 vl-vision skill,禁止用模型
+自身能力直接"看"图。但规则只靠模型自觉执行,纯文本模型(如 deepseek-v4-flash)
+看到图片时本能走 Read 工具,把图片塞给主模型,而该模型不支持 vision,
+API 直接报 400 卡死(典型表现:会话结尾 "API Error: 400 当前模型不支持
+该能力:vision" + 长时间死循环)。
 
-本 hook 在 Read 工具调用前拦截图片文件,判断顺序:
+本 hook 在 Read 工具调用前拦截图片文件,判断逻辑(默认放行,只拦纯文本):
   1. 显式开关 CLAUDE_MODEL_SUPPORTS_VISION
-     (=1/true/yes/on 放行,=0/false/no/off 强制阻断)
-  2. 未设开关 → 按模型名白名单兜底(claude/gemini/gpt-4o/qwen-vl/... 自动放行)
-  3. 都拿不准 → 阻断(安全优先),引导改用 vl-vision
+     =1/true/yes/on  → 放行(强制)
+     =0/false/no/off → 阻断(强制,一般不设)
+  2. 未设开关 → 按模型名黑名单兜底(vision_blacklist.json 里的纯文本模型
+     如 deepseek-v4/v3 等命中则拦);不命中 → 默认放行
+  3. 读不到模型名 → 默认放行(不误伤正常多模态)
+
+设计原则:正常多模态模型直接走 Claude Code 默认机制(能看图就自己看),
+只有确认是纯文本模型的才拦,引导改用 vl-vision。这样换新模型不会被误拦。
 
 安装/配置/卸载说明见同目录 README.md;settings.json 的 hooks 块指向本文件。
 退出码:0=放行 / 2=阻断(stderr 内容作为反馈回到模型上下文)
@@ -27,44 +32,44 @@ from pathlib import Path
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".ico"}
 
-# 白名单配置文件与本脚本同目录(相对脚本位置推导,skill 搬家不用改)。
-# 缺文件/损坏时按空白名单处理——相当于全部模型都不支持 vision,安全优先(宁误拦不放行)。
-WHITELIST_FILE = str(Path(__file__).resolve().parent / "vision_whitelist.json")
+# 黑名单配置文件与本脚本同目录(相对脚本位置推导,skill 搬家不用改)。
+# 缺文件/损坏时按空黑名单处理——相当于全部放行(默认走正常机制,安全)。
+BLACKLIST_FILE = str(Path(__file__).resolve().parent / "vision_blacklist.json")
 
 
-def load_whitelist() -> tuple[str, ...]:
-    """从 vision_whitelist.json 读取白名单关键词;失败返回空(安全降级)。"""
+def load_blacklist() -> tuple[str, ...]:
+    """从 vision_blacklist.json 读取纯文本模型黑名单;失败返回空(默认放行)。"""
     try:
-        with open(WHITELIST_FILE, encoding="utf-8") as f:
+        with open(BLACKLIST_FILE, encoding="utf-8") as f:
             data = json.load(f)
         keywords = data.get("keywords", [])
         if isinstance(keywords, list) and all(isinstance(k, str) for k in keywords):
             return tuple(k.lower() for k in keywords)
-        print(f"[vl-vision hook] 警告: {WHITELIST_FILE} keywords 字段格式不对,按空白名单处理", file=sys.stderr)
+        print(f"[vl-vision hook] 警告: {BLACKLIST_FILE} keywords 字段格式不对,按空黑名单处理", file=sys.stderr)
         return ()
     except FileNotFoundError:
-        print(f"[vl-vision hook] 警告: 找不到白名单文件 {WHITELIST_FILE},按空白名单处理", file=sys.stderr)
+        print(f"[vl-vision hook] 警告: 找不到黑名单文件 {BLACKLIST_FILE},按空黑名单处理", file=sys.stderr)
         return ()
     except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
-        print(f"[vl-vision hook] 警告: 读取白名单 {WHITELIST_FILE} 失败({e}),按空白名单处理", file=sys.stderr)
+        print(f"[vl-vision hook] 警告: 读取黑名单 {BLACKLIST_FILE} 失败({e}),按空黑名单处理", file=sys.stderr)
         return ()
 
 
-VISION_MODEL_KEYWORDS = load_whitelist()
+TEXT_MODEL_KEYWORDS = load_blacklist()
 
 # vl_vision.py 在本文件同级的上一级(skills/vl-vision/vl_vision.py)
 VL_SCRIPT = str(Path(__file__).resolve().parent.parent / "vl_vision.py")
 
 
 def model_supports_vision() -> bool:
-    """判断当前模型是否明确支持 vision。
+    """判断当前模型是否支持 vision。
 
-    判断顺序(显式优先,白名单兜底):
+    判断逻辑(默认放行,只拦纯文本):
       1. 环境变量 CLAUDE_MODEL_SUPPORTS_VISION
-         =1/true/yes/on  → 放行(换多模态模型时手动设,不靠猜)
-         =0/false/no/off → 阻断(强制)
-      2. 未设置 → 按模型名白名单关键词兜底
-      3. 都拿不准(无开关、名字不在白名单)→ 按不支持处理(安全优先)
+         =1/true/yes/on  → 放行(强制)
+         =0/false/no/off → 阻断(强制,一般不设)
+      2. 未设置 → 模型名命中黑名单(纯文本)→ 不支持;不命中 → 支持(默认放行)
+      3. 读不到模型名 → 按支持处理(默认放行)
     """
     explicit = os.environ.get("CLAUDE_MODEL_SUPPORTS_VISION", "").strip().lower()
     if explicit in ("1", "true", "yes", "on"):
@@ -73,8 +78,8 @@ def model_supports_vision() -> bool:
         return False
     model = (os.environ.get("ANTHROPIC_MODEL") or "").lower()
     if not model:
-        return False
-    return any(kw in model for kw in VISION_MODEL_KEYWORDS)
+        return True  # 读不到模型名,默认放行
+    return not any(kw in model for kw in TEXT_MODEL_KEYWORDS)
 
 
 def guidance(path: str) -> str:
@@ -82,7 +87,7 @@ def guidance(path: str) -> str:
     return (
         "【阻断】不能直接 Read 图片文件:当前模型("
         + model
-        + ")不支持 vision,直接读取会触发 API 400,"
+        + ")是纯文本模型,不支持 vision,直接读取会触发 API 400,"
         "这是全局规则 CLAUDE.md 第 0 条明确禁止的。\n"
         "请改用 vl-vision skill 识图:\n"
         '  python "'
@@ -116,7 +121,7 @@ def main() -> int:
         return 0
 
     if model_supports_vision():
-        return 0  # 模型能"亲眼看",放行
+        return 0  # 默认放行,模型能"亲眼看"
 
     sys.stderr.write(guidance(path_str) + "\n")
     return 2

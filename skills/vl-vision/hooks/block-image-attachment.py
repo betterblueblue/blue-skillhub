@@ -8,8 +8,8 @@ vision(如 deepseek-v4-flash),立即报 400 当前模型不支持该能力:visio
 
 本 hook 在用户提交消息时检测是否带图片标记([Image),有则阻断并引导改用
 vl-vision。与 block-image-read.py 共用同一个判断(模型是否支持 vision):
-  - 模型明确支持 vision → 放行(不拦,因为模型能"亲眼看")
-  - 模型不支持 vision / 读不到 → 阻断(宁误拦不放行),提示改用 vl-vision
+  - 默认放行:正常多模态模型直接走 Claude Code 默认机制
+  - 仅当模型名命中纯文本黑名单(如 deepseek-v4/v3)才阻断,提示改用 vl-vision
     (让模型转成 Read 图片路径 + vl-vision 调用,而不是直接粘图)
 
 退出码:0=放行 / 2=阻断(stderr 内容作为反馈回到会话)
@@ -21,17 +21,18 @@ import re
 import sys
 from pathlib import Path
 
-# 明确支持 vision 的模型关键词——与 block-image-read.py 共读同一个白名单,
-# 避免两处各自维护一份(若白名单文件读不到,用内置兜底)
+# 纯文本模型黑名单——与 block-image-read.py 共读同一个黑名单,
+# 避免两处各自维护一份(若黑名单文件读不到,用内置兜底,且默认放行)
 _VL_SCRIPT = str(Path(__file__).resolve().parent.parent / "vl_vision.py")
-_WHITELIST = str(Path(__file__).resolve().parent / "vision_whitelist.json")
+_BLACKLIST = str(Path(__file__).resolve().parent / "vision_blacklist.json")
 
-# 内置兜底关键词(白名单文件缺失/损坏时使用,宁窄勿宽)
+# 内置兜底关键词(黑名单文件缺失/损坏时使用;只含已知纯文本系列)
 _FALLBACK_KEYWORDS = (
-    "claude", "gemini", "gpt-4o", "gpt-4.1", "gpt-4.5", "gpt-5",
-    "kimi", "moonshot", "qwen-vl", "qwen3-vl", "qwen2.5-vl",
-    "glm-4v", "glm-5v", "doubao-vision", "doubao-seed",
-    "ernie-vl", "hunyuan-vision", "step-3", "step-1v", "step-2v",
+    "deepseek-v4",
+    "deepseek-v3",
+    "deepseek-r1",
+    "deepseek-chat",
+    "deepseek-reasoner",
 )
 
 # 图片附件在用户 prompt 里的标记(Claude Code 粘贴图片显示为 [Image #N])
@@ -39,7 +40,7 @@ _IMAGE_MARKER = re.compile(r"\[Image(?:\s+#\d+)?\]", re.IGNORECASE)
 
 
 def model_supports_vision() -> bool:
-    """判断当前模型是否支持 vision(与 block-image-read.py 相同的三级判断)"""
+    """判断当前模型是否支持 vision(与 block-image-read.py 相同的默认放行逻辑)"""
     explicit = os.environ.get("CLAUDE_MODEL_SUPPORTS_VISION", "").strip().lower()
     if explicit in ("1", "true", "yes", "on"):
         return True
@@ -47,15 +48,15 @@ def model_supports_vision() -> bool:
         return False
     model = (os.environ.get("ANTHROPIC_MODEL") or "").lower()
     if not model:
-        return False
-    # 读白名单(与 block-image-read.py 共用),失败用内置兜底
+        return True  # 读不到模型名,默认放行
+    # 读黑名单(与 block-image-read.py 共用),失败用内置兜底
     try:
-        with open(_WHITELIST, encoding="utf-8") as f:
+        with open(_BLACKLIST, encoding="utf-8") as f:
             kws = json.load(f).get("keywords", [])
         keywords = tuple(k.lower() for k in kws) if isinstance(kws, list) else _FALLBACK_KEYWORDS
     except Exception:
         keywords = _FALLBACK_KEYWORDS
-    return any(k in model for k in keywords)
+    return not any(k in model for k in keywords)
 
 
 def guidance() -> str:

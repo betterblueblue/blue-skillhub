@@ -1,0 +1,12 @@
+{
+  "_说明": "纯文本模型黑名单关键词。block-image-read.py / block-image-attachment.py 读取本文件,模型名(ANTHROPIC_MODEL 小写)命中任一关键词即判定为「不支持 vision」,触发拦截。改动后重启 Claude Code 会话生效。",
+  "_说明2": "匹配是子串匹配。设计原则:默认放行(正常多模态模型直接走 Claude Code 默认机制),只有命中黑名单的纯文本模型才拦。策略:① 已知纯文本系列用精确前缀(deepseek-v3/v4 等文本旗舰);② 不含通用厂商词(claude/gemini/gpt 都支持 vision,不用进名单,默认放行);③ 本地部署的开源纯文本模型自行加。误拦可用 CLAUDE_MODEL_SUPPORTS_VISION=1 解除。",
+  "version": 1,
+  "keywords": [
+    "deepseek-v4",
+    "deepseek-v3",
+    "deepseek-r1",
+    "deepseek-chat",
+    "deepseek-reasoner"
+  ]
+}

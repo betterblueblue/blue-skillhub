@@ -177,21 +177,23 @@ SILICONFLOW_API_KEY=sk-your-siliconflow-key
 
 ## 配套门禁 hook(可选)
 
-为了让「识图必须走 vl-vision」这条规则不被模型自觉绕过,可选挂一个
-PreToolUse hook:当模型不支持 vision 却尝试直接 `Read` 图片文件时当场阻断,
-并引导改用本工具。判断规则:环境变量 `CLAUDE_MODEL_SUPPORTS_VISION` 优先,
-其次按模型名白名单自动放行支持 vision 的模型。
+为了让「识图必须走 vl-vision」这条规则不被纯文本模型绕过,可选挂一个
+PreToolUse hook:当模型是纯文本模型(如 deepseek)却尝试直接 `Read` 图片文件时
+当场阻断,并引导改用本工具。**默认放行,只拦纯文本**——正常多模态模型直接走
+Claude Code 默认机制,不误拦。判断逻辑:环境变量 `CLAUDE_MODEL_SUPPORTS_VISION`
+优先(一般不设),其次按纯文本黑名单(`hooks/vision_blacklist.json`,当前含
+deepseek 系列)拦截,不命中则默认放行。
 
 `CLAUDE_MODEL_SUPPORTS_VISION` 取值:
 
 | 值 | 行为 |
 |----|------|
-| `1` / `true` / `yes` / `on` | 放行,允许直接 Read 图片(换白名单外的多模态模型时用) |
-| `0` / `false` / `no` / `off` | 强制阻断,一律走 vl-vision |
-| 不设置 | 按模型名白名单兜底(主流多模态模型名自动放行) |
+| `1` / `true` / `yes` / `on` | 强制放行(纯文本模型临时想直接看图,会 400) |
+| `0` / `false` / `no` / `off` | 强制阻断(一般不设) |
+| 不设置 | 按纯文本黑名单判断;正常多模态直接放行 |
 
-脚本在 `hooks/block-image-read.py`,完整的安装/配置/卸载/换模型说明见
-`hooks/README.md`。
+脚本在 `hooks/block-image-read.py` / `hooks/block-image-attachment.py`,完整的
+安装/配置/卸载/换模型说明见 `hooks/README.md`。
 
 
 ## 依赖

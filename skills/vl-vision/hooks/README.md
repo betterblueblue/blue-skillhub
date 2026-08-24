@@ -62,36 +62,36 @@ skills/vl-vision/
 
 ## 判断逻辑(换模型怎么处理)
 
-hook 按以下顺序决定放行还是阻断:
+**设计原则:默认放行,只拦纯文本模型。** 正常多模态模型直接走 Claude Code
+默认机制(能看图就自己看),只有确认是纯文本模型(如 deepseek)才拦,引导改用
+vl-vision。这样换新模型不会被误拦。
 
 ```
 ① 环境变量 CLAUDE_MODEL_SUPPORTS_VISION
-     =1 / true / yes / on   → 放行
-     =0 / false / no / off  → 强制阻断(即使白名单命中)
-② 未设开关 → 按模型名白名单兜底(见 `vision_whitelist.json` 的 `keywords`,
-     2026-08 收敛为「只覆盖主流 API 厂商多模态」:Anthropic(claude) / Google(gemini) /
-     OpenAI(gpt-4o·4.1·4.5·5) / 智谱(glm-4v·5v) / 通义(qwen-vl) / 豆包(doubao-vision·
-     seed) / Kimi / 阶跃(step-3) / 百度(ernie-vl) / 腾讯(hunyuan-vision)。不含
-     论文/开源模型(如 llava、internvl)——代理网关不提供,留着只会误导)
-     → 命中放行
-③ 都拿不准 → 阻断(安全优先),引导改用 vl-vision
+     =1 / true / yes / on   → 放行(强制)
+     =0 / false / no / off  → 阻断(强制,一般不设)
+② 未设开关 → 按模型名黑名单兜底(见 `vision_blacklist.json` 的 `keywords`,
+     当前只含 deepseek 系列纯文本:deepseek-v4/v3/r1/chat/reasoner)
+     → 命中黑名单 → 阻断;不命中 → 默认放行
+③ 读不到模型名 → 默认放行(不误伤正常多模态)
 ```
 
-- **换主流多模态模型**(名字在白名单里)→ 自动放行,零改动。
-- **换多模态模型但名字不在白名单**(本地部署的开源 VLM、代理自定义名等)
-  → 设环境变量 `CLAUDE_MODEL_SUPPORTS_VISION=1` 后重启会话即可放行,不用改脚本。
-  开关值可以放在 `settings.json` 的 `env` 里,或系统环境变量。
-- **想强制一律走 vl-vision** → 设 `CLAUDE_MODEL_SUPPORTS_VISION=0`。
+- **换任何主流多模态模型**(claude / gemini / gpt / 通义 / 豆包 / Kimi 等)
+  → **自动放行,零改动**——它们不在黑名单,默认就走正常机制。
+- **换纯文本模型**(deepseek 之外的新文本模型)→ 把它加进 `vision_blacklist.json`
+  的 `keywords`,重启会话即拦;不加就默认放行(会 400,自己负责)。
+- **想让纯文本模型临时看图** → 设环境变量 `CLAUDE_MODEL_SUPPORTS_VISION=1` 放行。
 
 ## 参数:`CLAUDE_MODEL_SUPPORTS_VISION`
 
-手动控制门禁放行/阻断的环境变量,优先级高于模型名白名单。**不设置就用模型名白名单自动判断**,所以不是必须项——它存在的意义是:你换了一个白名单外的多模态模型(或想强制走 vl-vision)时,不需要改脚本,设一个变量就搞定。
+手动控制门禁放行/阻断的环境变量,优先级高于黑名单。**一般不设置**——默认放行
+多模态、只拦黑名单纯文本,绝大多数情况不用管它。
 
 | 值 | 行为 | 典型场景 |
 |----|------|----------|
-| `1` / `true` / `yes` / `on` | 放行,允许直接 Read 图片 | 换了多模态模型,名字不在白名单 |
-| `0` / `false` / `no` / `off` | 强制阻断,一律走 vl-vision | 想确保任何图片都不经主模型"亲眼看" |
-| 不设置 | 用模型名白名单兜底判断 | 默认;换白名单内的模型时无需关心 |
+| `1` / `true` / `yes` / `on` | 强制放行 | 纯文本模型临时想直接看图(会 400) |
+| `0` / `false` / `no` / `off` | 强制阻断 | 想强制某模型一律走 vl-vision(一般不设) |
+| 不设置 | 按黑名单判断 | 默认;正常多模态直接放行 |
 
 **设置方式(任选其一)**:
 
@@ -130,7 +130,7 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"C:/x/a.png"}}' \
   | python block-image-read.py; echo "exit=$?"
 unset CLAUDE_MODEL_SUPPORTS_VISION
 
-# 3. 白名单模型(如 claude-sonnet-5)→ 应 exit 0(放行)
+# 3. 多模态模型(如 claude-sonnet-5,不在黑名单)→ 应 exit 0(放行)
 export ANTHROPIC_MODEL="claude-sonnet-5"
 echo '{"tool_name":"Read","tool_input":{"file_path":"C:/x/a.png"}}' \
   | python block-image-read.py; echo "exit=$?"
