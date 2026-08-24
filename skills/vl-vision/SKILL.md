@@ -175,6 +175,25 @@ VL_PROVIDER=siliconflow
 SILICONFLOW_API_KEY=sk-your-siliconflow-key
 ```
 
+## 配套门禁 hook(可选)
+
+为了让「识图必须走 vl-vision」这条规则不被模型自觉绕过,可选挂一个
+PreToolUse hook:当模型不支持 vision 却尝试直接 `Read` 图片文件时当场阻断,
+并引导改用本工具。判断规则:环境变量 `CLAUDE_MODEL_SUPPORTS_VISION` 优先,
+其次按模型名白名单自动放行支持 vision 的模型。
+
+`CLAUDE_MODEL_SUPPORTS_VISION` 取值:
+
+| 值 | 行为 |
+|----|------|
+| `1` / `true` / `yes` / `on` | 放行,允许直接 Read 图片(换白名单外的多模态模型时用) |
+| `0` / `false` / `no` / `off` | 强制阻断,一律走 vl-vision |
+| 不设置 | 按模型名白名单兜底(主流多模态模型名自动放行) |
+
+脚本在 `hooks/block-image-read.py`,完整的安装/配置/卸载/换模型说明见
+`hooks/README.md`。
+
+
 ## 依赖
 
 - Python >= 3.10
