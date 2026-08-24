@@ -33,26 +33,36 @@ from pathlib import Path
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".ico"}
 
 # 黑名单配置文件与本脚本同目录(相对脚本位置推导,skill 搬家不用改)。
-# 缺文件/损坏时按空黑名单处理——相当于全部放行(默认走正常机制,安全)。
+# 缺文件/损坏时用内置兜底关键词(见 _FALLBACK_KEYWORDS),保证即使漏拷配置文件
+# 也能拦已知纯文本模型(如 deepseek);完全未知模型默认放行。
 BLACKLIST_FILE = str(Path(__file__).resolve().parent / "vision_blacklist.json")
+
+# 内置兜底关键词(黑名单文件缺失/损坏时使用;与 block-image-attachment.py 保持一致)
+_FALLBACK_KEYWORDS = (
+    "deepseek-v4",
+    "deepseek-v3",
+    "deepseek-r1",
+    "deepseek-chat",
+    "deepseek-reasoner",
+)
 
 
 def load_blacklist() -> tuple[str, ...]:
-    """从 vision_blacklist.json 读取纯文本模型黑名单;失败返回空(默认放行)。"""
+    """从 vision_blacklist.json 读取纯文本模型黑名单;失败用内置兜底(不是空)。"""
     try:
         with open(BLACKLIST_FILE, encoding="utf-8") as f:
             data = json.load(f)
         keywords = data.get("keywords", [])
         if isinstance(keywords, list) and all(isinstance(k, str) for k in keywords):
             return tuple(k.lower() for k in keywords)
-        print(f"[vl-vision hook] 警告: {BLACKLIST_FILE} keywords 字段格式不对,按空黑名单处理", file=sys.stderr)
-        return ()
+        print(f"[vl-vision hook] 警告: {BLACKLIST_FILE} keywords 字段格式不对,用内置兜底", file=sys.stderr)
+        return _FALLBACK_KEYWORDS
     except FileNotFoundError:
-        print(f"[vl-vision hook] 警告: 找不到黑名单文件 {BLACKLIST_FILE},按空黑名单处理", file=sys.stderr)
-        return ()
+        print(f"[vl-vision hook] 警告: 找不到黑名单文件 {BLACKLIST_FILE},用内置兜底", file=sys.stderr)
+        return _FALLBACK_KEYWORDS
     except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
-        print(f"[vl-vision hook] 警告: 读取黑名单 {BLACKLIST_FILE} 失败({e}),按空黑名单处理", file=sys.stderr)
-        return ()
+        print(f"[vl-vision hook] 警告: 读取黑名单 {BLACKLIST_FILE} 失败({e}),用内置兜底", file=sys.stderr)
+        return _FALLBACK_KEYWORDS
 
 
 TEXT_MODEL_KEYWORDS = load_blacklist()
