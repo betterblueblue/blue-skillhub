@@ -21,7 +21,9 @@ skills/vl-vision/
 ├── SKILL.md                    # Skill 入口文档(内有本 hook 的指引)
 ├── vl_vision.py
 └── hooks/
-    ├── block-image-read.py     # 本 hook(脚本本体)
+    ├── block-image-read.py     # PreToolUse hook:拦 Read 工具读图片文件
+    ├── block-image-attachment.py  # UserPromptSubmit hook:拦用户直接粘贴图片
+    ├── vision_blacklist.json   # 纯文本模型黑名单(当前含 deepseek 系列)
     └── README.md               # 本文件(使用说明)
 ```
 
@@ -38,27 +40,72 @@ skills/vl-vision/
 
 1. 把 `hooks/` 目录放到全局 skill 目录:
    `C:\Users\blue\.claude\skills\vl-vision\hooks\`
-2. 在全局 `C:\Users\blue\.claude\settings.json` 的 `hooks` 字段挂载(只加这个字段,别动别的):
-
-   ```json
-   {
-     "hooks": {
-       "PreToolUse": [
-         {
-           "matcher": "Read",
-           "hooks": [
-             {
-               "type": "command",
-               "command": "python C:/Users/blue/.claude/skills/vl-vision/hooks/block-image-read.py"
-             }
-           ]
-         }
-       ]
-     }
-   }
-   ```
-
+   (随 skill 一起部署;`vision_blacklist.json` 漏拷也不怕,脚本有内置兜底关键词能拦 deepseek)
+2. 在全局 `C:\Users\blue\.claude\settings.json` 的 `hooks` 字段挂载两个 hook:
+   - `PreToolUse`(matcher=Read)→ 拦工具读图片
+   - `UserPromptSubmit` → 拦用户直接粘贴图片(`[Image #N]`,不走 Read 工具)
 3. **重启会话生效**——Claude Code 启动时才加载 hooks,改完配置当前会话不会自动生效。
+
+### 完整配置示例(ccswitch / deepseek)
+
+用 ccswitch 管理时,把下面整段写进全局 `~/.claude/settings.json`
+(替换 `sk-xxx` 为真实 key)。深色底是相对你的 ccswitch 模板做的关键改动:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "sk-xxxxxxxxxxxxxxxxxxxxxxxxx",
+    "ANTHROPIC_BASE_URL": "http://118.24.52.21:8080",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL": "deepseek-v4-flash-0731[1M]",
+    "ANTHROPIC_DEFAULT_FABLE_MODEL_NAME": "deepseek-v4-flash-0731",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "deepseek-v4-flash-0731",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL_NAME": "deepseek-v4-flash-0731",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "deepseek-v4-flash-0731[1M]",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME": "deepseek-v4-flash-0731",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "deepseek-v4-flash-0731[1M]",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL_NAME": "deepseek-v4-flash-0731",
+    "ANTHROPIC_MODEL": "deepseek-v4-flash-0731[1M]",
+    "CLAUDE_CODE_DISABLE_ATTACHMENTS": "1",
+    "CLAUDE_CODE_EFFORT_LEVEL": "max",
+    "CLAUDE_CODE_USE_POWERSHELL_TOOL": "1",
+    "STEP_API_KEY": "sk-your-stepfun-key"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "python C:/Users/blue/.claude/skills/vl-vision/hooks/block-image-read.py",
+            "type": "command"
+          }
+        ],
+        "matcher": "Read"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "python C:/Users/blue/.claude/skills/vl-vision/hooks/block-image-attachment.py",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  },
+  "includeCoAuthoredBy": false,
+  "model": "opus",
+  "skipDangerousModePermissionPrompt": true
+}
+```
+
+> 相比旧的 ccswitch 模板改了三处:
+> 1. **env 里删掉 `CLAUDE_MODEL_SUPPORTS_VISION`**——设为 `0` 会把所有模型(含多模态)强制拦掉,是坑。黑名单自动判断,不需要它。
+> 2. **加 `UserPromptSubmit` hook**——只挂 PreToolUse 只拦 Read 图片,直接粘图还会 400。
+> 3. **env 加 `STEP_API_KEY`**——vl-vision 识图要调 stepfun API,没这个 key 识别会失败。
+
+**换多模态模型(claude/gemini/gpt)**:这份配置不用改——黑名单不命中,默认放行。
+只有换新的纯文本模型时,才把它加进 `vision_blacklist.json` 的 `keywords`。
 
 ## 判断逻辑(换模型怎么处理)
 
