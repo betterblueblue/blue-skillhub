@@ -1,18 +1,18 @@
 # 识图门禁 hook — 使用说明
 
-> 配套 vl-vision 的 PreToolUse hook,把「识图必须走 vl-vision」这条规则变成硬门禁,
+> 配套 vl-vision 的 hook,把「识图必须走 vl-vision」这条规则变成硬门禁,
 > 不再依赖模型自觉。
 
 ## 它解决什么问题
 
-全局规则 CLAUDE.md 第 0 条要求:识图必须走 vl-vision,禁止用模型自身能力直接"看"图。
-但规则只是文字,执行靠模型记性。弱模型(如 deepseek-v4-flash)看到图片时本能走
-`Read` 工具,把图片直接塞给主模型——而这类模型不支持 vision,API 立即报
-`400 当前模型不支持该能力:vision`,会话卡死、反复死循环。
+纯文本模型(如 deepseek)不支持 vision,如果让它直接 Read 图片 / 用户直接粘图,
+图片会塞进主模型,API 立即报 `400 当前模型不支持该能力:vision`,会话卡死、
+反复死循环。本 hook 无条件拦截这两条通道,引导改用 vl-vision。
 
-本 hook 在 `Read` 工具执行前拦截:目标是图片文件、且当前模型不支持 vision 时,
-当场阻断,并把引导语(改用 `vl_vision.py`)作为反馈送回模型上下文,让它转去调
-vl-vision。vl-vision 自己走 Bash/Python,不受本 hook 影响。
+**设计原则:不做任何模型判断(没有黑名单/白名单/开关)。挂 hook 就拦,摘 hook 就放行。**
+
+- 当前用纯文本模型(如 deepseek)→ 挂上 hook,图片被拦、走 vl-vision
+- 当前用多模态模型(claude/gpt 等能看图)→ 摘掉 hook(或换配置),直接看图
 
 ## 文件位置
 
@@ -23,7 +23,6 @@ skills/vl-vision/
 └── hooks/
     ├── block-image-read.py     # PreToolUse hook:拦 Read 工具读图片文件
     ├── block-image-attachment.py  # UserPromptSubmit hook:拦用户直接粘贴图片
-    ├── vision_blacklist.json   # 纯文本模型黑名单(当前含 deepseek 系列)
     └── README.md               # 本文件(使用说明)
 ```
 
@@ -40,7 +39,6 @@ skills/vl-vision/
 
 1. 把 `hooks/` 目录放到全局 skill 目录:
    `C:\Users\blue\.claude\skills\vl-vision\hooks\`
-   (随 skill 一起部署;`vision_blacklist.json` 漏拷也不怕,脚本有内置兜底关键词能拦 deepseek)
 2. 在全局 `C:\Users\blue\.claude\settings.json` 的 `hooks` 字段挂载两个 hook:
    - `PreToolUse`(matcher=Read)→ 拦工具读图片
    - `UserPromptSubmit` → 拦用户直接粘贴图片(`[Image #N]`,不走 Read 工具)
@@ -49,7 +47,7 @@ skills/vl-vision/
 ### 完整配置示例(ccswitch / deepseek)
 
 用 ccswitch 管理时,把下面整段写进全局 `~/.claude/settings.json`
-(替换 `sk-xxx` 为真实 key)。深色底是相对你的 ccswitch 模板做的关键改动:
+(替换 `sk-xxx` 为真实 key):
 
 ```json
 {
@@ -99,97 +97,38 @@ skills/vl-vision/
 }
 ```
 
-> 相比旧的 ccswitch 模板改了三处:
-> 1. **env 里删掉 `CLAUDE_MODEL_SUPPORTS_VISION`**——设为 `0` 会把所有模型(含多模态)强制拦掉,是坑。黑名单自动判断,不需要它。
-> 2. **加 `UserPromptSubmit` hook**——只挂 PreToolUse 只拦 Read 图片,直接粘图还会 400。
-> 3. **env 加 `STEP_API_KEY`**——vl-vision 识图要调 stepfun API,没这个 key 识别会失败。
+> 要点:
+> 1. **不需要任何 `CLAUDE_MODEL_SUPPORTS_VISION` / 黑名单 / 白名单**——hook 无条件拦,不做模型判断。
+> 2. **必须挂两个 hook**——只挂 PreToolUse 只拦 Read 图片,直接粘图还会 400。
+> 3. **`STEP_API_KEY` 必须有**——vl-vision 识图要调 stepfun API,没它识别失败。
 
-**换多模态模型(claude/gemini/gpt)**:这份配置不用改——黑名单不命中,默认放行。
-只有换新的纯文本模型时,才把它加进 `vision_blacklist.json` 的 `keywords`。
-
-## 判断逻辑(换模型怎么处理)
-
-**设计原则:默认放行,只拦纯文本模型。** 正常多模态模型直接走 Claude Code
-默认机制(能看图就自己看),只有确认是纯文本模型(如 deepseek)才拦,引导改用
-vl-vision。这样换新模型不会被误拦。
-
-```
-① 环境变量 CLAUDE_MODEL_SUPPORTS_VISION
-     =1 / true / yes / on   → 放行(强制)
-     =0 / false / no / off  → 阻断(强制,一般不设)
-② 未设开关 → 按模型名黑名单兜底(见 `vision_blacklist.json` 的 `keywords`,
-     当前只含 deepseek 系列纯文本:deepseek-v4/v3/r1/chat/reasoner)
-     → 命中黑名单 → 阻断;不命中 → 默认放行
-③ 读不到模型名 → 默认放行(不误伤正常多模态)
-```
-
-- **换任何主流多模态模型**(claude / gemini / gpt / 通义 / 豆包 / Kimi 等)
-  → **自动放行,零改动**——它们不在黑名单,默认就走正常机制。
-- **换纯文本模型**(deepseek 之外的新文本模型)→ 把它加进 `vision_blacklist.json`
-  的 `keywords`,重启会话即拦;不加就默认放行(会 400,自己负责)。
-- **想让纯文本模型临时看图** → 设环境变量 `CLAUDE_MODEL_SUPPORTS_VISION=1` 放行。
-
-## 参数:`CLAUDE_MODEL_SUPPORTS_VISION`
-
-手动控制门禁放行/阻断的环境变量,优先级高于黑名单。**一般不设置**——默认放行
-多模态、只拦黑名单纯文本,绝大多数情况不用管它。
-
-| 值 | 行为 | 典型场景 |
-|----|------|----------|
-| `1` / `true` / `yes` / `on` | 强制放行 | 纯文本模型临时想直接看图(会 400) |
-| `0` / `false` / `no` / `off` | 强制阻断 | 想强制某模型一律走 vl-vision(一般不设) |
-| 不设置 | 按黑名单判断 | 默认;正常多模态直接放行 |
-
-**设置方式(任选其一)**:
-
-```bash
-# ① 系统环境变量(对所有会话生效,改完重启终端)
-# Windows:setx CLAUDE_MODEL_SUPPORTS_VISION 1
-#   macOS/Linux: export CLAUDE_MODEL_SUPPORTS_VISION=1
-
-# ② 全局 settings.json 的 env 段(随 Claude Code 一起加载,推荐)
-```
-
-```json
-{
-  "env": {
-    "CLAUDE_MODEL_SUPPORTS_VISION": "1"
-  }
-}
-```
-
-**生效时机**:修改后重启 Claude Code 会话才生效(和 hooks 加载时机一致)。
-**误拦时解除**:如果模型其实支持看图却被拦,按上面设 `1` 重启即可;引导信息里也会提示这条。
+**换多模态模型(claude/gpt 等能看图)**:摘掉 settings.json 里的两个 hook(或换一份不带 hooks 的 ccswitch 配置),直接看图,不用改任何脚本。
 
 ## 手动测试
 
-给 hook 喂 JSON 事件模拟 PreToolUse 入参,检查退出码:
+给 hook 喂 JSON 事件模拟入参,检查退出码:
 
 ```bash
-# 1. 不支持 vision 的模型 + 读图片 → 应 exit 2(阻断)
-export ANTHROPIC_MODEL="deepseek-v4-flash-0731"
+# 1. Read 图片 → 应 exit 2(无条件拦)
 echo '{"tool_name":"Read","tool_input":{"file_path":"C:/x/a.png"}}' \
   | python block-image-read.py; echo "exit=$?"
 
-# 2. 同模型 + 显式开关=1 → 应 exit 0(放行,模拟"换了多模态")
-export CLAUDE_MODEL_SUPPORTS_VISION=1
-echo '{"tool_name":"Read","tool_input":{"file_path":"C:/x/a.png"}}' \
-  | python block-image-read.py; echo "exit=$?"
-unset CLAUDE_MODEL_SUPPORTS_VISION
-
-# 3. 多模态模型(如 claude-sonnet-5,不在黑名单)→ 应 exit 0(放行)
-export ANTHROPIC_MODEL="claude-sonnet-5"
-echo '{"tool_name":"Read","tool_input":{"file_path":"C:/x/a.png"}}' \
-  | python block-image-read.py; echo "exit=$?"
-
-# 4. 读文本文件 / 非 Read 工具 → 应 exit 0(放行)
+# 2. 读文本文件 → 应 exit 0(放行)
 echo '{"tool_name":"Read","tool_input":{"file_path":"C:/x/main.py"}}' \
   | python block-image-read.py; echo "exit=$?"
+
+# 3. 粘图 → 应 exit 2(无条件拦)
+echo '{"prompt":"[Image #1] 看看这个"}' \
+  | python block-image-attachment.py; echo "exit=$?"
+
+# 4. 无图文本 → 应 exit 0(放行)
+echo '{"prompt":"读一下这个文件"}' \
+  | python block-image-attachment.py; echo "exit=$?"
 ```
 
 ## 卸载
 
-1. 从 `settings.json` 删掉 `hooks` 块(或整段 `PreToolUse` 条目)。
+1. 从 `settings.json` 删掉 `hooks` 块(或整段 `PreToolUse` / `UserPromptSubmit` 条目)。
 2. 删除 `C:\Users\blue\.claude\skills\vl-vision\hooks\`(仓库源可留着)。
 3. 重启会话。
 
@@ -200,7 +139,7 @@ echo '{"tool_name":"Read","tool_input":{"file_path":"C:/x/main.py"}}' \
   2. **用户直接把图片粘贴进对话**(显示为 `[Image #N]`)→ `UserPromptSubmit`
      hook(`block-image-attachment.py`)——这条不走 Read 工具,PreToolUse 拦不到,
      图片会直接塞进主模型触发 400,所以单独拦。
-- hook 判断依赖 `ANTHROPIC_MODEL` 环境变量;读不到时按"不支持"处理(安全优先),
-  可能误拦,用上面的显式开关解除。
+- **无条件拦,不做模型判断**——挂上就拦所有模型的图片读取。要放行多模态模型,
+  摘掉 hook,不是改脚本。
 - hook 自身出错时放行(解析失败返回 0),不会因为门禁坏了卡住整个工作流。
 - 若未来出现别的渠道把图片塞进主模型(如某个 MCP 截图工具直传),需要另加拦截。

@@ -67,22 +67,13 @@ vl-vision/
 
 ## 配置门禁开关
 
-内置识图门禁 hook **默认放行，只拦纯文本模型**（如 deepseek 系列）——正常多模态模型直接走 Claude Code 默认机制，不误拦。纯文本黑名单在 `hooks/vision_blacklist.json`。
+内置识图门禁 hook **无条件拦截**（不做任何模型判断）。是否启用由你在
+settings.json 里挂不挂决定：
 
-环境变量 `CLAUDE_MODEL_SUPPORTS_VISION` 可手动强制放行/阻断（一般不设置）：
+- 当前接入**纯文本模型**（如 deepseek，不支持 vision）→ 挂上 hook，图片被拦、走 vl-vision
+- 当前接入**多模态模型**（claude/gpt 等能看图）→ 不挂 hook，直接看图
 
-| 值 | 行为 |
-|----|------|
-| `1` / `true` / `yes` / `on` | 强制放行（纯文本模型临时想直接看图，会 400） |
-| `0` / `false` / `no` / `off` | 强制阻断（一般不设） |
-| 不设置 | 按纯文本黑名单判断；正常多模态直接放行 |
-
-```bash
-# 在全局 settings.json 的 env 段加（推荐）或系统环境变量设置，重启会话生效：
-export CLAUDE_MODEL_SUPPORTS_VISION=1
-```
-
-完整安装/配置/卸载说明见 `hooks/README.md`。
+不需要任何黑名单/白名单/环境变量开关。纯文本模型的完整配置示例见 `hooks/README.md`。
 
 ## 许可证
 

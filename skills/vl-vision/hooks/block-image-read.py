@@ -1,22 +1,17 @@
 """
-PreToolUse hook — 拦阻纯文本模型直接 Read 图片文件
+PreToolUse hook — 拦阻直接 Read 图片文件
 
 背景:全局规则 CLAUDE.md 第 0 条要求识图必须走 vl-vision skill,禁止用模型
-自身能力直接"看"图。但规则只靠模型自觉执行,纯文本模型(如 deepseek-v4-flash)
-看到图片时本能走 Read 工具,把图片塞给主模型,而该模型不支持 vision,
-API 直接报 400 卡死(典型表现:会话结尾 "API Error: 400 当前模型不支持
-该能力:vision" + 长时间死循环)。
+自身能力直接"看"图。纯文本模型(如 deepseek)直接 Read 图片会触发 API 400
+("当前模型不支持该能力:vision")并死循环。
 
-本 hook 在 Read 工具调用前拦截图片文件,判断逻辑(默认放行,只拦纯文本):
-  1. 显式开关 CLAUDE_MODEL_SUPPORTS_VISION
-     =1/true/yes/on  → 放行(强制)
-     =0/false/no/off → 阻断(强制,一般不设)
-  2. 未设开关 → 按模型名黑名单兜底(vision_blacklist.json 里的纯文本模型
-     如 deepseek-v4/v3 等命中则拦);不命中 → 默认放行
-  3. 读不到模型名 → 默认放行(不误伤正常多模态)
+本 hook 无条件拦截:只要 Read 目标是图片文件,就阻断并引导改用 vl-vision。
+不做任何模型名判断——是否启用由 settings.json 的挂载决定:
+  - 当前用纯文本模型(如 deepseek)→ 挂上本 hook,Read 图片被拦、走 vl-vision
+  - 当前用多模态模型(claude/gpt 等能看图)→ 摘掉本 hook(或换配置),直接看图
 
-设计原则:正常多模态模型直接走 Claude Code 默认机制(能看图就自己看),
-只有确认是纯文本模型的才拦,引导改用 vl-vision。这样换新模型不会被误拦。
+设计原则:不做黑名单/白名单/模型判断(那是过度设计)。简单直接:
+挂 hook = 拦,摘 hook = 放行。
 
 安装/配置/卸载说明见同目录 README.md;settings.json 的 hooks 块指向本文件。
 退出码:0=放行 / 2=阻断(stderr 内容作为反馈回到模型上下文)
@@ -26,79 +21,19 @@ skill 整体搬目录后无需改路径。
 """
 
 import json
-import os
 import sys
 from pathlib import Path
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".ico"}
 
-# 黑名单配置文件与本脚本同目录(相对脚本位置推导,skill 搬家不用改)。
-# 缺文件/损坏时用内置兜底关键词(见 _FALLBACK_KEYWORDS),保证即使漏拷配置文件
-# 也能拦已知纯文本模型(如 deepseek);完全未知模型默认放行。
-BLACKLIST_FILE = str(Path(__file__).resolve().parent / "vision_blacklist.json")
-
-# 内置兜底关键词(黑名单文件缺失/损坏时使用;与 block-image-attachment.py 保持一致)
-_FALLBACK_KEYWORDS = (
-    "deepseek-v4",
-    "deepseek-v3",
-    "deepseek-r1",
-    "deepseek-chat",
-    "deepseek-reasoner",
-)
-
-
-def load_blacklist() -> tuple[str, ...]:
-    """从 vision_blacklist.json 读取纯文本模型黑名单;失败用内置兜底(不是空)。"""
-    try:
-        with open(BLACKLIST_FILE, encoding="utf-8") as f:
-            data = json.load(f)
-        keywords = data.get("keywords", [])
-        if isinstance(keywords, list) and all(isinstance(k, str) for k in keywords):
-            return tuple(k.lower() for k in keywords)
-        print(f"[vl-vision hook] 警告: {BLACKLIST_FILE} keywords 字段格式不对,用内置兜底", file=sys.stderr)
-        return _FALLBACK_KEYWORDS
-    except FileNotFoundError:
-        print(f"[vl-vision hook] 警告: 找不到黑名单文件 {BLACKLIST_FILE},用内置兜底", file=sys.stderr)
-        return _FALLBACK_KEYWORDS
-    except (json.JSONDecodeError, OSError, UnicodeDecodeError) as e:
-        print(f"[vl-vision hook] 警告: 读取黑名单 {BLACKLIST_FILE} 失败({e}),用内置兜底", file=sys.stderr)
-        return _FALLBACK_KEYWORDS
-
-
-TEXT_MODEL_KEYWORDS = load_blacklist()
-
 # vl_vision.py 在本文件同级的上一级(skills/vl-vision/vl_vision.py)
 VL_SCRIPT = str(Path(__file__).resolve().parent.parent / "vl_vision.py")
 
 
-def model_supports_vision() -> bool:
-    """判断当前模型是否支持 vision。
-
-    判断逻辑(默认放行,只拦纯文本):
-      1. 环境变量 CLAUDE_MODEL_SUPPORTS_VISION
-         =1/true/yes/on  → 放行(强制)
-         =0/false/no/off → 阻断(强制,一般不设)
-      2. 未设置 → 模型名命中黑名单(纯文本)→ 不支持;不命中 → 支持(默认放行)
-      3. 读不到模型名 → 按支持处理(默认放行)
-    """
-    explicit = os.environ.get("CLAUDE_MODEL_SUPPORTS_VISION", "").strip().lower()
-    if explicit in ("1", "true", "yes", "on"):
-        return True
-    if explicit in ("0", "false", "no", "off"):
-        return False
-    model = (os.environ.get("ANTHROPIC_MODEL") or "").lower()
-    if not model:
-        return True  # 读不到模型名,默认放行
-    return not any(kw in model for kw in TEXT_MODEL_KEYWORDS)
-
-
 def guidance(path: str) -> str:
-    model = os.environ.get("ANTHROPIC_MODEL", "未知")
     return (
-        "【阻断】不能直接 Read 图片文件:当前模型("
-        + model
-        + ")是纯文本模型,不支持 vision,直接读取会触发 API 400,"
-        "这是全局规则 CLAUDE.md 第 0 条明确禁止的。\n"
+        "【阻断】不能直接 Read 图片文件:纯文本模型不支持 vision,直接读取会触发"
+        " API 400,这是全局规则 CLAUDE.md 第 0 条明确禁止的。\n"
         "请改用 vl-vision skill 识图:\n"
         '  python "'
         + VL_SCRIPT
@@ -107,9 +42,7 @@ def guidance(path: str) -> str:
         + '" [--template describe|ocr|layout|codegen|troubleshoot] '
         '[--prompt "..."] [--json]\n'
         "识图结果以返回的 description 为准;若 vl-vision 失败,把错误告知用户,"
-        "不要自行 Read 图片。\n"
-        "—— 如果你的模型其实支持看图却被误拦,请用户设置环境变量 "
-        "CLAUDE_MODEL_SUPPORTS_VISION=1 后重启会话即可放行。"
+        "不要自行 Read 图片。"
     )
 
 
@@ -129,9 +62,6 @@ def main() -> int:
 
     if Path(path_str).suffix.lower() not in IMAGE_EXTENSIONS:
         return 0
-
-    if model_supports_vision():
-        return 0  # 默认放行,模型能"亲眼看"
 
     sys.stderr.write(guidance(path_str) + "\n")
     return 2
