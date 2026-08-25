@@ -23,6 +23,7 @@
   V13: 性能要求节存在；有要求时记录了要求和用户确认，无要求时记录用户确认"没有"
   V14: 安全要求节存在；有要求时记录了要求和用户确认，无要求时记录用户确认"没有"
   V15: 术语表的原始术语不得出现在能力表的"能力"列（能力命名用人话侧，防止术语沿能力名繁殖到下游）
+  V16: 用户要求"1:1 / 全部页面 / 逐页"时，第 17 节页面清单必须存在且逐页完整
 
 本脚本不能验证文件引用是否真实、模型推导是否合理，也不能证明内容
 符合用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -85,6 +86,7 @@ VALID_DECISION_SOURCES = {
 VALID_DRIFT_STATUSES = {"未命中", "命中", "不适用"}
 CAPABILITY_ID_RE = re.compile(r"^C\d{2,}$")
 PATH_ID_RE = re.compile(r"^P\d{2,}$")
+PAGE_ID_RE = re.compile(r"^PG\d{2,}$")
 EVIDENCE_ID_RE = re.compile(r"^E\d{2,}$")
 # 链路目录名：YYYY-MM-DD-NNN-意图名称（与 SKILL.md「文件存放」节的
 # intent-chain/{链路目录}/intent.md 契约一致）
@@ -689,6 +691,40 @@ def validate(content: str) -> list[tuple[str, str, str]]:
         results.append(("V15", "FAIL", "；".join(term_leak_errors)))
     else:
         results.append(("V15", "PASS", "能力命名未使用术语表原始术语"))
+
+    # V16: 页级还原要求（1:1/全部页面/逐页）必须有页面清单
+    page_section = _section(content, "## 17. 页面清单")
+    intro = _section(content, "## 1. 一句话意图")
+    page_level_required = bool(
+        re.search(r"1\s*[:：]\s*1|全部页面|逐页|每个页面|所有页面", intro + critical_section)
+    )
+    page_rows = _table_rows(page_section, "页面 ID")
+    page_errors: list[str] = []
+    page_ids: set[str] = set()
+    for index, row in enumerate(page_rows, 1):
+        if len(row) != 4:
+            page_errors.append(f"页面清单第 {index} 行应有 4 列")
+            continue
+        pg_id, name, source, cap_refs = row
+        if pg_id in page_ids:
+            page_errors.append(f"页面 ID 重复：{pg_id}")
+        page_ids.add(pg_id)
+        if not PAGE_ID_RE.fullmatch(pg_id):
+            page_errors.append(f"页面 ID 非法：{pg_id}")
+        if any(_has_placeholder(v) for v in row):
+            page_errors.append(f"页面 {pg_id} 仍含模板占位符")
+        if not name or not source:
+            page_errors.append(f"页面 {pg_id} 缺少名称或来源")
+        referenced_caps = _split_evidence_ids(cap_refs)
+        if referenced_caps and any(item not in capabilities for item in referenced_caps):
+            page_errors.append(f"页面 {pg_id} 引用了未知能力 ID：{cap_refs}")
+
+    if page_level_required and not page_ids:
+        page_errors.append("用户要求 1:1/全部页面/逐页还原，但第 17 节页面清单为空")
+    if page_errors:
+        results.append(("V16", "FAIL", "；".join(page_errors)))
+    else:
+        results.append(("V16", "PASS", "页面清单与页级还原要求一致"))
 
     return results
 

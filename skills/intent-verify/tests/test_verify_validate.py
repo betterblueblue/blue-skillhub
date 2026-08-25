@@ -68,7 +68,7 @@ def _result(content: str, check_id: str, arch: str = _ARCH_CONTENT) -> tuple[str
 class TestValidFixture(unittest.TestCase):
     def test_valid_verify_record_passes_all_checks(self):
         results = validate(_content(), _intent(), _ARCH_CONTENT, _DESIGN_CONTENT)
-        self.assertEqual(8, len(results))
+        self.assertEqual(9, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -653,6 +653,37 @@ class TestDesignStandardArtifact(unittest.TestCase):
             ok, msg = _has_ui_artifact("- [x] Then: X — V3，截图：shots/p01.png", Path(td))
             self.assertFalse(ok)
             self.assertIn("不存在", msg)
+
+
+class TestPageListCheck(unittest.TestCase):
+    """V9: INTENT 有页面清单时，verify-record 必须逐页核对。"""
+
+    _PAGE_INTENT = (
+        "## 17. 页面清单\n\n"
+        "| 页面 ID | 页面名称 | 来源 | 覆盖能力 ID |\n"
+        "|---|---|---|---|\n"
+        "| PG01 | 首页 | Excel | C01 |\n"
+    )
+
+    _PAGE_CHECK = (
+        "## 最终复核\n\n"
+        "### 页面清单逐页核对\n\n"
+        "| 页面 ID | 页面名称 | 实现位置 | 证据 |\n"
+        "|---|---|---|---|\n"
+        "| PG01 | 首页 | web/src/views/Home.vue | 截图 |\n"
+    )
+
+    def test_missing_page_check_fails(self):
+        verify = "## 最终复核\n\n### 结论\n\n- 结果：通过\n"
+        results = validate(verify, self._PAGE_INTENT, _ARCH_CONTENT, _DESIGN_CONTENT)
+        v9 = [r for r in results if r[0] == "V9"]
+        self.assertEqual("FAIL", v9[0][1])
+        self.assertIn("缺少页面核对", v9[0][2])
+
+    def test_page_check_passes(self):
+        results = validate(self._PAGE_CHECK, self._PAGE_INTENT, _ARCH_CONTENT, _DESIGN_CONTENT)
+        v9 = [r for r in results if r[0] == "V9"]
+        self.assertEqual("PASS", v9[0][1])
 
 
 if __name__ == "__main__":

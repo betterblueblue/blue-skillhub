@@ -15,6 +15,7 @@
   V8: 最终复核包含技术漂移复核子节（architecture.md 和 design.md 都必传，缺任一个 V8 直接 FAIL；
       模块名与两者交叉比对；状态标"新增/缺失"的行免于存在性比对，但必须在说明列写明原因——
       如实报告漂移不应被判 FAIL）
+  V9: INTENT 第 17 节有页面清单时，最终复核必须逐页核对（页面 ID 覆盖 + 实现位置/证据非空）
 
 本脚本不能验证 V3 证据是否真实，也不能证明验收结果符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -63,6 +64,7 @@ CONCLUSION_HEADING = "### 结论"
 
 CAPABILITY_ID_RE = re.compile(r"C\d{2,}")
 PATH_ID_RE = re.compile(r"P\d{2,}")
+PAGE_ID_RE = re.compile(r"PG\d{2,}")
 
 
 def _split_paths(content: str) -> list[str]:
@@ -501,6 +503,38 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                 results.append(("V8", "FAIL", "; ".join(v8_errors)))
             else:
                 results.append(("V8", "PASS", "技术漂移复核模块与 architecture.md 和 design.md 均一致"))
+
+    # V9: INTENT 有页面清单时，verify-record 必须逐页核对
+    intent_page_section = _intent_section(intent_content, "## 17. 页面清单")
+    intent_page_rows = _table_rows(intent_page_section, "页面 ID")
+    intent_page_ids = {
+        row[0] for row in intent_page_rows if len(row) >= 1 and PAGE_ID_RE.fullmatch(row[0])
+    }
+    if intent_page_ids:
+        page_check_section = _subsection(gate_section, "页面清单逐页核对")
+        page_check_rows = _table_rows(page_check_section, "页面 ID")
+        verify_page_ids: set[str] = set()
+        page_errors: list[str] = []
+        for row in page_check_rows:
+            if len(row) < 4:
+                page_errors.append(f"页面清单逐页核对行不足 4 列: {' | '.join(row)}")
+                continue
+            pg_id = row[0].strip()
+            verify_page_ids.add(pg_id)
+            if not row[2].strip() or not row[3].strip():
+                page_errors.append(f"页面 {pg_id} 缺少实现位置或证据")
+        missing = intent_page_ids - verify_page_ids
+        if missing:
+            page_errors.append(f"缺少页面核对: {sorted(missing)}")
+        extra = verify_page_ids - intent_page_ids
+        if extra:
+            page_errors.append(f"页面清单外多余页面: {sorted(extra)}")
+        if page_errors:
+            results.append(("V9", "FAIL", "; ".join(page_errors)))
+        else:
+            results.append(("V9", "PASS", f"全部 {len(intent_page_ids)} 个页面已逐页核对"))
+    else:
+        results.append(("V9", "PASS", "无页面级要求，不适用"))
 
     return results
 

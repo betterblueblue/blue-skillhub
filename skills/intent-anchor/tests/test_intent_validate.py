@@ -69,7 +69,7 @@ def _replace_subsection(content: str, heading: str, body: str) -> str:
 class TestValidFixture(unittest.TestCase):
     def test_current_fixture_passes_all_checks(self):
         results = validate(_valid_content())
-        self.assertEqual(15, len(results))
+        self.assertEqual(16, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -558,6 +558,29 @@ class TestBaselineComparison(unittest.TestCase):
         texts = " ".join(warnings)
         self.assertIn("C03", texts)
         self.assertIn("删除", texts)
+
+
+class TestPageList(unittest.TestCase):
+    """V16: 页级还原要求（1:1/全部页面/逐页）必须有页面清单。"""
+
+    def test_page_level_required_without_list_fails(self):
+        content = "## 1. 一句话意图\n\n1:1 还原全部页面。\n"
+        results = validate(content)
+        v16 = [r for r in results if r[0] == "V16"]
+        self.assertEqual("FAIL", v16[0][1])
+        self.assertIn("页面清单", v16[0][2])
+
+    def test_page_level_with_list_passes(self):
+        content = (
+            "## 1. 一句话意图\n\n1:1 还原全部页面。\n"
+            "## 17. 页面清单\n\n"
+            "| 页面 ID | 页面名称 | 来源 | 覆盖能力 ID |\n"
+            "|---|---|---|---|\n"
+            "| PG01 | 首页 | Excel |  |\n"
+        )
+        results = validate(content)
+        v16 = [r for r in results if r[0] == "V16"]
+        self.assertEqual("PASS", v16[0][1])
 
 
 if __name__ == "__main__":
