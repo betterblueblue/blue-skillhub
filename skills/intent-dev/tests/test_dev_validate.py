@@ -193,5 +193,35 @@ class TestDoneRequiresV2(unittest.TestCase):
         self.assertEqual("PASS", result[1])
 
 
+class TestGenericOutputRejected(unittest.TestCase):
+    """泛化输出不算 V2 证据；量化要求必须有数字。"""
+
+    def test_generic_output_fails(self):
+        content = _dev_content().replace(
+            "- [x] Then: 记录文件存在 — V2，命令 `npm test` 输出: 4 passed",
+            "- [x] Then: 记录文件存在 — V2，命令 `npm test` 输出: 测试全绿",
+        )
+        result = _result(content, _issues_content(), "V3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("命令输出", result[2])
+
+    def test_quantified_requirement_needs_number(self):
+        content = _dev_content().replace(
+            "- [x] Then: 记录文件存在 — V2，命令 `npm test` 输出: 4 passed",
+            "- [x] Then: 首屏 ≤ 2.5s — V2，命令 `npm run perf` 输出: 性能达标",
+        )
+        result = _result(content, _issues_content(), "V3")
+        self.assertEqual("FAIL", result[1])
+
+    def test_sf_qualitative_output_passes(self):
+        """安全要求是定性条目，不强制输出含数字。"""
+        content = _dev_content().replace(
+            "- [x] Then: 记录文件存在 — V2，命令 `npm test` 输出: 4 passed",
+            "- [x] Then: 参数化查询防注入 [SF05] — V2，命令 `npm test` 输出: 鉴权生效",
+        )
+        result = _result(content, _issues_content(), "V3")
+        self.assertEqual("PASS", result[1])
+
+
 if __name__ == "__main__":
     unittest.main()

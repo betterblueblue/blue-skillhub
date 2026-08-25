@@ -6,7 +6,7 @@
 
 检查项：
   V1: 文件非空
-  V2: 每个工单包含必需子节
+  V2: 每个工单包含必需子节；类型字段不得使用内部术语 AFK/HITL（应写 自动完成 / 需人工参与）
   V3: 所有验收路径被至少一个工单覆盖（交叉检查 INTENT.md）
   V4: 所有保留能力被至少一个工单覆盖（交叉检查 INTENT.md）
   V5: Coverage Verification 节存在且包含三个子节
@@ -16,6 +16,7 @@
   V9: INTENT.md 有安全要求时，所有安全要求 ID 被至少一个工单引用（交叉检查 INTENT.md）
   V10: PRD 中每条验收路径的 Then/And 条件数量不少于工单中对应路径的条目数（交叉检查 PRD）
   V11: 工单的"涉及模块"引用的模块名必须在 architecture.md 第 2 节中定义（强制检查 architecture.md）
+  V12: 数据管理类工单（标题/做什么含 管理/维护/配置/档案/账号 等）必须同时覆盖「新增」与「删除」
 
 本脚本不能验证工单的技术可行性，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -59,6 +60,10 @@ PATH_ID_RE = re.compile(r"P\d{2,}")
 PERF_ID_RE = re.compile(r"PF\d{2,}")
 SECURITY_ID_RE = re.compile(r"SF\d{2,}")
 ISSUE_HEADING_RE = re.compile(r"^##\s+Issue\s+\d+", re.MULTILINE)
+ISSUE_TYPE_RE = re.compile(r"^-\s*\*\*类型\*\*[：:]\s*(.+)$", re.MULTILINE)
+MANAGE_HINT_RE = re.compile(r"管理|维护|配置|档案|规则|模板|账号|角色")
+CREATE_RE = re.compile(r"新增|增/删/改/查")
+DELETE_RE = re.compile(r"删除|增/删/改/查")
 
 # PRD Acceptance Criteria 中的 Then/And 行
 PRD_THEN_RE = re.compile(r"^\s*-\s*\*\*Then\*\*\s*(.+)$", re.MULTILINE)
@@ -218,6 +223,11 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
             for sub in REQUIRED_ISSUE_SUBSECTIONS:
                 if sub not in issue:
                     missing_subs.append(f"Issue {i} 缺少 {sub}")
+            type_m = ISSUE_TYPE_RE.search(issue)
+            if type_m and re.search(r"\b(AFK|HITL)\b", type_m.group(1), re.IGNORECASE):
+                missing_subs.append(
+                    f"Issue {i} 的类型字段使用了内部术语 AFK/HITL，用户可见处须写「自动完成 / 需人工参与」"
+                )
         if missing_subs:
             results.append(("V2", "FAIL", "; ".join(missing_subs)))
         else:
@@ -434,6 +444,27 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
                 results.append(("V11", "FAIL", "; ".join(v11_errors)))
             else:
                 results.append(("V11", "PASS", f"全部工单的涉及模块引用了架构文档中定义的模块"))
+
+    # V12: 数据管理类工单必须同时覆盖「新增」与「删除」（防止"只读切片"冒充管理能力）
+    v12_errors: list[str] = []
+    for i, issue in enumerate(issues, 1):
+        title_match = re.search(r"^##\s+Issue\s+\d+:\s*(.+)$", issue, re.MULTILINE)
+        title = title_match.group(1) if title_match else ""
+        do_match = re.search(r"### 做什么\s*\n(.*?)(?=^###\s+|\Z)", issue, re.MULTILINE | re.DOTALL)
+        do_text = do_match.group(1) if do_match else ""
+        crit_match = re.search(r"### 验收标准\s*\n(.*?)(?=^###\s+|\Z)", issue, re.MULTILINE | re.DOTALL)
+        crit_text = crit_match.group(1) if crit_match else ""
+        if re.search(MANAGE_HINT_RE, title + do_text):
+            has_create = bool(CREATE_RE.search(crit_text))
+            has_delete = bool(DELETE_RE.search(crit_text))
+            if not has_create or not has_delete:
+                v12_errors.append(
+                    f"Issue {i} 疑似管理/维护类工单，但验收标准未同时覆盖「新增」与「删除」"
+                )
+    if v12_errors:
+        results.append(("V12", "FAIL", "; ".join(v12_errors)))
+    else:
+        results.append(("V12", "PASS", "数据管理类工单均同时覆盖「新增」与「删除」"))
 
     return results
 

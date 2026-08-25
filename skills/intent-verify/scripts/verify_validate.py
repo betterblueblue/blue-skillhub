@@ -46,6 +46,7 @@ THEN_RE = re.compile(
 GIVEN_RE = re.compile(r"^-\s*Given[：:]\s*(.+)$", re.MULTILINE)
 WHEN_RE = re.compile(r"^-\s*When[：:]\s*(.+)$", re.MULTILINE)
 VERIFY_METHOD_RE = re.compile(r"^-\s*验证方式[：:]\s*(.+)$", re.MULTILINE)
+PERF_OUTPUT_RE = re.compile(r"^-\s*输出摘要[：:]\s*(.+)$", re.MULTILINE)
 REGRESSION_HEADING = "## 回归验证结果"
 E2E_HEADING = "## 端到端验收结果"
 CONDITIONAL_HEADING = "## 条件性验证结果"
@@ -105,8 +106,16 @@ def _has_when(path_content: str) -> bool:
     return bool(WHEN_RE.search(path_content))
 
 
-def _has_verify_method(path_content: str) -> bool:
-    return bool(VERIFY_METHOD_RE.search(path_content))
+def _verify_method_check(path_content: str) -> tuple[bool, str]:
+    """验证方式必须含 UI 特征；纯 API/接口脚本不能作为 V3 端到端证据。"""
+    m = VERIFY_METHOD_RE.search(path_content)
+    if not m:
+        return False, "缺少验证方式"
+    method = m.group(1).strip()
+    ui_markers = ("E2E", "Playwright", "浏览器", "页面", "截图", "DOM", "人工", "手动", "UI")
+    if not any(marker in method for marker in ui_markers):
+        return False, f"验证方式为纯 API/接口，不能作为 V3 端到端证据: {method[:60]}"
+    return True, ""
 
 
 def _all_thens_v3(path_content: str) -> bool:
@@ -211,8 +220,9 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                 v3_errors.append(f"{path_label} 缺少 When")
             if not _parse_then_lines(path):
                 v3_errors.append(f"{path_label} 缺少 Then/And 条目")
-            if not _has_verify_method(path):
-                v3_errors.append(f"{path_label} 缺少验证方式")
+            method_ok, method_msg = _verify_method_check(path)
+            if not method_ok:
+                v3_errors.append(f"{path_label} {method_msg}")
         if v3_errors:
             results.append(("V3", "FAIL", "; ".join(v3_errors)))
         else:
@@ -365,6 +375,13 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                 v7_errors.append("INTENT.md 有性能要求但验收记录标注性能验证不适用")
             elif not intent_has_perf and "不适用" not in perf_result and "通过" not in perf_result:
                 v7_errors.append(f"性能验证结果不明确: {perf_result}")
+            if intent_has_perf and ("通过" in perf_result or "达标" in perf_result):
+                out_m = PERF_OUTPUT_RE.search(perf_section)
+                out_val = out_m.group(1).strip() if out_m else ""
+                if not re.search(r"\d", out_val):
+                    v7_errors.append(
+                        "INTENT.md 有性能要求且验收标注通过/达标，但性能验证输出摘要缺少量化数字"
+                    )
 
     # 安全验证结论与 INTENT.md 一致
     security_section = _subsection(conditional_section, SECURITY_HEADING)

@@ -98,18 +98,38 @@ def _has_green_section(issue_content: str) -> bool:
     return bool(GREEN_RE.search(issue_content))
 
 
+_GENERIC_OUTPUT_PHRASES = (
+    "测试全绿",
+    "全站通过",
+    "实测毫秒级",
+    "服务稳定运行",
+    "起步值",
+    "单节点单体",
+    "无回归",
+)
+
+
 def _has_command_output(text: str) -> bool:
     """检查 Then 文本中是否同时包含命令和输出证据。
 
     V2 要求既有命令（命令 `xxx`）又有输出结果（输出: yyy 或 退出码: N），
-    只有其中一项不算有效证据。
+    只有其中一项不算有效证据。泛化输出（"测试全绿/实测毫秒级"等且无数字）不算证据；
+    涉及量化要求（性能/并发/可用性/首屏）时，输出必须含数字，且不能只靠退出码。
     """
     has_command = bool(re.search(r"命令\s*`[^`]+`", text))
-    has_output = bool(
-        re.search(r"输出[:：]\s*\S+", text)
-        or re.search(r"退出码[:：]\s*\d", text)
-    )
-    return has_command and has_output
+    if not has_command:
+        return False
+    out_m = re.search(r"输出[:：]\s*(.+)$", text)
+    exit_ok = bool(re.search(r"退出码[:：]\s*\d", text))
+    if not out_m and not exit_ok:
+        return False
+    output = out_m.group(1).strip() if out_m else ""
+    if out_m and any(p in output for p in _GENERIC_OUTPUT_PHRASES) and not re.search(r"\d", output):
+        return False
+    if re.search(r"(PF\d|99\.9|并发|可用性|首屏|≤\s*\d|<\s*\d)", text):
+        if not out_m or not re.search(r"\d", output):
+            return False
+    return True
 
 
 def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]]:

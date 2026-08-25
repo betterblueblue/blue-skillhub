@@ -600,5 +600,20 @@ class TestCLI(unittest.TestCase):
         self.assertEqual(1, code)
 
 
+class TestVerifyMethodUI(unittest.TestCase):
+    """V3 验证方式必须含 UI 特征，纯 API 不能单独构成端到端证据。"""
+
+    def test_pure_api_method_fails(self):
+        content = _content().replace("- 验证方式：手动走通", "- 验证方式：API 脚本")
+        result = _result(content, "V3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("API", result[2])
+
+    def test_e2e_method_passes(self):
+        content = _content().replace("- 验证方式：手动走通", "- 验证方式：E2E 测试")
+        result = _result(content, "V3")
+        self.assertEqual("PASS", result[1])
+
+
 if __name__ == "__main__":
     unittest.main()

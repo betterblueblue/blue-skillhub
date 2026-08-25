@@ -52,7 +52,7 @@ def _result(arch: str, design: str, intent: str, check_id: str) -> tuple[str, st
 class TestValidFixture(unittest.TestCase):
     def test_valid_files_pass_all_checks(self):
         results = validate(_arch_content(), _design_content(), _intent_content())
-        self.assertEqual(15, len(results))
+        self.assertEqual(16, len(results))
         failed = [(r[0], r[2]) for r in results if r[1] != "PASS"]
         self.assertFalse(failed, f"Unexpected failures: {failed}")
 
@@ -451,6 +451,23 @@ class TestX2CapabilityConsistency(unittest.TestCase):
 
     def test_matching_capabilities_passes(self):
         result = _result(_arch_content(), _design_content(), _intent_content(), "X2")
+        self.assertEqual("PASS", result[1])
+
+
+class TestDisplayContract(unittest.TestCase):
+    """D6: 每个能力必须有「数据→展示契约」且非空。"""
+
+    def test_missing_display_contract_fails(self):
+        content = _design_content().replace(
+            "- **数据→展示契约**：无（本能力不涉及状态/枚举/字典/图片字段）",
+            "- **X**：无",
+        )
+        result = _result(_arch_content(), content, _intent_content(), "D6")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("数据→展示契约", result[2])
+
+    def test_valid_display_contract_passes(self):
+        result = _result(_arch_content(), _design_content(), _intent_content(), "D6")
         self.assertEqual("PASS", result[1])
 
 

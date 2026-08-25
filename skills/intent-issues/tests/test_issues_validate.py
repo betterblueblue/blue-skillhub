@@ -71,7 +71,7 @@ def _result(issues: str, intent: str, check_id: str, arch: str = _ARCH_CONTENT) 
 class TestValidFixture(unittest.TestCase):
     def test_valid_issues_passes_all_checks(self):
         results = validate(_issues_content(), _intent_content(), "", _ARCH_CONTENT)
-        self.assertEqual(11, len(results))
+        self.assertEqual(12, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -366,6 +366,45 @@ class TestTemplateSync(unittest.TestCase):
         required = iv.REQUIRED_ISSUE_SUBSECTIONS + iv.COVERAGE_SUBSECTIONS
         missing = [s for s in required if s not in template]
         self.assertFalse(missing, f"模板缺少校验器要求的段落: {missing}")
+
+
+class TestAfkHITLTypeBan(unittest.TestCase):
+    """类型字段不得使用内部术语 AFK/HITL。"""
+
+    def test_afk_type_fails(self):
+        content = _issues_content().replace("- **类型**：自动完成", "- **类型**：AFK")
+        result = _result(content, _intent_content(), "V2")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("AFK/HITL", result[2])
+
+
+class TestCRUDCoverage(unittest.TestCase):
+    """V12: 数据管理类工单必须同时覆盖「新增」与「删除」。"""
+
+    def test_management_issue_without_crud_fails(self):
+        content = _issues_content().replace("## Issue 1: 生成交接记录功能", "## Issue 1: 服装档案管理")
+        result = _result(content, _intent_content(), "V12")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("新增", result[2])
+
+    def test_management_issue_missing_delete_fails(self):
+        content = _issues_content().replace("## Issue 1: 生成交接记录功能", "## Issue 1: 服装档案管理")
+        content = content.replace(
+            "- [ ] Then: 记录文件存在",
+            "- [ ] Then: 支持新增服装档案\n- [ ] Then: 记录文件存在",
+        )
+        result = _result(content, _intent_content(), "V12")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("删除", result[2])
+
+    def test_management_issue_with_crud_passes(self):
+        content = _issues_content().replace("## Issue 1: 生成交接记录功能", "## Issue 1: 服装档案管理")
+        content = content.replace(
+            "- [ ] Then: 记录文件存在",
+            "- [ ] Then: 支持新增、编辑、删除服装档案\n- [ ] Then: 记录文件存在",
+        )
+        result = _result(content, _intent_content(), "V12")
+        self.assertEqual("PASS", result[1])
 
 
 if __name__ == "__main__":

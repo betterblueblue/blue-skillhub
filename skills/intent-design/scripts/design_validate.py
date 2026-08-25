@@ -18,6 +18,7 @@
   D3: 「不做什么」非空
   D4: 不含代码特征词
   D5: 架构一致性核对表存在
+  D6: 每个能力有「数据→展示契约」且非空
   X1: design.md 引用的模块名都在 architecture.md 中定义
   X2: 两份文件引用的能力 ID 集合一致
 
@@ -480,6 +481,24 @@ def validate(
         results.append(("D5", "FAIL", "缺少架构一致性核对表"))
     else:
         results.append(("D5", "PASS", "架构一致性核对表存在"))
+
+    # D6: 「数据→展示契约」非空（机器值/图片字段的界面映射契约）
+    d6_errors: list[str] = []
+    for cap_id in sorted(retained_caps):
+        cap_text = _extract_cap_section(design_section2, cap_id)
+        if not cap_text:
+            d6_errors.append(f"{cap_id} 缺少功能设计节")
+            continue
+        display = _extract_field(cap_text, "数据→展示契约")
+        if display is None:
+            d6_errors.append(f"{cap_id} 缺少「数据→展示契约」字段")
+        elif not display.strip():
+            d6_errors.append(f"{cap_id} 的「数据→展示契约」为空")
+
+    if d6_errors:
+        results.append(("D6", "FAIL", "; ".join(d6_errors)))
+    else:
+        results.append(("D6", "PASS", f"全部 {len(retained_caps)} 项能力的「数据→展示契约」非空"))
 
     # ═══════════════════════════════════════════════════════════════════════
     # 跨文件检查 X1-X2
