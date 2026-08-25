@@ -11,6 +11,7 @@
 行为：
   - intent.md 必须存在（链路起点），缺失直接 FAIL
   - 其余文件按流水线顺序校验；尚未产出的标「跳过」（链路做到一半是常态）
+  - dev-record 全部工单 done 但 verify-record.md 未产出 → FAIL（验收不能被口头跳过）
   - 已产出但前置文件缺失的组合标 FAIL
   - 退出码：任一 FAIL → 1；全部 PASS / 合法跳过 → 0
 """
@@ -18,6 +19,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -41,6 +43,19 @@ PIPELINE = [
 ]
 
 
+def _dev_all_done(chain_dir: Path) -> bool:
+    """dev-record 是否已全部工单 done（链级门禁：完成后必须产出验收记录）。"""
+    dev_path = chain_dir / "dev-record.md"
+    issues_path = chain_dir / "issues.md"
+    if not dev_path.exists() or not issues_path.exists():
+        return False
+    dev_text = dev_path.read_text(encoding="utf-8", errors="replace")
+    issues_text = issues_path.read_text(encoding="utf-8", errors="replace")
+    done_count = len(re.findall(r"^-\s*状态[：:]\s*done", dev_text, re.MULTILINE | re.IGNORECASE))
+    issue_count = len(re.findall(r"^##\s+Issue\s+\d+", issues_text, re.MULTILINE))
+    return issue_count > 0 and done_count >= issue_count
+
+
 def main() -> int:
     if len(sys.argv) != 2:
         print("用法: python chain_validate.py /path/to/intent-chain/{链路目录}")
@@ -60,6 +75,9 @@ def main() -> int:
         if not target.exists():
             if inputs[0] == "intent.md":
                 rows.append((label, "FAIL", "intent.md 不存在——链路起点缺失"))
+                exit_code = 1
+            elif inputs[0] == "verify-record.md" and _dev_all_done(chain_dir):
+                rows.append((label, "FAIL", "dev-record 全部工单 done，但 verify-record.md 未产出"))
                 exit_code = 1
             else:
                 rows.append((label, "跳过", "尚未产出"))

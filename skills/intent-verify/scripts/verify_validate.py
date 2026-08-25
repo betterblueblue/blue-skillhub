@@ -7,7 +7,7 @@
 检查项：
   V1: 文件非空
   V2: 有回归验证段（全量测试命令和结果，结果必须为通过或不适用）
-  V3: 有端到端验收结果段（每条路径有 Given/When/Then 和验证方式）
+  V3: 有端到端验收结果段（每条路径有 Given/When/Then 和验证方式；INTENT 有设计标准时须带截图/Playwright 产物）
   V4: 每条路径所有 Then 已勾选且达到 V3
   V5: 有条件性验证段（性能验证和安全验证，不适用也要标注）
   V6: 最终复核完整（回归汇总、保留能力核对、验收路径逐条验证含 Then 全通过、条件性汇总、漂移复核、结论）
@@ -118,6 +118,27 @@ def _verify_method_check(path_content: str) -> tuple[bool, str]:
     return True, ""
 
 
+SCREENSHOT_MARK_RE = re.compile(r"截图[：:]\s*(\S+)")
+PLAYWRIGHT_ARTIFACT_RE = re.compile(r"Playwright\s*产物[：:]\s*(\S+)")
+
+
+def _has_ui_artifact(path_content: str, base_dir: Path | None) -> tuple[bool, str]:
+    """有设计标准时，V3 证据必须引用真实存在的截图或 Playwright 产物。"""
+    shot_m = SCREENSHOT_MARK_RE.search(path_content)
+    pw_m = PLAYWRIGHT_ARTIFACT_RE.search(path_content)
+    if not shot_m and not pw_m:
+        return False, "缺少截图/Playwright 产物证据（有设计标准时不能用「浏览器」或纯 API 冒充 UI 验证）"
+    rel = (shot_m or pw_m).group(1)
+    if base_dir is None:
+        return True, ""
+    resolved = Path(rel)
+    if not resolved.is_absolute():
+        resolved = base_dir / rel
+    if not resolved.exists():
+        return False, f"截图/Playwright 产物不存在: {rel}"
+    return True, ""
+
+
 def _all_thens_v3(path_content: str) -> bool:
     """检查路径中所有 Then/And 条目是否都已勾选且达到 V3。"""
     then_lines = _parse_then_lines(path_content)
@@ -167,7 +188,14 @@ def _intent_has_security_requirements(intent_content: str) -> bool:
     return bool(rows)
 
 
-def validate(verify_content: str, intent_content: str, architecture_content: str = "", design_content: str = "") -> list[tuple[str, str, str]]:
+def _intent_has_design_standards(intent_content: str) -> bool:
+    """INTENT.md 第 12 节是否有设计素材/UI 验收基线。"""
+    section = _intent_section(intent_content, "## 12. 设计标准")
+    rows = _table_rows(section, "设计素材 ID")
+    return bool(rows)
+
+
+def validate(verify_content: str, intent_content: str, architecture_content: str = "", design_content: str = "", base_dir: Path | None = None) -> list[tuple[str, str, str]]:
     """返回 (检查项, 结果, 说明)。"""
     results: list[tuple[str, str, str]] = []
 
@@ -223,6 +251,10 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
             method_ok, method_msg = _verify_method_check(path)
             if not method_ok:
                 v3_errors.append(f"{path_label} {method_msg}")
+            if _intent_has_design_standards(intent_content):
+                artifact_ok, artifact_msg = _has_ui_artifact(path, base_dir)
+                if not artifact_ok:
+                    v3_errors.append(f"{path_label} {artifact_msg}")
         if v3_errors:
             results.append(("V3", "FAIL", "; ".join(v3_errors)))
         else:
@@ -500,7 +532,7 @@ def main() -> int:
     intent_content = intent_path.read_text(encoding="utf-8")
     architecture_content = arch_path.read_text(encoding="utf-8")
     design_content = design_path.read_text(encoding="utf-8")
-    results = validate(verify_content, intent_content, architecture_content, design_content)
+    results = validate(verify_content, intent_content, architecture_content, design_content, base_dir=verify_path.parent)
 
     print(f"\n{'=' * 60}")
     print(f"VERIFY-RECORD 校验结果: {verify_path}")

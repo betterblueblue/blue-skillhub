@@ -15,7 +15,7 @@ from pathlib import Path
 SCRIPT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPT_DIR))
 try:
-    from chain_validate import main
+    from chain_validate import _dev_all_done, main
 finally:
     sys.path.pop(0)
 
@@ -62,6 +62,18 @@ class TestChainValidate(unittest.TestCase):
         chain = _make_chain_dir()
         (chain / "prd.md").write_text("# PRD\n", encoding="utf-8")
         self.assertEqual(1, _run_main(str(chain)))
+
+    def test_dev_all_done_detection(self):
+        chain = _make_chain_dir()
+        (chain / "issues.md").write_text("## Issue 1: A\n## Issue 2: B\n", encoding="utf-8")
+        (chain / "dev-record.md").write_text("- 状态：done\n- 状态：done\n", encoding="utf-8")
+        self.assertTrue(_dev_all_done(chain))
+
+    def test_dev_not_all_done(self):
+        chain = _make_chain_dir()
+        (chain / "issues.md").write_text("## Issue 1: A\n## Issue 2: B\n", encoding="utf-8")
+        (chain / "dev-record.md").write_text("- 状态：done\n- 状态：未通过\n", encoding="utf-8")
+        self.assertFalse(_dev_all_done(chain))
 
 
 if __name__ == "__main__":

@@ -16,7 +16,7 @@
   V9: INTENT.md 有安全要求时，所有安全要求 ID 被至少一个工单引用（交叉检查 INTENT.md）
   V10: PRD 中每条验收路径的 Then/And 条件数量不少于工单中对应路径的条目数（交叉检查 PRD）
   V11: 工单的"涉及模块"引用的模块名必须在 architecture.md 第 2 节中定义（强制检查 architecture.md）
-  V12: 数据管理类工单（标题/做什么含 管理/维护/配置/档案/账号 等）必须同时覆盖「新增」与「删除」
+  V12: 数据管理类工单（标题/做什么含 档案/配置/模板/账号/角色/商品/规则）必须分条覆盖新增/编辑/删除，显式「不做什么」可豁免单动作
 
 本脚本不能验证工单的技术可行性，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -61,9 +61,11 @@ PERF_ID_RE = re.compile(r"PF\d{2,}")
 SECURITY_ID_RE = re.compile(r"SF\d{2,}")
 ISSUE_HEADING_RE = re.compile(r"^##\s+Issue\s+\d+", re.MULTILINE)
 ISSUE_TYPE_RE = re.compile(r"^-\s*\*\*类型\*\*[：:]\s*(.+)$", re.MULTILINE)
-MANAGE_HINT_RE = re.compile(r"管理|维护|配置|档案|规则|模板|账号|角色")
-CREATE_RE = re.compile(r"新增|增/删/改/查")
-DELETE_RE = re.compile(r"删除|增/删/改/查")
+MANAGE_HINT_RE = re.compile(r"档案|配置|模板|账号|角色|商品|规则")
+CREATE_RE = re.compile(r"新增")
+EDIT_RE = re.compile(r"编辑")
+DELETE_RE = re.compile(r"删除")
+THEN_LINE_RE = re.compile(r"^\s*-\s*\[[ xX]\]\s*(?:Then|And):\s*(.+)$", re.MULTILINE)
 
 # PRD Acceptance Criteria 中的 Then/And 行
 PRD_THEN_RE = re.compile(r"^\s*-\s*\*\*Then\*\*\s*(.+)$", re.MULTILINE)
@@ -445,7 +447,7 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
             else:
                 results.append(("V11", "PASS", f"全部工单的涉及模块引用了架构文档中定义的模块"))
 
-    # V12: 数据管理类工单必须同时覆盖「新增」与「删除」（防止"只读切片"冒充管理能力）
+    # V12: 数据管理类工单必须分条覆盖新增/编辑/删除；显式「不做什么」可豁免单动作
     v12_errors: list[str] = []
     for i, issue in enumerate(issues, 1):
         title_match = re.search(r"^##\s+Issue\s+\d+:\s*(.+)$", issue, re.MULTILINE)
@@ -455,16 +457,30 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
         crit_match = re.search(r"### 验收标准\s*\n(.*?)(?=^###\s+|\Z)", issue, re.MULTILINE | re.DOTALL)
         crit_text = crit_match.group(1) if crit_match else ""
         if re.search(MANAGE_HINT_RE, title + do_text):
-            has_create = bool(CREATE_RE.search(crit_text))
-            has_delete = bool(DELETE_RE.search(crit_text))
-            if not has_create or not has_delete:
-                v12_errors.append(
-                    f"Issue {i} 疑似管理/维护类工单，但验收标准未同时覆盖「新增」与「删除」"
-                )
+            then_texts = [m.group(1) for m in THEN_LINE_RE.finditer(crit_text)]
+            create_lines = {j for j, t in enumerate(then_texts) if CREATE_RE.search(t)}
+            edit_lines = {j for j, t in enumerate(then_texts) if EDIT_RE.search(t)}
+            delete_lines = {j for j, t in enumerate(then_texts) if DELETE_RE.search(t)}
+            not_do_match = re.search(r"###\s*不做什么\s*\n(.*?)(?=^###\s+|\Z)", issue, re.MULTILINE | re.DOTALL)
+            not_do_text = not_do_match.group(1) if not_do_match else ""
+
+            missing: list[str] = []
+            if not create_lines and not re.search(r"(不支持|不做|无需)\s*新增", not_do_text):
+                missing.append("缺「新增」")
+            if not edit_lines and not re.search(r"(不支持|不做|无需)\s*编辑", not_do_text):
+                missing.append("缺「编辑」")
+            if not delete_lines and not re.search(r"(不支持|不做|无需)\s*删除", not_do_text):
+                missing.append("缺「删除」")
+            present_actions = (1 if create_lines else 0) + (1 if edit_lines else 0) + (1 if delete_lines else 0)
+            present_lines = create_lines | edit_lines | delete_lines
+            if not missing and len(present_lines) < present_actions:
+                missing.append("写操作未分条（新增/编辑/删除需各一条 Then）")
+            if missing:
+                v12_errors.append(f"Issue {i} 疑似管理/维护类工单: {'; '.join(missing)}")
     if v12_errors:
         results.append(("V12", "FAIL", "; ".join(v12_errors)))
     else:
-        results.append(("V12", "PASS", "数据管理类工单均同时覆盖「新增」与「删除」"))
+        results.append(("V12", "PASS", "数据管理类工单均分条覆盖新增/编辑/删除"))
 
     return results
 

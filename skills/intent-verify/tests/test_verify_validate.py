@@ -20,7 +20,7 @@ FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
 
 sys.path.insert(0, str(SCRIPT_DIR))
 try:
-    from verify_validate import validate, main
+    from verify_validate import _has_ui_artifact, _intent_has_design_standards, validate, main
 finally:
     sys.path.pop(0)
 
@@ -613,6 +613,46 @@ class TestVerifyMethodUI(unittest.TestCase):
         content = _content().replace("- 验证方式：手动走通", "- 验证方式：E2E 测试")
         result = _result(content, "V3")
         self.assertEqual("PASS", result[1])
+
+
+class TestDesignStandardArtifact(unittest.TestCase):
+    """有设计标准时 V3 必须带真实截图/Playwright 产物。"""
+
+    _DESIGN_INTENT = (
+        "## 12. 设计标准\n\n"
+        "| 设计素材 ID | 设计素材 | 路径 | 覆盖范围 | 确认 |\n"
+        "|---|---|---|---|---|\n"
+        '| D01 | 可点原型 | prototype/screens/main.html | 首页 | "按原型做" |\n'
+    )
+
+    def test_intent_has_design_standards_true(self):
+        self.assertTrue(_intent_has_design_standards(self._DESIGN_INTENT))
+
+    def test_intent_has_design_standards_false(self):
+        self.assertFalse(_intent_has_design_standards("## 12. 设计标准\n\n无设计标准素材。"))
+
+    def test_artifact_missing_fails(self):
+        ok, msg = _has_ui_artifact("- [x] Then: X — V3，手动走通", None)
+        self.assertFalse(ok)
+        self.assertIn("截图", msg)
+
+    def test_artifact_marker_present_without_base_passes(self):
+        ok, _ = _has_ui_artifact("- [x] Then: X — V3，截图：shots/p01.png", None)
+        self.assertTrue(ok)
+
+    def test_artifact_file_exists_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            (base / "shots").mkdir()
+            (base / "shots" / "p01.png").write_bytes(b"x")
+            ok, _ = _has_ui_artifact("- [x] Then: X — V3，截图：shots/p01.png", base)
+            self.assertTrue(ok)
+
+    def test_artifact_file_missing_fails(self):
+        with tempfile.TemporaryDirectory() as td:
+            ok, msg = _has_ui_artifact("- [x] Then: X — V3，截图：shots/p01.png", Path(td))
+            self.assertFalse(ok)
+            self.assertIn("不存在", msg)
 
 
 if __name__ == "__main__":

@@ -379,7 +379,7 @@ class TestAfkHITLTypeBan(unittest.TestCase):
 
 
 class TestCRUDCoverage(unittest.TestCase):
-    """V12: 数据管理类工单必须同时覆盖「新增」与「删除」。"""
+    """V12: 数据管理类工单必须分条覆盖新增/编辑/删除；显式「不做什么」可豁免。"""
 
     def test_management_issue_without_crud_fails(self):
         content = _issues_content().replace("## Issue 1: 生成交接记录功能", "## Issue 1: 服装档案管理")
@@ -397,11 +397,34 @@ class TestCRUDCoverage(unittest.TestCase):
         self.assertEqual("FAIL", result[1])
         self.assertIn("删除", result[2])
 
-    def test_management_issue_with_crud_passes(self):
+    def test_management_issue_crud_in_one_line_fails(self):
         content = _issues_content().replace("## Issue 1: 生成交接记录功能", "## Issue 1: 服装档案管理")
         content = content.replace(
             "- [ ] Then: 记录文件存在",
             "- [ ] Then: 支持新增、编辑、删除服装档案\n- [ ] Then: 记录文件存在",
+        )
+        result = _result(content, _intent_content(), "V12")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("分条", result[2])
+
+    def test_management_issue_exempt_delete_passes(self):
+        content = _issues_content().replace("## Issue 1: 生成交接记录功能", "## Issue 1: 服装档案管理")
+        content = content.replace(
+            "- [ ] Then: 记录文件存在",
+            "- [ ] Then: 支持新增服装档案\n- [ ] Then: 支持编辑服装档案\n- [ ] Then: 记录文件存在",
+        )
+        content = content.replace(
+            "### 前置依赖",
+            "### 不做什么\n\n- 不支持删除：保留审计记录\n\n### 前置依赖",
+        )
+        result = _result(content, _intent_content(), "V12")
+        self.assertEqual("PASS", result[1])
+
+    def test_management_issue_with_crud_passes(self):
+        content = _issues_content().replace("## Issue 1: 生成交接记录功能", "## Issue 1: 服装档案管理")
+        content = content.replace(
+            "- [ ] Then: 记录文件存在",
+            "- [ ] Then: 支持新增服装档案\n- [ ] Then: 支持编辑服装档案\n- [ ] Then: 支持删除服装档案\n- [ ] Then: 记录文件存在",
         )
         result = _result(content, _intent_content(), "V12")
         self.assertEqual("PASS", result[1])

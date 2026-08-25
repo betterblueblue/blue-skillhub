@@ -222,6 +222,15 @@ class TestGenericOutputRejected(unittest.TestCase):
         result = _result(content, _issues_content(), "V3")
         self.assertEqual("PASS", result[1])
 
+    def test_build_output_as_ui_evidence_fails(self):
+        content = _dev_content().replace(
+            "- [x] Then: 记录文件存在 — V2，命令 `npm test` 输出: 4 passed",
+            "- [x] Then: 对照 App原型_C端.html 结构一致 — V2，命令 `npx vite build` 输出: 60 modules transformed",
+        )
+        result = _result(content, _issues_content(), "V3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("命令输出", result[2])
+
 
 if __name__ == "__main__":
     unittest.main()

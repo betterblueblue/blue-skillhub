@@ -108,6 +108,9 @@ _GENERIC_OUTPUT_PHRASES = (
     "无回归",
 )
 
+_UI_COMPARE_RE = re.compile(r"对照|结构一致|原型")
+_BUILD_OUTPUT_RE = re.compile(r"modules transformed|vite build|webpack compiled|built in|transformed", re.IGNORECASE)
+
 
 def _has_command_output(text: str) -> bool:
     """检查 Then 文本中是否同时包含命令和输出证据。
@@ -125,6 +128,8 @@ def _has_command_output(text: str) -> bool:
         return False
     output = out_m.group(1).strip() if out_m else ""
     if out_m and any(p in output for p in _GENERIC_OUTPUT_PHRASES) and not re.search(r"\d", output):
+        return False
+    if _UI_COMPARE_RE.search(text) and _BUILD_OUTPUT_RE.search(output):
         return False
     if re.search(r"(PF\d|99\.9|并发|可用性|首屏|≤\s*\d|<\s*\d)", text):
         if not out_m or not re.search(r"\d", output):
