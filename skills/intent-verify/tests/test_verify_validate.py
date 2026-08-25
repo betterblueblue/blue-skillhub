@@ -670,7 +670,7 @@ class TestPageListCheck(unittest.TestCase):
         "### 页面清单逐页核对\n\n"
         "| 页面 ID | 页面名称 | 实现位置 | 证据 |\n"
         "|---|---|---|---|\n"
-        "| PG01 | 首页 | web/src/views/Home.vue | 截图 |\n"
+        "| PG01 | 首页 | web/src/views/Home.vue | 截图：shots/p01.png |\n"
     )
 
     def test_missing_page_check_fails(self):
@@ -680,10 +680,21 @@ class TestPageListCheck(unittest.TestCase):
         self.assertEqual("FAIL", v9[0][1])
         self.assertIn("缺少页面核对", v9[0][2])
 
-    def test_page_check_passes(self):
-        results = validate(self._PAGE_CHECK, self._PAGE_INTENT, _ARCH_CONTENT, _DESIGN_CONTENT)
+    def test_page_check_without_artifact_fails(self):
+        verify = self._PAGE_CHECK.replace("截图：shots/p01.png", "截图")
+        results = validate(verify, self._PAGE_INTENT, _ARCH_CONTENT, _DESIGN_CONTENT)
         v9 = [r for r in results if r[0] == "V9"]
-        self.assertEqual("PASS", v9[0][1])
+        self.assertEqual("FAIL", v9[0][1])
+        self.assertIn("证据不实", v9[0][2])
+
+    def test_page_check_passes(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            (base / "shots").mkdir()
+            (base / "shots" / "p01.png").write_bytes(b"x")
+            results = validate(self._PAGE_CHECK, self._PAGE_INTENT, _ARCH_CONTENT, _DESIGN_CONTENT, base_dir=base)
+            v9 = [r for r in results if r[0] == "V9"]
+            self.assertEqual("PASS", v9[0][1])
 
 
 if __name__ == "__main__":

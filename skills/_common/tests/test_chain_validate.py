@@ -7,6 +7,8 @@ Run:
 
 from __future__ import annotations
 
+import contextlib
+import io
 import sys
 import tempfile
 import unittest
@@ -74,6 +76,17 @@ class TestChainValidate(unittest.TestCase):
         (chain / "issues.md").write_text("## Issue 1: A\n## Issue 2: B\n", encoding="utf-8")
         (chain / "dev-record.md").write_text("- 状态：done\n- 状态：未通过\n", encoding="utf-8")
         self.assertFalse(_dev_all_done(chain))
+
+    def test_dev_done_without_verify_record_exits_1(self):
+        chain = _make_chain_dir()
+        (chain / "issues.md").write_text("## Issue 1: A\n", encoding="utf-8")
+        (chain / "dev-record.md").write_text("- 状态：done\n", encoding="utf-8")
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = _run_main(str(chain))
+        self.assertEqual(1, code)
+        self.assertIn("verify-record.md", buf.getvalue())
+        self.assertIn("FAIL", buf.getvalue())
 
 
 if __name__ == "__main__":

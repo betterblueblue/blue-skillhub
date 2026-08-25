@@ -695,8 +695,11 @@ def validate(content: str) -> list[tuple[str, str, str]]:
     # V16: 页级还原要求（1:1/全部页面/逐页）必须有页面清单
     page_section = _section(content, "## 17. 页面清单")
     intro = _section(content, "## 1. 一句话意图")
+    confirm_section = _section(content, "## 9. 用户确认记录")
+    anchor_record = _section(content, "## 11. 锚定原始记录")
+    page_scope_text = intro + critical_section + confirm_section + anchor_record
     page_level_required = bool(
-        re.search(r"1\s*[:：]\s*1|全部页面|逐页|每个页面|所有页面", intro + critical_section)
+        re.search(r"1\s*[:：]\s*1\s*(还原|复刻|照抄)|(全部页面|所有页面)\s*(还原|复刻|照抄)|逐页", page_scope_text)
     )
     page_rows = _table_rows(page_section, "页面 ID")
     page_errors: list[str] = []

@@ -521,8 +521,12 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                 continue
             pg_id = row[0].strip()
             verify_page_ids.add(pg_id)
-            if not row[2].strip() or not row[3].strip():
-                page_errors.append(f"页面 {pg_id} 缺少实现位置或证据")
+            if not row[2].strip():
+                page_errors.append(f"页面 {pg_id} 缺少实现位置")
+                continue
+            artifact_ok, artifact_msg = _has_ui_artifact(row[3], base_dir)
+            if not artifact_ok:
+                page_errors.append(f"页面 {pg_id} 证据不实: {artifact_msg}")
         missing = intent_page_ids - verify_page_ids
         if missing:
             page_errors.append(f"缺少页面核对: {sorted(missing)}")

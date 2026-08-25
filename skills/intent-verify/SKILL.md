@@ -83,6 +83,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
    - 第四优先级：运行 API 脚本验证接口行为（curl / fetch / httpie）——但 API 结果只能作为 UI 验证的补充证据，不能单独构成 V3。
    - 都不行 → 标"无法验证"，提示用户。
 5. **每条路径必须有 V3 证据**——实际走通的结果，不能只写"应该没问题"。
+6. **有设计标准时（INTENT 第 12 节有素材），路径证据必须写 `截图：{相对链路目录的路径}` 或 `Playwright 产物：{路径}`，且文件必须真实存在**；只写「浏览器」「前端已渲染」不算。
 
 输出：每条路径的 V3 验证结果。
 
@@ -118,7 +119,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 ### Phase 6：完成
 
-`verify-record.md` 已写入 `intent-chain/{链路目录}/`。链路全部走完。后续如需变更，使用 impact 做影响分析；如需新增功能，从 intent-anchor 重新开始。
+`verify-record.md` 已写入 `intent-chain/{链路目录}/`。**交接前必须运行链级校验器 `skills/_common/chain_validate.py`（传入链路目录），全部 PASS 或合法跳过才允许结束；任一 FAIL 不得宣告链路走完。** 链路走完后，后续如需变更，使用 impact 做影响分析；如需新增功能，从 intent-anchor 重新开始。
 
 ## 轻量档
 
@@ -163,6 +164,7 @@ INTENT.md 第 2 节标注轻量档时，本 skill 流程不变——全量回归
    - 条件性验证结果汇总
    - 漂移复核
    - 技术漂移复核（模块名 / 在 architecture.md 中 / 状态 / 说明 四列表格）
+   - 页面清单逐页核对（INTENT 第 17 节有页面清单时必填）
    - 结论
 
 ## 文件存放
