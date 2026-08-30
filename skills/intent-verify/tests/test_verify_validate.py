@@ -68,12 +68,44 @@ def _result(content: str, check_id: str, arch: str = _ARCH_CONTENT) -> tuple[str
 class TestValidFixture(unittest.TestCase):
     def test_valid_verify_record_passes_all_checks(self):
         results = validate(_content(), _intent(), _ARCH_CONTENT, _DESIGN_CONTENT)
-        self.assertEqual(9, len(results))
+        self.assertEqual(10, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
         )
 
+
+class TestDefectGate(unittest.TestCase):
+    """V10 缺陷闭环门禁:fixture 自带缺陷清单节,替换其数据行来构造场景。"""
+
+    ROW = "| FIX-001 | 低 | 营收导出日期格式优化 | 导出样例 | fixed(复验通过) |"
+
+    def _with_defects(self, row: str) -> str:
+        return _content().replace(self.ROW, row, 1)
+
+    def test_missing_defect_list_fails(self):
+        # 整节缺失(连表头一起删)才触发 FAIL;仅空表=已登记零缺陷,合法
+        content = _content().replace(
+            "\n## 缺陷清单\n\n| 缺陷 ID | 严重度 | 描述 | 证据 | 状态 |\n|---|---|---|---|---|\n"
+            + self.ROW,
+            "",
+            1,
+        )
+        check_id, status, message = _result(content, "V10")
+        self.assertEqual("FAIL", status)
+        self.assertIn("缺少缺陷清单", message)
+
+    def test_high_open_defect_blocks(self):
+        content = self._with_defects("| FIX-001 | 高 | 超卖 | 50单/库存-40 | open |")
+        check_id, status, message = _result(content, "V10")
+        self.assertEqual("FAIL", status)
+        self.assertIn("阻止交付", message)
+        self.assertIn("FIX-001", message)
+
+    def test_high_fixed_passes(self):
+        content = self._with_defects("| FIX-001 | 高 | 超卖 | 50单/库存-40 | fixed(复验通过) |")
+        check_id, status, message = _result(content, "V10")
+        self.assertEqual("PASS", status)
 
 class TestNonEmpty(unittest.TestCase):
     def test_empty_file_fails(self):
@@ -305,8 +337,8 @@ class TestCrossValidation(unittest.TestCase):
             "- INTENT.md/PRD 中是否有安全要求：是",
             "- INTENT.md/PRD 中是否有安全要求：否",
         ).replace(
-            "- 结果：通过\n\n---\n\n## 最终复核",
-            "- 结果：不适用\n\n---\n\n## 最终复核",
+            "- 结果：通过\n\n---\n\n## 缺陷清单",
+            "- 结果：不适用\n\n---\n\n## 缺陷清单",
         )
         result = _result(content, "V7")
         self.assertEqual("FAIL", result[1])

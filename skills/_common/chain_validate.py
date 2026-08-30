@@ -38,6 +38,8 @@ PIPELINE = [
      ["issues.md", "intent.md", "prd.md", "architecture.md"]),
     ("intent-dev/scripts/dev_validate.py", "dev-record.md",
      ["dev-record.md", "issues.md"]),
+    ("intent-adversarial/scripts/adversarial_validate.py", "adversarial-record.md",
+     ["adversarial-record.md", "intent.md"]),
     ("intent-verify/scripts/verify_validate.py", "verify-record.md",
      ["verify-record.md", "intent.md", "architecture.md", "design.md"]),
 ]
@@ -75,6 +77,9 @@ def main() -> int:
         if not target.exists():
             if inputs[0] == "intent.md":
                 rows.append((label, "FAIL", "intent.md 不存在——链路起点缺失"))
+                exit_code = 1
+            elif inputs[0] == "adversarial-record.md" and _dev_all_done(chain_dir):
+                rows.append((label, "FAIL", "dev-record 全部工单 done，但 adversarial-record.md 未产出——对抗性验证（安全攻击/性能/并发一致性）不能被跳过"))
                 exit_code = 1
             elif inputs[0] == "verify-record.md" and _dev_all_done(chain_dir):
                 rows.append((label, "FAIL", "dev-record 全部工单 done，但 verify-record.md 未产出"))

@@ -71,11 +71,43 @@ def _result(issues: str, intent: str, check_id: str, arch: str = _ARCH_CONTENT) 
 class TestValidFixture(unittest.TestCase):
     def test_valid_issues_passes_all_checks(self):
         results = validate(_issues_content(), _intent_content(), "", _ARCH_CONTENT)
-        self.assertEqual(12, len(results))
+        self.assertEqual(13, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
         )
+
+
+class TestTruthTraceability(unittest.TestCase):
+    def _intent_with_pages(self, trace_rows: str) -> tuple[str, str]:
+        intent = _intent_content() + (
+            "\n## 17. 页面清单\n\n| 页面 ID | 页面名称 | 来源 | 覆盖能力 ID |\n|---|---|---|---|\n"
+            "| PG001 | 首页 | Excel 行1 | C01 |\n| PG002 | 列表页 | Excel 行7 | C02 |\n"
+        )
+        issues = _issues_content() + (
+            "\n### 真值追溯\n\n| 页面 ID | 承接工单 |\n|---|---|\n"
+            + trace_rows
+        )
+        return issues, intent
+
+    def test_full_traceability_passes(self):
+        issues, intent = self._intent_with_pages("| PG001 | Issue 1 |\n| PG002 | Issue 1 |\n")
+        check_id, status, summary = _result(issues, intent, "V13", _ARCH_CONTENT)
+        self.assertEqual("PASS", status)
+        self.assertIn("全部映射", summary)
+
+    def test_missing_page_fails(self):
+        issues, intent = self._intent_with_pages("| PG001 | Issue 1 |\n")
+        check_id, status, message = _result(issues, intent, "V13", _ARCH_CONTENT)
+        self.assertEqual("FAIL", status)
+        self.assertIn("PG002 未出现", message)
+
+    def test_unknown_page_or_issue_fails(self):
+        issues, intent = self._intent_with_pages("| PG001 | Issue 1 |\n| PG999 | Issue 1 |\n| PG002 | Issue 999 |\n")
+        check_id, status, message = _result(issues, intent, "V13", _ARCH_CONTENT)
+        self.assertEqual("FAIL", status)
+        self.assertIn("未知页面", message)
+        self.assertIn("工单不存在", message)
 
 
 class TestRequiredSubsections(unittest.TestCase):

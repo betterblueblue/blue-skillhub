@@ -540,6 +540,25 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
     else:
         results.append(("V9", "PASS", "无页面级要求，不适用"))
 
+    # V10: 缺陷清单——存在未修复高危缺陷时 FAIL（验收缺陷闭环门禁，阻止交付）
+    defect_section = _section(verify_content, "## 缺陷清单")
+    if not defect_section and _section(verify_content, "## 4.6 缺陷清单"):
+        defect_section = _section(verify_content, "## 4.6 缺陷清单")
+    if not defect_section:
+        results.append(("V10", "FAIL", "缺少缺陷清单节（验收发现的缺陷必须逐条登记）"))
+    else:
+        defect_rows = _table_rows(defect_section, "缺陷 ID")
+        print("[dbg] defect_rows:", defect_rows)
+        high_open = [
+            row[0] for row in defect_rows
+            if len(row) >= 5 and "高" in row[1] and "fixed" not in row[4].lower()
+        ]
+        if high_open:
+            results.append(("V10", "FAIL", f"高危缺陷未修复，阻止交付: {', '.join(high_open)}"))
+        else:
+            n = len([row for row in defect_rows if row and row[0].startswith("FIX")])
+            results.append(("V10", "PASS", f"缺陷清单完整，无未修复高危缺陷（共 {n} 条）"))
+
     return results
 
 

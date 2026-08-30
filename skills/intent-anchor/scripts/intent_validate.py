@@ -695,9 +695,13 @@ def validate(content: str) -> list[tuple[str, str, str]]:
     # V16: 页级还原要求（1:1/全部页面/逐页）必须有页面清单
     page_section = _section(content, "## 17. 页面清单")
     intro = _section(content, "## 1. 一句话意图")
+    decisions_section = _section(content, "## 3. 证据来源")
     confirm_section = _section(content, "## 9. 用户确认记录")
     anchor_record = _section(content, "## 11. 锚定原始记录")
-    page_scope_text = intro + critical_section + confirm_section + anchor_record
+    # 触发面覆盖（9a5f0c4 曾收窄，租衣摄影复盘实测收窄导致漏报）：一句话意图、
+    # 证据来源（用户常把「92 页功能清单/逐页还原」登记在此）、不可妥协项、
+    # 用户确认记录、锚定原始记录
+    page_scope_text = intro + decisions_section + critical_section + confirm_section + anchor_record
     page_level_required = bool(
         re.search(r"1\s*[:：]\s*1\s*(还原|复刻|照抄)|(全部页面|所有页面)\s*(还原|复刻|照抄)|逐页", page_scope_text)
     )
@@ -724,13 +728,55 @@ def validate(content: str) -> list[tuple[str, str, str]]:
 
     if page_level_required and not page_ids:
         page_errors.append("用户要求 1:1/全部页面/逐页还原，但第 17 节页面清单为空")
+    # 行数核对：全文声明了总页数（如「92 页」）而清单行数明显不足 → WARN（源材料可能含非页行，不作 FAIL）
+    declared_pages = [int(m.group(1)) for m in re.finditer(r"(\d+)\s*页", content)]
+    page_warns: list[str] = []
+    if page_level_required and page_ids and declared_pages:
+        expected = max(declared_pages)
+        if len(page_ids) < expected:
+            page_warns.append(
+                f"全文声明最多 {expected} 页，第 17 节仅 {len(page_ids)} 行——若源材料确为逐页清单，请核对是否有漏页"
+            )
     if page_errors:
         results.append(("V16", "FAIL", "；".join(page_errors)))
+    elif page_warns:
+        results.append(("V16", "WARN", "；".join(page_warns)))
     else:
         results.append(("V16", "PASS", "页面清单与页级还原要求一致"))
 
-    return results
+    # V17: 第 15 节并发一致性表（CC 类）——存在则结构完整，缺失必须显式声明"无"
+    # 第 15 节内所有非 PF 行都按 CC 规则校验（ID 写错的行不能漏检）
+    cc_declared_none = bool(re.search(r"无并发一致性要求", perf_section))
+    cc_rows = _table_rows(perf_section, "要求 ID")
+    cc_rows = [row for row in cc_rows if row and not row[0].startswith("PF")]
+    cc_errors: list[str] = []
+    cc_ids: set[str] = set()
+    for index, row in enumerate(cc_rows, 1):
+        if len(row) != 4:
+            cc_errors.append(f"并发一致性第 {index} 行应有 4 列")
+            continue
+        cc_id, assertion, cap_refs, confirm = row
+        if cc_id in cc_ids:
+            cc_errors.append(f"一致性要求 ID 重复：{cc_id}")
+        cc_ids.add(cc_id)
+        if not re.fullmatch(r"CC\d+", cc_id):
+            cc_errors.append(f"一致性要求 ID 非法（应为 CC+N）：{cc_id}")
+        if not assertion or not confirm:
+            cc_errors.append(f"{cc_id} 缺少断言内容或用户确认")
+        if any(_has_placeholder(v) for v in row):
+            cc_errors.append(f"{cc_id} 仍含模板占位符")
+        referenced_caps = _split_evidence_ids(cap_refs)
+        if referenced_caps and any(item not in capabilities for item in referenced_caps):
+            cc_errors.append(f"{cc_id} 引用了未知能力 ID：{cap_refs}")
+    if not cc_rows and not cc_declared_none:
+        cc_errors.append("第 15 节缺少并发一致性表，且未显式声明「无并发一致性要求」")
+    if cc_errors:
+        results.append(("V17", "FAIL", "；".join(cc_errors)))
+    else:
+        summary = f"{len(cc_ids)} 条并发一致性断言" if cc_ids else "无并发一致性要求（已声明）"
+        results.append(("V17", "PASS", summary))
 
+    return results
 
 def _path_error(intent_path: Path) -> str | None:
     if intent_path.name != "intent.md":

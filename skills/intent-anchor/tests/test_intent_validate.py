@@ -69,11 +69,64 @@ def _replace_subsection(content: str, heading: str, body: str) -> str:
 class TestValidFixture(unittest.TestCase):
     def test_current_fixture_passes_all_checks(self):
         results = validate(_valid_content())
-        self.assertEqual(16, len(results))
+        self.assertEqual(17, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
         )
+
+    def test_missing_concurrency_consistency_table_fails(self):
+        # V17: 第 15 节既无 CC 表也未声明「无并发一致性要求」→ FAIL
+        content = _replace_section(
+            _valid_content(),
+            "## 15. 性能要求",
+            "## 15. 性能要求\n\n无性能要求。用户明确确认：“没有性能要求”。\n",
+        )
+        check_id, status, message = _result(content, "V17")
+        self.assertEqual("FAIL", status)
+        self.assertIn("并发一致性", message)
+
+    def test_declared_no_concurrency_consistency_passes(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 15. 性能要求",
+            "无性能要求。用户明确确认：“没有性能要求”。\n\n"
+            "无并发一致性要求。用户明确确认：“没有并发场景”。",
+        )
+        check_id, status, summary = _result(content, "V17")
+        self.assertEqual("PASS", status)
+        self.assertIn("已声明", summary)
+
+    def test_concurrency_rows_with_bad_id_or_placeholder_fail(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 15. 性能要求",
+            "| 要求 ID | 性能要求 | 对应能力 | 用户确认 |\n|---|---|---|---|\n"
+            "| CC01 | {断言内容} | C01 | 确认 |\n"
+            "| 一致性1 | 库存不为负 | C01 | 确认 |",
+        )
+        check_id, status, message = _result(content, "V17")
+        self.assertEqual("FAIL", status)
+        self.assertIn("仍含模板占位符", message)
+        self.assertIn("ID 非法", message)
+
+    def test_page_list_declared_pages_warn(self):
+        # V16: 全文声明「92 页」而清单仅 2 行 → WARN（不 FAIL，源材料可能含非页行）
+        content = _valid_content()
+        # fixture 无页级要求场景：先声明页级要求 + 追加 17 节清单 + 注入「92 页」规模声明
+        content = content.replace(
+            "## 3. 证据来源",
+            "## 3. 证据来源\n\n来源功能清单共 92 页，要求逐页还原。",
+            1,
+        )
+        content += (
+            "\n## 17. 页面清单\n\n| 页面 ID | 页面名称 | 来源 | 覆盖能力 ID |\n|---|---|---|---|\n"
+            "| PG001 | 首页 | 源材料 行1 | C01 |\n| PG002 | 列表页 | 源材料 行2 | C02 |\n\n"
+            "用户确认：“清单已逐页核对”。\n"
+        )
+        check_id, status, message = _result(content, "V16")
+        self.assertEqual("WARN", status)
+        self.assertIn("92 页", message)
 
     def test_valid_fixture_has_no_percentage_gate(self):
         content = _valid_content()

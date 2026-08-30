@@ -17,6 +17,7 @@
   V10: PRD 中每条验收路径的 Then/And 条件数量不少于工单中对应路径的条目数（交叉检查 PRD）
   V11: 工单的"涉及模块"引用的模块名必须在 architecture.md 第 2 节中定义（强制检查 architecture.md）
   V12: 数据管理类工单（标题/做什么含 档案/配置/模板/账号/角色/商品/规则）必须分条覆盖新增/编辑/删除，显式「不做什么」可豁免单动作
+  V13: 真值追溯——INTENT 有页面清单时，「真值追溯」节必须把每个页面 ID 映射到存在的工单，且不得包含未知页面
 
 本脚本不能验证工单的技术可行性，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -481,6 +482,37 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
         results.append(("V12", "FAIL", "; ".join(v12_errors)))
     else:
         results.append(("V12", "PASS", "数据管理类工单均分条覆盖新增/编辑/删除"))
+
+    # V13: 真值追溯——INTENT 有页面清单时，每个页面 ID 必须在「真值追溯」节映射到工单
+    page_section = _section(intent_content, "## 17. 页面清单")
+    page_ids = {
+        row[0]
+        for row in _table_rows(page_section, "页面 ID")
+        if row and row[0] and not _has_placeholder(row[0])
+    }
+    if page_ids:
+        trace_section = _section(issues_content, "### 真值追溯")
+        trace_rows = _table_rows(trace_section, "页面 ID")
+        traced_pages = {row[0] for row in trace_rows if row and row[0]}
+        covered_issue_ids = set(re.findall(r"^##\s+Issue\s+(\d+)", issues_content, re.MULTILINE))
+        v13_errors: list[str] = []
+        for pg in sorted(page_ids - traced_pages):
+            v13_errors.append(f"页面 {pg} 未出现在真值追溯表")
+        for row in trace_rows:
+            if not row or len(row) < 2:
+                continue
+            pg, issue_ref = row[0], row[1]
+            if pg not in page_ids:
+                v13_errors.append(f"真值追溯表包含未知页面：{pg}（不在 INTENT 第 17 节）")
+            m = re.search(r"(\d+)", issue_ref)
+            if not m or m.group(1) not in covered_issue_ids:
+                v13_errors.append(f"页面 {pg} 映射的工单不存在：{issue_ref}")
+        if v13_errors:
+            results.append(("V13", "FAIL", "; ".join(v13_errors)))
+        else:
+            results.append(("V13", "PASS", f"真值追溯完整：{len(page_ids)} 页全部映射到工单"))
+    else:
+        results.append(("V13", "PASS", "INTENT 无页面清单，真值追溯不适用"))
 
     return results
 
