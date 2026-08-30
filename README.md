@@ -70,7 +70,7 @@ flowchart TD
 
 | 你现在的处境 | 现在先做什么 | 用完以后 |
 |---|---|---|
-| 只有一个模糊想法，还说不清给谁用、解决什么问题 | 用 [IntentAnchor](skills/intent-anchor/) 把目标、取舍和不可妥协项写进 `INTENT.md` | 目标明确后，用 [IntentPRD](skills/intent-prd/) 生成 PRD → [IntentDesign](skills/intent-design/) 做技术方案设计 → [IntentIssues](skills/intent-issues/) 拆工单 → [IntentDev](skills/intent-dev/) 开发 → [IntentVerify](skills/intent-verify/) 验收；没有 `INTENT.md` 时，用第三方 [to-spec](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spec) / [to-tickets](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-tickets) 即可 |
+| 只有一个模糊想法，还说不清给谁用、解决什么问题 | 用 [IntentAnchor](skills/intent-anchor/) 把目标、取舍和不可妥协项写进 `INTENT.md` | 目标明确后，用 [IntentPRD](skills/intent-prd/) 生成 PRD → [IntentDesign](skills/intent-design/) 做技术方案设计 → [IntentIssues](skills/intent-issues/) 拆工单 → [IntentDev](skills/intent-dev/) 开发 → [IntentAdversarial](skills/intent-adversarial/) 对抗性验证（安全攻击/性能/并发一致性）→ [IntentVerify](skills/intent-verify/) 验收；没有 `INTENT.md` 时，用第三方 [to-spec](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-spec) / [to-tickets](https://github.com/mattpocock/skills/tree/main/skills/engineering/to-tickets) 即可 |
 | 已经知道要做什么，但不确定架构和技术路线 | 用 [开工前调研开源项目](prompt/open-source-project-research.md) 比较真正相似的项目 | 看过证据并确认方案后再开始开发 |
 | 方向和方案已经明确，准备从零实现完整产品 | 完整流程选 [Superpowers](https://github.com/obra/superpowers)，按需组合选 [Skills for Real Engineers](https://github.com/mattpocock/skills) | 如果模型仍然常把简单需求做复杂，可以再用 [Ponytail](https://github.com/DietrichGebert/ponytail) 强化“简单优先” |
 | 刚接手一个陌生仓库，不知道入口和模块关系 | 用 [Pathfinder](skills/pathfinder/) 只读摸清项目 | 有具体改动时进入 ImpactRadar |
@@ -97,7 +97,7 @@ flowchart TD
 
 ```powershell
 # 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
-"_common","pathfinder","impact","intent-anchor","intent-prd","intent-design","intent-issues","intent-dev","intent-verify" |
+"_common","pathfinder","impact","intent-anchor","intent-prd","intent-design","intent-issues","intent-dev","intent-adversarial","intent-verify" |
   ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
 
 Copy-Item "skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
@@ -285,6 +285,17 @@ Pathfinder 和 ImpactRadar 完成一次任务后，会在回复中附上一段�
 ### 一句提醒
 
 测试全绿不代表代码没问题。AI 完全可能在正确实现功能的同时，顺手加进一些多余、危险或者以后没法维护的东西。改动涉及支付、权限、隐私和生产数据时，人工看一眼这一步省不掉——评审工具能减少要看的量，不能代替看。
+
+### 项目跑完之后：Skill 体系的复盘与回流
+
+上面说的都是「这个项目做得对不对」，还有一层是「**做出这个项目的 Skill 体系本身对不对**」。每个完整跑完意图链路的项目，都是对这套 Skill 的一次实战检验——租衣摄影项目一轮就暴露了 20 个链路缺陷（验收环节缺失、页面清单没锚定、缺对抗性验证、缺缺陷闭环），全部已修复，但修复是否有效要靠下一个项目验证。
+
+复盘与回流的完整流程见 [`_improvements/`](_improvements/)，两个入口：
+
+- **项目开始时**：把 [`_improvements/VALIDATION-PROMPT.md`](_improvements/VALIDATION-PROMPT.md) 的引导词贴进会话——项目会话会在推进的同时执行 6 张验证卡的检查。
+- **项目跑完后**：把 [`_improvements/REVIEW-PROMPT.md`](_improvements/REVIEW-PROMPT.md) 的引导词贴进新会话——它会补验、登记新问题（按归因三分类：校验器缺口 / SKILL 指引不够 / Agent 违反指引）、更新 [`STATUS.md`](_improvements/STATUS.md) 聚合状态，并按归因直接执行修复。
+
+验证任务卡和验证报告清单见 [`verification-cards.md`](_improvements/verification-cards.md) 与 [`verifications/`](_improvements/verifications/)。归因分布的逐轮趋势是判断体系健康度的核心信号：「校验器缺口」占比应逐轮下降，若「Agent 违反指引」持续高位，说明剩余约束必须全部下沉为校验器。
 
 ## 里面有什么
 

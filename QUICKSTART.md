@@ -76,3 +76,5 @@ Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -For
 - 各 skill 完整说明：[pathfinder](skills/pathfinder/) · [impact](skills/impact/) · [intent 六件套](README.md#从零开始开发)
 - 不同 AI 客户端的验证程度与边界：[环境兼容说明](docs/environment-compatibility.md)
 - 场景速查表与完整路线：[README](README.md)
+
+项目完整跑完一轮后，还有一步：**用实战检验这套 Skill 本身**（复盘回流）。把 `_improvements/REVIEW-PROMPT.md` 的引导词贴进新会话即可；详见 README「项目跑完之后」一节。
