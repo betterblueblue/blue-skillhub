@@ -387,7 +387,7 @@ IntentAnchor 解决的是开发前的需求理解问题。当你只有一个模�
 
 这三个角度按信息缺口选用，不要求机械完成固定数量。系统转换会完整盘点源系统能力；0→1 项目即使没有类比物，也可以从现有做法和使用场景出发。能力清单会记录 `保留 / 推迟 / 放弃 / 待确认`，并区分"用户明确确认""用户授权模型决定"和"模型建议"。此外，IntentAnchor 会主动收集设计标准（原型、设计稿等 UI 验收基线）、术语表（行业黑话的人话翻译）、验收路径（端到端用户路径）、性能要求和安全要求，全部记录到 `INTENT.md` 对应章节。写入前还会执行 S1-S10 语义复核，把证据和中间判断留给用户检查。
 
-`intent_validate.py` 运行 15 项结构与交叉引用检查，用来发现未确认能力、决策来源冲突、统计不一致、缺少全文确认、设计标准缺失、术语表缺失、验收路径不完整、性能要求缺失和安全要求缺失等问题。它不能判断语义是否正确；PASS 只表示文件满足当前结构契约。
+`intent_validate.py` 运行 17 项结构与交叉引用检查，用来发现未确认能力、决策来源冲突、统计不一致、缺少全文确认、设计标准缺失、术语表缺失、验收路径不完整、性能要求缺失、安全要求缺失、页面清单缺失（1:1/逐页类需求强制，含行数核对）和并发一致性表缺失等问题。它不能判断语义是否正确；PASS 只表示文件满足当前结构契约。
 
 IntentAnchor 负责在开发前把意图说清楚，ImpactRadar 负责在开发中让改动符合已经确认的要求。两者可以衔接，也可以单独使用。详细设计见 [IntentAnchor README](skills/intent-anchor/README.md)。
 
@@ -405,15 +405,17 @@ IntentPRD 从 `INTENT.md` 生成 PRD。它原生读取 `INTENT.md` 的各章节�
 
 IntentIssues 从 `INTENT.md` 和 PRD 拆分工单，按垂直切片（tracer bullet）组织。每个工单贯穿所有集成层，可以独立演示或验证。工单的 Acceptance criteria 自动引用验收路径编号（如 `[P01]`），输出前自动检查所有验收路径被至少一个工单覆盖。
 
-`issues_validate.py` 运行 11 项检查（V1-V11），包括文件非空、工单必需子节、验收路径覆盖、保留能力覆盖、Coverage Verification、设计标准传递、术语表传递、性能要求传递、安全要求传递、PRD Then 覆盖和架构模块引用检查。
-
-### IntentDev
-
-[skills/intent-dev/](skills/intent-dev/)
-
-IntentDev 按 TDD 循环开发每个工单。它强制要求 INTENT.md、PRD、工单文件、architecture.md 和 design.md 通过校验作为输入。开发时先写测试看到红灯，再写代码看到绿灯，最后重构；修 bug 必须先写复现测试。每条验收条件根据实际运行的命令输出判定验证等级（V0 未验证 / V1 代码审查 / V2 实际运行通过），标 V2 但没有真实命令输出视为冒充，不允许标 done。
+`issues_validate.py` 运行 13 项检查（V1-V13），包括文件非空、工单必需子节、验收路径覆盖、保留能力覆盖、Coverage Verification、设计标准传递、术语表传递、性能要求传递、安全要求传递、PRD Then 覆盖、架构模块引用检查和真值追溯（页面清单逐页映射到工单）。
 
 `dev_validate.py` 运行 4 项检查，包括文件非空、工单开发记录完整性、每条 Then 的验证等级和 V2 证据、标 done 的工单所有 Then 达到 V2。
+
+### IntentAdversarial
+
+[skills/intent-adversarial/](skills/intent-adversarial/)
+
+IntentAdversarial 在所有工单开发完成后、端到端验收之前，把系统当敌人打。它强制要求 INTENT.md、issues.md、dev-record 和 architecture.md 通过校验且所有工单标 done。验证内容：六类安全攻击实测（垂直/横向/跨角色越权、未授权访问、业务逻辑攻击、暴力破解——静态确认不算证据）、性能三步法（数据放大 → 基准采集 → 并发压测）、并发一致性断言（INTENT 第 15 节 CC 类逐条实测，如超卖/重复抢单/重复支付）。发现的缺陷生成 FIX-* 工单交回 IntentDev 修复，高危缺陷未闭环不得交付。
+
+`adversarial_validate.py` 运行 6 项检查（A1-A6），包括文件非空、六个必需章节、SF 要求与攻击用例交叉、CC 断言实测通过交叉、高危缺陷全部修复、结论与缺陷状态一致。
 
 ### IntentVerify
 
@@ -421,7 +423,7 @@ IntentDev 按 TDD 循环开发每个工单。它强制要求 INTENT.md、PRD、�
 
 IntentVerify 在所有工单开发完成后做整体验收。它强制要求 INTENT.md、PRD、工单文件、dev-record、architecture.md 和 design.md 通过校验且所有工单标 done。验收流程：先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，然后做条件性验证（性能和安全要求，有则逐项验证，没有标不适用），最后做最终复核（保留能力核对 + 漂移复核 + 技术漂移复核）。
 
-`verify_validate.py` 运行 8 项检查，包括文件非空、回归验证段、验收路径的 Given/When/Then 和验证方式、每条路径有 V3 证据、条件性验证段、最终复核完整性（含漂移复核数据行检查）、与 INTENT.md 交叉校验和技术漂移复核检查（四个路径都必传，缺 design.md 会直接 FAIL；模块名与 architecture.md 和 design.md 交叉比对；状态标"新增/缺失"的行不做存在性比对，改查说明列是否写明原因）。
+`verify_validate.py` 运行 10 项检查，包括文件非空、回归验证段、验收路径的 Given/When/Then 和验证方式、每条路径有 V3 证据、条件性验证段、最终复核完整性（含漂移复核数据行检查）、与 INTENT.md 交叉校验、技术漂移复核检查和缺陷清单门禁（高危未修复 → FAIL 阻止交付）（四个路径都必传，缺 design.md 会直接 FAIL；模块名与 architecture.md 和 design.md 交叉比对；状态标"新增/缺失"的行不做存在性比对，改查说明列是否写明原因）。
 
 ### VL 识图
 
