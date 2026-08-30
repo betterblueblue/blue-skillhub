@@ -210,6 +210,18 @@ python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|ful
 
 用户确认文档后进入。**所有「写类」操作逐项确认。** 进入写操作前先用 `templates/060-preflight.md` 完成执行前检查。必须维护 `_active-state.md`。源码、测试、配置、DDL/DML 或外部系统写入 Step 必须和 Phase 4 文档写入 Step 分开；如果当前确认同时覆盖写文档和改代码，先只完成文档与验证，然后生成/更新 `060-preflight.md`，再重新给出源码写入 Step 等待新的 `确认 Step N`。
 
+**风险分级定向回归（每个写类 Step 的验证方式按此选取，不得只写"手工验收"）**：
+
+- **基线（所有写类 Step）**：项目已有测试全过 + 改动行为有对应测试。
+- **定向（命中强制规则 2 高风险清单才加，按改动类型选维度）**：
+  - 改权限/角色/enum/权限标识 → 越权抽测（双身份横向矩阵抽 2-3 条）
+  - 改支付/押金/库存/名额等并发资源 → 并发一致性断言（超卖=0、重复提交拒绝，几行脚本即可）
+  - 改 API 契约/路由/公共导出 → 消费者清单逐个验证
+  - 数据迁移/回填/状态迁移 → 数据校验 + 回滚演练
+- **全套（罕见）**：仅系统级大改（新认证体系/新支付通道）才值得跑完整对抗流程（可参考 intent-adversarial 的六类模板）。
+
+回归结果计入 `090-execution-record.md` 的「回归验证」节。重量必须匹配触发频率：日常小改走基线+定向（分钟级），只有动到系统骨架才升级。
+
 → **进入前必须读取 `references/phase-5-execution.md`**（含写入目标边界、V1-only 连续计数、非 Git 回退方案、阻塞恢复检查、DDL/DML 执行方式、高风险 Step 拦截清单详细处理流程、验证方案、测试失败处理、执行记录模板）
 
 > **执行 [N/总]: [操作名称]**
@@ -240,7 +252,7 @@ python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|ful
 
 ## 改进记录提示
 
-本次运行暴露出 Skill 自身可能需要改进的具体问题时，才在收尾内容后询问。**完整交互流程见 `references/improvement-log.md`。** 面向用户只说：
+本次运行暴露出 Skill 自身可能需要改进的具体问题时，才在收尾内容后询问。**完整交互流程见 `references/improvement-log.md`。登记载体**:改进项登记到 `blue-skillhub/_improvements/`（新 backlog 或 REVIEW-PROMPT 回流），按归因三分类（校验器缺口 / SKILL 指引不够 / Agent 违反指引）标注，供 STATUS.md 归因趋势统计。面向用户只说：
 
 > 这次发现一个可能值得用于改进 Skill 的问题：<一句话说明问题和后果>。要把它记录下来吗？你回复“记录”或“不用”就行。
 

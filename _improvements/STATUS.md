@@ -25,6 +25,8 @@
 | R1-D4 | 验收不沉淀可复跑资产 | R1 | fixed | R1→R2 | snapshots/ 约定,卡 5 验证 |
 | R1-E1 | verify 职责过重 | R1 | fixed | R1→R2 | 拆出 intent-adversarial |
 | R1-E2 | 链路完成无硬性定义 | R1 | verified | R1→R2 | chain_validate 状态矩阵 |
+| R2-IMP1 | impact 执行后缺风险驱动定向回归 | R2 | fixed | R2 | 回归维度镜像表,V25 校验,卡 7 验证 |
+| R2-IMP2 | 改进沉淀未接入 _improvements 回流 | R2 | fixed | R2 | 改进记录提示改指 _improvements,卡 7/卡 8 |
 
 **状态定义**:open(待修复)→ fixed(代码/规则已改)→ verified(下轮实战确认有效)→ regressed(实战中复发,重新打开)。
 
@@ -32,4 +34,4 @@
 
 | 轮次 | 校验器缺口 | SKILL 指引不够 | Agent 违反指引 | 备注 |
 |---|---|---|---|---|
-| R2 | {待项目 2 验证后填} | | | |
+| R2(impact/pathfinder 审查) | 2 | 0 | 本轮为 skill 侧审查,实战归因待下项目 |

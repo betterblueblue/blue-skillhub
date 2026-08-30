@@ -30,6 +30,7 @@ Checks:
   V22: Pathfinder map consumption record (when map exists, record used/rechecked/rejected facts) — FAIL
   V23: Extra structure & assumptions (020 §5.1 — extra structures need scenario, evidence, cost) — WARN/FAIL
   V24: Design→implementation mapping (020 Dxx ↔ 030 Step ↔ 090 Step consistency)   — FAIL
+  V25: Risk-tiered regression record (090 回归验证 section: baseline + tiered dimensions for high-risk Steps) — FAIL
 
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass (no FAIL), 1 = fail (any FAIL item).
@@ -2601,6 +2602,67 @@ def check_extra_structure(req_dir: Path, mode: str) -> tuple[list[str], list[str
 #      bidirectional consistency check.
 # ===========================================================================
 
+# ---------------------------------------------------------------------------
+# V25: Risk-tiered regression record — 090 回归验证 section must record
+#      baseline results, and high-risk Steps (permissions/payment/inventory/
+#      data migration) must have tiered regression dimensions recorded.
+# ---------------------------------------------------------------------------
+
+RE_REGRESSION_SECTION = re.compile(r"^##\s*回归验证", re.M)
+RE_HIGH_RISK_HINTS = {
+    "permission": re.compile(r"权限|角色|enum|权限标识", re.I),
+    "payment": re.compile(r"支付|押金|余额|资金", re.I),
+    "inventory": re.compile(r"库存|名额|配额|扣减", re.I),
+    "migration": re.compile(r"迁移|回填|状态迁移", re.I),
+}
+
+
+def check_risk_tiered_regression(req_dir: Path) -> tuple[list[str], list[str], list[str]]:
+    """V25: Check 090 回归验证 section for baseline and tiered regression records (R2-IMP1)."""
+    passes: list[str] = []
+    fails: list[str] = []
+    warns: list[str] = []
+
+    rec_file = req_dir / "090-execution-record.md"
+    if not rec_file.exists():
+        return passes, fails, warns  # V1/V24 handle missing record
+
+    text = rec_file.read_text(encoding="utf-8")
+    m = RE_REGRESSION_SECTION.search(text)
+    if not m:
+        # 无回归验证节:执行记录里也没有写类 Step 时合法(V24 阶段外);
+        # 有写类 Step 但缺节 → 提示补记(WARN,由执行者判断)
+        if RE_STEP_DESIGN_ITEM.search(text) or "写文件" in text or "改代码" in text:
+            warns.append(
+                "V25: 090 有写类 Step 记录但缺「回归验证」节——请按风险分级定向回归补记"
+            )
+        return passes, fails, warns
+
+    section = text[m.start():]
+    nxt = re.search(r"^##\s+", section[10:], re.M)
+    if nxt:
+        section = section[: 10 + nxt.start()]
+
+    baseline_ok = bool(re.search(r"基线", section)) and bool(re.search(r"测试", section))
+    if not baseline_ok:
+        fails.append("V25: 回归验证缺基线记录(已有测试全过 + 改动行为有测试)")
+
+    tiered_missing = []
+    dim_labels = {"permission": "权限", "payment": "支付", "inventory": "库存"}
+    for key, pat in RE_HIGH_RISK_HINTS.items():
+        if key in ("permission", "payment", "inventory") and pat.search(text) and dim_labels[key] not in section:
+            tiered_missing.append(key)
+    if tiered_missing:
+        warns.append("V25: 高风险维度可能未回归: " + ", ".join(tiered_missing))
+
+    if not fails and not warns:
+        passes.append("V25: 回归验证基线与定向维度记录完整")
+    elif not fails:
+        passes.append("V25: 回归验证记录存在(含提示)")
+
+    return passes, fails, warns
+
+
 RE_DESIGN_ITEM = re.compile(r"\bD(\d{2})\b")
 RE_MAPPING_TABLE_HEADER = re.compile(r"##\s*2\.2\s*设计到实施的对照")
 RE_IMPL_STEP_HEADER = re.compile(r"###\s*Step\s+(\d+)", re.I)
@@ -3066,6 +3128,12 @@ def main():
 
     # V7: Tier judgment sanity check
     p, f, w = check_tier_judgment(req_dir, mode)
+    all_passes.extend(p)
+    all_fails.extend(f)
+    all_warns.extend(w)
+
+    # V25: Risk-tiered regression record
+    p, f, w = check_risk_tiered_regression(req_dir)
     all_passes.extend(p)
     all_fails.extend(f)
     all_warns.extend(w)

@@ -15,7 +15,7 @@
 
 修复 ≠ 完成,必须经过**下一个真实项目**的实战验证。本目录的三件套构成验证闭环:
 
-1. **verification-cards.md** — 6 张验证任务卡(按链路环节),每张写明:验证时机、步骤、可机械判定的理想态、失败记录格式。
+1. **verification-cards.md** — 验证任务卡:卡 1-6 覆盖 intent 链路六环节;**卡 7(impact)/卡 8(pathfinder)待补**(见 impact-pathfinder backlog 的 R2-IMP2),每张写明:验证时机、步骤、可机械判定的理想态、失败记录格式。
 2. **VALIDATION-PROMPT.md** — 下一个项目会话的引导词(复制到会话开头即可),让新会话在推进项目的同时执行验证,失败项强制归因(校验器缺口 / SKILL 指引不够 / Agent 违反指引)。
 3. **verifications/** — 验证报告存放处(按 `TEMPLATE.md` 写),失败项按归因回流到 backlog 对应批次。
 4. **STATUS.md** — 全部改进项的聚合状态与归因分布趋势(单一真值)。
@@ -34,7 +34,8 @@
 
 | 文件 | 来源项目 | 问题数 | 状态 |
 |---|---|---|---|
-| [2026-08-29-intent-chain-rentphoto-backlog.md](2026-08-29-intent-chain-rentphoto-backlog.md) | 租衣摄影综合平台(92 页 Excel 1:1 还原,四端电商平台) | 20 | 已修复,待下项目实战验证 |
+| [2026-08-29-intent-chain-rentphoto-backlog.md](2026-08-29-intent-chain-rentphoto-backlog.md) | 租衣摄影综合平台(92 页 Excel 1:1 还原,四端电商平台)——intent 链路 0→1 分支 | 20 | 已修复,待下项目实战验证 |
+| [2026-08-30-impact-pathfinder-backlog.md](2026-08-30-impact-pathfinder-backlog.md) | impact + pathfinder 分支(已有系统迭代与项目摸底) | 2 | 待办(P1);R2-IMP1 方案已修订 v2:风险分级定向回归,不复用全套 adversarial 模板(过重) |
 
 ## 验证报告
 
