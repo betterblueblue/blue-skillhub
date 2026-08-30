@@ -36,7 +36,7 @@ flowchart TD
 
     B --> B1["需求模糊：IntentAnchor（Skill）"]
     B --> B2["目标明确、方案不明：开源项目调研（Prompt）"]
-    B1 --> B3["进入开发：IntentDev → IntentVerify（Skill）或 Superpowers 等第三方"]
+    B1 --> B3["进入开发：IntentDev → IntentAdversarial → IntentVerify（Skill）或 Superpowers 等第三方"]
     B2 --> B3
     B3 -.-> B4["可选：Ponytail 强化简单优先（第三方）"]
 
@@ -204,15 +204,17 @@ IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设计标�
 
 `design_validate.py` 运行 15 项检查（A1-A8, D1-D5, X1-X2），包括架构概览、模块定义、技术选型、数据流、假设合规性、能力覆盖、模块引用一致性和额外能力检查。
 
-### IntentDev 和 IntentVerify：从开发到端到端验收
+### IntentDev、IntentAdversarial 和 IntentVerify：从开发到对抗验证再到端到端验收
 
-[IntentDev](skills/intent-dev/) 和 [IntentVerify](skills/intent-verify/) 是 Blue SkillHub 自己开发的两个 Skill，分别负责工单开发和端到端验收。
+[IntentDev](skills/intent-dev/)、[IntentAdversarial](skills/intent-adversarial/) 和 [IntentVerify](skills/intent-verify/) 是 Blue SkillHub 自己开发的三个 Skill，分别负责工单开发、对抗性验证和端到端验收。
 
 IntentDev 按 TDD 循环开发每个工单：先写测试看到红灯，再写代码看到绿灯，最后重构。修 bug 必须先写复现测试。每条验收条件根据实际运行的命令输出判定验证等级（V0 未验证 / V1 代码审查 / V2 实际运行通过），标 V2 但没有真实命令输出视为冒充，不允许标 done。
 
-IntentVerify 在所有工单开发完成后做整体验收：先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，然后做条件性验证（性能和安全要求，有则逐项验证，没有标不适用），最后做最终复核（保留能力核对 + 漂移复核）。
+IntentAdversarial 在所有工单完成后、验收之前把系统当敌人打：六类安全攻击实测（垂直/横向/跨角色越权、未授权、业务逻辑攻击、暴力破解）、性能三步法（数据放大 → 基准采集 → 并发压测）、并发一致性断言（超卖/重复抢单/重复支付）。发现的缺陷生成 FIX-* 工单交回 IntentDev 修复，修复后定向复验——高危缺陷未闭环不得交付。
 
-两个 Skill 都强制要求前置产物作为输入：IntentDev 要求 INTENT.md、PRD、工单文件、architecture.md 和 design.md 通过校验，IntentVerify 在此基础上还要求 dev-record 通过 `dev_validate.py` 校验且所有工单标 done。
+IntentVerify 在对抗通过后做整体验收：先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，并按第 17 节页面清单逐页真点走查，然后做条件性验证（性能和安全要求，有则逐项验证，没有标不适用），最后做最终复核（保留能力核对 + 漂移复核）。
+
+三个 Skill 都强制要求前置产物作为输入：IntentDev 要求 INTENT.md、PRD、工单文件、architecture.md 和 design.md 通过校验；IntentAdversarial 在此基础上还要求 dev-record 通过 `dev_validate.py` 校验且所有工单标 done；IntentVerify 在此基础上还要求 adversarial-record 通过 `adversarial_validate.py` 校验。`chain_validate.py` 对整条链路做批量校验——缺任何一环都会 FAIL，验收不能被跳过。
 
 ### Superpowers：希望一套流程带着项目往前走
 
@@ -619,6 +621,7 @@ blue-skillhub/
     ├── intent-design/
     ├── intent-issues/
     ├── intent-dev/
+    ├── intent-adversarial/
     ├── intent-verify/
     └── vl-vision/
 ```
