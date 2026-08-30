@@ -158,6 +158,13 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 
 `dev-record.md` 已写入 `intent-chain/{链路目录}/`。下一步：运行 intent-verify，输入 intent.md、prd.md、issues.md、dev-record.md、architecture.md 和 design.md，做端到端验收。
 
+**⚠ dev-record 全部 done 只代表工单级完成，不等于链路完成。** 交付前必须依次运行：
+
+1. **intent-adversarial**（对抗性验证：安全攻击实测 / 性能压测三步法 / 并发一致性断言）——chain_validate 在此步缺失时会 FAIL。
+2. **intent-verify**（端到端验收 + 页面走查 + 缺陷闭环）。
+
+**承接验收缺陷**：adversarial / verify 产出的 `FIX-*` 缺陷工单（记录在链路目录 `defects.md`）由本 skill 承接修复，按 TDD 循环处理，修复后交回对应环节定向复验。
+
 ## 并行执行守则（仅当用户明确要求并行时）
 
 默认按工单串行开发。用户明确要求并行、且当前运行环境具备子代理/工作流编排能力时，按以下守则执行（环境不具备时如实告知并保持串行）：
