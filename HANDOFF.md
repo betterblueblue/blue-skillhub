@@ -1,7 +1,7 @@
 # 交接文档
 
-> 写给完全没有上下文的新会话。最近更新：2026-07-26（全天 7 个 commit，`2222124` → `a4c165f`，全部已推送）。
-> 本文档覆盖十五个独立任务。A-F、A7、H、I 是 intent-chain 六件套与 impact 的建设期记录（均已完成）；J-N 是 2026-07-26 单日完成的验证与收尾（详情见各任务节）；blue-interview 另册（部分完成，待补测）。
+> 写给完全没有上下文的新会话。最近更新：2026-08-30（租衣摄影实战复盘引发的链路强化 + intent-adversarial 新环节 + _improvements 验证闭环，详见「任务 N」与 `_improvements/`）。
+> 本文档覆盖十五个独立任务。A-F、A7、H、I 是 intent-chain 六件套与 impact 的建设期记录（均已完成）；J-N 是 2026-07-26 单日完成的验证与收尾（详情见各任务节）；任务 N 是 2026-08-30 的实战回流轮；blue-interview 另册（部分完成，待补测）。
 
 ## 当前状态与下一步（新会话从这里开始）
 
@@ -18,6 +18,28 @@ pathfinder references 最后抽查已完成（2026-07-26，发现并修复 7 条
 **毕业考已完成（2026-07-26 晚开考，07-27 凌晨交卷）**：EnterpriseMatchHub 真实用户亲驾一晚走完六阶段，chain_validate 判分方独立跑批 7/7 PASS，交付可运行双端全栈系统（288+46 测试全绿，17 条路径浏览器实走）。判定**通过**：三道历史错题 2 过 1 未过（术语落地系统性逃逸——原始术语沿能力名全线繁殖无一站拦截，已定位双层机械修法）；9 条发现其中 4 条考中已修复入库（按模板写入×6、对用户说人话×6、并行执行守则）。完整判卷：`docs/graduation-exam-2026-07-26.md`。
 
 **考后待办：①-⑤ 已全部完成（2026-07-27）**：①术语逃逸双层门禁（V15 源头掐断 + term_check 前端反查并入 chain_validate 第 8 行，实弹：考卷链两层各自命中含人工漏掉的"智能审核"，冒烟链零误伤）；②用户面表达专项（PRD/工单章节标题中文化 + 架构§6「关键选型与代价」，新旧双认——旧英文文档永久被识别，todo-cli/ledger-cli 旧格式链 8/8 实证）；③Then 粒度守则（anchor 步骤 9 + 模板 §14，指引性）；④D21 风格陷阱场景建成并于同日**首跑收官**（Sonnet ×2 并行隔离副本、交互式脚本化用户含模糊确认试探）：**2/2 PASS**（check_delivery 11/11、风格零违约含 CRLF 行尾逐行核对、编译与校验器判分方独立复跑一致）；判卷纠偏 4 处 case 定义（@ss.hasPermi 系 RuoYi-Vue 串味且出题人自己中招、档位 full→light 由 2/2 runner 依 SKILL 规则收敛、期望改动文件 3→1 对齐 addSave 同构先例、git diff --check 对 CRLF 仓库天然不可达标移出验收命令），修复 2 个校验器自伤 bug（V19 模板清单表格行误伤「不涉及」、V13/V15 被 skill 自产 .git-baseline.json 的 .json 扩展名误触，复现+守卫测试 impact 套件 96→100）；完整判卷 `eval/runs/real-projects/2026-07-27-sonnet-d21-style-trap/`；⑤安装副本已重装同步。七套件 254 passed，validate_real_projects 31 cases 全绿。⑥考卷项目四条已知限制的业务处置：**已完成**（2026-07-27，用户侧 Sonnet 处理，用户确认收工；按用户指示判分方未复核）。**毕业考全部后续至此清零，无挂起项。**律刃 v3.4 已于 2026-07-26 晚收编定版并完成验证：第 9 条 12 要点压 7 个去重、第 1 条合并提问三连、三份副本同步一致；Sonnet 5 按 6 个针对性场景验证 6/6 通过（TASK_V34_VERIFY.md，判分方独立 diff 沙盒核验，三处诱饵零上钩）；prompt/ 同轮评审结论为质量到位无需优化。原有三项已于 2026-07-26 晚间完成：① W3 D5 机械化——`skills/_common/d5_check.py` 落地并入 chain_validate 第 7 行（白名单实现承载区 + 负面提及行守卫，PRD Out of Scope／design「不做什么」合法点名不误报；官方 fixture 链 + 两条真实冒烟链零误报，回流注入 3 场景全命中）；② V24 Check E 窗口截断到节边界（2 个复现测试红转绿）；③ case prompt「先不要写代码」→「先不要改源码」（5 case 文件 10 处 + 6 份待发射 M3 prompt）+ impact SKILL.md Phase 4 澄清"分析文档不属于写代码"。八套件 339 passed（329+10）。④ 顺带发现并修复 gitignore 吞测试问题：`skills/*/tests/` 白名单缺 `_common`/`intent-prd`/`intent-design`/`intent-issues`/`pathfinder` 五个目录，新测试文件会被静默忽略——W5/W7 的 `_common` 测试和 `pathfinder/tests/fixtures`（test_pathfinder_scripts.py 引用的 degradation-trap fixture）此前从未入库、CI 未跑；已补白名单、全部入库，并给 CI 增加 `_common` 套件步骤（unittest discover，本地 16 tests OK）。
+
+---
+
+## 任务 N：租衣摄影实战复盘引发的链路强化 + intent-adversarial + _improvements 验证闭环（2026-08-30，已完成，已推送）
+
+**背景**：真实项目「租衣摄影综合平台」（`E:\agent\money\0824\租衣摄影综合平台`，Excel 92 页 1:1 还原，四端电商平台）完整交付并做了 8 层补测（253 项断言、23 个缺陷），暴露出意图链路 20 个结构缺口 + impact/pathfinder 分支 2 个镜像缺口。全部修复并回归（**175 + 139 项测试全过**），backlog 与修复记录在 `_improvements/2026-08-29/30-*.md`（20/20 + 2/2 勾选）。
+
+**校验器硬拦（修复后对租衣历史链路实测：7 项 FAIL 逐项点名历史缺口——这些校验器若在交付前存在，项目会被自动拦下）**：
+
+- `intent_validate.py`：V16 触发面扩大（纳入第 3 节证据来源；修订 9a5f0c4 的收窄——租衣案例证明收窄漏报）+ 声明页数核对 WARN + **新增 V17**（第 15 节 CC 并发一致性表结构校验）
+- `issues_validate.py`：**新增 V13** 真值追溯（INTENT 有页面清单时：无孤儿页/无未知页/映射工单必须存在）
+- `verify_validate.py`：**新增 V10** 缺陷清单门禁（高危未修复 FAIL 阻止交付）
+- `_common/chain_validate.py`：PIPELINE 接入 **adversarial 关卡**（dev done 但 adversarial-record 缺失 → FAIL）
+- 各校验器 tests 补正反例（V16 WARN/FAIL 双态、V17 三态、V13 三态、V10 三态）
+
+**新环节 intent-adversarial**（`skills/intent-adversarial/`，插在 dev 与 verify 之间）：六类安全攻击实测模板（垂直/横向/跨角色越权、未授权、业务逻辑攻击、暴力破解——静态确认不算证据）、性能三步法（数据放大→基准采集→并发压测）、CC 类逐条并发断言（超卖/重复抢单/重复支付）、FIX-* 缺陷工单生成与定向复验。含 templates/adversarial-record.md、adversarial_validate.py（A1-A6）、tests 6 项。
+
+**SKILL 指引同步**：anchor 规则 11（清单行数与声明页数核对 + CC 确认）；issues（真值追溯说明）；dev Phase 3（「⚠ 工单级完成 ≠ 链路完成」警告 + 承接 FIX-* 工单）；verify（Phase 3.5 页面走查子模式 + Phase 4 三步法/攻击实测 + Phase 4.5 缺陷闭环 + 快照留存 + 高危阻止交付）；README/QUICKSTART 索引与「项目跑完之后」回流节。
+
+**impact/pathfinder 分支延伸审查（R2）**：impact 新增风险分级定向回归（基线 + 命中高风险清单按类型选维度，镜像强制规则 2 拦截清单；090 模板加「回归验证」节；impact_validate 新增 V25）；两 skill 改进沉淀改指 `_improvements`；验证卡补卡 7（impact）/卡 8（pathfinder）。回归：impact 104 / pathfinder 35 全过。
+
+**_improvements 验证闭环**（Skill 自我进化机制）：`verification-cards.md`（8 张验证任务卡，理想态可机械判定）、`VALIDATION-PROMPT.md`（项目开始时贴，预约验证）、`REVIEW-PROMPT.md`（项目跑完后贴，复盘回流+再优化）、`verifications/TEMPLATE.md`、`STATUS.md`（聚合状态+归因三分类趋势——校验器缺口/SKILL 指引不够/Agent 违反指引，直接决定优化方向）。**下一个真实项目开始时贴 VALIDATION-PROMPT、跑完贴 REVIEW-PROMPT，循环自动转起。**
 
 ---
 
