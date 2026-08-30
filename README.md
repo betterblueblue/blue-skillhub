@@ -164,7 +164,7 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方
 
 ## 从零开始开发
 
-IntentAnchor 负责先把方向说清楚，"开工前调研开源项目"负责在技术路线不确定时查找依据。方向和方案确认以后，有两条路可以选：用 Blue SkillHub 自己的完整链路（IntentPRD → IntentDesign → IntentIssues → IntentDev → IntentVerify）继续往下走，或者使用下面的第三方工具。
+IntentAnchor 负责先把方向说清楚，"开工前调研开源项目"负责在技术路线不确定时查找依据。方向和方案确认以后，有两条路可以选：用 Blue SkillHub 自己的完整链路（IntentPRD → IntentDesign → IntentIssues → IntentDev → IntentAdversarial → IntentVerify）继续往下走，或者使用下面的第三方工具。
 
 完整链路：
 
