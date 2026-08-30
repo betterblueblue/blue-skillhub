@@ -179,7 +179,9 @@ intent-issues → issues.md（自动引用路径编号，自动检查覆盖；�
     ↓ 强制输入
 intent-dev → dev-record.md（TDD 循环，每条 Then 按实际运行结果判定验证等级）
     ↓ 强制输入
-intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 条件性验证 + 漂移复核 + 技术漂移复核）
+intent-adversarial → adversarial-record.md（六类安全攻击实测 + 性能三步法压测 + CC 并发一致性断言；缺陷生成 FIX-* 工单）
+    ↓ 强制输入
+intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 页面走查 + 条件性验证 + 缺陷清单 + 漂移复核 + 技术漂移复核）
 ```
 
 ### IntentPRD 和 IntentIssues：让 INTENT.md 的约束一路传到工单
