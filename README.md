@@ -154,7 +154,7 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方
 
 下面是最常见的搭配，不要求每次把所有工具都走一遍。
 
-- **从模糊想法开始做新项目**：律刃 → IntentAnchor → 需要时调研开源项目 → 用 IntentPRD 生成 PRD → 用 IntentDesign 做技术方案设计 → 用 IntentIssues 拆工单 → 用 IntentDev 开发 → 用 IntentVerify 端到端验收 → 提交前整理。也可以选择 Superpowers 或 Skills for Real Engineers 进入开发。担心 AI 把简单需求做复杂时，可以在开发阶段搭配 Ponytail。
+- **从模糊想法开始做新项目**：律刃 → IntentAnchor → 需要时调研开源项目 → 用 IntentPRD 生成 PRD → 用 IntentDesign 做技术方案设计 → 用 IntentIssues 拆工单 → 用 IntentDev 开发 → 用 IntentAdversarial 对抗性验证 → 用 IntentVerify 端到端验收 → 提交前整理。也可以选择 Superpowers 或 Skills for Real Engineers 进入开发。担心 AI 把简单需求做复杂时，可以在开发阶段搭配 Ponytail。
 - **接手陌生项目并准备修改**：律刃 → Pathfinder → 需求仍然模糊时使用 IntentAnchor → ImpactRadar → 独立验收 → 提交前整理。
 - **熟悉项目中的明确改动**：律刃 → ImpactRadar → 验证 → 独立验收或提交前整理。不必为了流程完整强行运行 Pathfinder。
 - **开发中途需求改变**：先暂停修改 → 需求变更对账 → 目标变化时回到 IntentAnchor，改动范围变化时回到 ImpactRadar。
