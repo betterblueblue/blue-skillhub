@@ -8,6 +8,7 @@ Run:
 
 from __future__ import annotations
 
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -52,7 +53,7 @@ def _result(arch: str, design: str, intent: str, check_id: str) -> tuple[str, st
 class TestValidFixture(unittest.TestCase):
     def test_valid_files_pass_all_checks(self):
         results = validate(_arch_content(), _design_content(), _intent_content())
-        self.assertEqual(16, len(results))
+        self.assertEqual(22, len(results))
         failed = [(r[0], r[2]) for r in results if r[1] != "PASS"]
         self.assertFalse(failed, f"Unexpected failures: {failed}")
 
@@ -72,7 +73,7 @@ class TestA1NonEmpty(unittest.TestCase):
 
 class TestA2RequiredSections(unittest.TestCase):
     def test_missing_section_fails(self):
-        content = _arch_content().replace("## 5. 额外结构与假设", "## X")
+        content = _arch_content().replace("## 7. 额外结构与假设", "## X")
         result = _result(content, _design_content(), _intent_content(), "A2")
         self.assertEqual("FAIL", result[1])
         self.assertIn("额外结构与假设", result[2])
@@ -174,8 +175,8 @@ class TestA7Assumptions(unittest.TestCase):
             "模型判断确有必要",
         )
         content = content.replace(
-            "## 5. 额外结构与假设",
-            "## 5. 额外结构与假设\n\n<!-- 无额外结构 -->",
+            "## 7. 额外结构与假设",
+            "## 7. 额外结构与假设\n\n<!-- 无额外结构 -->",
         )
         result = _result(content, _design_content(), _intent_content(), "A7")
         self.assertEqual("FAIL", result[1])
@@ -255,8 +256,8 @@ class TestA7Assumptions(unittest.TestCase):
             "模型判断确有必要",
         )
         content = content.replace(
-            "## 5. 额外结构与假设",
-            "## 5. 额外结构与假设\n\n下面这些结构并非无额外结构：",
+            "## 7. 额外结构与假设",
+            "## 7. 额外结构与假设\n\n下面这些结构并非无额外结构：",
         )
         result = _result(content, _design_content(), _intent_content(), "A7")
         self.assertEqual("FAIL", result[1])
@@ -265,8 +266,8 @@ class TestA7Assumptions(unittest.TestCase):
     def test_declaration_with_rows_contradiction_fails(self):
         """声明"无额外结构"但表格仍有数据行 → 矛盾 FAIL。"""
         content = _arch_content().replace(
-            "## 5. 额外结构与假设",
-            "## 5. 额外结构与假设\n\n无额外结构",
+            "## 7. 额外结构与假设",
+            "## 7. 额外结构与假设\n\n无额外结构",
         )
         result = _result(content, _design_content(), _intent_content(), "A7")
         self.assertEqual("FAIL", result[1])
@@ -327,8 +328,8 @@ class TestA8ExpensiveDetails(unittest.TestCase):
         """便宜决策不应该有详细说明。"""
         # 在第 6 节添加一个便宜条目的说明
         content = _arch_content().replace(
-            "## 6. 关键选型与代价（请重点核对）\n\n无",
-            "## 6. 关键选型与代价（请重点核对）\n\n### 文件格式\n\n这是一段说明。",
+            "## 8. 关键选型与代价（请重点核对）\n\n无",
+            "## 8. 关键选型与代价（请重点核对）\n\n### 文件格式\n\n这是一段说明。",
         )
         result = _result(content, _design_content(), _intent_content(), "A8")
         self.assertEqual("FAIL", result[1])
@@ -349,7 +350,7 @@ class TestD1NonEmpty(unittest.TestCase):
         results = validate(_arch_content(), "", _intent_content())
         d1_results = [r for r in results if r[0] == "D1"]
         self.assertEqual("FAIL", d1_results[0][1])
-        # D1 FAIL 后不继续检查 D2-D5 和 X1-X2
+        # D1 FAIL 后不继续检查 D2-D9 和 X1-X3
         d_and_x = [r for r in results if r[0].startswith("D") or r[0].startswith("X")]
         self.assertEqual(1, len(d_and_x))
 
@@ -410,7 +411,7 @@ class TestD4CodePatterns(unittest.TestCase):
 
 class TestD5ConsistencyCheck(unittest.TestCase):
     def test_missing_check_table_fails(self):
-        content = _design_content().replace("## 3. 与架构文档的对照", "## X")
+        content = _design_content().replace("## 4. 与架构文档的对照", "## X")
         result = _result(_arch_content(), content, _intent_content(), "D5")
         self.assertEqual("FAIL", result[1])
 
@@ -443,8 +444,8 @@ class TestX2CapabilityConsistency(unittest.TestCase):
     def test_capability_mismatch_fails(self):
         """architecture.md 没有 C02 但 design.md 有 [C02]。"""
         content = _design_content().replace(
-            "## 3. 与架构文档的对照",
-            "### [C02] 自动归档\n\n- **涉及模块**：文件存储\n- **数据流转**：无\n- **关键状态变化**：无\n- **不做什么**：不做归档\n\n## 3. 与架构文档的对照",
+            "## 4. 与架构文档的对照",
+            "### [C02] 自动归档\n\n- **涉及模块**：文件存储\n- **数据流转**：无\n- **关键状态变化**：无\n- **不做什么**：不做归档\n\n## 4. 与架构文档的对照",
         )
         result = _result(_arch_content(), content, _intent_content(), "X2")
         self.assertEqual("FAIL", result[1])
@@ -469,6 +470,239 @@ class TestDisplayContract(unittest.TestCase):
     def test_valid_display_contract_passes(self):
         result = _result(_arch_content(), _design_content(), _intent_content(), "D6")
         self.assertEqual("PASS", result[1])
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 非功能性设计落点 A9 / 运行形态 A10（2026-08-31 新增）
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestA9NFRAnchoring(unittest.TestCase):
+    """INTENT 第 15/16 节的 PF/CC/SF 必须逐条有架构对策落点。"""
+
+    NFR_ROW = (
+        "| SF01 | 交接记录模板只包含任务、进度、阻塞项和下一步，"
+        "生成时不含其他会话内容 | 记录生成器 |"
+    )
+
+    def test_uncovered_requirement_fails(self):
+        content = _arch_content().replace(self.NFR_ROW, "")
+        result = _result(content, _design_content(), _intent_content(), "A9")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("SF01", result[2])
+
+    def test_undefined_owner_module_fails(self):
+        content = _arch_content().replace(
+            self.NFR_ROW,
+            "| SF01 | 交接记录模板只包含任务和进度 | 幽灵模块 |",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A9")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("幽灵模块", result[2])
+
+    def test_valid_nfr_passes(self):
+        result = _result(_arch_content(), _design_content(), _intent_content(), "A9")
+        self.assertEqual("PASS", result[1])
+
+    def test_no_nfr_intent_requires_declaration(self):
+        """INTENT 没有任何 PF/CC/SF 时，架构侧必须声明「无性能与安全要求」。"""
+        intent = _intent_content().replace("SF01", "XX01")
+        result = _result(_arch_content(), _design_content(), intent, "A9")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("无性能与安全要求", result[2])
+
+    def test_no_nfr_intent_with_declaration_passes(self):
+        intent = _intent_content().replace("SF01", "XX01")
+        content = _arch_content().replace(
+            "| 要求 ID | 架构对策 | 归属模块 |\n|---|---|---|\n" + self.NFR_ROW,
+            "无性能与安全要求",
+        )
+        result = _result(content, _design_content(), intent, "A9")
+        self.assertEqual("PASS", result[1])
+
+
+class TestA10Runtime(unittest.TestCase):
+    def test_empty_runtime_fails(self):
+        content = _arch_content().replace(
+            "- **部署形态**：本地单机，随目标项目使用，不部署服务器\n"
+            "- **进程模型**：按需执行，单进程运行后退出\n"
+            "- **配置归属**：无配置，输出路径由命令行参数指定",
+            "",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A10")
+        self.assertEqual("FAIL", result[1])
+
+    def test_placeholder_runtime_fails(self):
+        content = _arch_content().replace(
+            "- **部署形态**：本地单机，随目标项目使用，不部署服务器",
+            "- **部署形态**：{部署形态}",
+        )
+        result = _result(content, _design_content(), _intent_content(), "A10")
+        self.assertEqual("FAIL", result[1])
+
+    def test_valid_runtime_passes(self):
+        result = _result(_arch_content(), _design_content(), _intent_content(), "A10")
+        self.assertEqual("PASS", result[1])
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 失败边界 D7 / 权限可见性 D8 / 数据设计 D9 / 实体归属 X3（2026-08-31 新增）
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestD7FailureField(unittest.TestCase):
+    def test_missing_field_fails(self):
+        content = _design_content().replace("- **失败与边界情况**：", "- **X**：")
+        result = _result(_arch_content(), content, _intent_content(), "D7")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("失败与边界情况", result[2])
+
+    def test_empty_field_fails(self):
+        content = _design_content().replace(
+            "- **失败与边界情况**：目标目录不可写时把错误返回给调用方并保留已有文件不变；无并发写入场景",
+            "- **失败与边界情况**：",
+        )
+        result = _result(_arch_content(), content, _intent_content(), "D7")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("为空", result[2])
+
+    def test_valid_field_passes(self):
+        result = _result(_arch_content(), _design_content(), _intent_content(), "D7")
+        self.assertEqual("PASS", result[1])
+
+
+class TestD8PermissionField(unittest.TestCase):
+    def test_missing_field_fails(self):
+        content = _design_content().replace("- **权限与可见性**：", "- **X**：")
+        result = _result(_arch_content(), content, _intent_content(), "D8")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("权限与可见性", result[2])
+
+    def test_empty_field_fails(self):
+        content = _design_content().replace(
+            "- **权限与可见性**：无——单机本地工具，无角色体系，产物由使用者自行保管",
+            "- **权限与可见性**：",
+        )
+        result = _result(_arch_content(), content, _intent_content(), "D8")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("为空", result[2])
+
+    def test_valid_field_passes(self):
+        result = _result(_arch_content(), _design_content(), _intent_content(), "D8")
+        self.assertEqual("PASS", result[1])
+
+
+_TABLE_BLOCK = (
+    "### 实体清单\n\n"
+    "| 实体 | 归属模块 | 生命周期与说明 |\n"
+    "|---|---|---|\n"
+    "| 交接记录 | 记录生成器 | 运行时生成，用户手动清理 |\n\n"
+    "### 数据表结构\n\n"
+    "#### 表：handoff_records\n\n"
+    "| 字段 | 类型 | 约束 | 说明 |\n"
+    "|---|---|---|---|\n"
+    "| id | 文本 | 主键 | 记录标识 |"
+)
+
+
+class TestD9DataDesign(unittest.TestCase):
+    def test_missing_section_fails(self):
+        content = _design_content().replace("无数据库表", "")
+        result = _result(_arch_content(), content, _intent_content(), "D9")
+        self.assertEqual("FAIL", result[1])
+
+    def test_no_declaration_no_rows_fails(self):
+        content = _design_content().replace("无数据库表", "（待定）")
+        result = _result(_arch_content(), content, _intent_content(), "D9")
+        self.assertEqual("FAIL", result[1])
+
+    def test_declaration_with_rows_contradiction_fails(self):
+        content = _design_content().replace(
+            "无数据库表",
+            "无数据库表\n\n#### 表：handoff_records\n\n"
+            "| 字段 | 类型 | 约束 | 说明 |\n|---|---|---|---|\n| id | 文本 | 主键 | 记录标识 |",
+        )
+        result = _result(_arch_content(), content, _intent_content(), "D9")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("矛盾", result[2])
+
+    def test_table_rows_pass(self):
+        content = _design_content().replace("无数据库表", _TABLE_BLOCK)
+        result = _result(_arch_content(), content, _intent_content(), "D9")
+        self.assertEqual("PASS", result[1])
+
+    def test_no_db_declaration_passes(self):
+        result = _result(_arch_content(), _design_content(), _intent_content(), "D9")
+        self.assertEqual("PASS", result[1])
+
+
+class TestX3EntityModules(unittest.TestCase):
+    def test_undefined_owner_fails(self):
+        block = _TABLE_BLOCK.replace("| 交接记录 | 记录生成器 |", "| 交接记录 | 幽灵模块 |")
+        content = _design_content().replace("无数据库表", block)
+        result = _result(_arch_content(), content, _intent_content(), "X3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("幽灵模块", result[2])
+
+    def test_valid_owner_passes(self):
+        content = _design_content().replace("无数据库表", _TABLE_BLOCK)
+        result = _result(_arch_content(), content, _intent_content(), "X3")
+        self.assertEqual("PASS", result[1])
+
+    def test_no_entities_not_applicable(self):
+        result = _result(_arch_content(), _design_content(), _intent_content(), "X3")
+        self.assertEqual("PASS", result[1])
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# 旧编号文档兼容（标题归一化，2026-08-31 章节扩充后）
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestLegacyDocumentCompat(unittest.TestCase):
+    """旧编号文档（6 节架构 / 3 节设计）经标题归一化后旧章节照常检查；
+    缺的新章节按 FAIL 提示补节，不静默豁免。"""
+
+    @staticmethod
+    def _legacy_arch() -> str:
+        text = _arch_content()
+        text = re.sub(
+            r"## 5\. 非功能性设计落点.*?(?=## 6\. 运行形态)", "", text, flags=re.S
+        )
+        text = re.sub(
+            r"## 6\. 运行形态.*?(?=## 7\. 额外结构与假设)", "", text, flags=re.S
+        )
+        text = text.replace("## 7. 额外结构与假设", "## 5. 额外结构与假设")
+        text = text.replace(
+            "## 8. 关键选型与代价（请重点核对）", "## 6. 关键选型与代价（请重点核对）"
+        )
+        return text
+
+    @staticmethod
+    def _legacy_design() -> str:
+        text = _design_content()
+        text = re.sub(r"## 2\. 数据设计.*?(?=## 3\. 能力设计)", "", text, flags=re.S)
+        text = text.replace("## 3. 能力设计", "## 2. 能力设计")
+        text = text.replace("## 4. 与架构文档的对照", "## 3. 与架构文档的对照")
+        return text
+
+    def test_legacy_headings_normalized(self):
+        results = validate(self._legacy_arch(), self._legacy_design(), _intent_content())
+        by_id = {r[0]: r for r in results}
+        # A2 的缺失提示只点名两个新章节——旧第 5/6 节被别名归一化识别
+        self.assertEqual("FAIL", by_id["A2"][1])
+        self.assertIn("非功能性设计落点", by_id["A2"][2])
+        self.assertIn("运行形态", by_id["A2"][2])
+        self.assertNotIn("额外结构与假设", by_id["A2"][2])
+        self.assertNotIn("关键选型", by_id["A2"][2])
+        # 旧第 5/6 节的内容检查照常运行
+        self.assertEqual("PASS", by_id["A7"][1])
+        self.assertEqual("PASS", by_id["A8"][1])
+        # 旧设计文档：只提示缺数据设计节，能力设计与对照表被识别
+        self.assertEqual("FAIL", by_id["D2"][1])
+        self.assertIn("数据设计", by_id["D2"][2])
+        self.assertNotIn("能力设计", by_id["D2"][2])
+        self.assertEqual("PASS", by_id["D5"][1])
 
 
 if __name__ == "__main__":

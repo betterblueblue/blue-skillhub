@@ -32,6 +32,8 @@ _COMMON_DIR = Path(__file__).resolve().parent.parent.parent / "_common"
 if str(_COMMON_DIR) not in sys.path:
     sys.path.insert(0, str(_COMMON_DIR))
 from markdown_parser import (
+    DESIGN_HEADING_ALIASES,
+    normalize_legacy_headings,
     section as _section,
     subsection as _subsection,
     table_rows as _table_rows,
@@ -457,10 +459,11 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                     for row in _table_rows(arch_module_section, "模块")
                     if row
                 }
-                # 解析 design.md 各能力的涉及模块
+                # 解析 design.md 各能力的涉及模块（旧文档章节号归一化后识别）
                 design_modules: set[str] = set()
-                design_section2 = _section(design_content, "## 2. 能力设计", numbered=True)
-                for cap_match in re.finditer(r"###\s+\[(C\d{2,})\].*?(?=^###\s+|\Z)", design_section2, re.MULTILINE | re.DOTALL):
+                design_normalized = normalize_legacy_headings(design_content, DESIGN_HEADING_ALIASES)
+                design_section3 = _section(design_normalized, "## 3. 能力设计", numbered=True)
+                for cap_match in re.finditer(r"###\s+\[(C\d{2,})\].*?(?=^###\s+|\Z)", design_section3, re.MULTILINE | re.DOTALL):
                     cap_text = cap_match.group(0)
                     mod_match = re.search(r"\*\*涉及模块\*\*[：:]\s*(.+)", cap_text)
                     if mod_match:

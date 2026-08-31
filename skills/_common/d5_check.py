@@ -9,7 +9,7 @@
   1. 只扫「实现承载区」白名单：
      - prd.md：Solution / User Stories / Implementation Decisions /
        Acceptance Criteria / Testing Decisions
-     - design.md：## 2. 能力设计
+     - design.md：## 3. 能力设计（旧文档 ## 2. 归一化后识别）
      - issues.md / dev-record.md：每个 ## Issue N 段
      不扫 intent.md（名单来源）、architecture.md（ID 级回流已由 design
      校验器 A3/X2 覆盖）、verify-record.md（漂移复核表合法提及）、
@@ -36,6 +36,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
     from markdown_parser import (
+        DESIGN_HEADING_ALIASES,
         PRD_HEADING_ALIASES,
         normalize_legacy_headings,
         section,
@@ -91,7 +92,8 @@ def _regions(chain_dir: Path):
     design = chain_dir / "design.md"
     if design.exists():
         text = RE_HTML_COMMENT.sub("", design.read_text(encoding="utf-8"))
-        body = section(text, "## 2. 能力设计")
+        text = normalize_legacy_headings(text, DESIGN_HEADING_ALIASES)
+        body = section(text, "## 3. 能力设计")
         if body.strip():
             yield ("design.md", "能力设计", body)
 
