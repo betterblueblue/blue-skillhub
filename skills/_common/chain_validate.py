@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """intent-chain 链路目录批量校验。
 
-一条命令对整个链路目录跑全部六个校验器，按流水线顺序输出结果矩阵。
-用途：上游文档修订后快速确认下游是否需要同步——六个校验器本身就带
+一条命令对整个链路目录跑全部校验器，按流水线顺序输出结果矩阵。
+用途：上游文档修订后快速确认下游是否需要同步——各校验器本身就带
 交叉检查，重跑一遍就是波及探测。
 
 用法：
@@ -11,6 +11,8 @@
 行为：
   - intent.md 必须存在（链路起点），缺失直接 FAIL
   - 其余文件按流水线顺序校验；尚未产出的标「跳过」（链路做到一半是常态）
+  - visual-design.md 是条件环节（intent-visual，仅无素材的 UI 项目产出）：
+    已产出则校验（连带基线页），未产出标跳过，不影响退出码
   - dev-record 全部工单 done 但 verify-record.md 未产出 → FAIL（验收不能被口头跳过）
   - 已产出但前置文件缺失的组合标 FAIL
   - 退出码：任一 FAIL → 1；全部 PASS / 合法跳过 → 0
@@ -34,6 +36,8 @@ PIPELINE = [
      ["prd.md", "intent.md"]),
     ("intent-design/scripts/design_validate.py", "architecture.md + design.md",
      ["architecture.md", "design.md", "intent.md"]),
+    ("intent-visual/scripts/visual_validate.py", "visual-design.md + visual-baseline.html",
+     ["visual-design.md"]),
     ("intent-issues/scripts/issues_validate.py", "issues.md",
      ["issues.md", "intent.md", "prd.md", "architecture.md"]),
     ("intent-dev/scripts/dev_validate.py", "dev-record.md",

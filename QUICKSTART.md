@@ -21,7 +21,7 @@ Copy-Item "skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recu
 Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
 ```
 
-重启客户端后，输入 `/pathfinder` 或 `/impact` 能被识别即装好。0→1 新产品链路（intent 六件套）和其他组件的安装见[安装与验证清单](docs/install-and-verify-checklist.md)。
+重启客户端后，输入 `/pathfinder` 或 `/impact` 能被识别即装好。0→1 新产品链路（intent 八件套，含仅 UI 项目需要的视觉环节）和其他组件的安装见[安装与验证清单](docs/install-and-verify-checklist.md)。
 
 ## 2. 第一个例子：只读摸清一个陌生项目
 
@@ -73,7 +73,7 @@ Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -For
 
 ## 5. 下一步
 
-- 各 skill 完整说明：[pathfinder](skills/pathfinder/) · [impact](skills/impact/) · [intent 六件套](README.md#从零开始开发)
+- 各 skill 完整说明：[pathfinder](skills/pathfinder/) · [impact](skills/impact/) · [intent 八件套](README.md#从零开始开发)
 - 不同 AI 客户端的验证程度与边界：[环境兼容说明](docs/environment-compatibility.md)
 - 场景速查表与完整路线：[README](README.md)
 

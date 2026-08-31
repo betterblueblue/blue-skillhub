@@ -23,6 +23,8 @@ finally:
 
 SKILLS_ROOT = SCRIPT_DIR.parent
 VALID_INTENT = SKILLS_ROOT / "intent-anchor" / "tests" / "fixtures" / "valid-intent.md"
+VALID_VISUAL = SKILLS_ROOT / "intent-visual" / "tests" / "fixtures" / "valid-visual-design.md"
+VALID_BASELINE = SKILLS_ROOT / "intent-visual" / "tests" / "fixtures" / "valid-visual-baseline.html"
 
 
 def _make_chain_dir() -> Path:
@@ -87,6 +89,48 @@ class TestChainValidate(unittest.TestCase):
         self.assertEqual(1, code)
         self.assertIn("verify-record.md", buf.getvalue())
         self.assertIn("FAIL", buf.getvalue())
+
+    def test_visual_design_present_and_valid_passes(self):
+        """visual-design.md 已产出且结构合法：visual 行 PASS，退出 0。"""
+        chain = _make_chain_dir()
+        (chain / "intent.md").write_text(
+            VALID_INTENT.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        (chain / "visual-design.md").write_text(
+            VALID_VISUAL.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        (chain / "visual-baseline.html").write_text(
+            VALID_BASELINE.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        self.assertEqual(0, _run_main(str(chain)))
+
+    def test_visual_design_broken_fails(self):
+        """visual-design.md 已产出但缺基线页（V10）：FAIL，退出 1。"""
+        chain = _make_chain_dir()
+        (chain / "intent.md").write_text(
+            VALID_INTENT.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        (chain / "visual-design.md").write_text(
+            VALID_VISUAL.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = _run_main(str(chain))
+        self.assertEqual(1, code)
+        self.assertIn("visual-baseline.html", buf.getvalue())
+
+    def test_visual_design_absent_is_skipped(self):
+        """visual-design.md 未产出（非 UI 项目或用户拒绝）：标跳过，不影响退出码。"""
+        chain = _make_chain_dir()
+        (chain / "intent.md").write_text(
+            VALID_INTENT.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            code = _run_main(str(chain))
+        self.assertEqual(0, code)
+        self.assertIn("visual-design.md", buf.getvalue())
+        self.assertIn("跳过", buf.getvalue())
 
 
 if __name__ == "__main__":

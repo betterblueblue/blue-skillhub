@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<!--
+  visual-baseline.html — 按同目录 visual-design.md 的数值渲染的一页式样式画廊。
+  用途：
+    1. intent-dev 的实现对照物（打开浏览器对着写）；
+    2. intent-verify 页面走查的比对基准（真实页面截图与基线并排）；
+    3. INTENT.md 第 12 节 D 素材行的验收范围所指。
+  规则：只渲染 visual-design.md 里写明的值，渲染替代后的真实字体栈；
+  不要在本文件里发明规范之外的新样式。
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visual Baseline - {产品名称}</title>
+<style>
+  /* ====== 以下变量逐项来自 visual-design.md 第 2-4 节，改规范先改规范文件 ====== */
+  :root {
+    --color-page-bg: {页面背景};
+    --color-text-primary: {主文字};
+    --color-text-secondary: {次级文字};
+    --color-hairline: {分隔线};
+    --font-stack: {正文字体栈};
+    --radius-card: {卡片圆角};
+    --radius-button: {按钮圆角};
+    --space-unit: {基础间距单位};
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: calc(var(--space-unit) * 4);
+    background: var(--color-page-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-stack);
+    font-size: 16px;
+    line-height: 28px;
+  }
+  .gallery { max-width: 1024px; margin: 0 auto; }
+  .gallery > section { border-top: 1px solid var(--color-hairline); padding: calc(var(--space-unit) * 4) 0; }
+  .gallery h2 { font-size: 13px; font-family: {技术标注字体栈}; font-weight: 400; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.08em; }
+  .swatches { display: flex; gap: var(--space-unit); flex-wrap: wrap; }
+  .swatch { width: 96px; }
+  .swatch .chip { height: 64px; border: 1px solid var(--color-hairline); border-radius: var(--radius-card); background: var(--swatch, #fff); }
+  .swatch code { font-size: 12px; color: var(--color-text-secondary); }
+  .type-scale > div { margin-bottom: var(--space-unit); }
+  .btn {
+    display: inline-block; padding: 8px 20px; border: none; cursor: pointer;
+    border-radius: var(--radius-button); background: var(--color-text-primary); color: var(--color-page-bg);
+    font-family: var(--font-stack); font-size: 14px;
+    transition: opacity 150ms ease-out;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .card {
+    border: 1px solid var(--color-hairline); border-radius: var(--radius-card);
+    padding: calc(var(--space-unit) * 3); max-width: 360px;
+  }
+  .card:hover { border-color: {hover 边框色}; }
+  .field {
+    border: 1px solid var(--color-hairline); border-radius: var(--radius-card);
+    padding: 8px 12px; width: 280px; font-family: var(--font-stack); font-size: 14px;
+  }
+  .field:focus { outline: none; border-color: {聚焦边框色}; }
+</style>
+</head>
+<body>
+<div class="gallery">
+  <section>
+    <h2>概览</h2>
+    <p style="font-size:24px; line-height:36px; font-weight:500; margin:0;">{一句话风格描述}</p>
+  </section>
+
+  <section>
+    <h2>色板（第 2 节）</h2>
+    <div class="swatches">
+      <!-- 每个用途一块：--swatch 填规范色值，code 标注用途与值 -->
+      <div class="swatch" style="--swatch: {色值}"><div class="chip"></div><code>{用途} {色值}</code></div>
+      <div class="swatch" style="--swatch: {色值}"><div class="chip"></div><code>{用途} {色值}</code></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>字号阶梯（第 3 节）</h2>
+    <div class="type-scale">
+      <!-- 按阶梯逐级渲染真实文字 -->
+      <div style="font-size:48px; line-height:56px; font-weight:500;">大标题 48/56</div>
+      <div>正文 16/28 —— The quick brown fox jumps over the lazy dog</div>
+      <div style="font-family:{技术标注字体栈}; font-size:13px; color:var(--color-text-secondary);">技术标注 13/20</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>组件样式（第 5 节）</h2>
+    <p>
+      <button class="btn">主按钮</button>
+      <button class="btn" disabled>禁用态</button>
+    </p>
+    <div class="card">
+      <strong>卡片标题</strong>
+      <p style="color:var(--color-text-secondary); margin:8px 0 0;">卡片正文示例文本。</p>
+    </div>
+    <p style="margin-top:16px;"><input class="field" placeholder="输入框默认态"></p>
+  </section>
+
+  <section>
+    <h2>间距与圆角（第 4 节）</h2>
+    <!-- 并排渲染不同间距/圆角样本，标注数值 -->
+    <div style="display:flex; gap:var(--space-unit); align-items:flex-end;">
+      <div style="width:64px; height:64px; background:{示例底色}; border-radius:var(--radius-card);"></div>
+      <code>{卡片圆角} / {基础间距单位}</code>
+    </div>
+  </section>
+</div>
+</body>
+</html>

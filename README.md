@@ -5,7 +5,7 @@
 
 Blue SkillHub 是一套面向 AI 编码助手的工作流工具。无论是把一个模糊想法说清楚、快速看懂陌生项目，还是修改已有系统，都有对应的工具可以使用。
 
-开源模型已经能完成不少编码任务，但在长任务和高风险变更中仍不够稳定：它可能理解错需求、漏掉调用方、跳过验证，或者把尚未完成的工作说成已经完成。这个仓库不试图让模型变得更聪明，而是把容易丢失的意图、项目事实和执行状态写进文件，再让脚本检查其中能够自动验证的部分。所有产出的文档都面向两类读者：AI 能接着用，人也能直接看懂——结论用普通话写清楚，不把内部黑话丢给用户。
+开源模型已经能完成不少编码任务，但在长任务和高风险变更中仍不够稳定：它可能理解错需求、漏掉调用方、跳过验证，或者把尚未完成的工作说成已经完成。提示词是人与模型之间临时的接口，会话结束、上下文被压缩或换一个模型之后就接不上了；值得长期保存的不是那些文字，而是意图——什么结果算好，哪些代价不能接受，什么时候必须停下来让人确认。这个仓库不试图让模型变得更聪明，而是把容易丢失的意图、项目事实和执行状态写进文件，再让脚本检查其中能够自动验证的部分。所有产出的文档都面向两类读者：AI 能接着用，人也能直接看懂——结论用普通话写清楚，不把内部黑话丢给用户。
 
 **改已有系统**用 ImpactRadar，它长这样——AI 分析完想动手，一句「都行，你定，继续吧」不算授权：
 
@@ -13,7 +13,7 @@ Blue SkillHub 是一套面向 AI 编码助手的工作流工具。无论是把�
 
 台词逐字取自[真实评测记录](eval/runs/real-projects/2026-07-27-sonnet-d21-style-trap/)。
 
-**从零做新项目**走 intent-chain 六件套，它管的是另一件事——你确认过的东西，下游不能偷偷丢掉：
+**从零做新项目**走 intent-chain 八件套（视觉环节仅 UI 项目需要），它管的是另一件事——你确认过的东西，下游不能偷偷丢掉：
 
 ![intent-chain 链路交叉校验演示](docs/assets/chain-demo.gif)
 
@@ -97,7 +97,7 @@ flowchart TD
 
 ```powershell
 # 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
-"_common","pathfinder","impact","intent-anchor","intent-prd","intent-design","intent-issues","intent-dev","intent-adversarial","intent-verify" |
+"_common","pathfinder","impact","intent-anchor","intent-prd","intent-design","intent-visual","intent-issues","intent-dev","intent-adversarial","intent-verify" |
   ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
 
 Copy-Item "skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
@@ -106,6 +106,7 @@ Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -For
 Copy-Item "skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
 Copy-Item "skills\intent-prd" "$env:USERPROFILE\.claude\skills\intent-prd" -Recurse -Force
 Copy-Item "skills\intent-design" "$env:USERPROFILE\.claude\skills\intent-design" -Recurse -Force
+Copy-Item "skills\intent-visual" "$env:USERPROFILE\.claude\skills\intent-visual" -Recurse -Force
 Copy-Item "skills\intent-issues" "$env:USERPROFILE\.claude\skills\intent-issues" -Recurse -Force
 Copy-Item "skills\intent-dev" "$env:USERPROFILE\.claude\skills\intent-dev" -Recurse -Force
 Copy-Item "skills\intent-verify" "$env:USERPROFILE\.claude\skills\intent-verify" -Recurse -Force
@@ -154,7 +155,7 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方
 
 下面是最常见的搭配，不要求每次把所有工具都走一遍。
 
-- **从模糊想法开始做新项目**：律刃 → IntentAnchor → 需要时调研开源项目 → 用 IntentPRD 生成 PRD → 用 IntentDesign 做技术方案设计 → 用 IntentIssues 拆工单 → 用 IntentDev 开发 → 用 IntentAdversarial 对抗性验证 → 用 IntentVerify 端到端验收 → 提交前整理。也可以选择 Superpowers 或 Skills for Real Engineers 进入开发。担心 AI 把简单需求做复杂时，可以在开发阶段搭配 Ponytail。
+- **从模糊想法开始做新项目**：律刃 → IntentAnchor → 需要时调研开源项目 → 用 IntentPRD 生成 PRD → 用 IntentDesign 做技术方案设计 → UI 项目用 IntentVisual 定视觉规范（无设计素材时）→ 用 IntentIssues 拆工单 → 用 IntentDev 开发 → 用 IntentAdversarial 对抗性验证 → 用 IntentVerify 端到端验收 → 提交前整理。也可以选择 Superpowers 或 Skills for Real Engineers 进入开发。担心 AI 把简单需求做复杂时，可以在开发阶段搭配 Ponytail。
 - **接手陌生项目并准备修改**：律刃 → Pathfinder → 需求仍然模糊时使用 IntentAnchor → ImpactRadar → 独立验收 → 提交前整理。
 - **熟悉项目中的明确改动**：律刃 → ImpactRadar → 验证 → 独立验收或提交前整理。不必为了流程完整强行运行 Pathfinder。
 - **开发中途需求改变**：先暂停修改 → 需求变更对账 → 目标变化时回到 IntentAnchor，改动范围变化时回到 ImpactRadar。
@@ -174,6 +175,8 @@ intent-anchor → intent.md（意图、能力、验收路径、设计标准、�
 intent-prd → prd.md（原生引用能力表和验收路径，验收标准用 Given/When/Then 结构）
     ↓ 强制输入
 intent-design → architecture.md + design.md（架构决策外化为文件，假设表把过度设计变成显式决策）
+    ↓ 按需（仅无设计素材的 UI 项目）
+intent-visual → visual-design.md + visual-baseline.html（视觉规范与验收基线，登记进 INTENT 第 12 节激活既有截图门禁）
     ↓ 强制输入
 intent-issues → issues.md（自动引用路径编号，自动检查覆盖；检查模块引用）
     ↓ 强制输入
@@ -196,7 +199,7 @@ IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设计标�
 
 **轻量档**：小项目（用户可感知能力 ≤5、单用户、无数据库、无对外 API）可以在 intent-anchor 定档为轻量——文档薄写、确认合并、工单单条直行，但验收路径、假设表、V2 证据和全部校验器不降级。档位记录在 `INTENT.md` 第 2 节，只允许轻量升标准，不允许反向降档。
 
-**链路批量校验**：上游文档修订后，运行 `python skills/_common/chain_validate.py intent-chain/{链路目录}` 一条命令重验整条链——六个校验器自带交叉检查，重跑一遍就能发现下游哪些文档需要同步更新；尚未产出的文件自动跳过。命令末尾还会做两项跨文件检查：D5 漂移交叉检查——推迟或放弃的能力若回流到 User Story、工单、开发记录这些实现内容区，会被直接拦下（PRD 的 Out of Scope、设计文档的「不做什么」等合法提及不受影响）；术语落地交叉检查——术语表登记过翻译的原始术语若出现在前端页面的用户可见文案里，也会被拦下（注释、原型素材目录豁免）。
+**链路批量校验**：上游文档修订后，运行 `python skills/_common/chain_validate.py intent-chain/{链路目录}` 一条命令重验整条链——各校验器自带交叉检查，重跑一遍就能发现下游哪些文档需要同步更新；尚未产出的文件自动跳过（visual-design.md 是条件环节，仅 UI 项目产出，未产出标跳过）。命令末尾还会做两项跨文件检查：D5 漂移交叉检查——推迟或放弃的能力若回流到 User Story、工单、开发记录这些实现内容区，会被直接拦下（PRD 的 Out of Scope、设计文档的「不做什么」等合法提及不受影响）；术语落地交叉检查——术语表登记过翻译的原始术语若出现在前端页面的用户可见文案里，也会被拦下（注释、原型素材目录豁免）。
 
 ### IntentDesign：把技术方案和假设外化为文件
 
@@ -205,6 +208,16 @@ IntentPRD 和 IntentIssues 原生解析 `INTENT.md` 的各章节，把设计标�
 它通过假设表把"这个场景会不会发生"从模型的隐含判断变成用户的显式决策。额外结构必须写出具体场景和依据，依据只能是代码位置、用户原话（引号包裹）或"无依据，属于假设"——不接受"模型判断确有必要"等非证据性表述。
 
 `design_validate.py` 运行 15 项检查（A1-A8, D1-D5, X1-X2），包括架构概览、模块定义、技术选型、数据流、假设合规性、能力覆盖、模块引用一致性和额外能力检查。
+
+### IntentVisual：把"要某某风格"变成可验收的视觉规范
+
+[IntentVisual](skills/intent-visual/) 是可选环节，仅服务一种情况：项目有用户界面，但 INTENT 第 12 节没有设计素材——用户只说了"要某某风格"或"好看点"。已有设计稿、原型或现成 DESIGN.md 的项目不需要它，直接登记进第 12 节即可；纯 CLI 工具也跳过。
+
+它的做法是参考 [awesome-design-md](https://github.com/VoltAgent/awesome-design-md)（MIT）把风格蒸馏成"只写具体值"的规范：`visual-design.md` 全部是 hex 色值、px、带 fallback 的字体栈和组件三态，不写形容词；配套生成 `visual-baseline.html` 样式画廊作为实现对照物和验收比对基准。风格来源有四条路：推荐真实网站供你确认（默认）、用内置的四个方向样张让你看图选、你自己指名品牌或网站、或授权模型决定。
+
+产物登记进 INTENT 第 12 节后，下游门禁原样点亮，不需要改任何校验器：IntentIssues 的工单自动要求"对照 visual-design.md"，IntentDev 对照基线页实现，IntentVerify 的路径证据必须附真实截图并与基线页比对。`visual_validate.py` 做 10 项结构检查（必需章节、色值格式、字体栈 fallback、负面清单非空、来源可追溯、基线页存在等）。
+
+如实说明边界：参考文件是第三方对公开网站的分析，不是官方设计系统；专有字体替换为系统字体栈，产出定位是"风格参考"而不是"品牌还原"；第一版不做像素级比对，风格相符 = 截图与基线页并排 + 人工确认。
 
 ### IntentDev、IntentAdversarial 和 IntentVerify：从开发到对抗验证再到端到端验收
 

@@ -86,23 +86,25 @@ claude --print -- "/impact 只做测试：请说明 impact 的适用范围，不
 
 如果 Claude Code 已配置只读 code graph / repo-map MCP，`/pathfinder` 和 `/impact` 会按各自规则自动探测使用；没有配置也应诚实降级到 Read/Grep，不影响基本流程。Cursor 用户可按 [§4 安装 Codegraph MCP](#4-安装-codegraph-mcp可选) 配置；若 MCP 已连接但没有工具，见 [README FAQ：Codegraph MCP](../README.md#codegraph-mcp-显示已连接但没有工具no-tools)。
 
-### intent-chain 六件套（0→1 链路，可选）
+### intent-chain 八件套（0→1 链路，可选）
 
-从模糊想法到验收的六步链路：intent-anchor → intent-prd → intent-design → intent-issues → intent-dev → intent-verify。`_common` 是六件套共享的校验工具目录（含链路批量校验脚本 `chain_validate.py`），需要一并复制。
+从模糊想法到验收的链路：intent-anchor → intent-prd → intent-design → intent-visual（仅无设计素材的 UI 项目需要）→ intent-issues → intent-dev → intent-adversarial → intent-verify。`_common` 是八件套共享的校验工具目录（含链路批量校验脚本 `chain_validate.py`），需要一并复制。
 
 Claude Code：
 
 ```powershell
 # 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
-"_common","intent-anchor","intent-prd","intent-design","intent-issues","intent-dev","intent-verify" |
+"_common","intent-anchor","intent-prd","intent-design","intent-visual","intent-issues","intent-dev","intent-adversarial","intent-verify" |
   ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
 
 Copy-Item "skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
 Copy-Item "skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
 Copy-Item "skills\intent-prd" "$env:USERPROFILE\.claude\skills\intent-prd" -Recurse -Force
 Copy-Item "skills\intent-design" "$env:USERPROFILE\.claude\skills\intent-design" -Recurse -Force
+Copy-Item "skills\intent-visual" "$env:USERPROFILE\.claude\skills\intent-visual" -Recurse -Force
 Copy-Item "skills\intent-issues" "$env:USERPROFILE\.claude\skills\intent-issues" -Recurse -Force
 Copy-Item "skills\intent-dev" "$env:USERPROFILE\.claude\skills\intent-dev" -Recurse -Force
+Copy-Item "skills\intent-adversarial" "$env:USERPROFILE\.claude\skills\intent-adversarial" -Recurse -Force
 Copy-Item "skills\intent-verify" "$env:USERPROFILE\.claude\skills\intent-verify" -Recurse -Force
 ```
 

@@ -92,7 +92,7 @@ INTENT.md 第 2 节标注轻量档时：
 
 ### Phase 5：完成
 
-`architecture.md` 和 `design.md` 已写入 `intent-chain/{链路目录}/`。下一步：运行 intent-issues，输入 intent.md、prd.md 和本次产出的 architecture.md、design.md。
+`architecture.md` 和 `design.md` 已写入 `intent-chain/{链路目录}/`。目标项目有用户界面时，下一步先运行 intent-visual 定视觉规范（INTENT 第 12 节已有设计素材行时可跳过）；无界面的项目或视觉规范完成后，运行 intent-issues，输入 intent.md、prd.md 和本次产出的 architecture.md、design.md。
 
 ## 强制规则
 
