@@ -2,7 +2,7 @@
 
 > 所有工单开发完成后的整体验收。先跑全量测试确认老功能没被改坏，再端到端走通验收路径，最后做条件性验证和最终复核。
 
-这是 intent-chain 六步链路的第 6 步，也是最后一步：intent-anchor → intent-prd → intent-design → intent-issues → intent-dev → **intent-verify**。
+这是 intent-chain 链路的第 8 步，也是最后一步：intent-anchor → intent-prd → intent-design → intent-visual（仅 UI 项目）→ intent-issues → intent-dev → intent-adversarial → **intent-verify**。
 
 ## 为什么需要它
 

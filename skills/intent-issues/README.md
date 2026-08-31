@@ -2,7 +2,7 @@
 
 > 把 PRD 和设计拆成一条条能独立开发、独立验证的工单，并自动检查没有任何验收路径被漏掉。
 
-这是 intent-chain 六步链路的第 4 步：intent-anchor → intent-prd → intent-design → **intent-issues** → intent-dev → intent-verify。
+这是 intent-chain 链路的第 5 步：intent-anchor → intent-prd → intent-design → intent-visual（仅 UI 项目）→ **intent-issues** → intent-dev → intent-adversarial → intent-verify。
 
 ## 为什么需要它
 

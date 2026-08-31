@@ -2,7 +2,7 @@
 
 > 把 `INTENT.md` 变成结构化 PRD，已确认的能力、验收路径和约束一条不漏地带进去。
 
-这是 intent-chain 六步链路的第 2 步：intent-anchor → **intent-prd** → intent-design → intent-issues → intent-dev → intent-verify。
+这是 intent-chain 链路的第 2 步：intent-anchor → **intent-prd** → intent-design → intent-visual（仅 UI 项目）→ intent-issues → intent-dev → intent-adversarial → intent-verify。
 
 ## 为什么需要它
 

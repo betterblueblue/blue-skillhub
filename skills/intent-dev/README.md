@@ -2,7 +2,7 @@
 
 > 按 TDD 循环开发每个工单，工单完成后实际运行验证确认通过。检查的是每个零件合不合格。
 
-这是 intent-chain 六步链路的第 5 步：intent-anchor → intent-prd → intent-design → intent-issues → **intent-dev** → intent-verify。
+这是 intent-chain 链路的第 6 步：intent-anchor → intent-prd → intent-design → intent-visual（仅 UI 项目）→ intent-issues → **intent-dev** → intent-adversarial → intent-verify。
 
 ## 为什么需要它
 

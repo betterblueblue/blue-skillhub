@@ -2,7 +2,7 @@
 
 > 把技术方案落成两份可检查的文件——全局架构决策和每个能力的落地设计；模型多加的每一个结构，都必须写明依据。
 
-这是 intent-chain 六步链路的第 3 步：intent-anchor → intent-prd → **intent-design** → intent-issues → intent-dev → intent-verify。
+这是 intent-chain 链路的第 3 步：intent-anchor → intent-prd → **intent-design** → intent-visual（仅 UI 项目）→ intent-issues → intent-dev → intent-adversarial → intent-verify。
 
 ## 为什么需要它
 
