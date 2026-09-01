@@ -25,10 +25,11 @@
 
 命令行入口（可选）：`scripts/ds.py`——`init`（探测本机 agent 存档）、`ingest`（提取语料）、`ask`（检索）、`contrast`（同一话题前后说法对比）、`promise`（欠账本：add 记一笔 / done 划掉）、`export`（随身说明书）、`monthly`（月度三页纸）、`install`（装进其他 agent 的 skills 目录）、`where`（数据目录 + 画像新鲜度）。
 
-## 数据放在哪
+## 数据放在哪（两层）
 
-按顺序找：环境变量 `WORD_MIRROR_HOME` → `~/.wordmirror/` → 本 skill 上两级 `../../data/`（完整仓库布局）。
-旧名 `DIGITAL_SELF_HOME`、`~/.digital-self/` 仍然兼容。
+**全局层**——"你是谁"（画像/规矩/语料/月报），不分项目，跟着你走。定位顺序：环境变量 `WORD_MIRROR_HOME` → `~/.wordmirror/` → 仓库布局（脚本旁有 data/）→ 默认 `~/.wordmirror/`（首次写入时创建）。旧名 `DIGITAL_SELF_HOME`、`~/.digital-self/` 兼容。
+
+**项目层**——"这个项目的事"（欠账本/写回），在哪个目录干活记哪：`<当前目录>/.wordmirror/promises.jsonl`，首次记账时自动创建，可随项目进 git。开场检查两层都看。
 
 ## 单装 vs 完整仓库
 

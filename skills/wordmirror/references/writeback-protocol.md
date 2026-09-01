@@ -41,7 +41,9 @@
 > 用户说"我要做X""下周去Y"——这算事实（他亲口说的要做），记进欠账本。
 > "我在想要不要做"是想法，不记。拿不准就问一句。
 
-**记一笔（open）**：数据目录 `promises.jsonl` 末尾追加一行（文件不存在就创建）：
+**记在哪（两层账本）**：你在哪个目录干活，账就记哪——当前目录 `.wordmirror/promises.jsonl`（目录自动创建）；在仓库实例目录里干活则记全局 `data/promises.jsonl`。开场检查两层都看（见 SKILL.md 第一步）。
+
+**记一笔（open）**：对应账本末尾追加一行（文件不存在就创建）：
 
 ```json
 {"date": "YYYY-MM-DD", "text": "要做的事，用用户的原话", "status": "open", "agent": "当前agent名"}
@@ -50,6 +52,6 @@
 **划掉（closed / dropped）**：用户说"做完了""这事黄了"→ 找到对应那行，把 status 改成 `closed`（完成）或 `dropped`（不做了），加一个 `"closed_date": "YYYY-MM-DD"`。
 欠账本改状态是记账，不算改历史——append-only 的规矩只约束 `user_writebacks.jsonl`。
 
-**当场回一声**："记下了：X" 或 "划掉了：X"。也可以用命令：`python ds.py promise add 要做的事` / `python ds.py promise done 关键词` / `python ds.py promise`（看欠账）。
+**当场回一声**："记下了：X" 或 "划掉了：X"。也可以用命令：`python ds.py promise add 要做的事` / `python ds.py promise done 关键词` / `python ds.py promise`（看两层欠账）。
 
 **和开场联动**：SKILL.md 第一步的"开工三句话"会瞄一眼这个本子，最老的一笔提一句——所以记账后用户在之后任何会话里都会被温柔地提醒。

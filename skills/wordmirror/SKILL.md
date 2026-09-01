@@ -17,7 +17,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 
 读完画像和规矩，开工前看三个小本子（合计不超过三句话，说完就干正事）：
 
-1. **欠账**：数据目录 `data/promises.jsonl`（若存在）里 status=open 的，加上 `data/tracker_items.json` 里 status=stalled 的，挑最老的一件提一句："你 X 天前说的 XX 还没下文"
+1. **欠账（两层都看）**：当前目录 `.wordmirror/promises.jsonl`（若存在）+ 数据目录 `data/promises.jsonl`（若存在）里 status=open 的，加上 `data/tracker_items.json` 里 status=stalled 的，挑最老的一件提一句："你 X 天前说的 XX 还没下文"
 2. **资料新鲜度**：portrait.md 顶部日期距今超过 30 天 → 提一句"画像有 X 天没更新了，要不要补最近的情况"
 3. 两条都没有 → 直接开工，一句废话不说
 

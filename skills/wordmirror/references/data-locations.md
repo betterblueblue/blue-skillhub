@@ -6,7 +6,10 @@
 
 1. **环境变量** `WORD_MIRROR_HOME`（用户显式指定，最优先；旧名 `DIGITAL_SELF_HOME` 仍兼容）
 2. `~/.wordmirror/`（产品化标准位置：`~/.wordmirror/data/`；旧目录 `~/.digital-self/` 仍兼容）
-3. 本 skill 目录往上两级：`../../data/`（开发实例的布局：skill 在 `<仓库>/skill/wordmirror/`，数据在 `<仓库>/data/`）
+3. 仓库布局：脚本旁真有 `data/` 目录才用（开发实例：skill 在 `<仓库>/skill/wordmirror/`，数据在 `<仓库>/data/`）
+4. 都没有 → 默认 `~/.wordmirror/`，首次写入时自动创建（单装用户数据不再撒到奇怪的地方）
+
+**项目层（欠账/写回专用）**：当前目录 `.wordmirror/promises.jsonl`——在哪个目录干活，账记哪，随项目走（可进项目 git）。全局层和项目层开场都查；`ds.py promise` 也扫两层。
 
 ## 验证找对了
 

@@ -19,8 +19,11 @@
 """
 import os, sys, subprocess, json, webbrowser, glob, re, shutil, datetime
 
-# 定位言镜（wordmirror）仓库根（data-locations.md 的同款顺序）：
-# 1) 环境变量 WORD_MIRROR_HOME（旧名 DIGITAL_SELF_HOME 兼容）  2) ~/.wordmirror（旧 ~/.digital-self 兼容）  3) 本脚本在 <repo>/skill/wordmirror/scripts/ 布局
+# 定位两层（data-locations.md 的同款顺序）：
+# 全局层（画像/语料/月报——"你是谁"，不分项目）：
+#   1) 环境变量 WORD_MIRROR_HOME（旧名 DIGITAL_SELF_HOME 兼容）  2) ~/.wordmirror（旧 ~/.digital-self 兼容）
+#   3) 仓库布局（脚本旁有 data/，开发实例）  4) 都没有 → 默认 ~/.wordmirror，首次写入时创建
+# 项目层（欠账/写回——"这个项目的事"）：<当前目录>/.wordmirror/，在哪个目录干活账记哪
 def _find_base():
     env = os.environ.get('WORD_MIRROR_HOME') or os.environ.get('DIGITAL_SELF_HOME')
     if env and os.path.isdir(os.path.join(env, 'data')):
@@ -34,7 +37,22 @@ def _find_base():
     guess = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     if os.path.isdir(os.path.join(guess, 'data')):
         return guess
-    return guess  # 找不到也返回最近猜测，ingest 时会创建
+    return home  # 标准默认位置，首次写入时自动创建
+
+def _promises_file():
+    """账本分两层：在仓库实例目录里干活 → 全局 data/；在其他项目目录 → 该目录 .wordmirror/。"""
+    cwd = os.getcwd()
+    if os.path.normcase(os.path.abspath(cwd)) == os.path.normcase(os.path.abspath(BASE)):
+        return os.path.join(DATA, 'promises.jsonl')
+    return os.path.join(cwd, '.wordmirror', 'promises.jsonl')
+
+def _ledger_paths():
+    """开场/查询要看的所有账本：当前项目层 + 全局层（去重）。"""
+    paths = [_promises_file()]
+    g = os.path.join(DATA, 'promises.jsonl')
+    if os.path.normcase(os.path.abspath(g)) != os.path.normcase(os.path.abspath(paths[0])):
+        paths.append(g)
+    return paths
 
 BASE = _find_base()
 ENGINE = os.path.join(BASE, 'engine')
@@ -162,6 +180,11 @@ def cmd_check():
 def cmd_where():
     print('数据目录：%s' % DATA)
     print('产物目录：%s' % PRODUCTS)
+    cwd = os.getcwd()
+    if os.path.normcase(os.path.abspath(cwd)) != os.path.normcase(os.path.abspath(BASE)):
+        proj = os.path.join(cwd, '.wordmirror', 'promises.jsonl')
+        mark = '（已有项目账本）' if os.path.exists(proj) else '（首次记账时创建）'
+        print('项目账本：%s %s' % (os.path.dirname(proj), mark))
     n = _try_count()
     print('语料条数：%s' % (n if n else '（还没跑过 ingest）'))
     info = _profile_age()
@@ -183,37 +206,46 @@ def _profile_age():
     d = datetime.date.fromisoformat(m.group(1))
     return (datetime.date.today() - d).days, m.group(1)
 
-# ===== 欠账本（说要做的事）=====
-PROMISES = os.path.join(DATA, 'promises.jsonl')
+# ===== 欠账本（说要做的事，两层：项目 + 全局）=====
 
-def _load_promises():
+def _load_promises(path):
     out = []
-    if os.path.exists(PROMISES):
-        for i, line in enumerate(open(PROMISES, encoding='utf-8'), 1):
+    if os.path.exists(path):
+        for i, line in enumerate(open(path, encoding='utf-8'), 1):
             line = line.strip()
             if not line:
                 continue
             try:
                 o = json.loads(line)
             except Exception:
-                print('警告：欠账本第 %d 行不是合法 JSON，跳过' % i)
+                print('警告：欠账本 %s 第 %d 行不是合法 JSON，跳过' % (path, i))
                 continue
             o['_line'] = i
             out.append(o)
     return out
 
+def _ledger_tag(path):
+    """项目账本 = 当前目录 .wordmirror 下的那本；其余（含默认 ~/.wordmirror）都算全局账本。"""
+    proj = os.path.join(os.getcwd(), '.wordmirror', 'promises.jsonl')
+    return '项目账本' if os.path.normcase(os.path.abspath(path)) == os.path.normcase(os.path.abspath(proj)) else '全局账本'
+
 def cmd_promise(args):
     if not args:
-        items = [o for o in _load_promises() if o.get('status') == 'open']
-        if not items:
+        infos = [(path, _load_promises(path)) for path in _ledger_paths()]
+        rows = []
+        for path, items in infos:
+            for o in items:
+                if o.get('status') == 'open':
+                    rows.append((_ledger_tag(path), o))
+        if not rows:
             print('欠账本干净，没有开着的事。')
             return
+        rows.sort(key=lambda t: t[1].get('date', ''))
         today = datetime.date.today()
-        items.sort(key=lambda o: o.get('date', ''))
-        print('欠账 %d 笔（从老到新）:' % len(items))
-        for o in items:
+        print('欠账 %d 笔（从老到新）:' % len(rows))
+        for tag, o in rows:
             days = (today - datetime.date.fromisoformat(o['date'])).days if o.get('date') else '?'
-            print('  %s 记的（%d 天）| %s' % (o.get('date', '?'), days, o.get('text', '')))
+            print('  [%s] %s 记的（%d 天）| %s' % (tag, o.get('date', '?'), days, o.get('text', '')))
         return
     sub = args[0]
     if sub == 'add':
@@ -221,25 +253,30 @@ def cmd_promise(args):
         if not text:
             print('用法：python ds.py promise add 要做的事')
             sys.exit(1)
+        pf = _promises_file()
+        os.makedirs(os.path.dirname(pf), exist_ok=True)
         row = {'date': datetime.date.today().isoformat(), 'text': text,
                'status': 'open', 'agent': 'cli'}
-        with open(PROMISES, 'a', encoding='utf-8') as f:
+        with open(pf, 'a', encoding='utf-8') as f:
             f.write(json.dumps(row, ensure_ascii=False) + '\n')
-        print('记下了：%s' % text)
+        print('记下了：%s（%s）' % (text, pf))
     elif sub in ('done', 'drop'):
         kw = ' '.join(args[1:]).strip()
-        items = _load_promises()
-        hit = next((o for o in items if o.get('status') == 'open' and kw in o.get('text', '')), None)
-        if not hit:
-            print('没找到开着的事里含「%s」的。' % kw)
-            sys.exit(1)
-        hit['status'] = 'closed' if sub == 'done' else 'dropped'
-        hit['closed_date'] = datetime.date.today().isoformat()
-        with open(PROMISES, 'w', encoding='utf-8') as f:
-            for o in items:
-                line = dict(o); line.pop('_line', None)
-                f.write(json.dumps(line, ensure_ascii=False) + '\n')
-        print('划掉了：%s' % hit['text'])
+        for pf in _ledger_paths():
+            items = _load_promises(pf)
+            hit = next((o for o in items if o.get('status') == 'open' and kw in o.get('text', '')), None)
+            if not hit:
+                continue
+            hit['status'] = 'closed' if sub == 'done' else 'dropped'
+            hit['closed_date'] = datetime.date.today().isoformat()
+            with open(pf, 'w', encoding='utf-8') as f:
+                for o in items:
+                    line = dict(o); line.pop('_line', None)
+                    f.write(json.dumps(line, ensure_ascii=False) + '\n')
+            print('划掉了：%s（%s）' % (hit['text'], pf))
+            return
+        print('没找到开着的事里含「%s」的。' % kw)
+        sys.exit(1)
     else:
         print('用法：python ds.py promise / promise add 文本 / promise done 关键词')
 
