@@ -1,28 +1,29 @@
 # -*- coding: utf-8 -*-
-"""ds · 言镜（wordmirror）命令行入口。
+"""ds · 言镜（wordmirror）—— AI 干不了的重活工具 + 记账/写回的唯一入口。
 
-用法：
-    python ds.py init    探测你机器上有哪些 agent 的存档
-    python ds.py ingest  全流程：提取你说过的话 → 去掉重复的 → 生成网页
-    python ds.py ask "问题关键词"   在你说过的话里搜
-    python ds.py contrast "话题"    这个话题最早和最近的说法并排看
+查旧话、看数据在哪、导出说明书这些活 AI 用自己的本事就能干（见 SKILL.md），
+不在这做命令。这里只留两类：
+
+三件 AI 干不了的活：
+    python ds.py ingest            提取你各 AI 的原始记录 → 去掉重复的 → 生成网页
+    python ds.py vec build [--update]   建/更新按意思搜的索引（见 scripts/vecsearch.py）
+    python ds.py vec status        看按意思搜的索引状态
+    python ds.py monthly [YYYY-MM] 生成这个月的报告（调 render.py）
+    python ds.py open              用浏览器打开首页
+
+记账 / 写回（中护栏：只走命令，保证格式对、坏行拦得住）：
     python ds.py promise           看说过要做的事（哪些还没做完）
-    python ds.py promise add 要做的事 / promise done 关键词
+    python ds.py promise add 要做的事 / promise done 关键词 / promise drop 关键词
     python ds.py wb add "事实" --topic 主题   记下一条你确认过的事（--ref 附依据）
     python ds.py wb list           看记下的事
-    python ds.py export            生成随身说明书（只含能公开的内容，完整情况不外发）
-    python ds.py install <目录>    把 skill 包装进指定 skills 目录（--all 自动找）
-    python ds.py monthly [YYYY-MM] 生成这个月的报告
-    python ds.py open    用浏览器打开首页
-    python ds.py check   跑一遍自检（检查项看输出）
-    python ds.py where   显示数据放在哪、你的情况多久没更新、怎么找到的
-    python ds.py bind <仓库根>  把已有完整仓库的数据接上（--clear 取消）
-    python ds.py vec build [--update]  建/更新按意思搜的索引（在你自己电脑上，见 scripts/vecsearch.py）
-    python ds.py vec status        看按意思搜的索引状态
+
+地基 / 护栏：
+    python ds.py bind <仓库根>     把已有完整仓库的数据接上（--clear 取消）
+    python ds.py check             跑一遍自检（检查项看输出）
 
 设计原则（DESIGN.md）：每人自己跑自己的；数据全程在自己电脑上；不写死路径。
 """
-import os, sys, subprocess, json, webbrowser, glob, re, shutil, datetime
+import os, sys, subprocess, json, webbrowser, re, datetime
 
 # 定位两层（data-locations.md 的同款顺序）：
 # 全局层（画像/语料/月报——"你是谁"，不分项目）：
@@ -100,13 +101,6 @@ def run(script, **kw):
         sys.exit(1)
     return r
 
-def cmd_init():
-    print('第一步：看看你机器上有哪些 agent 的存档')
-    print()
-    run('detect_agents.py')
-    print()
-    print('下一步：python ds.py ingest  （开始提取你说过的所有话）')
-
 def cmd_ingest():
     steps = [
         ('提取你说的话', 'extract_all.py'),
@@ -164,42 +158,6 @@ def _sugar_report():
     else:
         print('（重度用户量级：全部产物都会很扎实）')
 
-def _load_synonyms():
-    """近义词组：内置常见组 + 数据目录 synonyms.json 用户自扩（格式 {"词": ["近义词", ...]}）。
-    纯字面 grep 记不住原词就查不到——这层扩词是廉价补丁，不是语义检索。"""
-    groups = [
-        ['求职', '找工作', '投简历', '面试'],
-        ['放弃', '不做了', '算了', '弃了', '砍了'],
-        ['决定', '定了', '拍板', '敲定'],
-        ['简历', 'CV'],
-        ['备考', '复习', '学习'],
-        ['测试', '单测', '回归'],
-        ['部署', '上线', '发布'],
-        ['离职', '辞职'],
-    ]
-    p = os.path.join(DATA, 'synonyms.json')
-    if os.path.exists(p):
-        try:
-            with open(p, encoding='utf-8') as f:
-                for k, vs in json.load(f).items():
-                    groups.append([k] + list(vs))
-        except Exception:
-            pass
-    return groups
-
-def _expand_query(q):
-    """把查询词扩成近义词组（原词永远排第一）。查不到 synonyms.json 就只有原词。"""
-    words = [q]
-    for g in _load_synonyms():
-        if q in g:
-            words += [w for w in g if w != q]
-    seen, out = set(), []
-    for w in words:
-        if w not in seen:
-            seen.add(w)
-            out.append(w)
-    return out
-
 def cmd_vec(args):
     """语义检索入口。转发给 vecsearch.py（依赖 chromadb + sentence-transformers，本机跑）。"""
     sub = args[0] if args else 'status'
@@ -207,55 +165,6 @@ def cmd_vec(args):
     r = subprocess.run([sys.executable, rp, sub] + args[1:])
     sys.exit(r.returncode)
 
-
-def cmd_ask(query):
-    if not query:
-        print('用法：python ds.py ask "关键词"')
-        sys.exit(1)
-    # 语义优先：有索引走向量检索（问法和原话字面不同也能命中），没索引/查询失败降回关键词+近义词。
-    # 短查询（1-2 字）语义区分度差，直接走关键词。
-    try:
-        import vecsearch
-        hits = vecsearch.query(query) if len(query) > 2 else None
-    except Exception:
-        hits = None
-    if hits:
-        print('按意思搜到 %d 条（越相关排越前）:' % len(hits))
-        for h in hits:
-            tag = '写回' if h['src'] == 'user_writebacks.jsonl' else '原话'
-            print('  %.2f | %s | %-10s | %s | %s' % (h['score'], h['date'], h['agent'], tag, h['msg'][:110]))
-        print('（按意思相近排的，问题写具体一点更准；想按字面找，直接搜文件即可）')
-        return
-    _ask_keyword(query)
-
-
-def _ask_keyword(query):
-    # 关键词检索：跨两个主力文件；查询词自动带近义词组（用户记不住自己当时的原词是常态）
-    variants = _expand_query(query)
-    hits = []
-    for f in ['corpus_dedup.jsonl', 'user_writebacks.jsonl']:
-        p = os.path.join(DATA, f)
-        if not os.path.exists(p):
-            continue
-        for line in open(p, encoding='utf-8'):
-            if any(v.lower() in line.lower() for v in variants):
-                try:
-                    o = json.loads(line)
-                except Exception:
-                    continue
-                hits.append(o)
-    if not hits:
-        print('没找到含「%s」的话。换个词试试？' % query)
-        return
-    hits.sort(key=lambda o: o.get('date', ''))
-    print('找到 %d 条（按时间排）:' % len(hits))
-    if len(variants) > 1:
-        print('（「%s」也搜了近义词：%s）' % (query, '、'.join(variants[1:])))
-    for o in hits[-15:]:
-        msg = o.get('msg', '').replace(chr(10), ' ')[:110]
-        print('  %s | %-10s | %s' % (o.get('date', '?'), o.get('agent', o.get('source', '?')), msg))
-    if len(hits) > 15:
-        print('  …（共 %d 条，只显示最近 15 条）' % len(hits))
 
 def cmd_bind(args):
     """skill 装在 A 处、数据在 B 处（完整仓库）时，用 bind 把两者接上。指针在 ~/.wordmirror/bind.json。"""
@@ -280,7 +189,7 @@ def cmd_bind(args):
     with open(bind_p, 'w', encoding='utf-8') as f:
         json.dump({'home': target}, f, ensure_ascii=False)
     print('已绑定：%s（指针写在 %s）' % (target, bind_p))
-    print('验证：python ds.py where   （定位方式应显示 bind 指针）')
+    print('之后查旧话、生成网页、记账都用这份数据了。')
     print('解绑：python ds.py bind --clear')
 
 def cmd_open():
@@ -294,36 +203,6 @@ def cmd_open():
 
 def cmd_check():
     run('self_check.py')
-
-def cmd_where():
-    print('数据放在：%s' % DATA)
-    print('找到数据的方式：%s' % BASE_SOURCE)
-    print('生成的网页在：%s' % PRODUCTS)
-    cwd = os.getcwd()
-    if os.path.normcase(os.path.abspath(cwd)) != os.path.normcase(os.path.abspath(BASE)):
-        proj = os.path.join(cwd, '.wordmirror', 'promises.jsonl')
-        mark = '（已有记录）' if os.path.exists(proj) else '（第一次记时才建）'
-        print('这个目录记的事：%s %s' % (os.path.dirname(proj), mark))
-    n = _try_count()
-    print('你说过的话：%s' % (n if n else '（还没跑过 ingest）'))
-    info = _profile_age()
-    if info:
-        days, d = info
-        tip = '今天刚更新' if days == 0 else ('已 %d 天，该补最近的情况了' % days if days > 30 else '已 %d 天' % days)
-        print('你的情况整理于：%s（%s）' % (d, tip))
-    else:
-        print('你的情况：还没有，先跑 ingest 再让 AI 整理')
-
-def _profile_age():
-    """从 portrait.md 顶部拿第一个日期，算画像多少天没更新。"""
-    p = os.path.join(DATA, 'profile', 'portrait.md')
-    if not os.path.exists(p):
-        return None
-    m = re.search(r'(\d{4}-\d{2}-\d{2})', open(p, encoding='utf-8', errors='replace').read())
-    if not m:
-        return None
-    d = datetime.date.fromisoformat(m.group(1))
-    return (datetime.date.today() - d).days, m.group(1)
 
 # ===== 写回（"记住这个"——走命令保证格式，见 writeback-protocol.md 硬门槛）=====
 
@@ -483,82 +362,6 @@ def cmd_promise(args):
     else:
         print('用法：python ds.py promise / promise add 文本 / promise done 关键词')
 
-def cmd_contrast(query):
-    """同一话题最早 vs 最近的说法并排看——观点变没变，用户自己判断。"""
-    if not query:
-        print('用法：python ds.py contrast "话题关键词"')
-        sys.exit(1)
-    variants = _expand_query(query)
-    hits = []
-    for f in ['corpus_dedup.jsonl', 'user_writebacks.jsonl']:
-        p = os.path.join(DATA, f)
-        if not os.path.exists(p):
-            continue
-        for line in open(p, encoding='utf-8'):
-            if any(v.lower() in line.lower() for v in variants):
-                try:
-                    hits.append(json.loads(line))
-                except Exception:
-                    continue
-    if len(hits) < 2:
-        print('「%s」只找到 %d 条，凑不成对比。' % (query, len(hits)))
-        return
-    hits.sort(key=lambda o: o.get('date', ''))
-    first, last = hits[0], hits[-1]
-    def show(o, tag):
-        msg = o.get('msg', '').replace(chr(10), ' ')
-        print('  【%s】%s | %s' % (tag, o.get('date', '?'), msg[:120]))
-    print('「%s」共 %d 条，跨度 %s → %s：' % (query, len(hits), first.get('date', '?'), last.get('date', '?')))
-    if len(variants) > 1:
-        print('（也搜了近义词：%s）' % '、'.join(variants[1:]))
-    show(first, '最早')
-    show(last, '最近')
-    print('（中间变没变、为什么变，你自己判断——AI 不下结论）')
-
-def cmd_export():
-    """随身说明书：只出脱敏后的公开层——贴给任何 AI 的东西绝不含画像全文（references/privacy-rules.md）。"""
-    pub_p = os.path.join(DATA, 'layers', 'public.md')
-    pub = open(pub_p, encoding='utf-8', errors='replace').read().strip() if os.path.exists(pub_p) else ''
-    if len(pub) < 40:  # 只剩模板头也算空
-        print('能对外的那份内容（data/layers/public.md）还没有——对外只能用这份，不能把你的完整情况发出去。')
-        print('先让 AI 按隐私规矩（references/privacy-rules.md）从你的情况里整理出那份内容，再跑 export。')
-        sys.exit(1)
-    out = os.path.join(PRODUCTS, 'ME_随身说明书.md')
-    os.makedirs(os.path.dirname(out), exist_ok=True)
-    with open(out, 'w', encoding='utf-8') as f:
-        f.write('# 我的说明书（言镜导出，%s）\n\n' % datetime.date.today().isoformat())
-        f.write('> 把下面整段贴给任何 AI 对话的开头，它就认识我了。\n')
-        f.write('> 这份只放能公开的内容：真实姓名、公司、薪资这些，都已经去掉或换成代词了。\n\n---\n\n')
-        f.write(pub)
-        f.write('\n')
-    print('已生成：%s（只含能公开的内容）' % out)
-    print('用法：打开，复制全文，贴到任何 AI 对话的开头。')
-
-def cmd_install(args):
-    """把 skill 包拷进目标 skills 目录。--all 自动探测常见位置。"""
-    src = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # skill/wordmirror
-    targets = []
-    if args and args[0] == '--all':
-        for d in ['~/.claude/skills', '~/.codex/skills', '~/.agents/skills']:
-            p = os.path.expanduser(d)
-            if os.path.isdir(p):
-                targets.append(p)
-        for p in glob.glob(os.path.expanduser('~/.meituan-catpaw') + '/*/skills'):
-            if os.path.isdir(p):
-                targets.append(p)
-        if not targets:
-            print('没找到常见的 skills 目录。用 python ds.py install <目录> 手动指定。')
-            return
-    elif args:
-        targets = [os.path.abspath(args[0])]
-    else:
-        print('用法：python ds.py install <skills目录> 或 install --all')
-        return
-    for t in targets:
-        dst = os.path.join(t, 'wordmirror')
-        shutil.copytree(src, dst, dirs_exist_ok=True)
-        print('已安装：%s' % dst)
-
 def cmd_monthly(args):
     """月度三页纸：渲染是 skill 自带能力（scripts/render.py），不再依赖 engine。"""
     month = args[0] if args and re.match(r'\d{4}-\d{2}$', args[0]) else None
@@ -566,37 +369,19 @@ def cmd_monthly(args):
     r = subprocess.run([sys.executable, rp, 'monthly'] + ([month] if month else []))
     sys.exit(r.returncode)
 
-def _try_count():
-    try:
-        return sum(1 for _ in open(os.path.join(DATA, 'corpus_dedup.jsonl'), encoding='utf-8'))
-    except FileNotFoundError:
-        return None
-
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
         return
     cmd = sys.argv[1]
-    if cmd == 'init':
-        cmd_init()
-    elif cmd == 'ingest':
+    if cmd == 'ingest':
         cmd_ingest()
-    elif cmd == 'ask':
-        cmd_ask(sys.argv[2] if len(sys.argv) > 2 else '')
     elif cmd == 'open':
         cmd_open()
     elif cmd == 'check':
         cmd_check()
-    elif cmd == 'where':
-        cmd_where()
     elif cmd == 'promise':
         cmd_promise(sys.argv[2:])
-    elif cmd == 'contrast':
-        cmd_contrast(sys.argv[2] if len(sys.argv) > 2 else '')
-    elif cmd == 'export':
-        cmd_export()
-    elif cmd == 'install':
-        cmd_install(sys.argv[2:])
     elif cmd == 'bind':
         cmd_bind(sys.argv[2:])
     elif cmd == 'vec':

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """vecsearch · 言镜按意思搜（在你自己电脑上，用 chroma + 本机模型）。
 
-用法（一般不直接跑，ds.py ask 会自动走这里；建了索引就按意思搜，没建就按字面搜）：
+用法（AI 查旧话、字面搜不到时调这里；建了索引就按意思搜，没建就按字面搜）：
     python vecsearch.py build            建索引（把你说的话和确认过的事实都存进去）
     python vecsearch.py build --update   补索引：只加新说的话
     python vecsearch.py query "问题"      按意思搜，输出最相关的几条（带日期）
@@ -136,7 +136,7 @@ def build(update=False):
     with open(META_FILE, 'w', encoding='utf-8') as f:
         json.dump(meta, f, ensure_ascii=False)
     print('建好了：共 %d 条（新加 %d，已在里面 %d）→ %s' % (col.count(), n_new, n_dup, INDEX_DIR))
-    print('试一下：python ds.py ask "你的问题"   （自动按意思搜）')
+    print('试一下：python vecsearch.py query "你的问题"   （按意思搜）')
 
 
 def _existing_ids(col):

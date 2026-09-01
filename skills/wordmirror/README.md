@@ -23,8 +23,8 @@
 只按字面搜的死穴是：你记不住当时用的词。装了这个之后能按意思搜——问「当初为什么换技术栈」，能翻出你当时说的「把老项目迁到 Go」，一个字都不一样也搜得到。
 
 ```bash
-python scripts/ds.py vec build    # 建好（几千句话约 2 分钟）
-python scripts/ds.py ask "问题"    # 之后 ask 自动按意思搜
+python scripts/vecsearch.py build    # 建好（几千句话约 2 分钟）
+python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到时会自己调它）
 ```
 
 - 装依赖：`pip install chromadb sentence-transformers`（都在你自己电脑上跑）
@@ -42,13 +42,13 @@ python scripts/ds.py ask "问题"    # 之后 ask 自动按意思搜
 
 ## 数据放在哪（两层）
 
-**全局层**——"你是谁"（你的情况/规矩/你说的话/月报），不分项目，跟着你走。怎么找到它：环境变量 `WORD_MIRROR_HOME` → `ds.py bind` 接上的那个位置 → `~/.wordmirror/` → skill 所在仓库 → 默认 `~/.wordmirror/`（第一次用时自动建）。旧名字 `DIGITAL_SELF_HOME`、`~/.digital-self/` 也能认。跑 `ds.py where` 能看现在用的是哪个、怎么找到的。详见 `references/data-locations.md`。
+**全局层**——"你是谁"（你的情况/规矩/你说的话/月报），不分项目，跟着你走。怎么找到它：环境变量 `WORD_MIRROR_HOME` → `ds.py bind` 接上的那个位置 → `~/.wordmirror/` → skill 所在仓库 → 默认 `~/.wordmirror/`（第一次用时自动建）。旧名字 `DIGITAL_SELF_HOME`、`~/.digital-self/` 也能认。详见 `references/data-locations.md`。
 
 **项目层**——"这个项目的事"（说过要做的事/记的事），在哪个目录干活就记哪：`<当前目录>/.wordmirror/promises.jsonl`，第一次记时自动建，可以跟着项目进 git。每次开工两层都看；月报里"办完的事"也收两层。
 
 ## 单装 vs 完整仓库
 
-翻旧账（按字面+近义词，装上就能用；**按意思搜**要 `ds.py vec build` 建一下，见上节）、记你确认过的事、分隐私层、**生成网页**（render.py，模板在 templates/）——这些装完就能用。只有 **init / ingest 需要完整仓库**（`engine/` 目录在里面，负责从你各个 AI 的原始记录里提取话）。只装了这个包就跑 init，会得到清楚的提示——这时候两条路：
+翻旧账（AI 自己搜文件；**按意思搜**要 `ds.py vec build` 建一下，见上节）、记你确认过的事、分享、**生成网页**（render.py，模板在 templates/）——这些装完就能用。只有 **ingest（提取存档）需要完整仓库**（`engine/` 目录在里面，负责从你各个 AI 的原始记录里提取话）。只装了这个包就想提取，会得到清楚的提示——这时候两条路：
 
 - **数据已在完整仓库里**：`python ds.py bind <完整仓库根>` 一条命令接上（推荐），或设环境变量 `WORD_MIRROR_HOME`
 - **还没有数据**：克隆完整仓库后从那边初始化

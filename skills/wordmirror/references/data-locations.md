@@ -1,7 +1,6 @@
 # 数据目录定位 · 不写死路径
 
-> 本 skill 拷到任何机器都要能找到数据。按下面的顺序找，找到第一个存在的就用。
-> 不确定当前用的是哪个 → 跑 `python ds.py where`，会直接告诉你按哪种方式定位到的。
+> 本 skill 拷到任何机器都要能找到数据。你（AI）自己按下面的顺序找，找到第一个存在的就用。
 
 ## 定位顺序
 
@@ -19,7 +18,7 @@ skill 拷进某个 agent 的 skills 目录后，如果完整数据仓库在别�
 python <skill目录>/scripts/ds.py bind E:\path\to\digital-self
 ```
 
-之后所有命令（ask / monthly / promise / export / open）都用绑定的数据。解绑：`ds.py bind --clear`。
+之后所有命令（ingest / vec / monthly / promise / wb / open）都用绑定的数据；查旧话、看数据这种活你直接读绑定位置的文件就行。解绑：`ds.py bind --clear`。
 
 **项目层（欠账/写回专用）**：当前目录 `.wordmirror/promises.jsonl`——在哪个目录干活，账记哪，随项目走（可进项目 git）。全局层和项目层开场都查；`ds.py promise` 也扫两层。
 

@@ -11,14 +11,11 @@ python <skill目录>/scripts/ds.py ingest
 
 它会串联：提取（你的话+AI 的话）→ 去掉重复的 → 拼对话记录 → 统计 → 整理素材 → 生成网页。全程在你自己电脑上。
 
-## 分步（只想跑某一步时）
+## 就一条命令
 
-| 命令 | 作用 |
-|---|---|
-| `python scripts/ds.py init` | 只探测本机有哪些 agent 存档（不写任何东西） |
-| `python scripts/ds.py ingest` | 全链路更新 |
-| `python scripts/ds.py ask "词"` | 快速检索（验证数据活着） |
-| `python scripts/ds.py where` | 显示数据在哪、你说过的话有多少 |
+更新数据就 `python scripts/ds.py ingest` 一条，它会自己串联：提取你说的话 → 去掉重复的 → 拼对话记录 → 统计 → 整理素材 → 生成网页。中间那几步不用你分开跑。
+
+（提取存档是三件"AI 干不了的活"之一，所以留成命令；查旧话、看数据这些你自己读文件就行，不用命令。）
 
 ## 注意
 
