@@ -23,7 +23,7 @@
 2. 对你的 agent 说：**初始化 wordmirror**
 3. 日常使用不用任何命令——"我之前说过什么""记住这个""这个能发出去吗"，直接说就行
 
-命令行入口（可选）：`scripts/ds.py`——`init`（探测本机 agent 存档）、`ingest`（提取语料）、`ask`（检索）、`contrast`（同一话题前后说法对比）、`promise`（欠账本：add 记一笔 / done 划掉）、`export`（随身说明书）、`monthly`（月度三页纸）、`install`（装进其他 agent 的 skills 目录）、`where`（数据目录 + 画像新鲜度）。
+命令行入口（可选）：`scripts/ds.py`——`init`（探测本机 agent 存档）、`ingest`（提取语料）、`ask`（检索）、`contrast`（同一话题前后说法对比）、`promise`（欠账本：add 记一笔 / done 划掉）、`export`（随身说明书，仅脱敏公开层）、`monthly`（月度三页纸）、`install`（装进其他 agent 的 skills 目录）、`where`（数据目录 + 画像新鲜度）。
 
 ## 数据放在哪（两层）
 

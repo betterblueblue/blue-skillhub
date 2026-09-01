@@ -8,7 +8,7 @@
     python ds.py contrast "话题"    这个话题最早和最近的说法并排看
     python ds.py promise           看欠账本（说要做没做闭环的事）
     python ds.py promise add 要做的事 / promise done 关键词
-    python ds.py export            生成随身说明书（可贴给任何 AI）
+    python ds.py export            生成随身说明书（仅脱敏公开层，画像全文不外发）
     python ds.py install <目录>    把 skill 包装进指定 skills 目录（--all 自动探测）
     python ds.py monthly [YYYY-MM] 生成月度三页纸
     python ds.py open    用浏览器打开产物入口页
@@ -108,10 +108,12 @@ def _dedup():
     src = os.path.join(DATA, 'corpus_all.jsonl')
     dst = os.path.join(DATA, 'corpus_dedup.jsonl')
     import re
+    import hashlib
     seen, out = set(), []
     for line in open(src, encoding='utf-8'):
         o = json.loads(line)
-        k = re.sub(r'\s+', '', o['msg'])[:150]
+        # 去重键 = 全文归一化哈希。截前 150 字符会把长消息误判成同一条
+        k = hashlib.sha1(re.sub(r'\s+', '', o['msg']).encode('utf-8')).hexdigest()
         if k in seen:
             continue
         seen.add(k)
@@ -208,7 +210,7 @@ def _profile_age():
 
 # ===== 欠账本（说要做的事，两层：项目 + 全局）=====
 
-def _load_promises(path):
+def _load_promises(path, strict=False):
     out = []
     if os.path.exists(path):
         for i, line in enumerate(open(path, encoding='utf-8'), 1):
@@ -218,7 +220,11 @@ def _load_promises(path):
             try:
                 o = json.loads(line)
             except Exception:
-                print('警告：欠账本 %s 第 %d 行不是合法 JSON，跳过' % (path, i))
+                if strict:
+                    # 写操作不许碰损坏的账本——重写整份文件会把坏行永久吞掉
+                    print('账本 %s 第 %d 行不是合法 JSON。先手工修复或删掉那行再操作，我不替你静默改账。' % (path, i))
+                    sys.exit(1)
+                print('警告：欠账本 %s 第 %d 行不是合法 JSON，跳过（查询不受影响）' % (path, i))
                 continue
             o['_line'] = i
             out.append(o)
@@ -229,6 +235,21 @@ def _ledger_tag(path):
     proj = os.path.join(os.getcwd(), '.wordmirror', 'promises.jsonl')
     return '项目账本' if os.path.normcase(os.path.abspath(path)) == os.path.normcase(os.path.abspath(proj)) else '全局账本'
 
+def _tracker_note(today):
+    """档案 tracker 里的搁置事项也报一声——只读提醒，不动账（SKILL.md 开工检查的数据源）。"""
+    try:
+        tr = json.load(open(os.path.join(DATA, 'tracker_items.json'), encoding='utf-8'))
+        tr = tr if isinstance(tr, list) else tr.get('items', [])
+        st = sorted((r for r in tr if r.get('status') == 'stalled'), key=lambda r: r.get('date', ''))
+    except Exception:
+        return
+    if not st:
+        return
+    r0 = st[0]
+    days = (today - datetime.date.fromisoformat(r0['date'])).days if r0.get('date') else '?'
+    print('另外，档案 tracker 里还有 %d 件搁置的事，最老一件：' % len(st))
+    print('  %s 记的（%d 天）| %s' % (r0.get('date', '?'), days, r0.get('title', r0.get('desc', ''))))
+
 def cmd_promise(args):
     if not args:
         infos = [(path, _load_promises(path)) for path in _ledger_paths()]
@@ -237,15 +258,17 @@ def cmd_promise(args):
             for o in items:
                 if o.get('status') == 'open':
                     rows.append((_ledger_tag(path), o))
+        today = datetime.date.today()
         if not rows:
             print('欠账本干净，没有开着的事。')
+            _tracker_note(today)
             return
         rows.sort(key=lambda t: t[1].get('date', ''))
-        today = datetime.date.today()
         print('欠账 %d 笔（从老到新）:' % len(rows))
         for tag, o in rows:
             days = (today - datetime.date.fromisoformat(o['date'])).days if o.get('date') else '?'
             print('  [%s] %s 记的（%d 天）| %s' % (tag, o.get('date', '?'), days, o.get('text', '')))
+        _tracker_note(today)
         return
     sub = args[0]
     if sub == 'add':
@@ -262,8 +285,11 @@ def cmd_promise(args):
         print('记下了：%s（%s）' % (text, pf))
     elif sub in ('done', 'drop'):
         kw = ' '.join(args[1:]).strip()
+        if not kw:
+            print('必须给关键词，否则分不清要划哪笔。用法：python ds.py promise done 关键词')
+            sys.exit(1)
         for pf in _ledger_paths():
-            items = _load_promises(pf)
+            items = _load_promises(pf, strict=True)  # 写操作前严格查损，坏账本宁可停也不吞
             hit = next((o for o in items if o.get('status') == 'open' and kw in o.get('text', '')), None)
             if not hit:
                 continue
@@ -310,22 +336,22 @@ def cmd_contrast(query):
     print('（中间变没变、为什么变，你自己判断——AI 不下结论）')
 
 def cmd_export():
-    """把画像+规矩合成一份随身说明书，贴给任何 AI 都能认识我。"""
-    parts = []
-    for f in ['portrait.md', 'habits.md']:
-        p = os.path.join(DATA, 'profile', f)
-        if os.path.exists(p):
-            parts.append(open(p, encoding='utf-8', errors='replace').read().rstrip())
-    if not parts:
-        print('画像还没生成，先走初始化（对 agent 说：初始化 wordmirror）。')
+    """随身说明书：只出脱敏后的公开层——贴给任何 AI 的东西绝不含画像全文（references/privacy-rules.md）。"""
+    pub_p = os.path.join(DATA, 'layers', 'public.md')
+    pub = open(pub_p, encoding='utf-8', errors='replace').read().strip() if os.path.exists(pub_p) else ''
+    if len(pub) < 40:  # 只剩模板头也算空
+        print('公开层（data/layers/public.md）还没有内容——对外分享只能用脱敏公开层，不能导画像全文。')
+        print('先让 agent 按隐私规矩（references/privacy-rules.md）从画像提炼 public.md，再跑 export。')
         sys.exit(1)
     out = os.path.join(PRODUCTS, 'ME_随身说明书.md')
+    os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, 'w', encoding='utf-8') as f:
         f.write('# 我的说明书（言镜导出，%s）\n\n' % datetime.date.today().isoformat())
-        f.write('> 把下面整段贴给任何 AI（系统提示或对话开头都行），它就认识我了。\n\n---\n\n')
-        f.write('\n\n---\n\n'.join(parts))
+        f.write('> 把下面整段贴给任何 AI（系统提示或对话开头都行），它就认识我了。\n')
+        f.write('> 本说明书只含公开层：真实姓名、公司、薪资等隐私已按 redact_list 脱敏。\n\n---\n\n')
+        f.write(pub)
         f.write('\n')
-    print('已生成：%s' % out)
+    print('已生成：%s（仅公开层）' % out)
     print('用法：打开复制全文，贴到任何 AI 的对话开头或系统提示里。')
 
 def cmd_install(args):

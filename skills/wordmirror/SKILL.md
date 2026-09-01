@@ -36,7 +36,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 | 用户犹豫、纠结、比较选项 | `references/query-protocol.md`；可跑 `ds.py contrast 话题` | 先把这个话题最早和最近的说法并排摆出来，再谈建议，AI 不替用户下结论 |
 | 用户说"我要做X / 准备Y" | `references/writeback-protocol.md` 承诺记账 | 记入 promises.jsonl（open），当场说一声 |
 | 用户说"X做完了 / 这事黄了" | `references/writeback-protocol.md` 承诺记账 | 对应账目改成 closed/dropped，当场说一声 |
-| "把说明书导出 / 贴到别的 AI 用" | 跑 `scripts/ds.py export` | 生成随身说明书，告诉用户文件在哪 |
+| "把说明书导出 / 贴到别的 AI 用" | 跑 `scripts/ds.py export` | 生成随身说明书（**只含公开层**，画像全文绝不外发），告诉用户文件在哪 |
 
 ## 主动引导（功能要亮出来，别闷着）
 
