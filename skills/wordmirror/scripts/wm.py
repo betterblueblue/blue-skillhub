@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
-"""ds · 言镜（wordmirror）—— AI 干不了的重活工具 + 记账/写回的唯一入口。
+"""wm · 言镜（wordmirror）—— AI 干不了的重活工具 + 记账/写回的唯一入口。
 
 查旧话、看数据在哪、导出说明书这些活 AI 用自己的本事就能干（见 SKILL.md），
 不在这做命令。这里只留两类：
 
 三件 AI 干不了的活：
-    python ds.py ingest            提取你各 AI 的原始记录 → 去掉重复的 → 生成网页
-    python ds.py vec build [--update]   建/更新按意思搜的索引（见 scripts/vecsearch.py）
-    python ds.py vec status        看按意思搜的索引状态
-    python ds.py monthly [YYYY-MM] 生成这个月的报告（调 render.py）
-    python ds.py open              用浏览器打开首页
+    python wm.py ingest            提取你各 AI 的原始记录 → 去掉重复的 → 生成网页
+    python wm.py vec build [--update]   建/更新按意思搜的索引（见 scripts/vecsearch.py）
+    python wm.py vec status        看按意思搜的索引状态
+    python wm.py monthly [YYYY-MM] 生成这个月的报告（调 render.py）
+    python wm.py open              用浏览器打开首页
 
 记账 / 写回（中护栏：只走命令，保证格式对、坏行拦得住）：
-    python ds.py promise           看说过要做的事（哪些还没做完）
-    python ds.py promise add 要做的事 / promise done 关键词 / promise drop 关键词
-    python ds.py wb add "事实" --topic 主题 [--agent 工具名]   记下一条你确认过的事（--ref 附依据）
-    python ds.py wb list           看记下的事
+    python wm.py promise           看说过要做的事（哪些还没做完）
+    python wm.py promise add 要做的事 / promise done 关键词 / promise drop 关键词
+    python wm.py wb add "事实" --topic 主题 [--agent 工具名]   记下一条你确认过的事（--ref 附依据）
+    python wm.py wb list           看记下的事
 
 地基 / 护栏：
-    python ds.py bind <仓库根>     把已有完整仓库的数据接上（--clear 取消）
-    python ds.py check             跑一遍自检（检查项看输出）
+    python wm.py bind <仓库根>     把已有完整仓库的数据接上（--clear 取消）
+    python wm.py check             跑一遍自检（检查项看输出）
 
 设计原则（DESIGN.md）：每人自己跑自己的；数据全程在自己电脑上；不写死路径。
 """
@@ -126,7 +126,7 @@ def cmd_ingest():
         ('挖素材（决定时刻/被问住的瞬间/月度切片/项目基因）', 'distill_materials.py'),
         ('渲染产物页面', 'generate_html_pages.py'),
     ]
-    print('ds ingest · 开始（全程在你自己电脑上跑，数据不上传）')
+    print('wm ingest · 开始（全程在你自己电脑上跑，数据不上传）')
     print('=' * 56)
     for i, (label, script) in enumerate(steps, 1):
         print('[%d/%d] %s ...' % (i, len(steps), label))
@@ -141,7 +141,7 @@ def cmd_ingest():
         print('警告：ingest 后 writebacks（%d→%d）/ promises（%d→%d）行数变少，疑似被清空或覆盖，请检查。' % (before[0], after[0], before[1], after[1]))
     print('=' * 56)
     print('完成。看结果：')
-    print('  python ds.py open   （浏览器打开「翻给你看」入口页）')
+    print('  python wm.py open   （浏览器打开「翻给你看」入口页）')
 
 def _dedup():
     src = os.path.join(DATA, 'corpus_all.jsonl')
@@ -197,8 +197,8 @@ def cmd_bind(args):
             print('本来就没有绑定（%s 不存在）。' % bind_p)
         return
     if not args:
-        print('用法：python ds.py bind <完整仓库根目录>   # 绑定已有数据（该目录下须有 data/）')
-        print('      python ds.py bind --clear            # 解绑')
+        print('用法：python wm.py bind <完整仓库根目录>   # 绑定已有数据（该目录下须有 data/）')
+        print('      python wm.py bind --clear            # 解绑')
         return
     target = os.path.abspath(args[0])
     if not os.path.isdir(os.path.join(target, 'data')):
@@ -209,7 +209,7 @@ def cmd_bind(args):
         json.dump({'home': target}, f, ensure_ascii=False)
     print('已绑定：%s（指针写在 %s）' % (target, bind_p))
     print('之后查旧话、生成网页、记账都用这份数据了。')
-    print('解绑：python ds.py bind --clear')
+    print('解绑：python wm.py bind --clear')
 
 def cmd_open():
     for name in ['index.html', '10_翻给你看.html']:
@@ -218,7 +218,7 @@ def cmd_open():
             webbrowser.open('file:///' + p.replace(chr(92), '/'))
             print('已打开：%s' % name)
             return
-    print('产物页面不存在，先跑 python ds.py ingest')
+    print('产物页面不存在，先跑 python wm.py ingest')
 
 def cmd_check():
     run('self_check.py')
@@ -227,8 +227,8 @@ def cmd_check():
 
 def cmd_wb(args):
     if not args or args[0] not in ('add', 'list'):
-        print('用法：python ds.py wb add "事实内容" --topic 主题 [--ref 依据] [--agent 工具名]')
-        print('      python ds.py wb list           # 看已写回的事实')
+        print('用法：python wm.py wb add "事实内容" --topic 主题 [--ref 依据] [--agent 工具名]')
+        print('      python wm.py wb list           # 看已写回的事实')
         return
     wb_p = os.path.join(DATA, 'user_writebacks.jsonl')
     if args[0] == 'list':
@@ -263,7 +263,7 @@ def cmd_wb(args):
             text.append(args[i]); i += 1
     msg = ' '.join(text).strip()
     if not msg:
-        print('内容不能为空。用法：python ds.py wb add "事实内容" --topic 主题')
+        print('内容不能为空。用法：python wm.py wb add "事实内容" --topic 主题')
         sys.exit(1)
     os.makedirs(DATA, exist_ok=True)
     # 坏行拦截：写操作前确认现有文件每行都合法（写入不修复也不吞坏行）
@@ -359,7 +359,7 @@ def cmd_promise(args):
                 text_parts.append(args[i]); i += 1
         text = ' '.join(text_parts).strip()
         if not text:
-            print('用法：python ds.py promise add 要做的事 [--agent 工具名]')
+            print('用法：python wm.py promise add 要做的事 [--agent 工具名]')
             sys.exit(1)
         pf = _promises_file()
         os.makedirs(os.path.dirname(pf), exist_ok=True)
@@ -381,7 +381,7 @@ def cmd_promise(args):
     elif sub in ('done', 'drop'):
         kw = ' '.join(args[1:]).strip()
         if not kw:
-            print('必须给关键词，否则分不清要划哪笔。用法：python ds.py promise done 关键词')
+            print('必须给关键词，否则分不清要划哪笔。用法：python wm.py promise done 关键词')
             sys.exit(1)
         # 先扫两层账本，收集全部 open 命中项（先不划，避免静默划错）
         hits = []  # (pf, items, o)
@@ -408,7 +408,7 @@ def cmd_promise(args):
         print('划掉了：%s（%s）' % (hit['text'], pf))
         return
     else:
-        print('用法：python ds.py promise / promise add 文本 / promise done 关键词')
+        print('用法：python wm.py promise / promise add 文本 / promise done 关键词')
 
 def cmd_monthly(args):
     """月度三页纸：渲染是 skill 自带能力（scripts/render.py），不再依赖 engine。"""

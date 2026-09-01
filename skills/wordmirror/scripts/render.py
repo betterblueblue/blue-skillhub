@@ -12,11 +12,11 @@ import os, sys, re, json, datetime
 import html as H
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import ds  # 复用数据定位：ds.DATA / ds.PRODUCTS
+import wm  # 复用数据定位：wm.DATA / wm.PRODUCTS
 
 TPL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates')
-OUT = os.path.join(ds.PRODUCTS, 'html')
-MON = os.path.join(ds.PRODUCTS, 'monthly')
+OUT = os.path.join(wm.PRODUCTS, 'html')
+MON = os.path.join(wm.PRODUCTS, 'monthly')
 SHELL = open(os.path.join(TPL, 'read_shell.html'), encoding='utf-8').read()
 
 
@@ -83,7 +83,7 @@ def render_markdown(md):
 # ---------- READ 页 ----------
 
 def build_portrait():
-    p = os.path.join(ds.DATA, 'profile', 'portrait.md')
+    p = os.path.join(wm.DATA, 'profile', 'portrait.md')
     if not os.path.exists(p):
         print('跳过 01 那页：你的情况还没整理出来（先初始化）')
         return None
@@ -103,9 +103,9 @@ def build_portrait():
 
 def build_wrapped():
     paths = {
-        'materials_monthly': os.path.join(ds.DATA, 'materials_monthly.json'),
-        'stats_wordfreq': os.path.join(ds.DATA, 'stats_wordfreq.json'),
-        'stats_agents': os.path.join(ds.DATA, 'stats_agents.json'),
+        'materials_monthly': os.path.join(wm.DATA, 'materials_monthly.json'),
+        'stats_wordfreq': os.path.join(wm.DATA, 'stats_wordfreq.json'),
+        'stats_agents': os.path.join(wm.DATA, 'stats_agents.json'),
     }
     missing = [k for k, p in paths.items() if not os.path.exists(p)]
     if missing:
@@ -152,12 +152,12 @@ def build_wrapped():
 
 
 def build_index():
-    ag_p = os.path.join(ds.DATA, 'stats_agents.json')
+    ag_p = os.path.join(wm.DATA, 'stats_agents.json')
     if not os.path.exists(ag_p):
         print('跳过首页：统计素材 stats_agents.json 还没生成（先跑 ingest）')
         return None
     ag = load_json(ag_p)
-    tr_p = os.path.join(ds.DATA, 'tracker_items.json')
+    tr_p = os.path.join(wm.DATA, 'tracker_items.json')
     rows = []
     if os.path.exists(tr_p):
         tr = load_json(tr_p)
@@ -189,13 +189,13 @@ def build_index():
                     '<p style="color:var(--muted);">%s</p></div>'
                     % (num, href, H.escape(title), H.escape(desc)))
     body.append('<h2>文档</h2>')
-    if os.path.isdir(os.path.join(ds.PRODUCTS)):
-        docs = sorted(f for f in os.listdir(ds.PRODUCTS) if f.endswith('.md'))
+    if os.path.isdir(os.path.join(wm.PRODUCTS)):
+        docs = sorted(f for f in os.listdir(wm.PRODUCTS) if f.endswith('.md'))
         for f in docs:
             title = re.sub(r'^\d+_|\.md$', '', f).replace('_', ' · ')
             body.append('<div class="card" style="padding:16px 24px;">'
                         '<p style="margin:0;"><strong><a href="file:///%s">%s</a></strong></p></div>'
-                        % (os.path.join(ds.PRODUCTS, f).replace('\\', '/'), H.escape(title)))
+                        % (os.path.join(wm.PRODUCTS, f).replace('\\', '/'), H.escape(title)))
     return ('html/index.html',
             page('言镜 · 首页', '首页 <span class="dot">·</span> 言镜 · wordmirror', '\n'.join(body), home='index.html'))
 
@@ -203,7 +203,7 @@ def build_index():
 # ---------- 月报 ----------
 
 def load_jsonl(name):
-    return load_jsonl_path(os.path.join(ds.DATA, name))
+    return load_jsonl_path(os.path.join(wm.DATA, name))
 
 
 def load_jsonl_path(p):
@@ -224,10 +224,10 @@ def load_jsonl_path(p):
 def _promises_all_layers():
     """两层账本都收：当前目录项目层 + 全局层（月报口径——宣传说"划掉的欠账进月报"，就得两层都算）。"""
     rows = []
-    for p in ds._ledger_paths():
+    for p in wm._ledger_paths():
         for o in load_jsonl_path(p):
             o = dict(o)
-            o['_ledger'] = ds._ledger_tag(p)
+            o['_ledger'] = wm._ledger_tag(p)
             rows.append(o)
     return rows
 
@@ -249,7 +249,7 @@ def build_monthly(month=None):
         diff = '，比上月%s%d 条' % ('多' if d >= 0 else '少', abs(d))
     words = {}
     try:
-        words = load_json(os.path.join(ds.DATA, 'stats_wordfreq.json'))
+        words = load_json(os.path.join(wm.DATA, 'stats_wordfreq.json'))
     except Exception:
         pass
     word_rows = []
@@ -272,7 +272,7 @@ def build_monthly(month=None):
     wbs = [(o.get('date', ''), o.get('msg', '')) for o in load_jsonl('user_writebacks.jsonl')
            if o.get('date', '').startswith(month)]
     try:
-        items = load_json(os.path.join(ds.DATA, 'tracker_items.json'))
+        items = load_json(os.path.join(wm.DATA, 'tracker_items.json'))
         items = items if isinstance(items, list) else items.get('items', [])
     except Exception:
         items = []
@@ -322,7 +322,7 @@ def build_monthly(month=None):
 
 def build_tracker():
     tpl = open(os.path.join(TPL, 'tracker.html'), encoding='utf-8').read()
-    tr_p = os.path.join(ds.DATA, 'tracker_items.json')
+    tr_p = os.path.join(wm.DATA, 'tracker_items.json')
     if not os.path.exists(tr_p):
         print('跳过 03 那页：还没生成（先跑 ingest）')
         return None
@@ -337,7 +337,7 @@ def build_tracker():
 # ---------- 入口 ----------
 
 def write_out(rel, content):
-    p = os.path.join(ds.PRODUCTS, rel)
+    p = os.path.join(wm.PRODUCTS, rel)
     os.makedirs(os.path.dirname(p), exist_ok=True)
     with open(p, 'w', encoding='utf-8') as f:
         f.write(content)

@@ -30,7 +30,7 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 - 装依赖：`pip install chromadb sentence-transformers`（都在你自己电脑上跑）
 - 第一次建要下载一个约 117MB 的模型到 `~/.cache/huggingface`——这是下载工具，**不是把你的话传出去**；搜的时候全程在你自己电脑上
 - 没装依赖或没建：自动退回按字面搜（带近义词），照样能用
-- 你说过的话变多了：`ds.py vec build --update` 把新的补进去
+- 你说过的话变多了：`wm.py vec build --update` 把新的补进去
 
 ## 快速开始
 
@@ -38,11 +38,11 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 2. 对你的 agent 说：**初始化 wordmirror**
 3. 日常使用不用任何命令——"我之前说过什么""记住这个""这个能发出去吗"，直接说就行
 
-命令行入口（可选）：`scripts/ds.py`——`ingest`（把你说过话提取出来）、`promise`（说过要做的事：add 记一笔 / done 划掉）、`wb`（记你确认过的事：add / list）、`vec`（按意思搜：build / status）、`monthly`（这个月的报告）、`bind`（把已有数据接上）、`check`（自检）、`open`（浏览器打开产物首页）。
+命令行入口（可选）：`scripts/wm.py`——`ingest`（把你说过话提取出来）、`promise`（说过要做的事：add 记一笔 / done 划掉）、`wb`（记你确认过的事：add / list）、`vec`（按意思搜：build / status）、`monthly`（这个月的报告）、`bind`（把已有数据接上）、`check`（自检）、`open`（浏览器打开产物首页）。
 
 ## 数据放在哪（两层）
 
-**全局层**——"你是谁"（你的情况/规矩/你说的话/月报），不分项目，跟着你走。默认在用户主目录 `~/WordMirror/`（数据在 `~/WordMirror/data/`）；环境变量 `WORD_MIRROR_HOME` 或 `ds.py bind <目录>` 可以指到别处。旧名字 `DIGITAL_SELF_HOME`、`~/.digital-self/` 也能认。详见 `references/data-locations.md`。
+**全局层**——"你是谁"（你的情况/规矩/你说的话/月报），不分项目，跟着你走。默认在用户主目录 `~/WordMirror/`（数据在 `~/WordMirror/data/`）；环境变量 `WORD_MIRROR_HOME` 或 `wm.py bind <目录>` 可以指到别处。旧名字 `DIGITAL_SELF_HOME`、`~/.digital-self/` 也能认。详见 `references/data-locations.md`。
 
 **项目层**——"这个项目的事"（说过要做的事/记的事），在哪个目录干活就记哪：`<当前目录>/.wordmirror/promises.jsonl`，第一次记时自动建。⚠️ **注意：账本里存的是你的原话，可能含隐私（姓名/公司/薪资…）。默认不要把它提交进 git**——建议在项目 `.gitignore` 里加一行 `.wordmirror/`；真想跟着项目走，先把内容过一遍再手动挑出来。每次开工两层都看；月报里"办完的事"也收两层。
 
@@ -50,7 +50,7 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 
 这个 skill 包自带提取引擎（`engine/`）——ingest、查旧账、记你确认过的事、生成网页、按意思搜，装完就能用，不需要再找一个"完整仓库"。数据默认产在用户主目录 `~/WordMirror/data`（含你的原话，跟着你的机器走，不在 skill 包里）。
 
-如果你的数据在别处（比如旧版留下的），`python ds.py bind <数据目录>` 一条命令接上，或设环境变量 `WORD_MIRROR_HOME`。
+如果你的数据在别处（比如旧版留下的），`python wm.py bind <数据目录>` 一条命令接上，或设环境变量 `WORD_MIRROR_HOME`。
 
 ## 支持哪些 agent
 
@@ -68,7 +68,7 @@ ingest 会探测并提取你在这些工具里说过的话（清单在 skill 包
 SKILL.md          AI 的入口：按场景干活，AI 只读这一个文件就够
 references/       六份协议（初始化/翻旧账/记事/隐私/更新/数据放哪）+ 两份生成模板
 layers/           隐私层模板（出厂是空的）：真实的 public.md 和 redact_list.json 在数据目录 data/layers/，整理生成；清单本身含敏感词，绝不外传
-scripts/ds.py     命令行入口（翻旧账/记事/导出/月报）
+scripts/wm.py     命令行入口（翻旧账/记事/导出/月报）
 scripts/render.py  网页生成：read（首页/你的情况/翻给你看）/ monthly / tracker / all
 templates/        视觉规矩：DESIGN.md + read_shell.html + tracker.html（改样式只改这里）
 ```

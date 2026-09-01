@@ -12,7 +12,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 
 **全局层**（你是谁：你的情况 / 规矩 / 你说的话 / 月报）——不分项目，跟着你走。怎么找到：
 1. 环境变量 `WORD_MIRROR_HOME`
-2. `~/WordMirror/bind.json` 里写的位置（`ds.py bind <目录>` 接上已有数据）
+2. `~/WordMirror/bind.json` 里写的位置（`wm.py bind <目录>` 接上已有数据）
 3. `~/WordMirror/`（默认数据根，数据在 `~/WordMirror/data/`）
 4. 从 skill 目录向上找含 `data/corpus_dedup.jsonl` 的祖先目录（兼容旧布局）
 5. 都没有 → `~/WordMirror/`（第一次用时建）
@@ -49,8 +49,8 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 
 ### 记事 / 写回
 用户亲口确认的事实才记："我决定了 X""这事完了/黄了""不是 22 万是 20 万"。你的推断、他随口的情绪、"我在想要不要"都**不记**。拿不准就问一句"这个要记吗"。
-- 说要做的事 → `python scripts/ds.py promise add "事"`；做完了 `promise done 关键词`，不做了 `promise drop 关键词`
-- 确认过的事实 → `python scripts/ds.py wb add "事实" --topic 主题 --ref 依据 --agent 当前工具名`
+- 说要做的事 → `python scripts/wm.py promise add "事"`；做完了 `promise done 关键词`，不做了 `promise drop 关键词`
+- 确认过的事实 → `python scripts/wm.py wb add "事实" --topic 主题 --ref 依据 --agent 当前工具名`
 **这两类写操作只走命令，不要自己手写 jsonl**——命令保证格式对、坏行拦得住。写完当场回一声"记下了：X"。详见 `references/writeback-protocol.md`。
 
 ### 把情况分享给别的 AI
@@ -61,7 +61,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 对外发的东西，发之前把要发的清单给他过目、他点头才发。
 
 ### 更新数据 / 重新提取
-用户说"更新数据 / 重新提取 / 我的情况过期了" → 走 `references/ingest-protocol.md`，跑 `python scripts/ds.py ingest`（提取存档是重活，见下）。你说过的话变多了，补一句 `python scripts/ds.py vec build --update`（建过按意思搜的话）。
+用户说"更新数据 / 重新提取 / 我的情况过期了" → 走 `references/ingest-protocol.md`，跑 `python scripts/wm.py ingest`（提取存档是重活，见下）。你说过的话变多了，补一句 `python scripts/wm.py vec build --update`（建过按意思搜的话）。
 
 ### 生成网页
 用户要看"月度报告 / 说过要做的事 / 翻给你看"这些页面 → 跑 `python scripts/render.py all`（生成网页是重活，见下），出完告诉他文件在哪、双击就能看。
@@ -75,7 +75,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 |---|---|---|
 | 按意思搜（算向量，你现场算不了） | `python scripts/vecsearch.py query "问题"` / `build` | 字面搜不到、用户记不清原词时 |
 | 生成网页（要样式一致，你现写会漂） | `python scripts/render.py read / monthly / tracker / all` | 用户要月度报告 / 看板 / 翻给你看 |
-| 提取存档（要啃好几个 AI 的原始记录 + 去重） | `python scripts/ds.py ingest` | 首次初始化 / 更新数据 |
+| 提取存档（要啃好几个 AI 的原始记录 + 去重） | `python scripts/wm.py ingest` | 首次初始化 / 更新数据 |
 
 ## 硬规则（任何时候）
 

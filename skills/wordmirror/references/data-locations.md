@@ -5,7 +5,7 @@
 ## 定位顺序
 
 1. **环境变量** `WORD_MIRROR_HOME`（用户显式指定，最优先；旧名 `DIGITAL_SELF_HOME` 仍兼容）
-2. **bind 指针** `~/WordMirror/bind.json`（`python ds.py bind <数据目录>` 写入）——数据在别处时接上
+2. **bind 指针** `~/WordMirror/bind.json`（`python wm.py bind <数据目录>` 写入）——数据在别处时接上
 3. `~/WordMirror/`（默认数据根：`~/WordMirror/data/`；旧目录 `~/.digital-self/` 仍兼容）
 4. 仓库布局：从 skill 目录向上逐级找祖先目录里有 `data/corpus_dedup.jsonl`（或 `corpus_all.jsonl`）的——兼容旧布局，数据就在 skill 祖先目录时自动生效
 5. 都没有 → 默认 `~/WordMirror/`，首次写入时自动创建
@@ -15,12 +15,12 @@
 skill 拷进某个 agent 的 skills 目录后，如果完整数据仓库在别处（比如另一块盘），一条命令接上：
 
 ```bash
-python <skill目录>/scripts/ds.py bind E:\path\to\digital-self
+python <skill目录>/scripts/wm.py bind E:\path\to\digital-self
 ```
 
-之后所有命令（ingest / vec / monthly / promise / wb / open）都用绑定的数据；查旧话、看数据这种活你直接读绑定位置的文件就行。解绑：`ds.py bind --clear`。
+之后所有命令（ingest / vec / monthly / promise / wb / open）都用绑定的数据；查旧话、看数据这种活你直接读绑定位置的文件就行。解绑：`wm.py bind --clear`。
 
-**项目层（欠账/写回专用）**：当前目录 `.wordmirror/promises.jsonl`——在哪个目录干活，账记哪，随项目走。⚠️ **账本存的是你的原话、可能含隐私，默认别进 git**——项目 `.gitignore` 加一行 `.wordmirror/`；真想跟着项目走，先把内容过一遍再手动挑出来。全局层和项目层开场都查；`ds.py promise` 也扫两层。
+**项目层（欠账/写回专用）**：当前目录 `.wordmirror/promises.jsonl`——在哪个目录干活，账记哪，随项目走。⚠️ **账本存的是你的原话、可能含隐私，默认别进 git**——项目 `.gitignore` 加一行 `.wordmirror/`；真想跟着项目走，先把内容过一遍再手动挑出来。全局层和项目层开场都查；`wm.py promise` 也扫两层。
 
 ## 验证找对了
 

@@ -11,8 +11,8 @@
 
 ```bash
 cd <skill 包目录>   # skill 装在哪就在哪跑，如 ~/.agents/skills/wordmirror
-python engine/extract_all.py          # → data/corpus_all.jsonl（用户侧，10,798 条）
-python engine/extract_ai.py           # → data/ai_messages.jsonl（AI 侧，48,868 条）
+python engine/extract_all.py          # → data/corpus_all.jsonl（用户侧，10,799 条）
+python engine/extract_ai.py           # → data/ai_messages.jsonl（AI 侧，48,874 条）
 python engine/build_session_cards.py  # → data/sessions.jsonl（会话卡）
 ```
 
@@ -108,7 +108,7 @@ git commit -m "蒸馏 YYYY-MM-DD：语料 N 条→M 条，画像/产物更新点
 
 ## 数字口径备忘（防两套真相复发）
 
-**口径以 data/ 里的实际行数为准，不写死数字**——每次 `ds ingest` 都会因新对话而变化。
+**口径以 data/ 里的实际行数为准，不写死数字**——每次 `wm ingest` 都会因新对话而变化。
 引用数字前先数一遍：`wc -l data/corpus_dedup.jsonl`。
 
 | 口径 | 来源 | 2026-08-31 末值 |

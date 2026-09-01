@@ -20,10 +20,10 @@
 import os, sys, json, glob, re
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import ds
+import wm
 
 MODEL_NAME = 'paraphrase-multilingual-MiniLM-L12-v2'
-INDEX_DIR = os.path.join(ds.DATA, 'chroma_index')
+INDEX_DIR = os.path.join(wm.DATA, 'chroma_index')
 META_FILE = os.path.join(INDEX_DIR, '_meta.json')
 BATCH = 256
 
@@ -63,7 +63,7 @@ def _load_model():
 def _iter_rows():
     """语料行：corpus_dedup 为主，user_writebacks 也入库（写回是确认过的事实，检索该能查到）。"""
     for f in ('corpus_dedup.jsonl', 'user_writebacks.jsonl'):
-        p = os.path.join(ds.DATA, f)
+        p = os.path.join(wm.DATA, f)
         if not os.path.exists(p):
             continue
         for line in open(p, encoding='utf-8'):
@@ -126,7 +126,7 @@ def build(update=False):
         emb = model.encode(docs, normalize_embeddings=True)
         col.upsert(ids=ids, embeddings=emb.tolist(), documents=docs, metadatas=metas)
     # 标记写回类型，检索结果里区分"聊天原话"和"确认过的事实"
-    meta = {'model': MODEL_NAME, 'rows': col.count(), 'built': ds.datetime.date.today().isoformat()}
+    meta = {'model': MODEL_NAME, 'rows': col.count(), 'built': wm.datetime.date.today().isoformat()}
     with open(META_FILE, 'w', encoding='utf-8') as f:
         json.dump(meta, f, ensure_ascii=False)
     print('建好了：共 %d 条（新加 %d，已在里面 %d）→ %s' % (col.count(), n_new, n_dup, INDEX_DIR))
@@ -178,7 +178,7 @@ def status():
     if not _deps_ok(quiet=False):
         return
     if not os.path.isdir(INDEX_DIR):
-        print('还没有按意思搜的索引。跑 python ds.py vec build 建一个（话多的话要几分钟）。')
+        print('还没有按意思搜的索引。跑 python wm.py vec build 建一个（话多的话要几分钟）。')
         return
     if _warn_if_version_mismatch():
         return
@@ -191,11 +191,11 @@ def status():
         # 索引口径 = corpus_dedup + user_writebacks（见 _iter_rows），两边都数才不误报
         n = 0
         for f in ('corpus_dedup.jsonl', 'user_writebacks.jsonl'):
-            p = os.path.join(ds.DATA, f)
+            p = os.path.join(wm.DATA, f)
             if os.path.exists(p):
                 n += sum(1 for _ in open(p, encoding='utf-8'))
         if n - col.count() > 50:
-            print('（数据里共 %d 条，索引里是 %d 条，有 %d 条还没入库——跑 python ds.py vec build --update 补齐）' % (n, col.count(), n - col.count()))
+            print('（数据里共 %d 条，索引里是 %d 条，有 %d 条还没入库——跑 python wm.py vec build --update 补齐）' % (n, col.count(), n - col.count()))
     except FileNotFoundError:
         pass
 

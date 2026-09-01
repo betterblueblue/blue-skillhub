@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ds init 的核心：agent 存档探测器。
+"""wm init 的核心：agent 存档探测器。
 零硬编码绝对路径——只用"路径模式表"探测本机有哪些 agent 的会话存档。
 支持新 agent = 在 AGENT_PATTERNS 加一行，不改代码。
 
@@ -77,7 +77,7 @@ def detect():
     return report
 
 if __name__ == '__main__':
-    print('ds init · 探测你机器上的 agent 存档')
+    print('wm init · 探测你机器上的 agent 存档')
     print('=' * 62)
     n_ok = 0
     for agent, n, size, kind, how in detect():

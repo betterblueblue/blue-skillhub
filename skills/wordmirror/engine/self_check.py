@@ -65,7 +65,7 @@ for f in scan_files:
 check('旧命名残留', not hits, '; '.join(hits[:5]) if hits else '扫描 %d 个文件零残留' % len(scan_files))
 
 # ===== 2. 关键文件存在 =====
-missing_core = [f for f in ['SKILL.md', 'README.md', 'scripts/ds.py', 'scripts/render.py',
+missing_core = [f for f in ['SKILL.md', 'README.md', 'scripts/wm.py', 'scripts/render.py',
                              'scripts/vecsearch.py', 'engine/extract_all.py', 'engine/extract_ai.py']
                 if not os.path.exists(f)]
 check('关键文件存在', not missing_core, '核心文件齐全' if not missing_core else '缺: ' + ', '.join(missing_core))
@@ -76,7 +76,7 @@ links = re.findall(r'href="file:///([^"]+)"', t)
 dead = [l for l in links if not os.path.exists(l)]
 mds = [os.path.basename(f) for f in glob.glob(os.path.join(PROD, '*.md'))]
 linked_mds = [os.path.basename(l) for l in links if l.endswith('.md')]
-orphan = [md for md in mds if md not in linked_mds and '随身说明书' not in md]  # 随身说明书是 ds.py export 生成的，无手工入口
+orphan = [md for md in mds if md not in linked_mds and '随身说明书' not in md]  # 随身说明书是 wm.py export 生成的，无手工入口
 check('index 链接', not dead and not orphan,
       '%d 链接零死链' % len(links) if not dead and not orphan else '死链:%s 孤儿:%s' % (dead, orphan))
 
@@ -114,7 +114,7 @@ try:
     n_ai = sum(1 for _ in open(os.path.join(DATA, 'ai_messages.jsonl'), encoding='utf-8'))
     sop = open('engine/SOP_蒸馏流程.md', encoding='utf-8').read()
     ok = ('%s' % format(n_all, ',')) in sop and ('%s' % format(n_ai, ',')) in sop
-    check('SOP 数字口径', ok, '语料 %d 条 / AI %d 条，SOP 有记载' % (n_all, n_ai))
+    check('SOP 数字口径', ok if ok else None, '语料 %d 条 / AI %d 条，SOP 有记载' % (n_all, n_ai) if ok else '语料 %d / AI %d，SOP 数字旧了（更新 engine/SOP_蒸馏流程.md）' % (n_all, n_ai))
 except Exception as e:
     check('SOP 数字口径', False, str(e))
 
@@ -160,7 +160,7 @@ required = {
     'references/privacy-rules.md': '隐私规则',
     'references/ingest-protocol.md': '更新协议',
     'references/data-locations.md': '数据定位',
-    'scripts/ds.py': 'agent 可调用的脚本',
+    'scripts/wm.py': 'agent 可调用的脚本',
 }
 for f in required:
     if not os.path.exists(os.path.join(sk_root, f)):

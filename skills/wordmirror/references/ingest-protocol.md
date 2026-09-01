@@ -6,14 +6,14 @@
 ## 一条命令
 
 ```bash
-python <skill目录>/scripts/ds.py ingest
+python <skill目录>/scripts/wm.py ingest
 ```
 
 它会串联：提取（你的话+AI 的话）→ 去掉重复的 → 拼对话记录 → 统计 → 整理素材 → 生成网页。全程在你自己电脑上。
 
 ## 就一条命令
 
-更新数据就 `python scripts/ds.py ingest` 一条，它会自己串联：提取你说的话 → 去掉重复的 → 拼对话记录 → 统计 → 整理素材 → 生成网页。中间那几步不用你分开跑。
+更新数据就 `python scripts/wm.py ingest` 一条，它会自己串联：提取你说的话 → 去掉重复的 → 拼对话记录 → 统计 → 整理素材 → 生成网页。中间那几步不用你分开跑。
 
 （提取存档是三件"AI 干不了的活"之一，所以留成命令；查旧话、看数据这些你自己读文件就行，不用命令。）
 
@@ -22,6 +22,6 @@ python <skill目录>/scripts/ds.py ingest
 1. **首次跑要花的时间和你说过的话有多少成正比**（话多的话约几分钟）；以后只补新的，很快
 2. 跑完报告里的"量级提示"（<500 条=了解得还比较粗）要转告用户，管理预期
 3. **你的情况文件（portrait.md / habits.md）不自动重写**——你说过的话更新后，按 `engine/SOP_蒸馏流程.md` 重新整理才更新
-4. 更新完建议跑 `python scripts/ds.py check`（自检），全绿才算完成
+4. 更新完建议跑 `python scripts/wm.py check`（自检），全绿才算完成
 5. 探测不到某 agent → 正常（报告"没找到，跳过"），不是错误；新 agent 支持要改 `engine/detect_agents.py` 的表
 6. **DeepSeek Harness（dsh）提取需要 zstandard**（解压 zstd）：`pip install zstandard`；没装时该 agent 自动跳过并提示，不影响其他 agent

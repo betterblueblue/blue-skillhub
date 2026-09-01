@@ -19,10 +19,10 @@
 
 ## 怎么写（必须走命令，不许手写文件）
 
-**硬门槛：写回和欠账记账一律跑命令，禁止直接编辑 jsonl 文件。** 命令保证格式永远正确、坏账本永远进不了写入路径（手写没有这个保证——模型换个宿主就可能写出坏行）。命令不可用（找不到脚本/Python）才允许按下面格式手写，且写完跑 `ds.py promise` 验证能读出来。
+**硬门槛：写回和欠账记账一律跑命令，禁止直接编辑 jsonl 文件。** 命令保证格式永远正确、坏账本永远进不了写入路径（手写没有这个保证——模型换个宿主就可能写出坏行）。命令不可用（找不到脚本/Python）才允许按下面格式手写，且写完跑 `wm.py promise` 验证能读出来。
 
 ```bash
-python <skill目录>/scripts/ds.py wb add "事实内容" --topic 主题 --ref "用户原话" [--agent 工具名]
+python <skill目录>/scripts/wm.py wb add "事实内容" --topic 主题 --ref "用户原话" [--agent 工具名]
 # 欠账本见下节：promise add / promise done
 ```
 
@@ -53,10 +53,10 @@ python <skill目录>/scripts/ds.py wb add "事实内容" --topic 主题 --ref "�
 **一律走命令**（格式保证 + 坏账本拦截都在命令里）：
 
 ```bash
-python <skill目录>/scripts/ds.py promise add 要做的事 [--agent 工具名]  # 记一笔（open）
-python <skill目录>/scripts/ds.py promise done 关键词           # 划掉（closed）
-python <skill目录>/scripts/ds.py promise drop 关键词           # 不做了（dropped）
-python <skill目录>/scripts/ds.py promise                       # 看两层欠账
+python <skill目录>/scripts/wm.py promise add 要做的事 [--agent 工具名]  # 记一笔（open）
+python <skill目录>/scripts/wm.py promise done 关键词           # 划掉（closed）
+python <skill目录>/scripts/wm.py promise drop 关键词           # 不做了（dropped）
+python <skill目录>/scripts/wm.py promise                       # 看两层欠账
 ```
 
 命令不可用时手写兜底——对应账本末尾追加一行（文件不存在就创建）：
@@ -65,7 +65,7 @@ python <skill目录>/scripts/ds.py promise                       # 看两层欠�
 {"date": "YYYY-MM-DD", "text": "要做的事，用用户的原话", "status": "open", "agent": "当前agent名"}
 ```
 
-划掉（closed / dropped）：用户说"做完了""这事黄了"→ 找到对应那行，把 status 改成 `closed`（完成）或 `dropped`（不做了），加一个 `"closed_date": "YYYY-MM-DD"`。手写后跑 `ds.py promise` 验证可读。
+划掉（closed / dropped）：用户说"做完了""这事黄了"→ 找到对应那行，把 status 改成 `closed`（完成）或 `dropped`（不做了），加一个 `"closed_date": "YYYY-MM-DD"`。手写后跑 `wm.py promise` 验证可读。
 欠账本改状态是记账，不算改历史——append-only 的规矩只约束 `user_writebacks.jsonl`。
 
 **当场回一声**："记下了：X" 或 "划掉了：X"。
