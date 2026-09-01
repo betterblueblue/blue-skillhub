@@ -31,7 +31,7 @@ corpus_dedup.jsonl     # 主力：全部原话
 ai_messages.jsonl      # AI 回复
 sessions.jsonl         # 会话卡
 user_writebacks.jsonl  # 写回
-stats_wordfreq.json    # 口头禅频率（脚本算的）
+stats_wordfreq.json    # 高频词频率（通用词表计数，脚本算的；不是个性化口头禅识别）
 stalled_topics.json    # 搁置主题
 profile/portrait.md    # 我是谁（初始化生成，见 init-protocol.md）
 profile/habits.md      # 跟我干活的规矩（同上）

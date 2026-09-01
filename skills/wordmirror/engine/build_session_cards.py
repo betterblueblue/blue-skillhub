@@ -43,8 +43,7 @@ for (agent, sid), s in sessions.items():
     if len(u_msgs) < 2:  # 单条消息的会话价值低，跳过
         continue
     ai_msgs = s.get('ais', [])
-    # 日期取中位
-    dates = sorted([x for x in [s['date']] if x])
+    # 会话日期：第一条用户消息的日期（setdefault 只写首次，非中位）
     cards.append({
         'agent': agent,
         'sid': sid[:12],

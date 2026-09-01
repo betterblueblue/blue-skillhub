@@ -1,9 +1,26 @@
 # 言镜（wordmirror）蒸馏 SOP（标准作业流程）
 
 > 本文档是全部"LLM 手工环节"的唯一依据。任何 agent/人重新蒸馏时**必须**按此流程走，
-> 产物结构、引用格式、数字口径才算合规。manifest.json 登记的每个产物都能在此找到生成方法。
+> 产物结构、引用格式、数字口径才算合规。
 >
 > 版本 1.0 ｜ 2026-08-31 ｜ 从 2026-08-31 的实际蒸馏过程逆向固化
+
+---
+
+> ⚠️ **⚠️ 本文档已过时（2026-09-01 起重定向）** ⚠️
+>
+> 本文档写的是**旧完整仓库**时代的产物体系（9 封信 / 15 个项目 / proj_genes_raw /
+> manifest.json / 三套设计 token / git commit 收尾）。当前 wordmirror 已自包含，
+> 渲染只出 index / 01 / 03 / 10 / 月报，全部由 `scripts/render.py` + `templates/` 完成。
+>
+> **以这些为准（不再按本文档）：**
+> - 数据提取/去重/统计/素材/渲染：一律走 `python scripts/wm.py ingest`（顺序已内置，别手工分步）
+> - portrait.md / habits.md 的章节结构：**按 `references/portrait-template.md` 和 `references/habits-template.md`**，
+>   不是本文 2.1/2.2 的固定章节
+> - 自检：`python scripts/wm.py check`（调 `engine/self_check.py`），不看本文档第 5 步的 git 收尾
+> - 产物只有 4 页 + 月报，本文 3.1–3.7 那些专题产物已不再产出
+>
+> 本文 2.1/2.2、第 3 步、①处的「待固化 compute_stats」、文末 TODO 均作废。
 
 ---
 
@@ -101,7 +118,6 @@ git add -A
 git commit -m "蒸馏 YYYY-MM-DD：语料 N 条→M 条，画像/产物更新点简述"
 ```
 
-- 更新 manifest.json 的 rows 数字和 updated 日期
 - 画像有事实修正时，在 portrait.md 版本修正记录里写清 v(n-1)→v(n) 差异
 
 ---
@@ -117,7 +133,7 @@ git commit -m "蒸馏 YYYY-MM-DD：语料 N 条→M 条，画像/产物更新点
 | 用户原话（未去重） | corpus_all.jsonl | ~9,900 |
 | AI 回复 | ai_messages.jsonl | ~44,200 |
 | 会话卡 | sessions.jsonl | 353 |
-| agent 覆盖 | manifest.known_gaps | 8 个 |
+| agent 覆盖 | stats_agents.json | 按 agent 分列 |
 | bro 频率 | stats_wordfreq.json | 清洗后口径（旧口径 1027 含转录注入，已废弃） |
 
 ## TODO（P2 骨架收尾）

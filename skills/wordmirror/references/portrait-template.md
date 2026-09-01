@@ -42,7 +42,7 @@
 
 ## 从哪取材
 
-- `data/stats_wordfreq.json` → 口头禅（habits 用，这里引用频率最高的 3 个）
+- `data/stats_wordfreq.json` → 高频词（通用词表计数；habits 用，这里引用频率最高的 3 个）
 - `data/materials_monthly.json` → 阶段划分（每月 top 主题）
 - `data/materials_decisions.json` → 大事记
 - 抽读 `data/corpus_dedup.jsonl` 每月 20 条 → 基本情况、脾气

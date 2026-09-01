@@ -131,7 +131,7 @@ def build_wrapped():
                 '<div class="bignum"><div class="n">%d</div><div class="note">个 AI 工具跟你聊过</div></div>'
                 '<div class="bignum"><div class="n mono" style="font-size:26px;padding-top:8px;">%s</div>'
                 '<div class="note">从第一条到最新一条</div></div></div>' % (format(total, ','), len(ag), span))
-    body.append('<h2>你最常挂嘴边的词</h2>')
+    body.append('<h2>你说得多的常用词</h2>')
     body.append('<div style="margin:16px 0 8px;">%s</div>' % top_html)
     body.append('<h2>按月翻</h2>')
     for k in keys:
@@ -173,7 +173,7 @@ def build_index():
     monthly = sorted(os.listdir(MON)) if os.path.isdir(MON) else []
     if monthly:
         cards.append(('08', '%s · 这个月你对 AI 说了什么' % monthly[-1].replace('.html', ''),
-                      '这个月说了多少、定了什么、办完了几件', 'monthly/' + monthly[-1]))
+                      '这个月说了多少、定了什么、办完了几件', '../monthly/' + monthly[-1]))
     body = ['<h1 class="display">言镜</h1>',
             '<p style="font-size:18px;color:var(--body-strong);">你跟 AI 说过的话，都在这儿了。'
             '换个 AI 干活时，让它先读一遍你的情况——省得每次重新自我介绍。</p>',
@@ -188,14 +188,6 @@ def build_index():
                     '<p style="font-size:19px;margin-bottom:4px;"><strong><a href="%s">%s</a></strong></p>'
                     '<p style="color:var(--muted);">%s</p></div>'
                     % (num, href, H.escape(title), H.escape(desc)))
-    body.append('<h2>文档</h2>')
-    if os.path.isdir(os.path.join(wm.PRODUCTS)):
-        docs = sorted(f for f in os.listdir(wm.PRODUCTS) if f.endswith('.md'))
-        for f in docs:
-            title = re.sub(r'^\d+_|\.md$', '', f).replace('_', ' · ')
-            body.append('<div class="card" style="padding:16px 24px;">'
-                        '<p style="margin:0;"><strong><a href="file:///%s">%s</a></strong></p></div>'
-                        % (os.path.join(wm.PRODUCTS, f).replace('\\', '/'), H.escape(title)))
     return ('html/index.html',
             page('言镜 · 首页', '首页 <span class="dot">·</span> 言镜 · wordmirror', '\n'.join(body), home='index.html'))
 
@@ -288,7 +280,7 @@ def build_monthly(month=None):
                 '<div class="bignum"><div class="n mono" style="font-size:26px;padding-top:8px;">%s</div>'
                 '<div class="note">本月</div></div></div>' % (len(cur), esc(diff), month))
     if hot:
-        body.append('<h2>口头禅变化</h2>')
+        body.append('<h2>高频词变化</h2>')
         body.append('<div style="margin:8px 0 16px;">%s</div>' % ''.join(
             '<span class="pill">「%s」<b>%d</b> 次%s</span>'
             % (esc(w), c1, ('，上月 %d' % c0) if prev else '，新出现') for w, c1, c0 in hot))
@@ -315,7 +307,7 @@ def build_monthly(month=None):
     body.append('<p style="color:var(--muted-soft);font-size:13px;">生成于 %s</p>' % datetime.date.today().isoformat())
     return (os.path.join('monthly', '%s.html' % month),
             page('言镜月报 · %s' % month, '月报 <span class="dot">·</span> %s' % month,
-                 '\n'.join(body), home='../index.html'))
+                 '\n'.join(body), home='../html/index.html'))
 
 
 # ---------- tracker 看板 ----------

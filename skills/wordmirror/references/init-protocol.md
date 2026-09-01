@@ -24,7 +24,7 @@ python <skill目录>/scripts/wm.py ingest
 - `portrait.md` —— 按 `references/portrait-template.md` 的结构，从你说过的话里整理
 - `habits.md` —— 按 `references/habits-template.md` 的结构
 
-整理方法：读 `data/stats_wordfreq.json`（口头禅频率）+ `data/materials_*.json`（素材）+ 抽读你说过的话，按模板章节填。**说人话规则**：用户的词优先，禁用发明术语；每条判断要有原话+日期支撑。
+整理方法：读 `data/stats_wordfreq.json`（高频词频率，通用词表计数）+ `data/materials_*.json`（素材）+ 抽读你说过的话，按模板章节填。**说人话规则**：用户的词优先，禁用发明术语；每条判断要有原话+日期支撑。
 
 ### 第 4 步：验证 + 告知
 

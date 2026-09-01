@@ -2,7 +2,7 @@
 """言镜（wordmirror）自检脚本：改名/重蒸馏/日常维护后跑一遍，30 秒出结果。
 检查项（2026-08-31 起，项数以运行输出为准）：
   1  旧命名残留（改名最容易丢三落四的地方）
-  2  manifest 覆盖度（世上每个文件都要登记）
+  2  关键文件存在
   3  index 链接死链 + md 孤儿（没入口的文档）
   4  模板与渲染产物同步
   5  skill 引用路径存在
@@ -11,10 +11,13 @@
   8  SOP 数字口径 vs 实际语料行数
   9  写回文件被 git 跟踪
   10 skill 三件套互相引用
-  11 INTENT.md 存在
-  12 产品层无能力编号泄漏
   13 JSON 文件合法
-  14 浏览器四页加载（可选，--web 时跑）
+  14 skill 包结构（对标标准 skill）
+  16 承诺账本合法
+  17 开工三句话 + 主动引导就位
+  18 浏览器四页加载（可选，--web 时跑）
+  19 tracker 日期全格式
+  20 skill 包 layers 零真实数据
 用法：
   python engine/self_check.py          # 快检（无浏览器）
   python engine/self_check.py --web    # 连浏览器一起验
@@ -44,7 +47,7 @@ OLD_NAMES = ['产出样例', '承诺追踪器', '画像与协作', '年度之书
 hits = []
 scan_files = []
 for pat in ['engine/*.py', 'engine/*.md', '*', 'templates/*',
-            os.path.join(PROD, '*.md'), os.path.join(PROD, 'html/*.html'), 'manifest.json', os.path.join(DATA, '*.json'),
+            os.path.join(PROD, '*.md'), os.path.join(PROD, 'html/*.html'), os.path.join(DATA, '*.json'),
             '*.md']:
     scan_files += [f for f in glob.glob(pat) if os.path.isfile(f)]
 for f in scan_files:
@@ -66,19 +69,24 @@ check('旧命名残留', not hits, '; '.join(hits[:5]) if hits else '扫描 %d �
 
 # ===== 2. 关键文件存在 =====
 missing_core = [f for f in ['SKILL.md', 'README.md', 'scripts/wm.py', 'scripts/render.py',
-                             'scripts/vecsearch.py', 'engine/extract_all.py', 'engine/extract_ai.py']
+                             'scripts/vecsearch.py', 'engine/extract_all.py', 'engine/extract_ai.py',
+                             'engine/distill_insights.py']
                 if not os.path.exists(f)]
 check('关键文件存在', not missing_core, '核心文件齐全' if not missing_core else '缺: ' + ', '.join(missing_core))
 
 # ===== 3. index 链接 =====
-t = open(os.path.join(PROD, 'html/index.html'), encoding='utf-8').read()
-links = re.findall(r'href="file:///([^"]+)"', t)
-dead = [l for l in links if not os.path.exists(l)]
-mds = [os.path.basename(f) for f in glob.glob(os.path.join(PROD, '*.md'))]
-linked_mds = [os.path.basename(l) for l in links if l.endswith('.md')]
-orphan = [md for md in mds if md not in linked_mds and '随身说明书' not in md]  # 随身说明书是 wm.py export 生成的，无手工入口
-check('index 链接', not dead and not orphan,
-      '%d 链接零死链' % len(links) if not dead and not orphan else '死链:%s 孤儿:%s' % (dead, orphan))
+idx_p = os.path.join(PROD, 'html/index.html')
+if not os.path.exists(idx_p):
+    check('index 链接', None, '还没有产物（先跑 wm.py ingest 生成），跳过')
+else:
+    t = open(idx_p, encoding='utf-8').read()
+    links = re.findall(r'href="file:///([^"]+)"', t)
+    dead = [l for l in links if not os.path.exists(l)]
+    mds = [os.path.basename(f) for f in glob.glob(os.path.join(PROD, '*.md'))]
+    linked_mds = [os.path.basename(l) for l in links if l.endswith('.md')]
+    orphan = [md for md in mds if md not in linked_mds and '随身说明书' not in md]  # 随身说明书由 AI 按 SKILL.md 直接拼出来（无固定入口页），豁免
+    check('index 链接', not dead and not orphan,
+          '%d 链接零死链' % len(links) if not dead and not orphan else '死链:%s 孤儿:%s' % (dead, orphan))
 
 # ===== 4. 模板与产物同步 =====
 tpl_ok = True
@@ -98,25 +106,42 @@ for seg in [os.path.join(DATA, 'corpus_dedup.jsonl'), os.path.join(DATA, 'corpus
             'engine/extract_all.py', 'engine/SOP_蒸馏流程.md']:
     if not os.path.exists(seg):
         bad_ref.append(seg)
-check('skill 引用路径', not bad_ref, '全部有效' if not bad_ref else '失效: ' + ','.join(bad_ref))
+# 数据文件是 ingest 产物——空数据机器上没有属正常，只把代码/文档引用当硬失败
+code_bad = [s for s in bad_ref if s.startswith('engine/')]
+data_bad = [s for s in bad_ref if s.startswith(os.path.join(DATA, ''))]
+if code_bad:
+    check('skill 引用路径', False, '代码/文档引用失效: ' + ','.join(code_bad))
+elif data_bad:
+    check('skill 引用路径', None, '还没 ingest（数据文件缺失，属正常），跳过')
+else:
+    check('skill 引用路径', True, '全部有效')
 
 # ===== 6. git 工作区 =====
 st = subprocess.run(['git', 'status', '--short'], capture_output=True, text=True).stdout.strip()
 check('git 工作区', None if st else True, '干净' if not st else '有未提交改动（提醒，不算失败）')
 
 # ===== 7. engine 脚本可跑（抽样）=====
-r = subprocess.run(['python', 'engine/compute_stats.py'], capture_output=True, text=True)
-check('compute_stats 可跑', r.returncode == 0, '正常' if r.returncode == 0 else r.stderr[:120])
+_cdp = os.path.join(DATA, 'corpus_dedup.jsonl')
+if not os.path.exists(_cdp):
+    check('compute_stats 可跑', None, '还没 ingest（语料不存在），跳过')
+elif not any(l.strip() for l in open(_cdp, encoding='utf-8')):
+    check('compute_stats 可跑', None, '语料为空（corpus_dedup.jsonl 0 行），跳过')
+else:
+    r = subprocess.run(['python', 'engine/compute_stats.py'], capture_output=True, text=True)
+    check('compute_stats 可跑', r.returncode == 0, '正常' if r.returncode == 0 else r.stderr[:120])
 
 # ===== 8. SOP 数字口径 =====
-try:
-    n_all = sum(1 for _ in open(os.path.join(DATA, 'corpus_all.jsonl'), encoding='utf-8'))
-    n_ai = sum(1 for _ in open(os.path.join(DATA, 'ai_messages.jsonl'), encoding='utf-8'))
-    sop = open('engine/SOP_蒸馏流程.md', encoding='utf-8').read()
-    ok = ('%s' % format(n_all, ',')) in sop and ('%s' % format(n_ai, ',')) in sop
-    check('SOP 数字口径', ok if ok else None, '语料 %d 条 / AI %d 条，SOP 有记载' % (n_all, n_ai) if ok else '语料 %d / AI %d，SOP 数字旧了（更新 engine/SOP_蒸馏流程.md）' % (n_all, n_ai))
-except Exception as e:
-    check('SOP 数字口径', False, str(e))
+if not os.path.exists(os.path.join(DATA, 'corpus_all.jsonl')):
+    check('SOP 数字口径', None, '还没 ingest（语料不存在），跳过')
+else:
+    try:
+        n_all = sum(1 for _ in open(os.path.join(DATA, 'corpus_all.jsonl'), encoding='utf-8'))
+        n_ai = sum(1 for _ in open(os.path.join(DATA, 'ai_messages.jsonl'), encoding='utf-8'))
+        sop = open('engine/SOP_蒸馏流程.md', encoding='utf-8').read()
+        ok = ('%s' % format(n_all, ',')) in sop and ('%s' % format(n_ai, ',')) in sop
+        check('SOP 数字口径', ok if ok else None, '语料 %d 条 / AI %d 条，SOP 有记载' % (n_all, n_ai) if ok else '语料 %d / AI %d，SOP 数字旧了（更新 engine/SOP_蒸馏流程.md）' % (n_all, n_ai))
+    except Exception as e:
+        check('SOP 数字口径', False, str(e))
 
 # ===== 9. 写回文件未进 git（数据目录应被 .gitignore） =====
 r = subprocess.run(['git', 'ls-files', os.path.join(DATA, 'user_writebacks.jsonl')], capture_output=True, text=True)
@@ -139,7 +164,7 @@ check('产品层无能力编号', not leak, '干净' if not leak else str(leak))
 
 # ===== 13. JSON 合法 =====
 bad_json = []
-for f in [os.path.join(DATA, 'tracker_items.json'), 'manifest.json'] + glob.glob(os.path.join(DATA, 'materials_*.json')) + glob.glob(os.path.join(DATA, 'stats_*.json')):
+for f in [os.path.join(DATA, 'tracker_items.json')] + glob.glob(os.path.join(DATA, 'materials_*.json')) + glob.glob(os.path.join(DATA, 'stats_*.json')):
     if not os.path.exists(f): continue
     try:
         json.load(open(f, encoding='utf-8'))
@@ -159,6 +184,7 @@ required = {
     'references/writeback-protocol.md': '写回协议',
     'references/privacy-rules.md': '隐私规则',
     'references/ingest-protocol.md': '更新协议',
+    'references/mirror-protocol.md': '照见协议',
     'references/data-locations.md': '数据定位',
     'scripts/wm.py': 'agent 可调用的脚本',
 }
@@ -181,8 +207,15 @@ for leak in ['portrait.md', 'habits.md']:
 check('skill 包结构', not sk_struct, '标准结构完整，零用户数据' if not sk_struct else '缺: ' + ','.join(sk_struct))
 
 # 用户画像必须在数据侧
+has_corpus = os.path.exists(os.path.join(DATA, 'corpus_dedup.jsonl'))
 for need in [os.path.join(DATA, 'profile/portrait.md'), os.path.join(DATA, 'profile/habits.md')]:
-    check('用户画像就位(%s)' % need.split('/')[-1], os.path.exists(need))
+    name = need.split('/')[-1]
+    if os.path.exists(need):
+        check('用户画像就位(%s)' % name, True)
+    elif not has_corpus:
+        check('用户画像就位(%s)' % name, None, '还没 ingest（数据不存在），跳过')
+    else:
+        check('用户画像就位(%s)' % name, False, '数据在但 %s 缺失——走 references/init-protocol.md 整理' % name)
 
 # ===== 16. 承诺账本合法 =====
 pp = os.path.join(DATA, 'promises.jsonl')
@@ -216,7 +249,7 @@ if '--web' in sys.argv:
     try:
         from playwright.sync_api import sync_playwright
         pages = ['index.html', '01_我是谁_怎么跟我共事.html',
-                 '03_我说过要做的事_现在都怎么样了.html', '10_这九个月翻给你看.html']
+                 '03_我说过要做的事_现在都怎么样了.html', '10_翻给你看.html']
         pages = [p for p in pages if os.path.exists(os.path.join(PROD, 'html/') + p)]
         errs = []
         with sync_playwright() as pw:
@@ -234,12 +267,16 @@ else:
     check('浏览器四页加载', None, '跳过（--web 开启）')
 
 # ===== 19. tracker 日期全格式（防跨年硬编码回归）=====
-try:
-    items = json.load(open(os.path.join(DATA, 'tracker_items.json'), encoding='utf-8')).get('items', [])
-    short = [it.get('id') for it in items if not re.match(r'\d{4}-\d{2}-\d{2}$', str(it.get('date', '')))]
-    check('tracker 日期全格式', not short, '全部 YYYY-MM-DD' if not short else '短日期: %s' % short)
-except Exception as e:
-    check('tracker 日期全格式', False, str(e)[:80])
+tr_p = os.path.join(DATA, 'tracker_items.json')
+if not os.path.exists(tr_p):
+    check('tracker 日期全格式', None, '还没 ingest（tracker 不存在），跳过')
+else:
+    try:
+        items = json.load(open(tr_p, encoding='utf-8')).get('items', [])
+        short = [it.get('id') for it in items if not re.match(r'\d{4}-\d{2}-\d{2}$', str(it.get('date', '')))]
+        check('tracker 日期全格式', not short, '全部 YYYY-MM-DD' if not short else '短日期: %s' % short)
+    except Exception as e:
+        check('tracker 日期全格式', False, str(e)[:80])
 
 # ===== 20. skill 包 layers 零真实数据（脱敏清单含敏感词本身，永不进包/公开仓）=====
 try:

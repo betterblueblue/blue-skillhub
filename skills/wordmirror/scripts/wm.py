@@ -121,19 +121,22 @@ def cmd_ingest():
     steps = [
         ('提取你说的话', 'extract_all.py'),
         ('提取 AI 的回复', 'extract_ai.py'),
+        # 去重要放在消费脚本之前——extract_all 产出未去重版，下面三个脚本都读 dedup 版
+        ('去掉重复的', '_dedup'),
         ('拼会话卡', 'build_session_cards.py'),
-        ('算数字底座（你的口头禅/消息长度/分 agent 特征）', 'compute_stats.py'),
+        ('算数字底座（你的高频词/消息长度/分 agent 特征）', 'compute_stats.py'),
         ('挖素材（决定时刻/被问住的瞬间/月度切片/项目基因）', 'distill_materials.py'),
+        ('挖照见候选（说vs做/反复/前后矛盾/口头禅漂移）', 'distill_insights.py'),
         ('渲染产物页面', 'generate_html_pages.py'),
     ]
     print('wm ingest · 开始（全程在你自己电脑上跑，数据不上传）')
     print('=' * 56)
     for i, (label, script) in enumerate(steps, 1):
         print('[%d/%d] %s ...' % (i, len(steps), label))
-        run(script)
-    # 去重步骤（extract_all 产出未去重版，这里生成主力文件）
-    print('[%d/%d] 去掉重复的 ...' % (len(steps), len(steps)))
-    _dedup()
+        if script == '_dedup':
+            _dedup()
+        else:
+            run(script)
     # 汇报第一口糖
     _sugar_report()
     after = _ledger_snapshot()
@@ -173,7 +176,7 @@ def _sugar_report():
     if n < 500:
         print('（还不到 500 条——了解得还比较粗，先用着，以后会越来越全）')
     elif n < 3000:
-        print('（中等量级：口头禅和习惯已经很准，决定类文档开始有料）')
+        print('（中等量级：高频词和习惯已经很准，决定类文档开始有料）')
     else:
         print('（重度用户量级：全部产物都会很扎实）')
 
