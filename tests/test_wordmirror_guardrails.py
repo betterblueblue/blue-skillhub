@@ -76,7 +76,8 @@ class TestExportGate(_TempBase):
         # 不创建 layers/public.md → 导出必须失败退出，且明说原因
         r = self._run_cli("export")
         self.assertNotEqual(r.returncode, 0)
-        self.assertIn("公开层", r.stdout + r.stderr)
+        self.assertIn("data/layers/public.md", r.stdout + r.stderr)
+        self.assertIn("完整情况", r.stdout + r.stderr)  # 明确：不能把完整情况发出去
 
     def test_public_layer_too_short_blocks_export(self):
         (self.data / "layers").mkdir()
@@ -140,7 +141,7 @@ class TestLedgerGuards(_TempBase):
         with redirect_stdout(buf):
             ds.cmd_where()
         out = buf.getvalue()
-        self.assertIn("定位方式", out)
+        self.assertIn("找到数据的方式", out)
         self.assertIn("WORD_MIRROR_HOME", out)
 
 
@@ -159,7 +160,7 @@ class TestBindAndLocate(_TempBase):
         # 无绑定时：默认 ~/.wordmirror，明确告知还没数据
         r = subprocess.run([sys.executable, str(SCRIPTS / "ds.py"), "where"],
                            capture_output=True, text=True, encoding="utf-8", env=env)
-        self.assertIn("定位方式", r.stdout)
+        self.assertIn("找到数据的方式", r.stdout)
         self.assertIn("默认", r.stdout)
         # 绑定后：定位到完整仓库
         r = subprocess.run(
@@ -264,8 +265,8 @@ class TestRender(_TempBase):
         out = (self.repo / "products" / "monthly" / "2026-08.html").read_text(encoding="utf-8")
         self.assertIn("全局层的欠账", out)
         self.assertIn("项目层的欠账", out)
-        self.assertIn("全局账本", out)
-        self.assertIn("项目账本", out)
+        self.assertIn("（全局）", out)
+        self.assertIn("（这个目录）", out)
 
     def test_wrapped_month_count_follows_data(self):
         months = {"2025-11": {"n": 10}, "2026-08": {"n": 20}}  # 10 个月跨度
@@ -333,6 +334,40 @@ class TestSemanticFallback(_TempBase):
         sys.path.insert(0, str(SCRIPTS))
         import vecsearch
         self.assertIsNone(vecsearch.query("任何问题"))
+
+
+class TestPlainLanguageCopy(unittest.TestCase):
+    """文案规矩（DESIGN.md 宪法条）：产品自己的话不堆术语，也不写硬凹的口号。
+    只查产品文案的源文件（模板/脚本/README/输出模板），不查渲染出的数据页——
+    用户自己的话里出现任何词（如他做的"向量库"）是正常的，不算产品文案问题。"""
+
+    def _read(self, *parts):
+        return (SKILL_DIR.joinpath(*parts)).read_text(encoding="utf-8")
+
+    def test_colophon_is_plain_fact_not_cutesy_slogan(self):
+        for f in ("templates/read_shell.html", "templates/tracker.html"):
+            s = self._read(*f.split("/"))
+            self.assertIn("数据只存在你自己的电脑上", s, f)
+            for bad in ("纯本地", "零云端", "只住在", "你的话是你的"):
+                self.assertNotIn(bad, s, "%s 还留着造作口号 %r" % (f, bad))
+
+    def test_render_py_page_copy_has_no_jargon(self):
+        s = self._read("scripts", "render.py")
+        for bad in ("Wrapped", "数字自己档案馆", "语义检索", "语义索引", "画像"):
+            self.assertNotIn(bad, s, "render.py 还留着 %r" % bad)
+
+    def test_readme_has_no_jargon(self):
+        s = self._read("README.md")
+        for bad in ("画像", "蒸馏", "语义索引", "语料", "向量", "纯本地", "零云端"):
+            self.assertNotIn(bad, s, "README 还留着 %r" % bad)
+
+    def test_output_templates_are_plain(self):
+        for f in ("references/portrait-template.md", "references/habits-template.md", "layers/public.md"):
+            s = self._read(*f.split("/"))
+            for bad in ("去重原话", "蒸馏", "数据源："):
+                self.assertNotIn(bad, s, "%s 还留着 %r" % (f, bad))
+        # portrait 头行换成人话（会渲染进网页的色带）
+        self.assertIn("这些结论来自", self._read("references", "portrait-template.md"))
 
 
 if __name__ == "__main__":

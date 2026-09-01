@@ -12,25 +12,25 @@
 
 ## 装上你会得到什么
 
-- **认识你**：加载即生效的画像（你是谁、在忙什么）和协作规矩（口头禅词典 + 沟通规矩），不用再每次开会话自我介绍
-- **旧账可查**：对几千句历史原话做检索——问法和原话字面不同也能按**意思**搜到（本地语义索引，可选）；观点前后变化两版都摆出来让你自己判断
+- **认识你**：装完，AI 就认识你（你是谁、在忙什么、跟你说要什么规矩），不用再每次重新介绍自己
+- **旧账可查**：你说过几千句话都能翻出来——你问的词跟当时说的不一样，也能按意思搜到（要装个可选的东西）；同一件事前后说法变了，两版都摆出来，你自己判断
 - **跨工具**：你在多个 agent 里的历史合成一本账，在任何一处都能查别处说过的话
-- **对外安全**：要分享时先过脱敏清单，private 层永不外发，发给谁由你当场确认
-- **不端着**：AI 只在你要复盘时摆事实和数据（原话、日期、条数），不主动给你做心理或行为分析——画像是给它干活用的，不是拿来评判你的
+- **对外安全**：要分享时先把隐私去掉，不能公开的部分绝不发出去，发给谁由你当场确认
+- **不端着**：AI 只在你问起来时摆事实（原话、日期、条数），不主动分析你的心理和行为——你的情况是给 AI 干活用的，不是用来评判你的
 
-## 语义检索（可选增强，默认关）
+## 按意思搜（可选，默认没开）
 
-关键词检索的死穴是"你记不住当时的原词"。装上语义索引后，按意思搜：问「当初为什么换技术栈」，能翻出你当时说的「把老项目迁到 Go」——字面完全不同也能命中。
+只按字面搜的死穴是：你记不住当时用的词。装了这个之后能按意思搜——问「当初为什么换技术栈」，能翻出你当时说的「把老项目迁到 Go」，一个字都不一样也搜得到。
 
 ```bash
-python scripts/ds.py vec build    # 建索引（几千条语料约 2 分钟）
-python scripts/ds.py ask "问题"    # 之后 ask 自动走语义
+python scripts/ds.py vec build    # 建好（几千句话约 2 分钟）
+python scripts/ds.py ask "问题"    # 之后 ask 自动按意思搜
 ```
 
-- 依赖：`pip install chromadb sentence-transformers`（都在本机跑）
-- 首次建索引会下载 117MB 的多语言嵌入模型到 `~/.cache/huggingface`——是下载工具，**不是把你的话传出去**；算向量和检索全程不出这台机器
-- 没装依赖或没建索引：自动降回关键词+近义词检索，功能照旧
-- 语料更新后：`ds.py vec build --update` 增量同步
+- 装依赖：`pip install chromadb sentence-transformers`（都在你自己电脑上跑）
+- 第一次建要下载一个约 117MB 的模型到 `~/.cache/huggingface`——这是下载工具，**不是把你的话传出去**；搜的时候全程在你自己电脑上
+- 没装依赖或没建：自动退回按字面搜（带近义词），照样能用
+- 你说过的话变多了：`ds.py vec build --update` 把新的补进去
 
 ## 快速开始
 
@@ -38,17 +38,17 @@ python scripts/ds.py ask "问题"    # 之后 ask 自动走语义
 2. 对你的 agent 说：**初始化 wordmirror**
 3. 日常使用不用任何命令——"我之前说过什么""记住这个""这个能发出去吗"，直接说就行
 
-命令行入口（可选）：`scripts/ds.py`——`init`（探测本机 agent 存档）、`ingest`（提取语料）、`ask`（检索，自带近义词扩词）、`contrast`（同一话题前后说法对比）、`promise`（欠账本：add 记一笔 / done 划掉）、`export`（随身说明书，仅脱敏公开层）、`monthly`（月度三页纸）、`install`（装进其他 agent 的 skills 目录）、`bind`（绑定已有完整仓库的数据）、`where`（数据目录 + 定位方式 + 画像新鲜度）。
+命令行入口（可选）：`scripts/ds.py`——`init`（看看你机器上有哪些 AI 的记录）、`ingest`（把你说过话提取出来）、`ask`（搜，自动带近义词）、`contrast`（同一件事前后说法并排看）、`promise`（说过要做的事：add 记一笔 / done 划掉）、`export`（随身说明书，只含能公开的内容）、`monthly`（这个月的报告）、`install`（装进别的 AI）、`bind`（把已有数据接上）、`where`（数据在哪、你的情况多久没更新）。
 
 ## 数据放在哪（两层）
 
-**全局层**——"你是谁"（画像/规矩/语料/月报），不分项目，跟着你走。定位顺序：环境变量 `WORD_MIRROR_HOME` → bind 指针（`ds.py bind <完整仓库根>`）→ `~/.wordmirror/` → skill 祖先目录里的仓库布局 → 默认 `~/.wordmirror/`（首次写入时创建）。旧名 `DIGITAL_SELF_HOME`、`~/.digital-self/` 兼容。跑 `ds.py where` 可看当前用的哪个、按哪种方式定位到的。详见 `references/data-locations.md`。
+**全局层**——"你是谁"（你的情况/规矩/你说的话/月报），不分项目，跟着你走。怎么找到它：环境变量 `WORD_MIRROR_HOME` → `ds.py bind` 接上的那个位置 → `~/.wordmirror/` → skill 所在仓库 → 默认 `~/.wordmirror/`（第一次用时自动建）。旧名字 `DIGITAL_SELF_HOME`、`~/.digital-self/` 也能认。跑 `ds.py where` 能看现在用的是哪个、怎么找到的。详见 `references/data-locations.md`。
 
-**项目层**——"这个项目的事"（欠账本/写回），在哪个目录干活记哪：`<当前目录>/.wordmirror/promises.jsonl`，首次记账时自动创建，可随项目进 git。开场检查两层都看；月报"办完的事"也收两层。
+**项目层**——"这个项目的事"（说过要做的事/记的事），在哪个目录干活就记哪：`<当前目录>/.wordmirror/promises.jsonl`，第一次记时自动建，可以跟着项目进 git。每次开工两层都看；月报里"办完的事"也收两层。
 
 ## 单装 vs 完整仓库
 
-检索（关键词+近义词，装上就能用；**语义检索**需 `ds.py vec build` 建索引，见上节）、写回、隐私分层、**HTML 产物渲染**（render.py，模板在 templates/）装上就能用。只有 **init / ingest 需要引擎**（`engine/` 目录，在完整仓库根，负责从各 agent 原始存档提取语料）。只装了这个包就跑 init 会得到明确提示——此时两条路：
+翻旧账（按字面+近义词，装上就能用；**按意思搜**要 `ds.py vec build` 建一下，见上节）、记你确认过的事、分隐私层、**生成网页**（render.py，模板在 templates/）——这些装完就能用。只有 **init / ingest 需要完整仓库**（`engine/` 目录在里面，负责从你各个 AI 的原始记录里提取话）。只装了这个包就跑 init，会得到清楚的提示——这时候两条路：
 
 - **数据已在完整仓库里**：`python ds.py bind <完整仓库根>` 一条命令接上（推荐），或设环境变量 `WORD_MIRROR_HOME`
 - **还没有数据**：克隆完整仓库后从那边初始化
@@ -56,16 +56,16 @@ python scripts/ds.py ask "问题"    # 之后 ask 自动走语义
 ## 目录导览
 
 ```
-SKILL.md          agent 入口：场景驱动、按需加载，agent 只读这一个文件就够
-references/       六份协议（初始化/检索/写回/隐私/更新/数据定位）+ 两份画像生成模板
-layers/           隐私分层模板（出厂为空）：真实的 public.md 和 redact_list.json 在数据目录 data/layers/，由蒸馏生成；清单本身含敏感词，永不外传
-scripts/ds.py     命令行入口（检索/写回/欠账/导出/月报）
-scripts/render.py  HTML 渲染器：read（入口/画像/Wrapped）/ monthly / tracker / all
-templates/        视觉体系：DESIGN.md（设计法）+ read_shell.html + tracker.html（改样式只改这里）
+SKILL.md          AI 的入口：按场景干活，AI 只读这一个文件就够
+references/       六份协议（初始化/翻旧账/记事/隐私/更新/数据放哪）+ 两份生成模板
+layers/           隐私层模板（出厂是空的）：真实的 public.md 和 redact_list.json 在数据目录 data/layers/，整理生成；清单本身含敏感词，绝不外传
+scripts/ds.py     命令行入口（翻旧账/记事/导出/月报）
+scripts/render.py  网页生成：read（首页/你的情况/翻给你看）/ monthly / tracker / all
+templates/        视觉规矩：DESIGN.md + read_shell.html + tracker.html（改样式只改这里）
 ```
 
 ## 诚实边界
 
-- 语料 500 条以下画像很薄，几千条才是完整体验
-- 只记你对 AI 说的话——它不知道你线下说了什么
-- 画像是快照，说过新东西要重新蒸馏才进画像（协议里写了一键更新）
+- 你说过的话不到 500 条，了解得还比较粗；几千条才是完整体验
+- 只记你对 AI 说的话——你跟人线下说的，它不知道
+- 你的情况是个快照，说了新东西要重新整理才会更新（怎么更新在 references/ingest-protocol.md）

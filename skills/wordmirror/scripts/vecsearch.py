@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
-"""vecsearch · 言镜语义检索（本地向量索引，chroma + 本地嵌入模型）。
+"""vecsearch · 言镜按意思搜（在你自己电脑上，用 chroma + 本机模型）。
 
-用法（一般不直接跑，ds.py ask 会自动走这里；有索引用语义，没索引降回关键词）：
-    python vecsearch.py build            建索引（corpus_dedup + user_writebacks 全量入库）
-    python vecsearch.py build --update   增量：只加新语料（按行指纹去重）
-    python vecsearch.py query "问题"      语义查询，输出 top 结果（带日期，供 agent 引用）
-    python vecsearch.py status           索引状态（条数、模型、新鲜度）
+用法（一般不直接跑，ds.py ask 会自动走这里；建了索引就按意思搜，没建就按字面搜）：
+    python vecsearch.py build            建索引（把你说的话和确认过的事实都存进去）
+    python vecsearch.py build --update   补索引：只加新说的话
+    python vecsearch.py query "问题"      按意思搜，输出最相关的几条（带日期）
+    python vecsearch.py status           看索引状态（多少条、用什么模型、多久没更新）
 
 设计原则（DESIGN.md + README 诚实边界）：
-- 嵌入模型必须在本机跑（sentence-transformers / paraphrase-multilingual-MiniLM-L12-v2，
-  117MB，下载到 ~/.cache/huggingface，是下载工具不是上传数据）
-- 索引存储格式跟 chromadb 大版本走（0.4x 与 1.x 互不兼容）。装了新版本（≥1.0）就固定用新版本，
-  别在两个大版本之间来回读写同一个索引目录——旧版读新版目录直接报错，虽不损坏数据但会吓人。
-  需要迁移时：删掉 data/chroma_index/ 用新版本重跑 build（语料都在 jsonl 里，索引随时可重建）
-- 索引存在数据目录 data/chroma_index/，跟着数据走，永不外传
-- 没装依赖或没建索引 → 安静降级回关键词检索，功能照旧（ask 里处理）
-- 与 corpus_dedup.jsonl 的一致性：build --update 按行指纹同步，删掉的语料不自动清（重建即可）
+- 模型必须在本机跑（sentence-transformers / paraphrase-multilingual-MiniLM-L12-v2，
+  117MB，下载到 ~/.cache/huggingface，是下载工具，不是把你的话传出去）
+- 索引的存法跟着 chromadb 的版本走（0.4x 和 1.x 不通用）。装了新版本就固定用它，
+  别在两个版本之间来回读同一个索引目录——旧版打开新版建的目录会报错（数据不坏，但会吓人）。
+  要迁移：删掉 data/chroma_index/，用新版本重跑 build（你说的话都在 jsonl 里，索引随时能重建）
+- 索引存在数据目录 data/chroma_index/，跟着数据走，不会发出去
+- 没装依赖或没建索引 → 自动退回按字面搜，功能照旧（ask 里处理）
+- 和 corpus_dedup.jsonl 保持一致：build --update 只补新的，删掉的话不会自动清（重建即可）
 """
 import os, sys, json, glob, re
 
@@ -102,7 +102,7 @@ def _norm(o):
 def build(update=False):
     if not _deps_ok(quiet=False):
         print('先装依赖：pip install chromadb sentence-transformers')
-        print('（都是免费本机库；首次建索引还会下载 %.0fMB 的多语言嵌入模型到 ~/.cache/huggingface）' % 117)
+        print('（都是免费的本机工具；第一次建还要下载一个约 117MB 的模型到 ~/.cache/huggingface）')
         sys.exit(1)
     if _warn_if_version_mismatch():
         sys.exit(1)
@@ -135,8 +135,8 @@ def build(update=False):
     meta = {'model': MODEL_NAME, 'rows': col.count(), 'built': ds.datetime.date.today().isoformat()}
     with open(META_FILE, 'w', encoding='utf-8') as f:
         json.dump(meta, f, ensure_ascii=False)
-    print('索引完成：共 %d 条（新增 %d，已在库 %d）→ %s' % (col.count(), n_new, n_dup, INDEX_DIR))
-    print('查询试一下：python ds.py ask "你的问题"   （自动走语义检索）')
+    print('建好了：共 %d 条（新加 %d，已在里面 %d）→ %s' % (col.count(), n_new, n_dup, INDEX_DIR))
+    print('试一下：python ds.py ask "你的问题"   （自动按意思搜）')
 
 
 def _existing_ids(col):
@@ -174,8 +174,8 @@ def query(q, top=15):
 def _warn_if_version_mismatch():
     """索引目录是大版本不兼容的另一代 chromadb 建的：给出人话提示+出路，别让用户面对 sqlite 报错。"""
     if _collection_version_mismatch():
-        print('索引目录是用另一代 chromadb（大版本不同）建的，本版本打不开。')
-        print('数据没坏——语料都在 corpus_dedup.jsonl 里。删掉 %s 后跑 vec build 重建即可。' % INDEX_DIR)
+        print('这份索引是另一个版本的 chromadb 建的，当前版本打不开。')
+        print('数据没坏——你说的话都在 corpus_dedup.jsonl 里。删掉 %s 后跑 vec build 重新建即可。' % INDEX_DIR)
         return True
     return False
 
@@ -184,7 +184,7 @@ def status():
     if not _deps_ok(quiet=False):
         return
     if not os.path.isdir(INDEX_DIR):
-        print('还没有向量索引。跑 python ds.py vec build 建一个（语料多的话要几分钟）。')
+        print('还没有按意思搜的索引。跑 python ds.py vec build 建一个（话多的话要几分钟）。')
         return
     if _warn_if_version_mismatch():
         return
@@ -192,11 +192,11 @@ def status():
     if os.path.exists(META_FILE):
         meta = json.load(open(META_FILE, encoding='utf-8'))
     col = _open_collection()
-    print('向量索引：%d 条 | 模型 %s | 建于 %s' % (col.count(), meta.get('model', '?'), meta.get('built', '?')))
+    print('按意思搜的索引：%d 条 | 模型 %s | 建于 %s' % (col.count(), meta.get('model', '?'), meta.get('built', '?')))
     try:
         n = sum(1 for _ in open(os.path.join(ds.DATA, 'corpus_dedup.jsonl'), encoding='utf-8'))
         if n and abs(n - col.count()) > 50:
-            print('（语料 %d 条 vs 索引 %d 条——跑 python ds.py vec build --update 同步）' % (n, col.count()))
+            print('（你说的话有 %d 条，索引里是 %d 条——跑 python ds.py vec build --update 补齐）' % (n, col.count()))
     except FileNotFoundError:
         pass
 
@@ -211,12 +211,12 @@ if __name__ == '__main__':
             sys.exit(1)
         hits = query(' '.join(sys.argv[2:]))
         if hits is None:
-            print('索引不可用（没建或依赖缺失），走关键词检索吧。')
+            print('按意思搜用不了（没建或依赖没装），改按字面搜了。')
             sys.exit(1)
         if not hits:
-            print('语义检索没找到相关的。')
+            print('按意思没搜到相关的。')
             sys.exit(0)
-        print('语义检索 %d 条（按相关度排）:' % len(hits))
+        print('按意思搜到 %d 条（越相关排越前）:' % len(hits))
         for h in hits:
             tag = '写回' if h['src'] == 'user_writebacks.jsonl' else '原话'
             print('  %.2f | %s | %-10s | %s | %s' % (h['score'], h['date'], h['agent'], tag, h['msg'][:110]))

@@ -3,24 +3,24 @@
 
 用法：
     python ds.py init    探测你机器上有哪些 agent 的存档
-    python ds.py ingest  全链路：提取 → 去重 → 会话卡 → 数字底座 → 素材 → 渲染产物
+    python ds.py ingest  全流程：提取你说过的话 → 去掉重复的 → 生成网页
     python ds.py ask "问题关键词"   在你说过的话里搜
     python ds.py contrast "话题"    这个话题最早和最近的说法并排看
-    python ds.py promise           看欠账本（说要做没做闭环的事）
+    python ds.py promise           看说过要做的事（哪些还没做完）
     python ds.py promise add 要做的事 / promise done 关键词
-    python ds.py wb add "事实" --topic 主题   写回用户确认过的事实（--ref 附依据）
-    python ds.py wb list           看已写回的事实
-    python ds.py export            生成随身说明书（仅脱敏公开层，画像全文不外发）
-    python ds.py install <目录>    把 skill 包装进指定 skills 目录（--all 自动探测）
-    python ds.py monthly [YYYY-MM] 生成月度三页纸
-    python ds.py open    用浏览器打开产物入口页
-    python ds.py check   跑全量自检（项数以输出为准）
-    python ds.py where   显示数据目录在哪、画像多新、按哪种方式定位到的
-    python ds.py bind <仓库根>  绑定已有完整仓库的数据（--clear 解绑）
-    python ds.py vec build [--update]  建/更新语义索引（本地向量检索，见 scripts/vecsearch.py）
-    python ds.py vec status        看索引状态
+    python ds.py wb add "事实" --topic 主题   记下一条你确认过的事（--ref 附依据）
+    python ds.py wb list           看记下的事
+    python ds.py export            生成随身说明书（只含能公开的内容，完整情况不外发）
+    python ds.py install <目录>    把 skill 包装进指定 skills 目录（--all 自动找）
+    python ds.py monthly [YYYY-MM] 生成这个月的报告
+    python ds.py open    用浏览器打开首页
+    python ds.py check   跑一遍自检（检查项看输出）
+    python ds.py where   显示数据放在哪、你的情况多久没更新、怎么找到的
+    python ds.py bind <仓库根>  把已有完整仓库的数据接上（--clear 取消）
+    python ds.py vec build [--update]  建/更新按意思搜的索引（在你自己电脑上，见 scripts/vecsearch.py）
+    python ds.py vec status        看按意思搜的索引状态
 
-设计原则（DESIGN.md）：每人自己跑自己的；全部本地；探测不硬编码。
+设计原则（DESIGN.md）：每人自己跑自己的；数据全程在自己电脑上；不写死路径。
 """
 import os, sys, subprocess, json, webbrowser, glob, re, shutil, datetime
 
@@ -116,13 +116,13 @@ def cmd_ingest():
         ('挖素材（决定时刻/被问住的瞬间/月度切片/项目基因）', 'distill_materials.py'),
         ('渲染产物页面', 'generate_html_pages.py'),
     ]
-    print('ds ingest · 开始（全部本地，不出你这台机器）')
+    print('ds ingest · 开始（全程在你自己电脑上跑，数据不上传）')
     print('=' * 56)
     for i, (label, script) in enumerate(steps, 1):
         print('[%d/%d] %s ...' % (i, len(steps), label))
         run(script)
     # 去重步骤（extract_all 产出未去重版，这里生成主力文件）
-    print('[%d/%d] 去重 ...' % (len(steps), len(steps)))
+    print('[%d/%d] 去掉重复的 ...' % (len(steps), len(steps)))
     _dedup()
     # 汇报第一口糖
     _sugar_report()
@@ -147,7 +147,7 @@ def _dedup():
     with open(dst, 'w', encoding='utf-8') as f:
         for o in out:
             f.write(json.dumps(o, ensure_ascii=False) + '\n')
-    print('     去重完成：共 %d 条' % len(out))
+    print('     去掉重复后：共 %d 条' % len(out))
 
 def _sugar_report():
     # 第一口糖：数字汇报 + 提示画像方向
@@ -156,9 +156,9 @@ def _sugar_report():
     except FileNotFoundError:
         return
     print()
-    print('你跟 AI 说过的话：%d 条（去重后）' % n)
+    print('你跟 AI 说过的话：%d 条（重复的只算一次）' % n)
     if n < 500:
-        print('（还不到 500 条——画像会很薄，先攒着，以后再跑会越来越厚）')
+        print('（还不到 500 条——了解得还比较粗，先用着，以后会越来越全）')
     elif n < 3000:
         print('（中等量级：口头禅和习惯已经很准，决定类文档开始有料）')
     else:
@@ -220,11 +220,11 @@ def cmd_ask(query):
     except Exception:
         hits = None
     if hits:
-        print('语义检索 %d 条（按相关度排，0~1 越高越相关）:' % len(hits))
+        print('按意思搜到 %d 条（越相关排越前）:' % len(hits))
         for h in hits:
             tag = '写回' if h['src'] == 'user_writebacks.jsonl' else '原话'
             print('  %.2f | %s | %-10s | %s | %s' % (h['score'], h['date'], h['agent'], tag, h['msg'][:110]))
-        print('（语义检索按"意思相近"排，长问题比单词效果好；想按字面搜，用 grep 或看 references/query-protocol.md）')
+        print('（按意思相近排的，问题写具体一点更准；想按字面找，直接搜文件即可）')
         return
     _ask_keyword(query)
 
@@ -296,23 +296,23 @@ def cmd_check():
     run('self_check.py')
 
 def cmd_where():
-    print('数据目录：%s' % DATA)
-    print('定位方式：%s' % BASE_SOURCE)
-    print('产物目录：%s' % PRODUCTS)
+    print('数据放在：%s' % DATA)
+    print('找到数据的方式：%s' % BASE_SOURCE)
+    print('生成的网页在：%s' % PRODUCTS)
     cwd = os.getcwd()
     if os.path.normcase(os.path.abspath(cwd)) != os.path.normcase(os.path.abspath(BASE)):
         proj = os.path.join(cwd, '.wordmirror', 'promises.jsonl')
-        mark = '（已有项目账本）' if os.path.exists(proj) else '（首次记账时创建）'
-        print('项目账本：%s %s' % (os.path.dirname(proj), mark))
+        mark = '（已有记录）' if os.path.exists(proj) else '（第一次记时才建）'
+        print('这个目录记的事：%s %s' % (os.path.dirname(proj), mark))
     n = _try_count()
-    print('语料条数：%s' % (n if n else '（还没跑过 ingest）'))
+    print('你说过的话：%s' % (n if n else '（还没跑过 ingest）'))
     info = _profile_age()
     if info:
         days, d = info
         tip = '今天刚更新' if days == 0 else ('已 %d 天，该补最近的情况了' % days if days > 30 else '已 %d 天' % days)
-        print('画像日期：%s（%s）' % (d, tip))
+        print('你的情况整理于：%s（%s）' % (d, tip))
     else:
-        print('画像：还没有，先跑 ingest 再让 agent 生成')
+        print('你的情况：还没有，先跑 ingest 再让 AI 整理')
 
 def _profile_age():
     """从 portrait.md 顶部拿第一个日期，算画像多少天没更新。"""
@@ -423,7 +423,7 @@ def _tracker_note(today):
         return
     r0 = st[0]
     days = (today - datetime.date.fromisoformat(r0['date'])).days if r0.get('date') else '?'
-    print('另外，档案 tracker 里还有 %d 件搁置的事，最老一件：' % len(st))
+    print('另外，还记着 %d 件事一直没动，最老一件：' % len(st))
     print('  %s 记的（%d 天）| %s' % (r0.get('date', '?'), days, r0.get('title', r0.get('desc', ''))))
 
 def cmd_promise(args):
@@ -436,14 +436,15 @@ def cmd_promise(args):
                     rows.append((_ledger_tag(path), o))
         today = datetime.date.today()
         if not rows:
-            print('欠账本干净，没有开着的事。')
+            print('没有还没做完的事。')
             _tracker_note(today)
             return
         rows.sort(key=lambda t: t[1].get('date', ''))
-        print('欠账 %d 笔（从老到新）:' % len(rows))
+        tag_plain = {'全局账本': '全局', '项目账本': '这个目录'}
+        print('还没做完的事 %d 件（从老到新）:' % len(rows))
         for tag, o in rows:
             days = (today - datetime.date.fromisoformat(o['date'])).days if o.get('date') else '?'
-            print('  [%s] %s 记的（%d 天）| %s' % (tag, o.get('date', '?'), days, o.get('text', '')))
+            print('  [%s] %s 记的（%d 天）| %s' % (tag_plain.get(tag, tag), o.get('date', '?'), days, o.get('text', '')))
         _tracker_note(today)
         return
     sub = args[0]
@@ -519,19 +520,19 @@ def cmd_export():
     pub_p = os.path.join(DATA, 'layers', 'public.md')
     pub = open(pub_p, encoding='utf-8', errors='replace').read().strip() if os.path.exists(pub_p) else ''
     if len(pub) < 40:  # 只剩模板头也算空
-        print('公开层（data/layers/public.md）还没有内容——对外分享只能用脱敏公开层，不能导画像全文。')
-        print('先让 agent 按隐私规矩（references/privacy-rules.md）从画像提炼 public.md，再跑 export。')
+        print('能对外的那份内容（data/layers/public.md）还没有——对外只能用这份，不能把你的完整情况发出去。')
+        print('先让 AI 按隐私规矩（references/privacy-rules.md）从你的情况里整理出那份内容，再跑 export。')
         sys.exit(1)
     out = os.path.join(PRODUCTS, 'ME_随身说明书.md')
     os.makedirs(os.path.dirname(out), exist_ok=True)
     with open(out, 'w', encoding='utf-8') as f:
         f.write('# 我的说明书（言镜导出，%s）\n\n' % datetime.date.today().isoformat())
-        f.write('> 把下面整段贴给任何 AI（系统提示或对话开头都行），它就认识我了。\n')
-        f.write('> 本说明书只含公开层：真实姓名、公司、薪资等隐私已按 redact_list 脱敏。\n\n---\n\n')
+        f.write('> 把下面整段贴给任何 AI 对话的开头，它就认识我了。\n')
+        f.write('> 这份只放能公开的内容：真实姓名、公司、薪资这些，都已经去掉或换成代词了。\n\n---\n\n')
         f.write(pub)
         f.write('\n')
-    print('已生成：%s（仅公开层）' % out)
-    print('用法：打开复制全文，贴到任何 AI 的对话开头或系统提示里。')
+    print('已生成：%s（只含能公开的内容）' % out)
+    print('用法：打开，复制全文，贴到任何 AI 对话的开头。')
 
 def cmd_install(args):
     """把 skill 包拷进目标 skills 目录。--all 自动探测常见位置。"""

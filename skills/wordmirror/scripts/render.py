@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""言镜渲染器（skill 自带能力）：data → HTML 产物。样式出自 ../templates/，数据在数据目录。
+"""言镜生成网页：把 data 里的内容变成 HTML。样式在 ../templates/，数据在数据目录。
 用法：
-    python render.py read            # index + 01 画像页 + 10 Wrapped
-    python render.py monthly [YYYY-MM]  # 月度三页纸（默认最近有语料的月份）
-    python render.py tracker         # 03 承诺看板
+    python render.py read            # 首页 + 01 你的情况 + 10 翻给你看
+    python render.py monthly [YYYY-MM]  # 月报（默认最近有数据的月份）
+    python render.py tracker         # 03 说过要做的事
     python render.py all             # 全部
-不依赖 engine/——单装用户数据就位后同样能出（语料由 ingest 生成）。
-零外部请求，产物是 file:// 双击可开的单文件。
+不依赖 engine/——单装用户数据就位后同样能出（数据由 ingest 生成）。
+零联网，产物是双击就能打开的单个文件。
 """
 import os, sys, re, json, datetime
 import html as H
@@ -47,7 +47,7 @@ def render_markdown(md):
             out.append('<h2>%s</h2>' % inline(ln[3:]))
         elif ln.startswith('### '):
             out.append('<h3>%s</h3>' % inline(ln[4:]))
-        elif ln.startswith('> ') and not ln.startswith('> 数据源'):
+        elif ln.startswith('> ') and not (ln.startswith('> 数据源') or ln.startswith('> 这些结论来自')):
             out.append('<p><strong>%s</strong></p>' % inline(ln[2:]))
         elif ln.startswith('|') and i + 1 < len(lines) and re.match(r'^\|[\s\-|]+\|$', lines[i + 1]):
             rows = []
@@ -85,12 +85,13 @@ def render_markdown(md):
 def build_portrait():
     p = os.path.join(ds.DATA, 'profile', 'portrait.md')
     if not os.path.exists(p):
-        print('跳过 01 画像页：portrait.md 还没生成（先初始化）')
+        print('跳过 01 那页：你的情况还没整理出来（先初始化）')
         return None
     md = open(p, encoding='utf-8', errors='replace').read()
     ver = re.search(r'# 我是谁（(v\d+) · (\d{4}-\d{2}-\d{2})）', md)
     tag, date = (ver.group(1), ver.group(2)) if ver else ('v1', '')
-    src = re.search(r'> 数据源：(.+)', md)
+    src = (re.search(r'> 这些结论来自：(.+)', md)
+           or re.search(r'> 数据源：(.+)', md))  # 旧版头行兼容
     body = ['<h1 class="display">我是谁，<br>怎么跟我共事</h1>']
     if src:
         body.append('<div class="band"><p>%s</p></div>' % inline(src.group(1)))
@@ -120,7 +121,7 @@ def build_wrapped():
                 '<div class="bignum"><div class="n">%d</div><div class="note">个 AI 工具跟你聊过</div></div>'
                 '<div class="bignum"><div class="n mono" style="font-size:26px;padding-top:8px;">%s</div>'
                 '<div class="note">从第一条到最新一条</div></div></div>' % (format(total, ','), len(ag), span))
-    body.append('<h2>你最高频的词，暴露了你的工作方式</h2>')
+    body.append('<h2>你最常挂嘴边的词</h2>')
     body.append('<div style="margin:16px 0 8px;">%s</div>' % top_html)
     body.append('<h2>按月翻</h2>')
     for k in keys:
@@ -137,7 +138,7 @@ def build_wrapped():
                         '<div class="q-text">「%s」</div></div>' % H.escape(m['closer'][:120]))
         body.append('</div>')
     return ('html/10_翻给你看.html',
-            page('翻给你看 · 言镜', 'Wrapped · %s <span class="dot">·</span> 按月回顾' % span, '\n'.join(body)))
+            page('翻给你看 · 言镜', '按月回顾 · %s' % span, '\n'.join(body)))
 
 
 def build_index():
@@ -158,15 +159,15 @@ def build_index():
     monthly = sorted(os.listdir(MON)) if os.path.isdir(MON) else []
     if monthly:
         cards.append(('08', '%s · 这个月你对 AI 说了什么' % monthly[-1].replace('.html', ''),
-                      '当月的量、决定、办完的事', 'monthly/' + monthly[-1]))
+                      '这个月说了多少、定了什么、办完了几件', 'monthly/' + monthly[-1]))
     body = ['<h1 class="display">言镜</h1>',
-            '<p style="font-size:18px;color:var(--body-strong);">你跟 AI 说过的话，全存档在这了。'
-            '换了新的 AI 干活时，让它先读你的说明书——不用每次从头自我介绍。</p>',
+            '<p style="font-size:18px;color:var(--body-strong);">你跟 AI 说过的话，都在这儿了。'
+            '换个 AI 干活时，让它先读一遍你的情况——省得每次重新自我介绍。</p>',
             '<div class="bignum-row">'
-            '<div class="bignum"><div class="n">%s</div><div class="note">条对话记录（去掉重复后）</div></div>'
+            '<div class="bignum"><div class="n">%s</div><div class="note">条对话记录（重复的只算一次）</div></div>'
             '<div class="bignum"><div class="n">%d</div><div class="note">个 AI 工具的聊天记录</div></div>'
             '<div class="bignum"><div class="n" style="color:var(--stalled);">%d</div>'
-            '<div class="note">件说了没下文的事（超 30 天），最扎眼</div></div></div>' % (format(total, ','), len(ag), stalled)]
+            '<div class="note">件说了没下文的事（超过 30 天），最该看看</div></div></div>' % (format(total, ','), len(ag), stalled)]
     body.append('<h2>页面</h2>')
     for num, title, desc, href in cards:
         body.append('<div class="card"><div class="eyebrow">%s</div>'
@@ -182,7 +183,7 @@ def build_index():
                         '<p style="margin:0;"><strong><a href="file:///%s">%s</a></strong></p></div>'
                         % (os.path.join(ds.PRODUCTS, f).replace('\\', '/'), H.escape(title)))
     return ('html/index.html',
-            page('数字自己档案馆 · 言镜', '总入口 <span class="dot">·</span> 言镜 · wordmirror', '\n'.join(body), home='index.html'))
+            page('言镜 · 首页', '首页 <span class="dot">·</span> 言镜 · wordmirror', '\n'.join(body), home='index.html'))
 
 
 # ---------- 月报 ----------
@@ -220,7 +221,7 @@ def _promises_all_layers():
 def build_monthly(month=None):
     corpus = load_jsonl('corpus_dedup.jsonl')
     if not corpus:
-        print('语料还没生成，先跑 ingest（或让 agent 走初始化流程）')
+        print('你说的话还没提取出来，先跑 ingest（或让 agent 走初始化）')
         sys.exit(1)
     months = sorted({o.get('date', '')[:7] for o in corpus if o.get('date')})
     month = month if (month and month in months) else months[-1]
@@ -287,10 +288,12 @@ def build_monthly(month=None):
     if not wbs and not decisions:
         body.append('<p>这个月没有记下的决定。</p>')
     body.append('<h2>这个月办完的事</h2>')
+    ledger_name = {'全局账本': '全局', '项目账本': '这个目录'}
     if promises:
         body.append('<ul>%s</ul>' % ''.join(
             '<li><span class="mono">%s</span> · 划掉：%s<span style="color:var(--muted);">（%s）</span></li>'
-            % (esc(o.get('closed_date', '')), esc(o.get('text', '')), esc(o.get('_ledger', '账本'))) for o in promises))
+            % (esc(o.get('closed_date', '')), esc(o.get('text', '')),
+               esc(ledger_name.get(o.get('_ledger'), o.get('_ledger') or ''))) for o in promises))
     if done:
         body.append('<p style="color:var(--muted);">之前已经办完 %d 件。</p>' % len(done))
     if not promises and not done:
@@ -307,7 +310,7 @@ def build_tracker():
     tpl = open(os.path.join(TPL, 'tracker.html'), encoding='utf-8').read()
     tr_p = os.path.join(ds.DATA, 'tracker_items.json')
     if not os.path.exists(tr_p):
-        print('跳过 03 看板：tracker_items.json 还没生成（先 ingest）')
+        print('跳过 03 那页：还没生成（先跑 ingest）')
         return None
     data_text = open(tr_p, encoding='utf-8').read().strip()
     out = tpl.replace('__TRACKER_DATA__', data_text)
@@ -321,7 +324,7 @@ def write_out(rel, content):
     os.makedirs(os.path.dirname(p), exist_ok=True)
     with open(p, 'w', encoding='utf-8') as f:
         f.write(content)
-    print('渲染 -> products/%s' % rel)
+    print('生成 -> products/%s' % rel)
 
 
 def main():

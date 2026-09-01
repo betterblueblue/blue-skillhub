@@ -17,9 +17,9 @@
 python <skill目录>/scripts/ds.py ask "你的问题"
 ```
 
-- 有语义索引时自动走向量检索：按**意思相近**排序，问法和原话字面不同也能命中（问「当初为什么换技术栈」能翻出「把老项目迁到 Go」）
-- 没有索引时自动降回关键词 + 近义词组（「求职」也搜「找工作/投简历/面试」；自己的词在 `data/synonyms.json` 自扩）
-- 想建语义索引：`ds.py vec build`（需要 chromadb + sentence-transformers，模型本机跑，详见 scripts/vecsearch.py 头部说明）
+- 建了按意思搜的东西时，自动按**意思相近**排：问法和原话字面不同也能命中（问「当初为什么换技术栈」能翻出「把老项目迁到 Go」）
+- 没建时自动退回按字面 + 近义词组（「求职」也搜「找工作/投简历/面试」；自己的词在 `data/synonyms.json` 自扩）
+- 想建按意思搜的：`ds.py vec build`（需要 chromadb + sentence-transformers，模型在你自己电脑上跑，详见 scripts/vecsearch.py 头部说明）
 
 **第一层：关键词 grep**（命令查不到、或要大批量翻看时）
 
@@ -63,7 +63,7 @@ python <skill目录>/scripts/ds.py ask "关键词"
 
 | 用户问 | 实际检索 |
 |---|---|
-| "我上个月纠结的事后来怎么样了" | `ds.py ask "上个月纠结"`（语义）→ 追踪后续日期同话题 |
+| "我上个月纠结的事后来怎么样了" | `ds.py ask "上个月纠结"`（按意思搜）→ 追踪后续日期同话题 |
 | "我对 RAG 的观点是什么" | `ds.py ask "RAG"`→ 按时间排，展示观点演化 |
 | "我说过要做但没下文的事" | data/stalled_topics.json（按 gap 天数排） |
 | "我说话有什么口头禅" | data/stats_wordfreq.json（脚本算好的频率表） |
