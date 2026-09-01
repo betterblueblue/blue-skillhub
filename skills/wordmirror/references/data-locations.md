@@ -5,10 +5,10 @@
 ## 定位顺序
 
 1. **环境变量** `WORD_MIRROR_HOME`（用户显式指定，最优先；旧名 `DIGITAL_SELF_HOME` 仍兼容）
-2. **bind 指针** `~/WordMirror/bind.json`（`python wm.py bind <数据目录>` 写入）——数据在别处时接上
-3. `~/WordMirror/`（默认数据根：`~/WordMirror/data/`；旧目录 `~/.digital-self/` 仍兼容）
+2. **bind 指针** `~/wordmirror/bind.json`（`python wm.py bind <数据目录>` 写入）——数据在别处时接上
+3. `~/wordmirror/`（默认数据根：`~/wordmirror/data/`；旧目录 `~/.digital-self/` 仍兼容）
 4. 仓库布局：从 skill 目录向上逐级找祖先目录里有 `data/corpus_dedup.jsonl`（或 `corpus_all.jsonl`）的——兼容旧布局，数据就在 skill 祖先目录时自动生效
-5. 都没有 → 默认 `~/WordMirror/`，首次写入时自动创建
+5. 都没有 → 默认 `~/wordmirror/`，首次写入时自动创建
 
 ## 单装用户推荐接法（bind）
 
@@ -43,4 +43,4 @@ profile/habits.md      # 跟我干活的规矩（同上）
 
 - `~` = 用户主目录（`C:\Users\<名>` 或 `/home/<名>` 或 `/Users/<名>`）
 - 路径分隔符：脚本已兼容，grep 时注意 Windows 是 `\`
-- 数据根在用户主目录 `~/WordMirror/`（默认），数据在 `~/WordMirror/data/`；skill 目录自身只放代码，不放数据
+- 数据根在用户主目录 `~/wordmirror/`（默认），数据在 `~/wordmirror/data/`；skill 目录自身只放代码，不放数据

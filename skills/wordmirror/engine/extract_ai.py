@@ -5,7 +5,7 @@ import json, os, glob, re, sqlite3, datetime
 
 H = os.path.expanduser('~')
 import os
-BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', 'WordMirror'))
+BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', 'wordmirror'))
 OUT = os.path.join(BASE, 'data', 'ai_messages.jsonl')
 MAXLEN = 1200
 

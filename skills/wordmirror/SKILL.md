@@ -12,10 +12,10 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 
 **全局层**（你是谁：你的情况 / 规矩 / 你说的话 / 月报）——不分项目，跟着你走。怎么找到：
 1. 环境变量 `WORD_MIRROR_HOME`
-2. `~/WordMirror/bind.json` 里写的位置（`wm.py bind <目录>` 接上已有数据）
-3. `~/WordMirror/`（默认数据根，数据在 `~/WordMirror/data/`）
+2. `~/wordmirror/bind.json` 里写的位置（`wm.py bind <目录>` 接上已有数据）
+3. `~/wordmirror/`（默认数据根，数据在 `~/wordmirror/data/`）
 4. 从 skill 目录向上找含 `data/corpus_dedup.jsonl` 的祖先目录（兼容旧布局）
-5. 都没有 → `~/WordMirror/`（第一次用时建）
+5. 都没有 → `~/wordmirror/`（第一次用时建）
 详细见 `references/data-locations.md`。
 
 **项目层**（这个项目的事：说过要做的事）——在哪个目录干活就记哪：`<当前目录>/.wordmirror/promises.jsonl`。⚠️ **账本里是原话，可能含隐私——默认别让它进 git**（项目 `.gitignore` 加一行 `.wordmirror/`）。

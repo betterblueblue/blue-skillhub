@@ -4,7 +4,7 @@ LLM 只负责最后的成文——素材（决策句/被问住句/月度切片/�
 输出: data/materials_*.json"""
 import json, re, collections, os, datetime
 
-BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', 'WordMirror'))
+BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', 'wordmirror'))
 DATA = os.path.join(BASE, 'data')
 BS = chr(92)
 

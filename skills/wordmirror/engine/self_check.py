@@ -23,7 +23,7 @@ import os, sys, glob, json, re, subprocess
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(BASE)
-DATA_ROOT = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', 'WordMirror'))
+DATA_ROOT = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', 'wordmirror'))
 DATA = os.path.join(DATA_ROOT, 'data')
 PROD = os.path.join(DATA_ROOT, 'products')
 
