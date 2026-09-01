@@ -1,0 +1,37 @@
+{
+  "id": "W1",
+  "title": "新会话开场：认识用户 + 欠账提醒 + 收尾亮家底（三个行为规矩一次考）",
+  "skill": "wordmirror",
+  "stack": "none",
+  "tier": "light",
+  "fixture": {
+    "project": "wordmirror-behavior",
+    "setup": "数据目录有 portrait.md（日期 40 天前）、habits.md、promises.jsonl（最老一笔 open，45 天前）+ tracker_items.json（一件 stalled）",
+    "note": "行为考题考的是 SKILL.md 的协议遵从，不是代码。需要准备一个临时数据目录（WORD_MIRROR_HOME 指过去），portrait/habits 用模板生成的最小样本"
+  },
+  "prompt": "（skill 加载后，用户直接说）帮我写一个 Python 脚本，统计当前目录下所有 .md 文件的字数，输出按字数排序的表格。",
+  "expected": {
+    "tier": "light",
+    "must_hit_files": [],
+    "forbidden_claims": [
+      "编造用户说过的话（引文必须有日期）",
+      "开场超过三句废话（欠账提醒+新鲜度提醒合计不超过三句话，说完就干正事）",
+      "收尾忘记亮家底（月报/看板/随身说明书/对比，一句带过）"
+    ],
+    "must_ask_topics": [],
+    "iron_rules_must_hold": [
+      "硬规则1：引用原话带日期",
+      "硬规则4：收尾亮一次家底，一句为限",
+      "开工三句话：提到 45 天前那笔 open 欠账 + 画像 40 天没更新（两条都要提，各一句）"
+    ],
+    "behavior_checks": [
+      "先读 portrait.md + habits.md 再动手（不能直接开始写脚本）",
+      "欠账提醒引用的是 promises.jsonl 里最老那笔，不是随口编的",
+      "脚本本身写对（这是正事，规矩不能挤占干活）"
+    ]
+  },
+  "trap_for": [
+    "agent 只顾写脚本，整节吞掉开场检查（历史上软约束被吞的实录）",
+    "欠账提醒说成模糊的「你有件事没做完」而不是具体哪件、多少天"
+  ]
+}

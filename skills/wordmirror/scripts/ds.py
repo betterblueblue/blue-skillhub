@@ -8,6 +8,8 @@
     python ds.py contrast "话题"    这个话题最早和最近的说法并排看
     python ds.py promise           看欠账本（说要做没做闭环的事）
     python ds.py promise add 要做的事 / promise done 关键词
+    python ds.py wb add "事实" --topic 主题   写回用户确认过的事实（--ref 附依据）
+    python ds.py wb list           看已写回的事实
     python ds.py export            生成随身说明书（仅脱敏公开层，画像全文不外发）
     python ds.py install <目录>    把 skill 包装进指定 skills 目录（--all 自动探测）
     python ds.py monthly [YYYY-MM] 生成月度三页纸
@@ -15,6 +17,8 @@
     python ds.py check   跑全量自检（项数以输出为准）
     python ds.py where   显示数据目录在哪、画像多新、按哪种方式定位到的
     python ds.py bind <仓库根>  绑定已有完整仓库的数据（--clear 解绑）
+    python ds.py vec build [--update]  建/更新语义索引（本地向量检索，见 scripts/vecsearch.py）
+    python ds.py vec status        看索引状态
 
 设计原则（DESIGN.md）：每人自己跑自己的；全部本地；探测不硬编码。
 """
@@ -196,11 +200,37 @@ def _expand_query(q):
             out.append(w)
     return out
 
+def cmd_vec(args):
+    """语义检索入口。转发给 vecsearch.py（依赖 chromadb + sentence-transformers，本机跑）。"""
+    sub = args[0] if args else 'status'
+    rp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'vecsearch.py')
+    r = subprocess.run([sys.executable, rp, sub] + args[1:])
+    sys.exit(r.returncode)
+
+
 def cmd_ask(query):
     if not query:
         print('用法：python ds.py ask "关键词"')
         sys.exit(1)
-    # 简单 grep：跨两个主力文件；查询词自动带近义词组（用户记不住自己当时的原词是常态）
+    # 语义优先：有索引走向量检索（问法和原话字面不同也能命中），没索引/查询失败降回关键词+近义词。
+    # 短查询（1-2 字）语义区分度差，直接走关键词。
+    try:
+        import vecsearch
+        hits = vecsearch.query(query) if len(query) > 2 else None
+    except Exception:
+        hits = None
+    if hits:
+        print('语义检索 %d 条（按相关度排，0~1 越高越相关）:' % len(hits))
+        for h in hits:
+            tag = '写回' if h['src'] == 'user_writebacks.jsonl' else '原话'
+            print('  %.2f | %s | %-10s | %s | %s' % (h['score'], h['date'], h['agent'], tag, h['msg'][:110]))
+        print('（语义检索按"意思相近"排，长问题比单词效果好；想按字面搜，用 grep 或看 references/query-protocol.md）')
+        return
+    _ask_keyword(query)
+
+
+def _ask_keyword(query):
+    # 关键词检索：跨两个主力文件；查询词自动带近义词组（用户记不住自己当时的原词是常态）
     variants = _expand_query(query)
     hits = []
     for f in ['corpus_dedup.jsonl', 'user_writebacks.jsonl']:
@@ -294,6 +324,65 @@ def _profile_age():
         return None
     d = datetime.date.fromisoformat(m.group(1))
     return (datetime.date.today() - d).days, m.group(1)
+
+# ===== 写回（"记住这个"——走命令保证格式，见 writeback-protocol.md 硬门槛）=====
+
+def cmd_wb(args):
+    if not args or args[0] not in ('add', 'list'):
+        print('用法：python ds.py wb add "事实内容" --topic 主题 [--ref 依据]')
+        print('      python ds.py wb list           # 看已写回的事实')
+        return
+    wb_p = os.path.join(DATA, 'user_writebacks.jsonl')
+    if args[0] == 'list':
+        if not os.path.exists(wb_p):
+            print('还没有写回记录。')
+            return
+        rows = []
+        for i, line in enumerate(open(wb_p, encoding='utf-8'), 1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except Exception:
+                print('警告：第 %d 行不是合法 JSON，跳过' % i)
+        for o in rows[-20:]:
+            print('  %s | %-8s | %s' % (o.get('date', '?'), o.get('source', o.get('topic', '?')), o.get('msg', '')[:70]))
+        if len(rows) > 20:
+            print('  …（共 %d 条，显示最近 20 条）' % len(rows))
+        return
+    # add：解析 --topic/--ref 选项，其余为内容
+    text, topic, ref = [], 'general', ''
+    i = 1
+    while i < len(args):
+        if args[i] == '--topic' and i + 1 < len(args):
+            topic = args[i + 1]; i += 2
+        elif args[i] == '--ref' and i + 1 < len(args):
+            ref = args[i + 1]; i += 2
+        else:
+            text.append(args[i]); i += 1
+    msg = ' '.join(text).strip()
+    if not msg:
+        print('内容不能为空。用法：python ds.py wb add "事实内容" --topic 主题')
+        sys.exit(1)
+    os.makedirs(DATA, exist_ok=True)
+    # 坏行拦截：写操作前确认现有文件每行都合法（写入不修复也不吞坏行）
+    if os.path.exists(wb_p):
+        for i, line in enumerate(open(wb_p, encoding='utf-8'), 1):
+            line = line.strip()
+            if line:
+                try:
+                    json.loads(line)
+                except Exception:
+                    print('写回文件 %s 第 %d 行不是合法 JSON。先手工修复或删掉那行，我不替你静默改账。' % (wb_p, i))
+                    sys.exit(1)
+    row = {'date': datetime.date.today().isoformat(), 'source': 'cli',
+           'topic': topic, 'msg': msg, 'ref': ref or '用户当次确认'}
+    with open(wb_p, 'a', encoding='utf-8') as f:
+        f.write(json.dumps(row, ensure_ascii=False) + '\n')
+    print('记下了：%s（%s）' % (msg, wb_p))
+
+
 
 # ===== 欠账本（说要做的事，两层：项目 + 全局）=====
 
@@ -509,6 +598,10 @@ def main():
         cmd_install(sys.argv[2:])
     elif cmd == 'bind':
         cmd_bind(sys.argv[2:])
+    elif cmd == 'vec':
+        cmd_vec(sys.argv[2:])
+    elif cmd == 'wb':
+        cmd_wb(sys.argv[2:])
     elif cmd == 'monthly':
         cmd_monthly(sys.argv[2:])
     else:

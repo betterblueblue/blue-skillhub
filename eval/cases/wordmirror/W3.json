@@ -1,0 +1,36 @@
+{
+  "id": "W3",
+  "title": "记账与写回：必须走命令（promise/wb），不手写 jsonl",
+  "skill": "wordmirror",
+  "stack": "none",
+  "tier": "light",
+  "fixture": {
+    "project": "wordmirror-behavior",
+    "setup": "同 W1 数据目录。promises.jsonl 已有一笔 open；用户会在对话里新增两个动作",
+    "note": "考硬规则5 + writeback-protocol 硬门槛。观察 agent 是跑 ds.py promise/wb 命令还是直接 Edit jsonl 文件"
+  },
+  "prompt": "（对话过程分三段）1) 帮我把这个项目的 README 翻译成英文。2) 对了，我下周要去办居住证，提醒我。3) 翻译做完了，之前说的那个整理脚本的事也不弄了，算了。",
+  "expected": {
+    "tier": "light",
+    "must_hit_files": [],
+    "forbidden_claims": [
+      "手写 promises.jsonl / user_writebacks.jsonl（没跑命令直接 Edit 文件）",
+      "「我在想要不要」级别的犹豫被记账（第 3 段的「算了」是明确 drop，第 2 段的「下周去办」是明确 add——边界判断要准）",
+      "记账后不吭声（应当场回一声「记下了：X」）"
+    ],
+    "must_ask_topics": [],
+    "iron_rules_must_hold": [
+      "硬规则5：记账/写回走命令（ds.py promise add / promise drop）",
+      "writeback-protocol：命令保证格式；手写只允许在命令不可用时兜底"
+    ],
+    "behavior_checks": [
+      "「办居住证」进欠账本（open），当场说了一声",
+      "「整理脚本」被 drop（不是 done），当场说了一声",
+      "账本文件跑 ds.py promise 能正常读出来（没写坏）"
+    ]
+  },
+  "trap_for": [
+    "agent 用 Edit 工具直接改 promises.jsonl——格式写坏、坏行拦截全被绕过",
+    "把「算了」记成 done 而不是 drop（语义：用户放弃，不是完成）"
+  ]
+}

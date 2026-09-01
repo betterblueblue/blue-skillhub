@@ -25,17 +25,17 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 
 | 用户说 / 场景 | 读这个 | 然后做 |
 |---|---|---|
-| "我之前说过什么 / 我上次怎么想的 / 某话题我的观点" | `references/query-protocol.md` | 按协议检索原话，回答必须带日期 |
-| "记住这个 / 我决定了X / 状态变了" | `references/writeback-protocol.md` | 按协议写回，一条事实一行 |
+| "我之前说过什么 / 我上次怎么想的 / 某话题我的观点" | `references/query-protocol.md` | 先跑 `ds.py ask "问题"`（有语义索引自动按意思搜，没有则关键词+近义词）；引文只从命令输出复制 |
+| "记住这个 / 我决定了X / 状态变了" | `references/writeback-protocol.md` | 走命令：`ds.py wb add "事实" --topic 主题`（不许手写文件） |
 | "把我的情况告诉这个 agent / 分享我的画像" | `references/privacy-rules.md` | 先过脱敏清单，绝不直接给 private 层 |
-| "更新数据 / 重新提取 / 画像过期了" | `references/ingest-protocol.md` | 跑 scripts/ds.py ingest |
+| "更新数据 / 重新提取 / 画像过期了" | `references/ingest-protocol.md` | 跑 scripts/ds.py ingest；语料变了补一句 `ds.py vec build --update`（有索引的话） |
 | 首次使用 / 读不到 portrait.md | `references/init-protocol.md` | 按四步初始化（探测→提取→生成画像→验证） |
 | "哪些事说了没下文 / 我的项目都怎么样了" | `references/query-protocol.md` 第 3 节 | 查搁置主题，按天数排 |
 | 用户开始写代码、改文档、长时间协作 | 不用额外读，habits.md 已够 | 按习惯规矩干活 |
 | 任何收尾时刻（认识完用户/初始化完/出完产物） | "主动引导"节 + 硬规则第 4 条 | 一句话亮家底，句号 |
-| 用户犹豫、纠结、比较选项 | `references/query-protocol.md`；可跑 `ds.py contrast 话题` | 先把这个话题最早和最近的说法并排摆出来，再谈建议，AI 不替用户下结论 |
-| 用户说"我要做X / 准备Y" | `references/writeback-protocol.md` 承诺记账 | 记入 promises.jsonl（open），当场说一声 |
-| 用户说"X做完了 / 这事黄了" | `references/writeback-protocol.md` 承诺记账 | 对应账目改成 closed/dropped，当场说一声 |
+| 用户犹豫、纠结、比较选项 | 可跑 `ds.py contrast 话题` | 先把这个话题最早和最近的说法并排摆出来，再谈建议，AI 不替用户下结论 |
+| 用户说"我要做X / 准备Y" | `references/writeback-protocol.md` 承诺记账 | 走命令：`ds.py promise add 要做的事`，当场说一声 |
+| 用户说"X做完了 / 这事黄了" | `references/writeback-protocol.md` 承诺记账 | 走命令：`ds.py promise done 关键词`（或 drop），当场说一声 |
 | "把说明书导出 / 贴到别的 AI 用" | 跑 `scripts/ds.py export` | 生成随身说明书（**只含公开层**，画像全文绝不外发），告诉用户文件在哪 |
 
 ## 主动引导（功能要亮出来，别闷着）
@@ -57,10 +57,11 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 
 ## 硬规则（任何时候）
 
-1. 引用我的原话必须带日期；编我没说过的话，一次都不行
+1. 引用我的原话必须带日期；编我没说过的话，一次都不行。落地办法：**引文只从 `ds.py ask` / `contrast` 的输出复制**（输出每行自带日期），不从记忆里默写
 2. 用户数据（数据目录里的 portrait.md 含隐私）只在本机本会话用，不进任何外部请求——除非我当次明确说"可以"（详见 references/privacy-rules.md）
 3. 数据目录怎么找：见 `references/data-locations.md`（按机器自动定位，不写死路径）
 4. **加载或初始化收尾，必须亮一次家底**：用一句话告诉用户本 skill 还能出什么（月度三页纸、欠账看板 HTML、随身说明书、新旧说法对比）。不管走的是哪条路径——认识用户、初始化蒸馏、写回更新——收尾都要带这一句。引导不超过一句，用户说不用就停。详见"主动引导"节
+5. **记账/写回走命令，不手写文件**：`ds.py promise add/done/drop`、`ds.py wb add`——格式正确和坏账拦截都在命令里（详见 references/writeback-protocol.md）
 
 ## 数据从哪来
 

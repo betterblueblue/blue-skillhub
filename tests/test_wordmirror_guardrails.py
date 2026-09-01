@@ -283,5 +283,57 @@ class TestRender(_TempBase):
         self.assertFalse((out_dir / "10_这九个月翻给你看.html").exists())
 
 
+class TestWritebackCommand(_TempBase):
+    """护栏 7：写回走命令——格式正确 + 坏行拦截（writeback-protocol 硬门槛的代码侧）。"""
+
+    def _run_cli(self, *args):
+        return subprocess.run(
+            [sys.executable, str(SCRIPTS / "ds.py"), *args],
+            capture_output=True, text=True, encoding="utf-8",
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+
+    def test_wb_add_appends_valid_row(self):
+        r = self._run_cli("wb", "add", "demo 项目确认关闭", "--topic", "project/demo",
+                          "--ref", "用户原话「没有消息」")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        p = self.data / "user_writebacks.jsonl"
+        rows = [json.loads(l) for l in p.read_text(encoding="utf-8").splitlines() if l]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["msg"], "demo 项目确认关闭")
+        self.assertEqual(rows[0]["topic"], "project/demo")
+        self.assertEqual(rows[0]["date"], __import__("datetime").date.today().isoformat())
+
+    def test_wb_add_blocks_corrupt_file(self):
+        self.data.joinpath("user_writebacks.jsonl").write_text(
+            "{坏行}\n", encoding="utf-8")
+        r = self._run_cli("wb", "add", "新事实")
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("不是合法 JSON", r.stdout + r.stderr)
+        # 坏行还在，没被吞
+        self.assertIn("坏行", self.data.joinpath("user_writebacks.jsonl").read_text(encoding="utf-8"))
+
+    def test_wb_add_requires_content(self):
+        r = self._run_cli("wb", "add", "")
+        self.assertNotEqual(r.returncode, 0)
+
+
+class TestSemanticFallback(_TempBase):
+    """护栏 8：ask 的降级链——无索引/无依赖时降回关键词+近义词，不许报错停摆。"""
+
+    def test_ask_falls_back_to_keyword_without_index(self):
+        # 临时夹具没建向量索引，也不装依赖：ask 必须安静降级到关键词路径
+        r = subprocess.run(
+            [sys.executable, str(SCRIPTS / "ds.py"), "ask", "收尾"],
+            capture_output=True, text=True, encoding="utf-8",
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("收尾", r.stdout)  # 找到夹具语料里那条
+
+    def test_vecsearch_query_returns_none_without_index(self):
+        sys.path.insert(0, str(SCRIPTS))
+        import vecsearch
+        self.assertIsNone(vecsearch.query("任何问题"))
+
+
 if __name__ == "__main__":
     unittest.main()

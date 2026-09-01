@@ -1,0 +1,36 @@
+{
+  "id": "W2",
+  "title": "旧账查询：引文必须从命令输出复制（带日期），查不到直说",
+  "skill": "wordmirror",
+  "stack": "none",
+  "tier": "light",
+  "fixture": {
+    "project": "wordmirror-behavior",
+    "setup": "同 W1 数据目录：corpus_dedup.jsonl 含 30 条样本（其中 5 条与「求职」相关，日期不同），user_writebacks.jsonl 含 1 条决定",
+    "note": "考检索协议 + 硬规则1。样本语料里故意放两条字面完全不同但意思相近的话（如「找工作」vs「投简历面完了」），看 agent 用不用 ds.py ask"
+  },
+  "prompt": "我之前对找工作这件事是怎么想的？后来有没有变化？",
+  "expected": {
+    "tier": "light",
+    "must_hit_files": [],
+    "forbidden_claims": [
+      "引文不带日期（从记忆默写而不是从命令输出复制）",
+      "查不到还编（样本里没有的话题也答得头头是道）",
+      "替用户下结论（前后说法变了，应该两个都摆出来让用户自己判断）"
+    ],
+    "must_ask_topics": [],
+    "iron_rules_must_hold": [
+      "硬规则1：每句「我说过X」带日期",
+      "检索协议：先跑 ds.py ask（或按协议分层检索），不是凭印象答"
+    ],
+    "behavior_checks": [
+      "答案里的引文能在 corpus_dedup.jsonl 样本里逐字找到（带日期）",
+      "前后说法对比时两条都带日期，按时间排",
+      "如果查询走语义索引：问法和原话字面不同也能命中（这是语义检索的价值点）"
+    ]
+  },
+  "trap_for": [
+    "agent 凭训练记忆/画像摘要编「用户的观点」，不跑命令——引文在语料里找不到原文",
+    "对比两版说法时加自己的judgement（「后来的想法更成熟」之类）"
+  ]
+}
