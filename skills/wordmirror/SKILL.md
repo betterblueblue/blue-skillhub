@@ -14,7 +14,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 1. 环境变量 `WORD_MIRROR_HOME`
 2. `~/.wordmirror/bind.json` 里写的位置（`ds.py bind <目录>` 接上已有数据）
 3. `~/.wordmirror/`
-4. 从 skill 目录向上找含 `data/corpus_dedup.jsonl` 的祖先目录（skill 装在完整仓库里时自动生效）
+4. 从 skill 目录向上找含 `data/corpus_dedup.jsonl` 的祖先目录（数据就在 skill 目录内时自动生效）
 5. 都没有 → `~/.wordmirror/`（第一次用时建）
 详细见 `references/data-locations.md`。
 

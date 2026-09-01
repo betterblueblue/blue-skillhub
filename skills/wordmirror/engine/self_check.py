@@ -1,0 +1,262 @@
+# -*- coding: utf-8 -*-
+"""言镜（wordmirror）自检脚本：改名/重蒸馏/日常维护后跑一遍，30 秒出结果。
+检查项（2026-08-31 起，项数以运行输出为准）：
+  1  旧命名残留（改名最容易丢三落四的地方）
+  2  manifest 覆盖度（世上每个文件都要登记）
+  3  index 链接死链 + md 孤儿（没入口的文档）
+  4  模板与渲染产物同步
+  5  skill 引用路径存在
+  6  git 工作区干净（提醒，不算失败）
+  7  engine 脚本可跑（抽样 compute_stats）
+  8  SOP 数字口径 vs 实际语料行数
+  9  写回文件被 git 跟踪
+  10 skill 三件套互相引用
+  11 INTENT.md 存在
+  12 产品层无能力编号泄漏
+  13 JSON 文件合法
+  14 浏览器四页加载（可选，--web 时跑）
+用法：
+  python engine/self_check.py          # 快检（无浏览器）
+  python engine/self_check.py --web    # 连浏览器一起验
+"""
+import os, sys, glob, json, re, subprocess
+
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.chdir(BASE)
+
+PASS, FAIL, WARN = '✓', '✗', '!'
+results = []
+def check(name, ok, detail=''):
+    results.append((PASS if ok is True else (WARN if ok is None else FAIL), name, detail))
+
+BS = chr(92)
+
+# ===== 1. 旧命名残留 =====
+OLD_NAMES = ['产出样例', '承诺追踪器', '画像与协作', '年度之书', '项目基因库', '决策档案',
+             '能力光谱', '文娟记忆包', '时间胶囊', '提问模式', '每日传记', '跨agent人格',
+             'digital-self/work/', 'digital-self' + BS + 'work' + BS, 'work/extractors',
+             'E:/agent/digital-self/产出',
+             'skill/digital-self']
+# 新名清单出现旧词不算（如"时间胶囊"不再使用；但 SOP 反例示范行豁免）
+hits = []
+scan_files = []
+for pat in ['engine/*.py', 'engine/*.md', '*', 'templates/*',
+            'products/*.md', 'products/html/*.html', 'manifest.json', 'data/*.json',
+            '*.md']:
+    scan_files += [f for f in glob.glob(pat) if os.path.isfile(f)]
+for f in scan_files:
+    if 'A1_' in f or '手调版' in f or f.replace(chr(92), '/').endswith('engine/self_check.py'):
+        continue  # 历史备份不动；自检脚本自身存有检查词表，豁免
+    try:
+        t = open(f, encoding='utf-8', errors='replace').read()
+    except Exception:
+        continue
+    for k in OLD_NAMES:
+        if k in t:
+            # 豁免：SOP 说人话规则里的反例示范
+            if f.endswith('SOP_蒸馏流程.md') and ('反例' in t or '这类比喻一律不写' in t):
+                seg = t[t.find(k)-120:t.find(k)+120]
+                if '一律不写' in seg or '→' in seg:
+                    continue
+            hits.append('%s -> %s' % (f, k))
+check('旧命名残留', not hits, '; '.join(hits[:5]) if hits else '扫描 %d 个文件零残留' % len(scan_files))
+
+# ===== 2. 关键文件存在 =====
+missing_core = [f for f in ['SKILL.md', 'README.md', 'scripts/ds.py', 'scripts/render.py',
+                             'scripts/vecsearch.py', 'engine/extract_all.py', 'engine/extract_ai.py']
+                if not os.path.exists(f)]
+check('关键文件存在', not missing_core, '核心文件齐全' if not missing_core else '缺: ' + ', '.join(missing_core))
+
+# ===== 3. index 链接 =====
+t = open('products/html/index.html', encoding='utf-8').read()
+links = re.findall(r'href="file:///([^"]+)"', t)
+dead = [l for l in links if not os.path.exists(l)]
+mds = [os.path.basename(f) for f in glob.glob('products/*.md')]
+linked_mds = [os.path.basename(l) for l in links if l.endswith('.md')]
+orphan = [md for md in mds if md not in linked_mds and '随身说明书' not in md]  # 随身说明书是 ds.py export 生成的，无手工入口
+check('index 链接', not dead and not orphan,
+      '%d 链接零死链' % len(links) if not dead and not orphan else '死链:%s 孤儿:%s' % (dead, orphan))
+
+# ===== 4. 模板与产物同步 =====
+tpl_ok = True
+tpl = os.path.join('templates', 'tracker.html')
+prod = 'products/html/03_我说过要做的事_现在都怎么样了.html'
+if os.path.exists(tpl) and os.path.exists(prod):
+    a = open(tpl, encoding='utf-8').read()[:2000]
+    b = open(prod, encoding='utf-8').read()[:2000]
+    tpl_ok = a == b
+check('模板与产物同步', tpl_ok, 'tracker 一致（模板在 skill 包）' if tpl_ok else '模板改了没重渲染？跑 python scripts/render.py tracker')
+
+# ===== 5. skill 引用路径 =====
+sk = open('SKILL.md', encoding='utf-8').read()
+bad_ref = []
+for seg in ['data/corpus_dedup.jsonl', 'data/corpus_all.jsonl', 'data/ai_messages.jsonl',
+            'data/sessions.jsonl', 'data/user_writebacks.jsonl',
+            'engine/extract_all.py', 'engine/SOP_蒸馏流程.md']:
+    if not os.path.exists(seg):
+        bad_ref.append(seg)
+check('skill 引用路径', not bad_ref, '全部有效' if not bad_ref else '失效: ' + ','.join(bad_ref))
+
+# ===== 6. git 工作区 =====
+st = subprocess.run(['git', 'status', '--short'], capture_output=True, text=True).stdout.strip()
+check('git 工作区', None if st else True, '干净' if not st else '有未提交改动（提醒，不算失败）')
+
+# ===== 7. engine 脚本可跑（抽样）=====
+r = subprocess.run(['python', 'engine/compute_stats.py'], capture_output=True, text=True)
+check('compute_stats 可跑', r.returncode == 0, '正常' if r.returncode == 0 else r.stderr[:120])
+
+# ===== 8. SOP 数字口径 =====
+try:
+    n_all = sum(1 for _ in open('data/corpus_all.jsonl', encoding='utf-8'))
+    n_ai = sum(1 for _ in open('data/ai_messages.jsonl', encoding='utf-8'))
+    sop = open('engine/SOP_蒸馏流程.md', encoding='utf-8').read()
+    ok = ('%s' % format(n_all, ',')) in sop and ('%s' % format(n_ai, ',')) in sop
+    check('SOP 数字口径', ok, '语料 %d 条 / AI %d 条，SOP 有记载' % (n_all, n_ai))
+except Exception as e:
+    check('SOP 数字口径', False, str(e))
+
+# ===== 9. 写回文件未进 git（数据目录应被 .gitignore） =====
+r = subprocess.run(['git', 'ls-files', 'data/user_writebacks.jsonl'], capture_output=True, text=True)
+check('写回文件未进 git', not r.stdout.strip(), '未被跟踪（隐私正确）' if not r.stdout.strip() else '写回文件被 git 跟踪，data/ 应加进 .gitignore')
+
+# ===== 10. skill 内部引用 =====
+sk_ok = 'portrait.md' in sk and 'habits.md' in sk
+check('skill 内部引用', sk_ok)
+
+# ===== 11. （已废弃）INTENT.md —— intent-chain 是旧完整仓库结构，skill 自包含后不再检查 =====
+
+# ===== 12. 产品层无能力编号 =====
+leak = []
+for f in glob.glob('products/*.md') + glob.glob('products/html/*.html'):
+    if 'A1_' in f: continue
+    t = open(f, encoding='utf-8', errors='replace').read()
+    if re.search(r'\bC0\d\b|\bC1\d\b', t):
+        leak.append(f)
+check('产品层无能力编号', not leak, '干净' if not leak else str(leak))
+
+# ===== 13. JSON 合法 =====
+bad_json = []
+for f in ['data/tracker_items.json', 'manifest.json'] + glob.glob('data/materials_*.json') + glob.glob('data/stats_*.json'):
+    if not os.path.exists(f): continue
+    try:
+        json.load(open(f, encoding='utf-8'))
+    except Exception as e:
+        bad_json.append('%s (%s)' % (f, str(e)[:50]))
+check('JSON 合法性', not bad_json, '全部合法' if not bad_json else str(bad_json))
+
+# ===== 14. skill 包结构（对标标准 skill）=====
+sk_struct = []
+sk_root = '.'
+required = {
+    'SKILL.md': '入口（场景驱动+按需加载表）',
+    'references/init-protocol.md': '初始化协议',
+    'references/portrait-template.md': '画像模板',
+    'references/habits-template.md': '习惯模板',
+    'references/query-protocol.md': '检索协议',
+    'references/writeback-protocol.md': '写回协议',
+    'references/privacy-rules.md': '隐私规则',
+    'references/ingest-protocol.md': '更新协议',
+    'references/data-locations.md': '数据定位',
+    'scripts/ds.py': 'agent 可调用的脚本',
+}
+for f in required:
+    if not os.path.exists(os.path.join(sk_root, f)):
+        sk_struct.append(f)
+skm = open(os.path.join(sk_root, 'SKILL.md'), encoding='utf-8').read()
+if 'allowed-tools' not in skm:
+    sk_struct.append('SKILL.md 缺 allowed-tools')
+if 'references/' not in skm:
+    sk_struct.append('SKILL.md 缺按需加载表')
+# SKILL.md 不应再含写死的绝对路径
+import re
+if re.search(r'[A-Z]:\agent', skm):
+    sk_struct.append('SKILL.md 仍有写死绝对路径')
+# 用户数据不得在 skill 包里（出厂零数据原则）
+for leak in ['portrait.md', 'habits.md']:
+    if os.path.exists(os.path.join(sk_root, leak)):
+        sk_struct.append('用户数据泄漏进 skill 包: ' + leak)
+check('skill 包结构', not sk_struct, '标准结构完整，零用户数据' if not sk_struct else '缺: ' + ','.join(sk_struct))
+
+# 用户画像必须在数据侧
+for need in ['data/profile/portrait.md', 'data/profile/habits.md']:
+    check('用户画像就位(%s)' % need.split('/')[-1], os.path.exists(need))
+
+# ===== 16. 承诺账本合法 =====
+pp = 'data/promises.jsonl'
+if os.path.exists(pp):
+    bad = []
+    for i, l in enumerate(open(pp, encoding='utf-8'), 1):
+        l = l.strip()
+        if l:
+            try:
+                json.loads(l)
+            except Exception:
+                bad.append(i)
+    check('承诺账本合法', not bad, '全部合法' if not bad else '坏行: %s' % bad)
+else:
+    check('承诺账本合法', True, '账本还没建（说过要做的事会自动记上）')
+
+# ===== 17. 开工三句话 + 主动引导就位（含双层账本） =====
+try:
+    ip = open('references/init-protocol.md', encoding='utf-8').read()
+except OSError:
+    ip = ''
+ok17 = 'promises.jsonl' in sk and '欠着的事' in sk and '.wordmirror' in sk and '主动引导' in sk
+ok17b = '收尾必带' in ip and '硬规则第 4 条' in ip
+check('开工三句话就位', ok17 and ok17b,
+      'SKILL.md 含欠账/新鲜度开场检查、认项目层账本、主动引导是硬规则；init 收尾接引导'
+      if ok17 and ok17b else
+      'SKILL.md 缺开场检查/项目账本/主动引导硬规则，或 init-protocol 收尾没接引导')
+
+# ===== 18. 浏览器四页（--web）=====
+if '--web' in sys.argv:
+    try:
+        from playwright.sync_api import sync_playwright
+        pages = ['index.html', '01_我是谁_怎么跟我共事.html',
+                 '03_我说过要做的事_现在都怎么样了.html', '10_这九个月翻给你看.html']
+        pages = [p for p in pages if os.path.exists('products/html/' + p)]
+        errs = []
+        with sync_playwright() as pw:
+            b = pw.chromium.launch()
+            pg = b.new_page()
+            pg.on('pageerror', lambda e: errs.append(str(e)[:80]))
+            for u in pages:
+                pg.goto('file:///' + BASE.replace(BS, '/') + '/products/html/' + u)
+                pg.wait_for_timeout(400)
+            b.close()
+        check('浏览器四页加载', not errs, '%d 页零JS错误' % len(pages) if not errs else str(errs[:2]))
+    except ImportError:
+        check('浏览器四页加载', None, 'playwright 未装，跳过')
+else:
+    check('浏览器四页加载', None, '跳过（--web 开启）')
+
+# ===== 19. tracker 日期全格式（防跨年硬编码回归）=====
+try:
+    items = json.load(open('data/tracker_items.json', encoding='utf-8')).get('items', [])
+    short = [it.get('id') for it in items if not re.match(r'\d{4}-\d{2}-\d{2}$', str(it.get('date', '')))]
+    check('tracker 日期全格式', not short, '全部 YYYY-MM-DD' if not short else '短日期: %s' % short)
+except Exception as e:
+    check('tracker 日期全格式', False, str(e)[:80])
+
+# ===== 20. skill 包 layers 零真实数据（脱敏清单含敏感词本身，永不进包/公开仓）=====
+try:
+    rl = json.load(open('layers/redact_list.json', encoding='utf-8'))
+    leak = [k for k, v in rl.items() if isinstance(v, list) and v]
+    check('skill layers 零真实数据', not leak, '清单全空，安全' if not leak else '清单混入真实数据: %s' % leak)
+except Exception as e:
+    check('skill layers 零真实数据', False, str(e)[:80])
+
+# ===== 汇总 =====
+fails = [r for r in results if r[0] == FAIL]
+warns = [r for r in results if r[0] == WARN]
+print()
+print('=' * 56)
+for mark, name, detail in results:
+    line = ' %s %-16s %s' % (mark, name, detail)
+    print(line)
+print('=' * 56)
+print('结果: %d 通过 / %d 警告 / %d 失败' % (len(results) - len(fails) - len(warns), len(warns), len(fails)))
+if fails:
+    print('结论: 有问题，按上面 ✗ 修完再 commit')
+    sys.exit(1)
+print('结论: 全绿')

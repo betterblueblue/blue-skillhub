@@ -21,7 +21,7 @@ python <skill目录>/scripts/ds.py ingest
 
 1. **首次跑要花的时间和你说过的话有多少成正比**（话多的话约几分钟）；以后只补新的，很快
 2. 跑完报告里的"量级提示"（<500 条=了解得还比较粗）要转告用户，管理预期
-3. **你的情况文件（portrait.md / habits.md）不自动重写**——你说过的话更新后，按 `engine/SOP_蒸馏流程.md` 重新整理才更新（SOP 在完整仓库的 engine/ 下，若只有 skill 包则提示用户去原仓库跑）
-4. 更新完建议跑 `python scripts/ds.py check`（自检），全绿才算完成——注意：**check 依赖完整仓库的 engine/（`engine/self_check.py`）**，单装 skill 包跑 check 会得到"缺引擎脚本"提示，属正常，此时跳过自检即可
+3. **你的情况文件（portrait.md / habits.md）不自动重写**——你说过的话更新后，按 `engine/SOP_蒸馏流程.md` 重新整理才更新
+4. 更新完建议跑 `python scripts/ds.py check`（自检），全绿才算完成
 5. 探测不到某 agent → 正常（报告"没找到，跳过"），不是错误；新 agent 支持要改 `engine/detect_agents.py` 的表
 6. **DeepSeek Harness（dsh）提取需要 zstandard**（解压 zstd）：`pip install zstandard`；没装时该 agent 自动跳过并提示，不影响其他 agent

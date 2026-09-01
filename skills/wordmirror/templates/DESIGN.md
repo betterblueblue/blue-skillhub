@@ -1,6 +1,6 @@
 # 言镜 · WordMirror 视觉设计系统（DESIGN.md v2.0）
 
-> 本文档管"长什么样"；仓库根 INTENT.md 管"为什么这么设计"（产品宪法）。注：INTENT.md 在完整仓库根目录，单装 skill 包里没有，找不到正常。
+> 本文档管"长什么样"；产品设计原则见 README 与各 references/ 协议。
 > 来源：参考 VoltAgent/awesome-design-md 的 Claude 暖编辑风分析。v2.0 起砍掉双模式——
 > 暗色看板与读信页并排开割裂感严重，全站统一为暖纸白单一体系，数据页只是密度变体。
 > 给任何 AI agent 的用法：做言镜相关页面时先读本文档，令牌照抄，不要发明新颜色。

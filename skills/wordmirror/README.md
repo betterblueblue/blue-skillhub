@@ -46,16 +46,15 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 
 **项目层**——"这个项目的事"（说过要做的事/记的事），在哪个目录干活就记哪：`<当前目录>/.wordmirror/promises.jsonl`，第一次记时自动建。⚠️ **注意：账本里存的是你的原话，可能含隐私（姓名/公司/薪资…）。默认不要把它提交进 git**——建议在项目 `.gitignore` 里加一行 `.wordmirror/`；真想跟着项目走，先把内容过一遍再手动挑出来。每次开工两层都看；月报里"办完的事"也收两层。
 
-## 单装 vs 完整仓库
+## 装完就能用（自包含）
 
-翻旧账（AI 自己搜文件；**按意思搜**要 `ds.py vec build` 建一下，见上节）、记你确认过的事、分享、**生成网页**（render.py，模板在 templates/）——这些装完就能用。只有 **ingest（提取存档）需要完整仓库**（`engine/` 目录在里面，负责从你各个 AI 的原始记录里提取话）。只装了这个包就想提取，会得到清楚的提示——这时候两条路：
+这个 skill 包自带提取引擎（`engine/`）——ingest、查旧账、记你确认过的事、生成网页、按意思搜，装完就能用，不需要再找一个"完整仓库"。数据产在 skill 目录下的 `data/`（含你的原话，已被 `.gitignore` 排除，不进 git）。
 
-- **数据已在完整仓库里**：`python ds.py bind <完整仓库根>` 一条命令接上（推荐），或设环境变量 `WORD_MIRROR_HOME`
-- **还没有数据**：克隆完整仓库后从那边初始化
+如果你的数据在别处（比如旧版留下的），`python ds.py bind <数据目录>` 一条命令接上，或设环境变量 `WORD_MIRROR_HOME`。
 
 ## 支持哪些 agent
 
-ingest 会探测并提取你在这些工具里说过的话（清单在完整仓库的 `engine/detect_agents.py` 维护）：
+ingest 会探测并提取你在这些工具里说过的话（清单在 skill 包的 `engine/detect_agents.py` 维护）：
 
 - Claude Code、Codex、Cursor、DeepSeek Harness、美团 CatPaw、zcode、Qwen、WorkBuddy、Pi、AtomCode、Google Antigravity（Grok 仅能采 shell 输入）
 

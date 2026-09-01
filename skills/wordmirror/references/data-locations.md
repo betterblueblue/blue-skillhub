@@ -5,9 +5,9 @@
 ## 定位顺序
 
 1. **环境变量** `WORD_MIRROR_HOME`（用户显式指定，最优先；旧名 `DIGITAL_SELF_HOME` 仍兼容）
-2. **bind 指针** `~/.wordmirror/bind.json`（`python ds.py bind <完整仓库根>` 写入）——skill 装在 A 处、数据在 B 处时的标准接法
+2. **bind 指针** `~/.wordmirror/bind.json`（`python ds.py bind <数据目录>` 写入）——数据在别处时接上
 3. `~/.wordmirror/`（产品化标准位置：`~/.wordmirror/data/`；旧目录 `~/.digital-self/` 仍兼容）
-4. 仓库布局：从 skill 目录向上逐级找祖先目录里有 `data/corpus_dedup.jsonl`（或 `corpus_all.jsonl`）的——skill 恰好装在完整仓库里面时自动生效
+4. 仓库布局：从 skill 目录向上逐级找祖先目录里有 `data/corpus_dedup.jsonl`（或 `corpus_all.jsonl`）的——数据在 skill 目录内时自动生效
 5. 都没有 → 默认 `~/.wordmirror/`，首次写入时自动创建（单装用户数据不再撒到奇怪的地方）
 
 ## 单装用户推荐接法（bind）
