@@ -12,10 +12,10 @@
 
 ## 单装用户推荐接法（bind）
 
-skill 拷进某个 agent 的 skills 目录后，如果完整数据仓库在别处（比如另一块盘），一条命令接上：
+skill 拷进某个 agent 的 skills 目录后，如果数据在别处（比如另一块盘），一条命令接上：
 
 ```bash
-python <skill目录>/scripts/wm.py bind E:\path\to\digital-self
+python <skill目录>/scripts/wm.py bind E:\path\to\wordmirror-data
 ```
 
 之后所有命令（ingest / vec / monthly / promise / wb / open）都用绑定的数据；查旧话、看数据这种活你直接读绑定位置的文件就行。解绑：`wm.py bind --clear`。
