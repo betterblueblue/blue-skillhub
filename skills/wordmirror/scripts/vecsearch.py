@@ -10,6 +10,9 @@
 设计原则（DESIGN.md + README 诚实边界）：
 - 嵌入模型必须在本机跑（sentence-transformers / paraphrase-multilingual-MiniLM-L12-v2，
   117MB，下载到 ~/.cache/huggingface，是下载工具不是上传数据）
+- 索引存储格式跟 chromadb 大版本走（0.4x 与 1.x 互不兼容）。装了新版本（≥1.0）就固定用新版本，
+  别在两个大版本之间来回读写同一个索引目录——旧版读新版目录直接报错，虽不损坏数据但会吓人。
+  需要迁移时：删掉 data/chroma_index/ 用新版本重跑 build（语料都在 jsonl 里，索引随时可重建）
 - 索引存在数据目录 data/chroma_index/，跟着数据走，永不外传
 - 没装依赖或没建索引 → 安静降级回关键词检索，功能照旧（ask 里处理）
 - 与 corpus_dedup.jsonl 的一致性：build --update 按行指纹同步，删掉的语料不自动清（重建即可）
@@ -34,6 +37,22 @@ def _deps_ok(quiet=True):
         if not quiet:
             print('缺依赖：%s' % e)
         return False
+
+
+def _open_collection():
+    import chromadb
+    client = chromadb.PersistentClient(path=INDEX_DIR)
+    return client.get_or_create_collection('wordmirror_corpus', metadata={'hnsw:space': 'cosine'})
+
+
+def _collection_version_mismatch():
+    """索引目录是大版本不兼容的另一代 chromadb 建的 → 提示重建而不是让用户看 sqlite 报错。
+    判据：能打开库但按 schema 查询失败（旧版 0.4x 读新版 1.x 目录就是这个症状）。"""
+    try:
+        _open_collection().count()
+        return False
+    except Exception:
+        return _deps_ok() and os.path.isdir(INDEX_DIR) and bool(glob.glob(os.path.join(INDEX_DIR, 'chroma.sqlite3')))
 
 
 def _load_model():
@@ -84,6 +103,8 @@ def build(update=False):
     if not _deps_ok(quiet=False):
         print('先装依赖：pip install chromadb sentence-transformers')
         print('（都是免费本机库；首次建索引还会下载 %.0fMB 的多语言嵌入模型到 ~/.cache/huggingface）' % 117)
+        sys.exit(1)
+    if _warn_if_version_mismatch():
         sys.exit(1)
     model = _load_model()
     col = _open_collection()
@@ -150,11 +171,22 @@ def query(q, top=15):
         return None
 
 
+def _warn_if_version_mismatch():
+    """索引目录是大版本不兼容的另一代 chromadb 建的：给出人话提示+出路，别让用户面对 sqlite 报错。"""
+    if _collection_version_mismatch():
+        print('索引目录是用另一代 chromadb（大版本不同）建的，本版本打不开。')
+        print('数据没坏——语料都在 corpus_dedup.jsonl 里。删掉 %s 后跑 vec build 重建即可。' % INDEX_DIR)
+        return True
+    return False
+
+
 def status():
     if not _deps_ok(quiet=False):
         return
     if not os.path.isdir(INDEX_DIR):
         print('还没有向量索引。跑 python ds.py vec build 建一个（语料多的话要几分钟）。')
+        return
+    if _warn_if_version_mismatch():
         return
     meta = {}
     if os.path.exists(META_FILE):
