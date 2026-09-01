@@ -23,6 +23,9 @@ import os, sys, glob, json, re, subprocess
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(BASE)
+DATA_ROOT = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', 'WordMirror'))
+DATA = os.path.join(DATA_ROOT, 'data')
+PROD = os.path.join(DATA_ROOT, 'products')
 
 PASS, FAIL, WARN = '✓', '✗', '!'
 results = []
@@ -41,7 +44,7 @@ OLD_NAMES = ['产出样例', '承诺追踪器', '画像与协作', '年度之书
 hits = []
 scan_files = []
 for pat in ['engine/*.py', 'engine/*.md', '*', 'templates/*',
-            'products/*.md', 'products/html/*.html', 'manifest.json', 'data/*.json',
+            os.path.join(PROD, '*.md'), os.path.join(PROD, 'html/*.html'), 'manifest.json', os.path.join(DATA, '*.json'),
             '*.md']:
     scan_files += [f for f in glob.glob(pat) if os.path.isfile(f)]
 for f in scan_files:
@@ -68,10 +71,10 @@ missing_core = [f for f in ['SKILL.md', 'README.md', 'scripts/ds.py', 'scripts/r
 check('关键文件存在', not missing_core, '核心文件齐全' if not missing_core else '缺: ' + ', '.join(missing_core))
 
 # ===== 3. index 链接 =====
-t = open('products/html/index.html', encoding='utf-8').read()
+t = open(os.path.join(PROD, 'html/index.html'), encoding='utf-8').read()
 links = re.findall(r'href="file:///([^"]+)"', t)
 dead = [l for l in links if not os.path.exists(l)]
-mds = [os.path.basename(f) for f in glob.glob('products/*.md')]
+mds = [os.path.basename(f) for f in glob.glob(os.path.join(PROD, '*.md'))]
 linked_mds = [os.path.basename(l) for l in links if l.endswith('.md')]
 orphan = [md for md in mds if md not in linked_mds and '随身说明书' not in md]  # 随身说明书是 ds.py export 生成的，无手工入口
 check('index 链接', not dead and not orphan,
@@ -80,7 +83,7 @@ check('index 链接', not dead and not orphan,
 # ===== 4. 模板与产物同步 =====
 tpl_ok = True
 tpl = os.path.join('templates', 'tracker.html')
-prod = 'products/html/03_我说过要做的事_现在都怎么样了.html'
+prod = os.path.join(PROD, 'html/03_我说过要做的事_现在都怎么样了.html')
 if os.path.exists(tpl) and os.path.exists(prod):
     a = open(tpl, encoding='utf-8').read()[:2000]
     b = open(prod, encoding='utf-8').read()[:2000]
@@ -90,8 +93,8 @@ check('模板与产物同步', tpl_ok, 'tracker 一致（模板在 skill 包）'
 # ===== 5. skill 引用路径 =====
 sk = open('SKILL.md', encoding='utf-8').read()
 bad_ref = []
-for seg in ['data/corpus_dedup.jsonl', 'data/corpus_all.jsonl', 'data/ai_messages.jsonl',
-            'data/sessions.jsonl', 'data/user_writebacks.jsonl',
+for seg in [os.path.join(DATA, 'corpus_dedup.jsonl'), os.path.join(DATA, 'corpus_all.jsonl'), os.path.join(DATA, 'ai_messages.jsonl'),
+            os.path.join(DATA, 'sessions.jsonl'), os.path.join(DATA, 'user_writebacks.jsonl'),
             'engine/extract_all.py', 'engine/SOP_蒸馏流程.md']:
     if not os.path.exists(seg):
         bad_ref.append(seg)
@@ -107,8 +110,8 @@ check('compute_stats 可跑', r.returncode == 0, '正常' if r.returncode == 0 e
 
 # ===== 8. SOP 数字口径 =====
 try:
-    n_all = sum(1 for _ in open('data/corpus_all.jsonl', encoding='utf-8'))
-    n_ai = sum(1 for _ in open('data/ai_messages.jsonl', encoding='utf-8'))
+    n_all = sum(1 for _ in open(os.path.join(DATA, 'corpus_all.jsonl'), encoding='utf-8'))
+    n_ai = sum(1 for _ in open(os.path.join(DATA, 'ai_messages.jsonl'), encoding='utf-8'))
     sop = open('engine/SOP_蒸馏流程.md', encoding='utf-8').read()
     ok = ('%s' % format(n_all, ',')) in sop and ('%s' % format(n_ai, ',')) in sop
     check('SOP 数字口径', ok, '语料 %d 条 / AI %d 条，SOP 有记载' % (n_all, n_ai))
@@ -116,7 +119,7 @@ except Exception as e:
     check('SOP 数字口径', False, str(e))
 
 # ===== 9. 写回文件未进 git（数据目录应被 .gitignore） =====
-r = subprocess.run(['git', 'ls-files', 'data/user_writebacks.jsonl'], capture_output=True, text=True)
+r = subprocess.run(['git', 'ls-files', os.path.join(DATA, 'user_writebacks.jsonl')], capture_output=True, text=True)
 check('写回文件未进 git', not r.stdout.strip(), '未被跟踪（隐私正确）' if not r.stdout.strip() else '写回文件被 git 跟踪，data/ 应加进 .gitignore')
 
 # ===== 10. skill 内部引用 =====
@@ -127,7 +130,7 @@ check('skill 内部引用', sk_ok)
 
 # ===== 12. 产品层无能力编号 =====
 leak = []
-for f in glob.glob('products/*.md') + glob.glob('products/html/*.html'):
+for f in glob.glob(os.path.join(PROD, '*.md')) + glob.glob(os.path.join(PROD, 'html/*.html')):
     if 'A1_' in f: continue
     t = open(f, encoding='utf-8', errors='replace').read()
     if re.search(r'\bC0\d\b|\bC1\d\b', t):
@@ -136,7 +139,7 @@ check('产品层无能力编号', not leak, '干净' if not leak else str(leak))
 
 # ===== 13. JSON 合法 =====
 bad_json = []
-for f in ['data/tracker_items.json', 'manifest.json'] + glob.glob('data/materials_*.json') + glob.glob('data/stats_*.json'):
+for f in [os.path.join(DATA, 'tracker_items.json'), 'manifest.json'] + glob.glob(os.path.join(DATA, 'materials_*.json')) + glob.glob(os.path.join(DATA, 'stats_*.json')):
     if not os.path.exists(f): continue
     try:
         json.load(open(f, encoding='utf-8'))
@@ -178,11 +181,11 @@ for leak in ['portrait.md', 'habits.md']:
 check('skill 包结构', not sk_struct, '标准结构完整，零用户数据' if not sk_struct else '缺: ' + ','.join(sk_struct))
 
 # 用户画像必须在数据侧
-for need in ['data/profile/portrait.md', 'data/profile/habits.md']:
+for need in [os.path.join(DATA, 'profile/portrait.md'), os.path.join(DATA, 'profile/habits.md')]:
     check('用户画像就位(%s)' % need.split('/')[-1], os.path.exists(need))
 
 # ===== 16. 承诺账本合法 =====
-pp = 'data/promises.jsonl'
+pp = os.path.join(DATA, 'promises.jsonl')
 if os.path.exists(pp):
     bad = []
     for i, l in enumerate(open(pp, encoding='utf-8'), 1):
@@ -214,7 +217,7 @@ if '--web' in sys.argv:
         from playwright.sync_api import sync_playwright
         pages = ['index.html', '01_我是谁_怎么跟我共事.html',
                  '03_我说过要做的事_现在都怎么样了.html', '10_这九个月翻给你看.html']
-        pages = [p for p in pages if os.path.exists('products/html/' + p)]
+        pages = [p for p in pages if os.path.exists(os.path.join(PROD, 'html/') + p)]
         errs = []
         with sync_playwright() as pw:
             b = pw.chromium.launch()
@@ -232,7 +235,7 @@ else:
 
 # ===== 19. tracker 日期全格式（防跨年硬编码回归）=====
 try:
-    items = json.load(open('data/tracker_items.json', encoding='utf-8')).get('items', [])
+    items = json.load(open(os.path.join(DATA, 'tracker_items.json'), encoding='utf-8')).get('items', [])
     short = [it.get('id') for it in items if not re.match(r'\d{4}-\d{2}-\d{2}$', str(it.get('date', '')))]
     check('tracker 日期全格式', not short, '全部 YYYY-MM-DD' if not short else '短日期: %s' % short)
 except Exception as e:

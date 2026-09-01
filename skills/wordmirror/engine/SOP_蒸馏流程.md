@@ -12,7 +12,7 @@
 ```bash
 cd <skill 包目录>   # skill 装在哪就在哪跑，如 ~/.agents/skills/wordmirror
 python engine/extract_all.py          # → data/corpus_all.jsonl（用户侧，10,798 条）
-python engine/extract_ai.py           # → data/ai_messages.jsonl（AI 侧，48,864 条）
+python engine/extract_ai.py           # → data/ai_messages.jsonl（AI 侧，48,868 条）
 python engine/build_session_cards.py  # → data/sessions.jsonl（会话卡）
 ```
 

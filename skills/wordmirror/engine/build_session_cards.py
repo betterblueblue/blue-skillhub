@@ -4,7 +4,7 @@
 import json, os, re, collections
 
 import os
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', 'WordMirror'))
 WORK = os.path.join(BASE, 'data')
 users = [json.loads(l) for l in open(WORK + '/corpus_dedup.jsonl', encoding='utf-8')]
 ais = [json.loads(l) for l in open(WORK + '/ai_messages.jsonl', encoding='utf-8')]

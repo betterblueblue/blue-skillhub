@@ -28,10 +28,10 @@ import os, sys, subprocess, json, webbrowser, re, datetime
 # 定位两层（data-locations.md 的同款顺序）：
 # 全局层（画像/语料/月报——"你是谁"，不分项目）：
 #   1) 环境变量 WORD_MIRROR_HOME（旧名 DIGITAL_SELF_HOME 兼容）
-#   2) bind 指针 ~/.wordmirror/bind.json（ds.py bind 写入——skill 装在别处、数据在完整仓库时用）
-#   3) ~/.wordmirror（旧 ~/.digital-self 兼容）
+#   2) bind 指针 ~/WordMirror/bind.json（数据在别处时接上）
+#   3) ~/WordMirror（旧 ~/.digital-self 兼容）
 #   4) 脚本祖先逐级向上找仓库布局（data/ 下有语料签名才算，防无关 data/ 目录劫持）
-#   5) 都没有 → 默认 ~/.wordmirror，首次写入时自动创建
+#   5) 都没有 → 默认 ~/WordMirror，首次写入时自动创建
 # 项目层（欠账/写回——"这个项目的事"）：<当前目录>/.wordmirror/，在哪个目录干活账记哪
 def _find_base():
     """返回 (数据仓库根, 定位方式说明)。"""
@@ -43,7 +43,7 @@ def _find_base():
         if _has_data(env):
             return env, '环境变量 %s' % how
         return env, '环境变量 %s（还没有数据，首次写入时创建）' % how
-    home = os.path.join(os.path.expanduser('~'), '.wordmirror')
+    home = os.path.join(os.path.expanduser('~'), 'WordMirror')
     bind_p = os.path.join(home, 'bind.json')
     if os.path.isfile(bind_p):
         try:
@@ -53,7 +53,7 @@ def _find_base():
         if target and _has_data(target):
             return target, 'bind 指针（%s）' % bind_p
     if _has_data(home):
-        return home, '标准位置 ~/.wordmirror'
+        return home, '标准位置 ~/WordMirror'
     legacy = os.path.join(os.path.expanduser('~'), '.digital-self')
     if _has_data(legacy):
         return legacy, '旧目录 ~/.digital-self'
@@ -66,7 +66,7 @@ def _find_base():
         if parent == d:
             break
         d = parent
-    return home, '默认 ~/.wordmirror（还没有数据，首次写入时创建）'
+    return home, '默认 ~/WordMirror（还没有数据，首次写入时创建）'
 
 def _promises_file():
     """账本分两层：在仓库实例目录里干活 → 全局 data/；在其他项目目录 → 该目录 .wordmirror/。"""
@@ -84,18 +84,20 @@ def _ledger_paths():
     return paths
 
 BASE, BASE_SOURCE = _find_base()
-ENGINE = os.path.join(BASE, 'engine')
+SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ENGINE = os.path.join(SKILL_DIR, 'engine')
 DATA = os.path.join(BASE, 'data')
 PRODUCTS = os.path.join(BASE, 'products')
 
 def run(script, **kw):
-    """跑 engine 下的脚本，透传输出。"""
+    """跑 engine 下的脚本，把数据根目录经环境变量透传。"""
     path = os.path.join(ENGINE, script)
     if not os.path.exists(path):
-        print('缺少引擎脚本 engine/%s —— 只装了 skill 包时 init/ingest 用不了。' % script)
-        print('解决办法：设环境变量 WORD_MIRROR_HOME 指向完整仓库根，或克隆完整仓库。')
+        print('缺少引擎脚本 engine/%s —— 检查 skill 包是否完整。' % script)
         sys.exit(1)
-    r = subprocess.run([sys.executable, path], capture_output=True, text=True, encoding='utf-8', **kw)
+    env = dict(os.environ)
+    env['WORD_MIRROR_HOME'] = BASE
+    r = subprocess.run([sys.executable, path], capture_output=True, text=True, encoding='utf-8', env=env, **kw)
     if r.stdout:
         print(r.stdout.rstrip())
     if r.returncode != 0:
@@ -184,8 +186,8 @@ def cmd_vec(args):
 
 
 def cmd_bind(args):
-    """skill 装在 A 处、数据在 B 处（完整仓库）时，用 bind 把两者接上。指针在 ~/.wordmirror/bind.json。"""
-    home = os.path.join(os.path.expanduser('~'), '.wordmirror')
+    """数据在别处时，用 bind 把两者接上。指针在 ~/WordMirror/bind.json。"""
+    home = os.path.join(os.path.expanduser('~'), 'WordMirror')
     bind_p = os.path.join(home, 'bind.json')
     if args and args[0] == '--clear':
         if os.path.isfile(bind_p):

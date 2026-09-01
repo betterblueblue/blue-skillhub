@@ -42,13 +42,13 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 
 ## 数据放在哪（两层）
 
-**全局层**——"你是谁"（你的情况/规矩/你说的话/月报），不分项目，跟着你走。怎么找到它：环境变量 `WORD_MIRROR_HOME` → `ds.py bind` 接上的那个位置 → `~/.wordmirror/` → skill 所在仓库 → 默认 `~/.wordmirror/`（第一次用时自动建）。旧名字 `DIGITAL_SELF_HOME`、`~/.digital-self/` 也能认。详见 `references/data-locations.md`。
+**全局层**——"你是谁"（你的情况/规矩/你说的话/月报），不分项目，跟着你走。默认在用户主目录 `~/WordMirror/`（数据在 `~/WordMirror/data/`）；环境变量 `WORD_MIRROR_HOME` 或 `ds.py bind <目录>` 可以指到别处。旧名字 `DIGITAL_SELF_HOME`、`~/.digital-self/` 也能认。详见 `references/data-locations.md`。
 
 **项目层**——"这个项目的事"（说过要做的事/记的事），在哪个目录干活就记哪：`<当前目录>/.wordmirror/promises.jsonl`，第一次记时自动建。⚠️ **注意：账本里存的是你的原话，可能含隐私（姓名/公司/薪资…）。默认不要把它提交进 git**——建议在项目 `.gitignore` 里加一行 `.wordmirror/`；真想跟着项目走，先把内容过一遍再手动挑出来。每次开工两层都看；月报里"办完的事"也收两层。
 
 ## 装完就能用（自包含）
 
-这个 skill 包自带提取引擎（`engine/`）——ingest、查旧账、记你确认过的事、生成网页、按意思搜，装完就能用，不需要再找一个"完整仓库"。数据产在 skill 目录下的 `data/`（含你的原话，已被 `.gitignore` 排除，不进 git）。
+这个 skill 包自带提取引擎（`engine/`）——ingest、查旧账、记你确认过的事、生成网页、按意思搜，装完就能用，不需要再找一个"完整仓库"。数据默认产在用户主目录 `~/WordMirror/data`（含你的原话，跟着你的机器走，不在 skill 包里）。
 
 如果你的数据在别处（比如旧版留下的），`python ds.py bind <数据目录>` 一条命令接上，或设环境变量 `WORD_MIRROR_HOME`。
 

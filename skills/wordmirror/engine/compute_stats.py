@@ -4,7 +4,7 @@
 产物文档里引用的每个数字都必须能从这里复现。"""
 import json, re, collections, statistics, os, datetime
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', 'WordMirror'))
 DATA = os.path.join(BASE, 'data')
 TODAY = datetime.date.today().isoformat()
 
