@@ -96,7 +96,7 @@ def build_portrait():
         body.append('<div class="band"><p>%s</p></div>' % inline(src.group(1)))
     body.append(render_markdown(md[md.index('## 一句话'):]))
     return ('html/01_我是谁_怎么跟我共事.html',
-            page('我是谁 · 言镜', '画像 %s · %s <span class="dot">·</span> 言镜蒸馏' % (tag, date), '\n'.join(body)))
+            page('我是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s <span class="dot">·</span> 言镜整理' % (tag, date), '\n'.join(body)))
 
 
 def build_wrapped():
@@ -112,7 +112,7 @@ def build_wrapped():
     body = ['<h1 class="display">这九个月，<br>翻给你看</h1>']
     body.append('<div class="bignum-row">'
                 '<div class="bignum"><div class="n">%s</div><div class="note">条原话，都是你说给 AI 的</div></div>'
-                '<div class="bignum"><div class="n">%d</div><div class="note">个 agent 接住过这些话</div></div>'
+                '<div class="bignum"><div class="n">%d</div><div class="note">个 AI 工具跟你聊过</div></div>'
                 '<div class="bignum"><div class="n mono" style="font-size:26px;padding-top:8px;">%s</div>'
                 '<div class="note">从第一条到最新一条</div></div></div>' % (format(total, ','), len(ag), span))
     body.append('<h2>你最高频的词，暴露了你的工作方式</h2>')
@@ -146,22 +146,22 @@ def build_index():
     total = sum(a['msgs'] for a in ag.values())
 
     cards = [
-        ('01', '我是谁，怎么跟我共事', '画像与说话规矩，读信模式', '01_我是谁_怎么跟我共事.html'),
-        ('03', '我说过要做的事，现在都怎么样了', '承诺看板：欠账一眼清', '03_我说过要做的事_现在都怎么样了.html'),
-        ('10', '这九个月翻给你看', '按月回顾，Wrapped', '10_这九个月翻给你看.html'),
+        ('01', '我是谁，怎么跟我共事', '你的说明书：你是谁、在忙什么、AI 该怎么跟你配合', '01_我是谁_怎么跟我共事.html'),
+        ('03', '我说过要做的事，现在都怎么样了', '哪件说了没下文，一眼看清', '03_我说过要做的事_现在都怎么样了.html'),
+        ('10', '这九个月翻给你看', '一个月一页，翻回去看', '10_这九个月翻给你看.html'),
     ]
     monthly = sorted(os.listdir(MON)) if os.path.isdir(MON) else []
     if monthly:
-        cards.append(('08', '%s · 月度三页纸' % monthly[-1].replace('.html', ''),
-                      '最近一个月你对 AI 说了什么', 'monthly/' + monthly[-1]))
+        cards.append(('08', '%s · 这个月你对 AI 说了什么' % monthly[-1].replace('.html', ''),
+                      '当月的量、决定、办完的事', 'monthly/' + monthly[-1]))
     body = ['<h1 class="display">言镜</h1>',
-            '<p style="font-size:18px;color:var(--body-strong);">你说给 AI 的话，都记在这了。'
-            '加载即认识你的 agent，从这进入。</p>',
+            '<p style="font-size:18px;color:var(--body-strong);">你跟 AI 说过的话，全存档在这了。'
+            '换了新的 AI 干活时，让它先读你的说明书——不用每次从头自我介绍。</p>',
             '<div class="bignum-row">'
-            '<div class="bignum"><div class="n">%s</div><div class="note">条去重原话</div></div>'
-            '<div class="bignum"><div class="n">%d</div><div class="note">个 agent 的对话底座</div></div>'
+            '<div class="bignum"><div class="n">%s</div><div class="note">条对话记录（去掉重复后）</div></div>'
+            '<div class="bignum"><div class="n">%d</div><div class="note">个 AI 工具的聊天记录</div></div>'
             '<div class="bignum"><div class="n" style="color:var(--stalled);">%d</div>'
-            '<div class="note">件搁置 30 天+ 的事，欠账要扎眼</div></div></div>' % (format(total, ','), len(ag), stalled)]
+            '<div class="note">件说了没下文的事（超 30 天），最扎眼</div></div></div>' % (format(total, ','), len(ag), stalled)]
     body.append('<h2>页面</h2>')
     for num, title, desc, href in cards:
         body.append('<div class="card"><div class="eyebrow">%s</div>'
@@ -262,21 +262,21 @@ def build_monthly(month=None):
         body.append('<ul>%s</ul>' % ''.join(
             '<li><span class="mono">%s</span> · %s</li>' % (esc(d), esc(m)) for d, m in wbs))
     if decisions:
-        body.append('<p style="color:var(--muted);">语料里的决定时刻（样本）：</p><ul>%s</ul>' %
+        body.append('<p style="color:var(--muted);">聊天记录里你拍板的话（挑了几条）：</p><ul>%s</ul>' %
                     ''.join('<li><span class="mono">%s</span> · %s</li>' % (esc(d), esc(m)) for d, m in decisions))
     if not wbs and not decisions:
         body.append('<p>这个月没有记下的决定。</p>')
-    body.append('<h2>收线清单</h2>')
+    body.append('<h2>这个月办完的事</h2>')
     if promises:
         body.append('<ul>%s</ul>' % ''.join(
             '<li><span class="mono">%s</span> · 划掉：%s</li>' % (esc(o.get('closed_date', '')), esc(o.get('text', ''))) for o in promises))
     if done:
-        body.append('<p style="color:var(--muted);">历史已收线 %d 件（含本月前完成的）。</p>' % len(done))
+        body.append('<p style="color:var(--muted);">之前已经办完 %d 件。</p>' % len(done))
     if not promises and not done:
-        body.append('<p>这个月没有收线记录。说"这事做完了"就会记上。</p>')
+        body.append('<p>这个月还没有办完的事。你说一句"这事做完了"，AI 就会记上。</p>')
     body.append('<p style="color:var(--muted-soft);font-size:13px;">生成于 %s</p>' % datetime.date.today().isoformat())
     return (os.path.join('monthly', '%s.html' % month),
-            page('言镜月报 · %s' % month, '月度三页纸 <span class="dot">·</span> %s' % month,
+            page('言镜月报 · %s' % month, '月报 <span class="dot">·</span> %s' % month,
                  '\n'.join(body), home='../index.html'))
 
 

@@ -156,21 +156,21 @@ body {
     <span class="brand-sub">wordmirror</span>
   </div>
   <div class="sidebar-nav">
-    <div class="nav-heading">承诺视图 (VIEWS)</div>
+    <div class="nav-heading">说过要做的事，按状态看</div>
     <div class="nav-item active" data-filter="all" onclick="setFilter('all', this)">
-      <span class="nav-dot all"></span> 全部承诺 <span class="nav-count">0</span>
+      <span class="nav-dot all"></span> 全部 <span class="nav-count">0</span>
     </div>
     <div class="nav-item" data-filter="stalled" onclick="setFilter('stalled', this)">
-      <span class="nav-dot stalled"></span> 搁置中 (30d+) <span class="nav-count">0</span>
+      <span class="nav-dot stalled"></span> 说了没下文（30 天+） <span class="nav-count">0</span>
     </div>
     <div class="nav-item" data-filter="cooling" onclick="setFilter('cooling', this)">
-      <span class="nav-dot cooling"></span> 自然冷却 <span class="nav-count">0</span>
+      <span class="nav-dot cooling"></span> 自己放凉了的 <span class="nav-count">0</span>
     </div>
     <div class="nav-item" data-filter="waiting" onclick="setFilter('waiting', this)">
-      <span class="nav-dot waiting"></span> 等外部结果 <span class="nav-count">0</span>
+      <span class="nav-dot waiting"></span> 在等对方消息 <span class="nav-count">0</span>
     </div>
     <div class="nav-item" data-filter="done" onclick="setFilter('done', this)">
-      <span class="nav-dot done"></span> 已收线闭环 <span class="nav-count">0</span>
+      <span class="nav-dot done"></span> 办完了 <span class="nav-count">0</span>
     </div>
   </div>
   <div class="sidebar-footer">
@@ -182,16 +182,16 @@ body {
 
 <div class="main">
   <div class="topbar">
-    <span class="view-title" id="currentViewTitle">全部承诺</span>
-    <span class="item-count" id="itemCountLabel">0 个事项</span>
+    <span class="view-title" id="currentViewTitle">全部——说过要做的事</span>
+    <span class="item-count" id="itemCountLabel">0 件</span>
     <div class="search-wrap">
-      <input type="text" id="filterInput" placeholder="过滤承诺标题或原话…">
+      <input type="text" id="filterInput" placeholder="搜：哪件事、哪个项目…">
       <span class="search-key">/</span>
     </div>
   </div>
 
   <div class="list-head">
-    <div>标识</div><div></div><div>标题与背景提要</div><div>所属项目</div><div>停滞</div><div>记账日期</div>
+    <div>编号</div><div></div><div>什么事</div><div>哪个项目</div><div>多久了</div><div>哪天说的</div>
   </div>
   <div id="rowsContainer"></div>
 </div>
@@ -208,29 +208,31 @@ body {
   </div>
 
   <div>
-    <div class="drawer-section-label">最后原话记录</div>
+    <div class="drawer-section-label">你当时是这么说的</div>
     <div class="drawer-quote" id="drawerQuote">—</div>
   </div>
 
   <div class="drawer-props-grid">
-    <div class="drawer-prop-key">状态分类</div>
+    <div class="drawer-prop-key">现在什么状态</div>
     <div class="drawer-prop-val" id="drawerStatus">—</div>
-    <div class="drawer-prop-key">停滞天数</div>
+    <div class="drawer-prop-key">多久没动静</div>
     <div class="drawer-prop-val" id="drawerAge">—</div>
-    <div class="drawer-prop-key">所属项目</div>
+    <div class="drawer-prop-key">哪个项目</div>
     <div class="drawer-prop-val" id="drawerProj">—</div>
-    <div class="drawer-prop-key">沉淀遗产</div>
+    <div class="drawer-prop-key">留下了什么</div>
     <div class="drawer-prop-val" id="drawerLegacy">—</div>
   </div>
 </div>
 
 <script>
 let data = [];
-const statusLabel = { stalled: '搁置中 (30d+)', cooling: '自然冷却', waiting: '等外部结果', done: '已收线闭环' };
+const statusLabel = { stalled: '说了没下文（30 天+）', cooling: '自己放凉了', waiting: '在等对方消息', done: '办完了' };
 
 function loadData() {
   const j = __TRACKER_DATA__;
   data = j.items;
+  // "86d" 这类缩写统一显示成 "86 天"
+  data.forEach(it => { it.age = String(it.age).replace(/^(\d+)d$/i, '$1 天'); });
   // 侧边栏计数动态刷新
   const counts = { all: data.length };
   data.forEach(it => counts[it.status] = (counts[it.status] || 0) + 1);
@@ -295,8 +297,8 @@ function setFilter(filter, el) {
   currentFilter = filter;
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   if (el) el.classList.add('active');
-  const titleMap = { all: '全部承诺', stalled: '搁置中 (30 天+)', cooling: '自然冷却', waiting: '等外部结果', done: '已收线闭环' };
-  document.getElementById('currentViewTitle').innerText = titleMap[filter] || '承诺列表';
+  const titleMap = { all: '全部——说过要做的事', stalled: '说了没下文（30 天+）', cooling: '自己放凉了的', waiting: '在等对方消息', done: '办完了' };
+  document.getElementById('currentViewTitle').innerText = titleMap[filter] || '说过要做的事';
   render();
 }
 
