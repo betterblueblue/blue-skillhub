@@ -380,9 +380,11 @@ def cmd_install(args):
         print('已安装：%s' % dst)
 
 def cmd_monthly(args):
-    if args and re.match(r'\d{4}-\d{2}$', args[0]):
-        os.environ['DS_MONTH'] = args[0]
-    run('make_monthly.py')
+    """月度三页纸：渲染是 skill 自带能力（scripts/render.py），不再依赖 engine。"""
+    month = args[0] if args and re.match(r'\d{4}-\d{2}$', args[0]) else None
+    rp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'render.py')
+    r = subprocess.run([sys.executable, rp, 'monthly'] + ([month] if month else []))
+    sys.exit(r.returncode)
 
 def _try_count():
     try:

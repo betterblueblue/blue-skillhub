@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我说过要做的事，现在都怎么样了</title>
+<style>
+/* ===== 言镜单一视觉体系（skill/wordmirror/templates/DESIGN.md v2.0）：暖纸白数据密度变体 ===== */
+:root {
+  --primary: #cc785c;         /* 话印朱：全站唯一强调色 */
+  --primary-active: #a9583e;
+  --canvas: #faf9f5;
+  --surface-soft: #f5f0e8;    /* 侧栏/悬停 */
+  --surface-card: #efe9de;    /* 选中行/卡片 */
+  --hairline: #e6dfd8;
+  --ink: #141413;
+  --body-c: #3d3d3a;
+  --muted: #6c6a64;
+  --muted-soft: #8e8b82;
+  --stalled: #c64545; --cooling: #d4a017; --waiting: #5db872; --done: #8e8b82;
+  --font-display: 'Noto Serif SC','Source Han Serif SC','Songti SC',SimSun,Georgia,serif;
+  --font-body: 'PingFang SC','Microsoft YaHei','Noto Sans SC',-apple-system,'Segoe UI',sans-serif;
+  --font-mono: 'JetBrains Mono',Consolas,'Cascadia Code',ui-monospace,monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--canvas); color: var(--body-c);
+  font-family: var(--font-body); font-size: 13px; line-height: 1.5;
+  height: 100vh; overflow: hidden; display: flex;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 左侧导航：色带面，非暗面板 */
+.sidebar {
+  width: 220px; background: var(--surface-soft);
+  border-right: 1px solid var(--hairline);
+  display: flex; flex-direction: column; flex-shrink: 0; user-select: none;
+}
+.sidebar-header {
+  height: 48px; padding: 0 14px; display: flex; align-items: baseline; gap: 8px;
+  border-bottom: 1px solid var(--hairline);
+}
+.brand-mark {
+  font-family: var(--font-display); font-size: 18px; color: var(--ink); letter-spacing: 2px;
+}
+.brand-sub {
+  font-family: var(--font-mono); font-size: 10px; letter-spacing: 1.5px;
+  color: var(--muted-soft); text-transform: uppercase;
+}
+.sidebar-nav { padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.nav-heading {
+  font-size: 11px; font-weight: 600; color: var(--muted-soft);
+  padding: 8px 8px 4px; letter-spacing: 1px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+  border-radius: 6px; cursor: pointer; color: var(--body-c); font-size: 13px;
+}
+.nav-item:hover { background: var(--surface-card); }
+.nav-item.active { background: var(--surface-card); color: var(--ink); font-weight: 600; }
+.nav-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.nav-dot.all { background: var(--primary); }
+.nav-dot.stalled { background: var(--stalled); }
+.nav-dot.cooling { background: var(--cooling); }
+.nav-dot.waiting { background: var(--waiting); }
+.nav-dot.done { background: var(--done); }
+.nav-count { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.sidebar-footer {
+  padding: 12px 14px; border-top: 1px solid var(--hairline);
+  font-family: var(--font-mono); font-size: 10px; color: var(--muted-soft); line-height: 1.8;
+}
+
+/* 主区：给三栏布局留最小宽度，窄窗口横向滚动而不是把文字挤成竖排 */
+.main { flex: 1; display: flex; flex-direction: column; min-width: 560px; }
+.topbar {
+  height: 48px; padding: 0 20px; display: flex; align-items: center; gap: 16px;
+  border-bottom: 1px solid var(--hairline); flex-shrink: 0;
+}
+.view-title { font-size: 15px; font-weight: 600; color: var(--ink); }
+.item-count { font-family: var(--font-mono); font-size: 11px; color: var(--muted-soft); }
+.search-wrap { margin-left: auto; position: relative; }
+.search-wrap input {
+  width: 240px; padding: 6px 28px 6px 12px; border-radius: 6px;
+  border: 1px solid var(--hairline); background: var(--canvas);
+  font-family: var(--font-body); font-size: 13px; color: var(--ink); outline: none;
+}
+.search-wrap input:focus { border-color: var(--primary); }
+.search-key {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  font-family: var(--font-mono); font-size: 11px; color: var(--muted-soft);
+}
+
+/* 列表头：眉标式列名 */
+.list-head {
+  display: grid; grid-template-columns: 56px 20px minmax(200px, 1fr) 118px 60px 96px;
+  gap: 12px; padding: 10px 20px; border-bottom: 1px solid var(--hairline);
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px;
+  color: var(--muted-soft); flex-shrink: 0;
+}
+#rowsContainer { flex: 1; overflow-y: auto; }
+
+.issue-row {
+  display: grid; grid-template-columns: 56px 20px minmax(200px, 1fr) 118px 60px 96px;
+  gap: 12px; align-items: center; padding: 12px 20px;
+  border-bottom: 1px solid var(--hairline); cursor: pointer;
+}
+.issue-row:hover { background: var(--surface-soft); }
+.issue-row.selected { background: var(--surface-card); box-shadow: inset 3px 0 0 var(--primary); }
+.row-id { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.status-dot.stalled { background: var(--stalled); }
+.status-dot.cooling { background: var(--cooling); }
+.status-dot.waiting { background: var(--waiting); }
+.status-dot.done { background: var(--done); }
+.row-title-wrap { min-width: 0; }
+.row-title { color: var(--ink); font-weight: 500; margin-right: 6px; }
+.row-desc-preview { color: var(--muted); }
+.proj-badge {
+  display: inline-block; padding: 1px 8px; border-radius: 999px;
+  background: var(--surface-soft); border: 1px solid var(--hairline);
+  font-family: var(--font-mono); font-size: 11px; color: var(--body-c);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.row-age { font-family: var(--font-mono); font-size: 12px; }
+.row-age.red { color: var(--stalled); } .row-age.amber { color: var(--cooling); }
+.row-age.green { color: var(--waiting); } .row-age.gray { color: var(--muted-soft); }
+.row-date { font-family: var(--font-mono); font-size: 12px; color: var(--muted-soft); }
+
+/* 右侧详情抽屉：引文块规格与全站一致 */
+.drawer {
+  width: 360px; border-left: 1px solid var(--hairline); background: var(--canvas);
+  padding: 24px; overflow-y: auto; flex-shrink: 0; display: flex; flex-direction: column; gap: 24px;
+}
+.drawer-id { font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px; color: var(--muted-soft); }
+.drawer-title { font-family: var(--font-display); font-size: 24px; font-weight: 400; color: var(--ink); line-height: 1.3; }
+.drawer-section-label {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px;
+  color: var(--muted-soft); text-transform: uppercase; margin-bottom: 6px;
+}
+.drawer-desc { color: var(--body-c); line-height: 1.7; }
+.drawer-quote {
+  border-left: 3px solid var(--primary); padding: 4px 0 4px 16px;
+  font-family: var(--font-display); font-size: 15px; color: var(--body-strong); line-height: 1.7;
+}
+.drawer-props-grid { display: grid; grid-template-columns: auto 1fr; gap: 10px 20px; }
+.drawer-prop-key { font-size: 12px; color: var(--muted-soft); }
+.drawer-prop-val { font-size: 13px; color: var(--ink); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <span class="brand-mark">言镜</span>
+    <span class="brand-sub">wordmirror</span>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-heading">承诺视图 (VIEWS)</div>
+    <div class="nav-item active" data-filter="all" onclick="setFilter('all', this)">
+      <span class="nav-dot all"></span> 全部承诺 <span class="nav-count">0</span>
+    </div>
+    <div class="nav-item" data-filter="stalled" onclick="setFilter('stalled', this)">
+      <span class="nav-dot stalled"></span> 搁置中 (30d+) <span class="nav-count">0</span>
+    </div>
+    <div class="nav-item" data-filter="cooling" onclick="setFilter('cooling', this)">
+      <span class="nav-dot cooling"></span> 自然冷却 <span class="nav-count">0</span>
+    </div>
+    <div class="nav-item" data-filter="waiting" onclick="setFilter('waiting', this)">
+      <span class="nav-dot waiting"></span> 等外部结果 <span class="nav-count">0</span>
+    </div>
+    <div class="nav-item" data-filter="done" onclick="setFilter('done', this)">
+      <span class="nav-dot done"></span> 已收线闭环 <span class="nav-count">0</span>
+    </div>
+  </div>
+  <div class="sidebar-footer">
+    纯本地运行 · 零云端依赖<br>
+    <a href="index.html" style="color:var(--primary);border:none;">回到首页</a> ·
+    <a href="10_这九个月翻给你看.html" style="color:var(--primary);border:none;">这九个月翻给你看</a>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <span class="view-title" id="currentViewTitle">全部承诺</span>
+    <span class="item-count" id="itemCountLabel">0 个事项</span>
+    <div class="search-wrap">
+      <input type="text" id="filterInput" placeholder="过滤承诺标题或原话…">
+      <span class="search-key">/</span>
+    </div>
+  </div>
+
+  <div class="list-head">
+    <div>标识</div><div></div><div>标题与背景提要</div><div>所属项目</div><div>停滞</div><div>记账日期</div>
+  </div>
+  <div id="rowsContainer"></div>
+</div>
+
+<div class="drawer">
+  <div>
+    <div class="drawer-id" id="drawerId">DS-00</div>
+    <div class="drawer-title" id="drawerTitle">—</div>
+  </div>
+
+  <div>
+    <div class="drawer-section-label">背景说明</div>
+    <div class="drawer-desc" id="drawerDesc">—</div>
+  </div>
+
+  <div>
+    <div class="drawer-section-label">最后原话记录</div>
+    <div class="drawer-quote" id="drawerQuote">—</div>
+  </div>
+
+  <div class="drawer-props-grid">
+    <div class="drawer-prop-key">状态分类</div>
+    <div class="drawer-prop-val" id="drawerStatus">—</div>
+    <div class="drawer-prop-key">停滞天数</div>
+    <div class="drawer-prop-val" id="drawerAge">—</div>
+    <div class="drawer-prop-key">所属项目</div>
+    <div class="drawer-prop-val" id="drawerProj">—</div>
+    <div class="drawer-prop-key">沉淀遗产</div>
+    <div class="drawer-prop-val" id="drawerLegacy">—</div>
+  </div>
+</div>
+
+<script>
+let data = [];
+const statusLabel = { stalled: '搁置中 (30d+)', cooling: '自然冷却', waiting: '等外部结果', done: '已收线闭环' };
+
+function loadData() {
+  const j = __TRACKER_DATA__;
+  data = j.items;
+  // 侧边栏计数动态刷新
+  const counts = { all: data.length };
+  data.forEach(it => counts[it.status] = (counts[it.status] || 0) + 1);
+  document.querySelectorAll('.nav-item').forEach(el => {
+    const f = el.getAttribute('data-filter');
+    const cnt = el.querySelector('.nav-count');
+    if (cnt && counts[f] !== undefined) cnt.innerText = counts[f];
+  });
+  render();
+  if (data.length) selectRow(data[0].id);
+}
+let currentFilter = 'all';
+let selectedId = null;
+
+loadData();
+
+function render() {
+  const container = document.getElementById('rowsContainer');
+  const keyword = document.getElementById('filterInput').value.trim().toLowerCase();
+
+  const filtered = data.filter(item => {
+    const matchFilter = (currentFilter === 'all' || item.status === currentFilter);
+    const matchKeyword = (!keyword || item.title.toLowerCase().includes(keyword) || item.desc.toLowerCase().includes(keyword) || item.proj.toLowerCase().includes(keyword));
+    return matchFilter && matchKeyword;
+  });
+
+  document.getElementById('itemCountLabel').innerText = filtered.length + ' 个事项';
+
+  container.innerHTML = filtered.map(item => `
+    <div class="issue-row ${item.id === selectedId ? 'selected' : ''}" onclick="selectRow('${item.id}')">
+      <div class="row-id">${item.id}</div>
+      <div class="row-status-icon"><span class="status-dot ${item.status}"></span></div>
+      <div class="row-title-wrap">
+        <span class="row-title">${item.title}</span>
+        <span class="row-desc-preview">— ${item.desc}</span>
+      </div>
+      <div class="row-proj"><span class="proj-badge">${item.proj}</span></div>
+      <div class="row-age ${item.ageClass}">${item.age}</div>
+      <div class="row-date">${item.date}</div>
+    </div>
+  `).join('');
+}
+
+function selectRow(id) {
+  selectedId = id;
+  const item = data.find(d => d.id === id);
+  if (!item) return;
+
+  document.getElementById('drawerId').innerText = item.id;
+  document.getElementById('drawerTitle').innerText = item.title;
+  document.getElementById('drawerDesc').innerText = item.desc;
+  document.getElementById('drawerQuote').innerText = item.quote;
+  document.getElementById('drawerStatus').innerText = statusLabel[item.status] || item.status;
+  document.getElementById('drawerAge').innerText = item.age;
+  document.getElementById('drawerProj').innerText = item.proj;
+  document.getElementById('drawerLegacy').innerText = item.legacy;
+
+  render();
+}
+
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const titleMap = { all: '全部承诺', stalled: '搁置中 (30 天+)', cooling: '自然冷却', waiting: '等外部结果', done: '已收线闭环' };
+  document.getElementById('currentViewTitle').innerText = titleMap[filter] || '承诺列表';
+  render();
+}
+
+document.getElementById('filterInput').addEventListener('input', render);
+
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') {
+    if (e.key === 'Escape') { e.target.value = ''; e.target.blur(); render(); }
+    return;
+  }
+  if (e.key === '/') { e.preventDefault(); document.getElementById('filterInput').focus(); }
+  if (e.key === '1') setFilter('all', document.querySelector('.nav-item[data-filter="all"]'));
+  if (e.key === '2') setFilter('stalled', document.querySelector('.nav-item[data-filter="stalled"]'));
+  if (e.key === '3') setFilter('cooling', document.querySelector('.nav-item[data-filter="cooling"]'));
+  if (e.key === '4') setFilter('waiting', document.querySelector('.nav-item[data-filter="waiting"]'));
+  if (e.key === '5') setFilter('done', document.querySelector('.nav-item[data-filter="done"]'));
+});
+</script>
+
+</body>
+</html>

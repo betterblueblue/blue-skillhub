@@ -33,7 +33,7 @@
 
 ## 单装 vs 完整仓库
 
-这个包是纯协议：检索、写回、隐私分层装上就能用。但 **init / ingest 需要引擎**（`engine/` 目录，在完整仓库根）。只装了这个包就跑 init 会得到明确提示——此时设 `WORD_MIRROR_HOME` 指向完整仓库根，或直接克隆完整仓库。
+检索、写回、隐私分层、**HTML 产物渲染**（render.py，模板在 templates/）装上就能用。只有 **init / ingest 需要引擎**（`engine/` 目录，在完整仓库根，负责从各 agent 原始存档提取语料）。只装了这个包就跑 init 会得到明确提示——此时设 `WORD_MIRROR_HOME` 指向完整仓库根，或直接克隆完整仓库。
 
 ## 目录导览
 
@@ -41,7 +41,9 @@
 SKILL.md          agent 入口：场景驱动、按需加载，agent 只读这一个文件就够
 references/       六份协议（初始化/检索/写回/隐私/更新/数据定位）+ 两份画像生成模板
 layers/           隐私分层模板（出厂为空）：真实的 public.md 和 redact_list.json 在数据目录 data/layers/，由蒸馏生成；清单本身含敏感词，永不外传
-scripts/ds.py     命令行入口
+scripts/ds.py     命令行入口（检索/写回/欠账/导出/月报）
+scripts/render.py  HTML 渲染器：read（入口/画像/Wrapped）/ monthly / tracker / all
+templates/        视觉体系：DESIGN.md（设计法）+ read_shell.html + tracker.html（改样式只改这里）
 ```
 
 ## 诚实边界

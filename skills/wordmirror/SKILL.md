@@ -53,7 +53,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 | 用户要给别人介绍自己 / 贴到别的 AI | "出一页随身说明书？"（`ds.py export`） |
 | 出了任何 HTML 产物 | 告诉用户文件在哪，双击就能看，单文件零依赖 |
 
-> 注意：月报（`ds.py monthly`）和 HTML 看板依赖 engine/ 目录——只装了 skill 包时出不了，如实告知"这功能在完整仓库里"，别引导用户去跑会报错的命令。`contrast` / `export` / 欠账本不依赖引擎，随时能出。
+> 月报（`ds.py monthly`）、承诺看板、画像页、Wrapped 都由 skill 自带渲染器（`scripts/render.py`，模板在 `templates/`）产出——装了 skill 就能出，唯一前提是数据已生成（语料来自 ingest）。出完告诉用户文件在哪，双击就能看，单文件零依赖。样式改动只改 `templates/DESIGN.md` 和模板，然后重跑 render.py，禁止手编产物。
 
 ## 硬规则（任何时候）
 

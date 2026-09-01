@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>__TITLE__</title>
+<style>
+/* ===== 言镜单一视觉体系令牌（skill/wordmirror/templates/DESIGN.md v2.0，照抄不改） ===== */
+:root {
+  --primary: #cc785c;         /* 话印朱：全站唯一强调色 */
+  --primary-active: #a9583e;
+  --canvas: #faf9f5;          /* 暖纸白 */
+  --surface-soft: #f5f0e8;
+  --surface-card: #efe9de;
+  --hairline: #e6dfd8;
+  --ink: #141413;
+  --body-c: #3d3d3a;
+  --body-strong: #252523;
+  --muted: #6c6a64;
+  --muted-soft: #8e8b82;
+  --stalled: #c64545; --cooling: #d4a017; --waiting: #5db872; --done: #8e8b82;
+  --font-display: 'Noto Serif SC','Source Han Serif SC','Songti SC',SimSun,Georgia,serif;
+  --font-body: 'PingFang SC','Microsoft YaHei','Noto Sans SC',-apple-system,'Segoe UI',sans-serif;
+  --font-mono: 'JetBrains Mono',Consolas,'Cascadia Code',ui-monospace,monospace;
+  --shadow-lift: 0 1px 3px rgba(20,20,19,0.08); /* 唯一允许的阴影 */
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--canvas); color: var(--body-c);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 720px; margin: 0 auto; padding: 48px 24px 64px; }
+
+/* 顶部铭牌：全站统一，一眼认出言镜 */
+.topbar { display: flex; align-items: baseline; gap: 10px; margin-bottom: 56px; }
+.wordmark {
+  font-family: var(--font-display); font-size: 22px; color: var(--ink);
+  text-decoration: none; border: none; letter-spacing: 2px;
+}
+.wm-sub {
+  font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px;
+  color: var(--muted-soft); text-transform: uppercase;
+}
+
+/* 眉标：mono、字距加宽、日期一律全格式 */
+.eyebrow {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 1.5px;
+  color: var(--muted); text-transform: uppercase; margin-bottom: 16px;
+}
+.eyebrow .dot { color: var(--primary); }
+
+h1.display {
+  font-family: var(--font-display); font-weight: 400; font-size: 48px;
+  letter-spacing: -1.5px; line-height: 1.25; color: var(--ink); margin-bottom: 24px;
+}
+h2 {
+  font-family: var(--font-body); font-weight: 500; font-size: 22px;
+  color: var(--ink); margin: 96px 0 24px; padding-top: 32px;
+  border-top: 1px solid var(--hairline);
+}
+h3 { font-size: 18px; font-weight: 500; color: var(--ink); margin: 48px 0 16px; }
+p { margin-bottom: 16px; }
+strong { color: var(--body-strong); font-weight: 600; }
+a { color: var(--primary); text-decoration: none; border-bottom: 1px solid var(--hairline); }
+a:hover { color: var(--primary-active); border-bottom-color: var(--primary-active); }
+
+/* 引文块：灵魂组件，规格全站统一 */
+.quote {
+  border-left: 3px solid var(--primary);
+  padding: 4px 0 4px 20px; margin: 24px 0;
+}
+.quote .q-eyebrow {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 1.5px;
+  color: var(--muted); display: block; margin-bottom: 6px;
+}
+.quote .q-text {
+  font-family: var(--font-display); font-size: 17px; color: var(--body-strong);
+}
+
+/* 卡片与色带 */
+.card {
+  background: var(--surface-card); border-radius: 12px;
+  padding: 24px 28px; margin: 24px 0;
+}
+.band { background: var(--surface-soft); border-radius: 12px; padding: 24px 28px; margin: 24px 0; }
+
+/* 大数字块：数字大、注解小、人话先行 */
+.bignum-row { display: flex; flex-wrap: wrap; gap: 16px; margin: 32px 0; }
+.bignum {
+  flex: 1 1 180px; background: var(--surface-card); border-radius: 12px; padding: 24px;
+}
+.bignum .n {
+  font-family: var(--font-display); font-weight: 400; font-size: 40px;
+  color: var(--ink); letter-spacing: -1px; line-height: 1.1;
+}
+.bignum .note { font-size: 14px; color: var(--muted); margin-top: 8px; }
+
+/* 状态徽标（药丸，四档语义色） */
+.pill {
+  display: inline-block; padding: 2px 12px; border-radius: 999px;
+  font-size: 13px; line-height: 1.6; margin: 0 6px 6px 0;
+  background: var(--surface-soft); color: var(--body-c);
+}
+.pill.red { color: var(--stalled); } .pill.amber { color: var(--cooling); }
+.pill.green { color: var(--waiting); } .pill.gray { color: var(--done); }
+
+/* 表格 */
+table { width: 100%; border-collapse: collapse; margin: 24px 0; font-size: 15px; }
+th { font-weight: 500; color: var(--muted); text-align: left; padding: 8px 12px;
+     border-bottom: 1px solid var(--hairline); font-size: 13px; }
+td { padding: 12px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
+td.mono, .mono { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+ul { list-style: none; margin: 16px 0; }
+li { padding-left: 20px; position: relative; margin-bottom: 12px; }
+li::before { content: '·'; color: var(--primary); position: absolute; left: 4px; font-weight: 700; }
+
+/* 落款 */
+.colophon {
+  margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--hairline);
+  font-size: 13px; color: var(--muted-soft);
+}
+@media (max-width: 720px) {
+  h1.display { font-size: 36px; }
+  .page { padding-top: 40px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="topbar"><a class="wordmark" href="__HOME__">言镜</a><span class="wm-sub">wordmirror · 纯本地</span></div>
+<div class="eyebrow">__EYEBROW__</div>
+__BODY__
+<div class="colophon">言镜 · 纯本地生成 · 零云端依赖</div>
+</div>
+</body>
+</html>
