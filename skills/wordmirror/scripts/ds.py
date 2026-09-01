@@ -13,7 +13,8 @@
     python ds.py monthly [YYYY-MM] 生成月度三页纸
     python ds.py open    用浏览器打开产物入口页
     python ds.py check   跑全量自检（项数以输出为准）
-    python ds.py where   显示数据目录在哪、画像多新
+    python ds.py where   显示数据目录在哪、画像多新、按哪种方式定位到的
+    python ds.py bind <仓库根>  绑定已有完整仓库的数据（--clear 解绑）
 
 设计原则（DESIGN.md）：每人自己跑自己的；全部本地；探测不硬编码。
 """
@@ -21,23 +22,44 @@ import os, sys, subprocess, json, webbrowser, glob, re, shutil, datetime
 
 # 定位两层（data-locations.md 的同款顺序）：
 # 全局层（画像/语料/月报——"你是谁"，不分项目）：
-#   1) 环境变量 WORD_MIRROR_HOME（旧名 DIGITAL_SELF_HOME 兼容）  2) ~/.wordmirror（旧 ~/.digital-self 兼容）
-#   3) 仓库布局（脚本旁有 data/，开发实例）  4) 都没有 → 默认 ~/.wordmirror，首次写入时创建
+#   1) 环境变量 WORD_MIRROR_HOME（旧名 DIGITAL_SELF_HOME 兼容）
+#   2) bind 指针 ~/.wordmirror/bind.json（ds.py bind 写入——skill 装在别处、数据在完整仓库时用）
+#   3) ~/.wordmirror（旧 ~/.digital-self 兼容）
+#   4) 脚本祖先逐级向上找仓库布局（data/ 下有语料签名才算，防无关 data/ 目录劫持）
+#   5) 都没有 → 默认 ~/.wordmirror，首次写入时自动创建
 # 项目层（欠账/写回——"这个项目的事"）：<当前目录>/.wordmirror/，在哪个目录干活账记哪
 def _find_base():
+    """返回 (数据仓库根, 定位方式说明)。"""
+    def _has_data(p):
+        return os.path.isdir(os.path.join(p, 'data'))
     env = os.environ.get('WORD_MIRROR_HOME') or os.environ.get('DIGITAL_SELF_HOME')
-    if env and os.path.isdir(os.path.join(env, 'data')):
-        return env
+    if env and _has_data(env):
+        how = 'WORD_MIRROR_HOME' if os.environ.get('WORD_MIRROR_HOME') else 'DIGITAL_SELF_HOME'
+        return env, '环境变量 %s' % how
     home = os.path.join(os.path.expanduser('~'), '.wordmirror')
-    if os.path.isdir(os.path.join(home, 'data')):
-        return home
+    bind_p = os.path.join(home, 'bind.json')
+    if os.path.isfile(bind_p):
+        try:
+            target = json.load(open(bind_p, encoding='utf-8')).get('home', '')
+        except Exception:
+            target = ''
+        if target and _has_data(target):
+            return target, 'bind 指针（%s）' % bind_p
+    if _has_data(home):
+        return home, '标准位置 ~/.wordmirror'
     legacy = os.path.join(os.path.expanduser('~'), '.digital-self')
-    if os.path.isdir(os.path.join(legacy, 'data')):
-        return legacy
-    guess = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-    if os.path.isdir(os.path.join(guess, 'data')):
-        return guess
-    return home  # 标准默认位置，首次写入时自动创建
+    if _has_data(legacy):
+        return legacy, '旧目录 ~/.digital-self'
+    d = os.path.dirname(os.path.abspath(__file__))
+    while True:
+        if _has_data(d) and any(os.path.exists(os.path.join(d, 'data', f))
+                                for f in ('corpus_dedup.jsonl', 'corpus_all.jsonl')):
+            return d, '仓库布局（向上找到 %s）' % d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    return home, '默认 ~/.wordmirror（还没有数据，首次写入时创建）'
 
 def _promises_file():
     """账本分两层：在仓库实例目录里干活 → 全局 data/；在其他项目目录 → 该目录 .wordmirror/。"""
@@ -54,7 +76,7 @@ def _ledger_paths():
         paths.append(g)
     return paths
 
-BASE = _find_base()
+BASE, BASE_SOURCE = _find_base()
 ENGINE = os.path.join(BASE, 'engine')
 DATA = os.path.join(BASE, 'data')
 PRODUCTS = os.path.join(BASE, 'products')
@@ -102,7 +124,7 @@ def cmd_ingest():
     _sugar_report()
     print('=' * 56)
     print('完成。看结果：')
-    print('  python ds.py open   （浏览器打开「这几个月翻给你看」）')
+    print('  python ds.py open   （浏览器打开「翻给你看」入口页）')
 
 def _dedup():
     src = os.path.join(DATA, 'corpus_all.jsonl')
@@ -121,7 +143,7 @@ def _dedup():
     with open(dst, 'w', encoding='utf-8') as f:
         for o in out:
             f.write(json.dumps(o, ensure_ascii=False) + '\n')
-    print('     去重完成：%d → %d 条' % (len(seen) + 0 or 0, len(out)) if False else '     去重完成：共 %d 条' % len(out))
+    print('     去重完成：共 %d 条' % len(out))
 
 def _sugar_report():
     # 第一口糖：数字汇报 + 提示画像方向
@@ -138,19 +160,55 @@ def _sugar_report():
     else:
         print('（重度用户量级：全部产物都会很扎实）')
 
+def _load_synonyms():
+    """近义词组：内置常见组 + 数据目录 synonyms.json 用户自扩（格式 {"词": ["近义词", ...]}）。
+    纯字面 grep 记不住原词就查不到——这层扩词是廉价补丁，不是语义检索。"""
+    groups = [
+        ['求职', '找工作', '投简历', '面试'],
+        ['放弃', '不做了', '算了', '弃了', '砍了'],
+        ['决定', '定了', '拍板', '敲定'],
+        ['简历', 'CV'],
+        ['备考', '复习', '学习'],
+        ['测试', '单测', '回归'],
+        ['部署', '上线', '发布'],
+        ['离职', '辞职'],
+    ]
+    p = os.path.join(DATA, 'synonyms.json')
+    if os.path.exists(p):
+        try:
+            with open(p, encoding='utf-8') as f:
+                for k, vs in json.load(f).items():
+                    groups.append([k] + list(vs))
+        except Exception:
+            pass
+    return groups
+
+def _expand_query(q):
+    """把查询词扩成近义词组（原词永远排第一）。查不到 synonyms.json 就只有原词。"""
+    words = [q]
+    for g in _load_synonyms():
+        if q in g:
+            words += [w for w in g if w != q]
+    seen, out = set(), []
+    for w in words:
+        if w not in seen:
+            seen.add(w)
+            out.append(w)
+    return out
+
 def cmd_ask(query):
     if not query:
         print('用法：python ds.py ask "关键词"')
         sys.exit(1)
-    # 简单 grep：跨两个主力文件
-    import re
+    # 简单 grep：跨两个主力文件；查询词自动带近义词组（用户记不住自己当时的原词是常态）
+    variants = _expand_query(query)
     hits = []
     for f in ['corpus_dedup.jsonl', 'user_writebacks.jsonl']:
         p = os.path.join(DATA, f)
         if not os.path.exists(p):
             continue
         for line in open(p, encoding='utf-8'):
-            if query.lower() in line.lower():
+            if any(v.lower() in line.lower() for v in variants):
                 try:
                     o = json.loads(line)
                 except Exception:
@@ -161,14 +219,42 @@ def cmd_ask(query):
         return
     hits.sort(key=lambda o: o.get('date', ''))
     print('找到 %d 条（按时间排）:' % len(hits))
+    if len(variants) > 1:
+        print('（「%s」也搜了近义词：%s）' % (query, '、'.join(variants[1:])))
     for o in hits[-15:]:
         msg = o.get('msg', '').replace(chr(10), ' ')[:110]
         print('  %s | %-10s | %s' % (o.get('date', '?'), o.get('agent', o.get('source', '?')), msg))
     if len(hits) > 15:
         print('  …（共 %d 条，只显示最近 15 条）' % len(hits))
 
+def cmd_bind(args):
+    """skill 装在 A 处、数据在 B 处（完整仓库）时，用 bind 把两者接上。指针在 ~/.wordmirror/bind.json。"""
+    home = os.path.join(os.path.expanduser('~'), '.wordmirror')
+    bind_p = os.path.join(home, 'bind.json')
+    if args and args[0] == '--clear':
+        if os.path.isfile(bind_p):
+            os.remove(bind_p)
+            print('已解绑：%s 已删除。定位回到默认顺序（见 references/data-locations.md）。' % bind_p)
+        else:
+            print('本来就没有绑定（%s 不存在）。' % bind_p)
+        return
+    if not args:
+        print('用法：python ds.py bind <完整仓库根目录>   # 绑定已有数据（该目录下须有 data/）')
+        print('      python ds.py bind --clear            # 解绑')
+        return
+    target = os.path.abspath(args[0])
+    if not os.path.isdir(os.path.join(target, 'data')):
+        print('%s 下面没有 data/——要指向完整仓库的根目录（里面应有 data/corpus_dedup.jsonl）。' % target)
+        sys.exit(1)
+    os.makedirs(home, exist_ok=True)
+    with open(bind_p, 'w', encoding='utf-8') as f:
+        json.dump({'home': target}, f, ensure_ascii=False)
+    print('已绑定：%s（指针写在 %s）' % (target, bind_p))
+    print('验证：python ds.py where   （定位方式应显示 bind 指针）')
+    print('解绑：python ds.py bind --clear')
+
 def cmd_open():
-    for name in ['index.html', '10_这九个月翻给你看.html']:
+    for name in ['index.html', '10_翻给你看.html']:
         p = os.path.join(PRODUCTS, 'html', name)
         if os.path.exists(p):
             webbrowser.open('file:///' + p.replace(chr(92), '/'))
@@ -181,6 +267,7 @@ def cmd_check():
 
 def cmd_where():
     print('数据目录：%s' % DATA)
+    print('定位方式：%s' % BASE_SOURCE)
     print('产物目录：%s' % PRODUCTS)
     cwd = os.getcwd()
     if os.path.normcase(os.path.abspath(cwd)) != os.path.normcase(os.path.abspath(BASE)):
@@ -198,7 +285,7 @@ def cmd_where():
         print('画像：还没有，先跑 ingest 再让 agent 生成')
 
 def _profile_age():
-    """从 portrait.md 顶部抳第一个日期，算画像多少天没更新。"""
+    """从 portrait.md 顶部拿第一个日期，算画像多少天没更新。"""
     p = os.path.join(DATA, 'profile', 'portrait.md')
     if not os.path.exists(p):
         return None
@@ -311,13 +398,14 @@ def cmd_contrast(query):
     if not query:
         print('用法：python ds.py contrast "话题关键词"')
         sys.exit(1)
+    variants = _expand_query(query)
     hits = []
     for f in ['corpus_dedup.jsonl', 'user_writebacks.jsonl']:
         p = os.path.join(DATA, f)
         if not os.path.exists(p):
             continue
         for line in open(p, encoding='utf-8'):
-            if query.lower() in line.lower():
+            if any(v.lower() in line.lower() for v in variants):
                 try:
                     hits.append(json.loads(line))
                 except Exception:
@@ -331,6 +419,8 @@ def cmd_contrast(query):
         msg = o.get('msg', '').replace(chr(10), ' ')
         print('  【%s】%s | %s' % (tag, o.get('date', '?'), msg[:120]))
     print('「%s」共 %d 条，跨度 %s → %s：' % (query, len(hits), first.get('date', '?'), last.get('date', '?')))
+    if len(variants) > 1:
+        print('（也搜了近义词：%s）' % '、'.join(variants[1:]))
     show(first, '最早')
     show(last, '最近')
     print('（中间变没变、为什么变，你自己判断——AI 不下结论）')
@@ -417,6 +507,8 @@ def main():
         cmd_export()
     elif cmd == 'install':
         cmd_install(sys.argv[2:])
+    elif cmd == 'bind':
+        cmd_bind(sys.argv[2:])
     elif cmd == 'monthly':
         cmd_monthly(sys.argv[2:])
     else:

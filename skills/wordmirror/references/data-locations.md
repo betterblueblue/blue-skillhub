@@ -1,13 +1,25 @@
 # 数据目录定位 · 不写死路径
 
 > 本 skill 拷到任何机器都要能找到数据。按下面的顺序找，找到第一个存在的就用。
+> 不确定当前用的是哪个 → 跑 `python ds.py where`，会直接告诉你按哪种方式定位到的。
 
 ## 定位顺序
 
 1. **环境变量** `WORD_MIRROR_HOME`（用户显式指定，最优先；旧名 `DIGITAL_SELF_HOME` 仍兼容）
-2. `~/.wordmirror/`（产品化标准位置：`~/.wordmirror/data/`；旧目录 `~/.digital-self/` 仍兼容）
-3. 仓库布局：脚本旁真有 `data/` 目录才用（开发实例：skill 在 `<仓库>/skill/wordmirror/`，数据在 `<仓库>/data/`）
-4. 都没有 → 默认 `~/.wordmirror/`，首次写入时自动创建（单装用户数据不再撒到奇怪的地方）
+2. **bind 指针** `~/.wordmirror/bind.json`（`python ds.py bind <完整仓库根>` 写入）——skill 装在 A 处、数据在 B 处时的标准接法
+3. `~/.wordmirror/`（产品化标准位置：`~/.wordmirror/data/`；旧目录 `~/.digital-self/` 仍兼容）
+4. 仓库布局：从 skill 目录向上逐级找祖先目录里有 `data/corpus_dedup.jsonl`（或 `corpus_all.jsonl`）的——skill 恰好装在完整仓库里面时自动生效
+5. 都没有 → 默认 `~/.wordmirror/`，首次写入时自动创建（单装用户数据不再撒到奇怪的地方）
+
+## 单装用户推荐接法（bind）
+
+skill 拷进某个 agent 的 skills 目录后，如果完整数据仓库在别处（比如另一块盘），一条命令接上：
+
+```bash
+python <skill目录>/scripts/ds.py bind E:\path\to\digital-self
+```
+
+之后所有命令（ask / monthly / promise / export / open）都用绑定的数据。解绑：`ds.py bind --clear`。
 
 **项目层（欠账/写回专用）**：当前目录 `.wordmirror/promises.jsonl`——在哪个目录干活，账记哪，随项目走（可进项目 git）。全局层和项目层开场都查；`ds.py promise` 也扫两层。
 

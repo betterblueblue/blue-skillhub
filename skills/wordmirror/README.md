@@ -23,17 +23,20 @@
 2. 对你的 agent 说：**初始化 wordmirror**
 3. 日常使用不用任何命令——"我之前说过什么""记住这个""这个能发出去吗"，直接说就行
 
-命令行入口（可选）：`scripts/ds.py`——`init`（探测本机 agent 存档）、`ingest`（提取语料）、`ask`（检索）、`contrast`（同一话题前后说法对比）、`promise`（欠账本：add 记一笔 / done 划掉）、`export`（随身说明书，仅脱敏公开层）、`monthly`（月度三页纸）、`install`（装进其他 agent 的 skills 目录）、`where`（数据目录 + 画像新鲜度）。
+命令行入口（可选）：`scripts/ds.py`——`init`（探测本机 agent 存档）、`ingest`（提取语料）、`ask`（检索，自带近义词扩词）、`contrast`（同一话题前后说法对比）、`promise`（欠账本：add 记一笔 / done 划掉）、`export`（随身说明书，仅脱敏公开层）、`monthly`（月度三页纸）、`install`（装进其他 agent 的 skills 目录）、`bind`（绑定已有完整仓库的数据）、`where`（数据目录 + 定位方式 + 画像新鲜度）。
 
 ## 数据放在哪（两层）
 
-**全局层**——"你是谁"（画像/规矩/语料/月报），不分项目，跟着你走。定位顺序：环境变量 `WORD_MIRROR_HOME` → `~/.wordmirror/` → 仓库布局（脚本旁有 data/）→ 默认 `~/.wordmirror/`（首次写入时创建）。旧名 `DIGITAL_SELF_HOME`、`~/.digital-self/` 兼容。
+**全局层**——"你是谁"（画像/规矩/语料/月报），不分项目，跟着你走。定位顺序：环境变量 `WORD_MIRROR_HOME` → bind 指针（`ds.py bind <完整仓库根>`）→ `~/.wordmirror/` → skill 祖先目录里的仓库布局 → 默认 `~/.wordmirror/`（首次写入时创建）。旧名 `DIGITAL_SELF_HOME`、`~/.digital-self/` 兼容。跑 `ds.py where` 可看当前用的哪个、按哪种方式定位到的。详见 `references/data-locations.md`。
 
-**项目层**——"这个项目的事"（欠账本/写回），在哪个目录干活记哪：`<当前目录>/.wordmirror/promises.jsonl`，首次记账时自动创建，可随项目进 git。开场检查两层都看。
+**项目层**——"这个项目的事"（欠账本/写回），在哪个目录干活记哪：`<当前目录>/.wordmirror/promises.jsonl`，首次记账时自动创建，可随项目进 git。开场检查两层都看；月报"办完的事"也收两层。
 
 ## 单装 vs 完整仓库
 
-检索、写回、隐私分层、**HTML 产物渲染**（render.py，模板在 templates/）装上就能用。只有 **init / ingest 需要引擎**（`engine/` 目录，在完整仓库根，负责从各 agent 原始存档提取语料）。只装了这个包就跑 init 会得到明确提示——此时设 `WORD_MIRROR_HOME` 指向完整仓库根，或直接克隆完整仓库。
+检索、写回、隐私分层、**HTML 产物渲染**（render.py，模板在 templates/）装上就能用。只有 **init / ingest 需要引擎**（`engine/` 目录，在完整仓库根，负责从各 agent 原始存档提取语料）。只装了这个包就跑 init 会得到明确提示——此时两条路：
+
+- **数据已在完整仓库里**：`python ds.py bind <完整仓库根>` 一条命令接上（推荐），或设环境变量 `WORD_MIRROR_HOME`
+- **还没有数据**：克隆完整仓库后从那边初始化
 
 ## 目录导览
 

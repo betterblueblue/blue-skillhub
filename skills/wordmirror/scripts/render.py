@@ -106,10 +106,15 @@ def build_wrapped():
     total = sum(a['msgs'] for a in ag.values())
     keys = sorted(months)
     span = '%s ~ %s' % (keys[0], keys[-1])
+    # 标题里的月份数按数据实算（2025-11~2026-08 是 10 个月），不写死
+    y0, m0 = map(int, keys[0].split('-'))
+    y1, m1 = map(int, keys[-1].split('-'))
+    n_mon = (y1 * 12 + m1) - (y0 * 12 + m0) + 1
+    span_word = '这' + {1: '一个月', 2: '两个月'}.get(n_mon, ' %d 个月' % n_mon)
     top = sorted(wf.items(), key=lambda t: -t[1])[:5]
     top_html = ''.join('<span class="pill">%s <b>%d</b> 次</span>' % (H.escape(w), n) for w, n in top)
 
-    body = ['<h1 class="display">这九个月，<br>翻给你看</h1>']
+    body = ['<h1 class="display">%s，<br>翻给你看</h1>' % span_word]
     body.append('<div class="bignum-row">'
                 '<div class="bignum"><div class="n">%s</div><div class="note">条原话，都是你说给 AI 的</div></div>'
                 '<div class="bignum"><div class="n">%d</div><div class="note">个 AI 工具跟你聊过</div></div>'
@@ -131,8 +136,8 @@ def build_wrapped():
             body.append('<div class="quote"><span class="q-eyebrow">收尾一句</span>'
                         '<div class="q-text">「%s」</div></div>' % H.escape(m['closer'][:120]))
         body.append('</div>')
-    return ('html/10_这九个月翻给你看.html',
-            page('这九个月翻给你看 · 言镜', 'Wrapped · %s <span class="dot">·</span> 按月回顾' % span, '\n'.join(body)))
+    return ('html/10_翻给你看.html',
+            page('翻给你看 · 言镜', 'Wrapped · %s <span class="dot">·</span> 按月回顾' % span, '\n'.join(body)))
 
 
 def build_index():
@@ -148,7 +153,7 @@ def build_index():
     cards = [
         ('01', '我是谁，怎么跟我共事', '你的说明书：你是谁、在忙什么、AI 该怎么跟你配合', '01_我是谁_怎么跟我共事.html'),
         ('03', '我说过要做的事，现在都怎么样了', '哪件说了没下文，一眼看清', '03_我说过要做的事_现在都怎么样了.html'),
-        ('10', '这九个月翻给你看', '一个月一页，翻回去看', '10_这九个月翻给你看.html'),
+        ('10', '翻给你看', '一个月一页，翻回去看', '10_翻给你看.html'),
     ]
     monthly = sorted(os.listdir(MON)) if os.path.isdir(MON) else []
     if monthly:
@@ -183,7 +188,10 @@ def build_index():
 # ---------- 月报 ----------
 
 def load_jsonl(name):
-    p = os.path.join(ds.DATA, name)
+    return load_jsonl_path(os.path.join(ds.DATA, name))
+
+
+def load_jsonl_path(p):
     if not os.path.exists(p):
         return []
     out = []
@@ -196,6 +204,17 @@ def load_jsonl(name):
         except Exception:
             continue
     return out
+
+
+def _promises_all_layers():
+    """两层账本都收：当前目录项目层 + 全局层（月报口径——宣传说"划掉的欠账进月报"，就得两层都算）。"""
+    rows = []
+    for p in ds._ledger_paths():
+        for o in load_jsonl_path(p):
+            o = dict(o)
+            o['_ledger'] = ds._ledger_tag(p)
+            rows.append(o)
+    return rows
 
 
 def build_monthly(month=None):
@@ -231,7 +250,8 @@ def build_monthly(month=None):
     word_rows.sort(key=lambda t: t[1] - t[2], reverse=True)
     hot = word_rows[:5]
 
-    kw = re.compile(r'决定|定了|就这么|弃了|放弃|算了|确认关闭|offer|收线|完成')
+    # 决定/收线的口癖词表——只会多搜不会错搜（月报只挑几条展示，人工可筛）
+    kw = re.compile(r'决定|定了|就这么|定下来|拍板|敲定|拍了|定了它|不再|不做了|不干了|弃了|放弃|算了|收线|关掉|关闭|结束|完成|搞定|办完|确认关闭|offer|录用|入职|上岗')
     decisions = [(o['date'], o.get('msg', '').replace('\n', ' ')[:100])
                  for o in cur if kw.search(o.get('msg', ''))][-8:]
     wbs = [(o.get('date', ''), o.get('msg', '')) for o in load_jsonl('user_writebacks.jsonl')
@@ -242,7 +262,7 @@ def build_monthly(month=None):
     except Exception:
         items = []
     done = [it for it in items if it.get('status') == 'done']
-    promises = [o for o in load_jsonl('promises.jsonl')
+    promises = [o for o in _promises_all_layers()
                 if o.get('status') in ('closed', 'dropped') and o.get('closed_date', '').startswith(month)]
 
     def esc(s):
@@ -269,7 +289,8 @@ def build_monthly(month=None):
     body.append('<h2>这个月办完的事</h2>')
     if promises:
         body.append('<ul>%s</ul>' % ''.join(
-            '<li><span class="mono">%s</span> · 划掉：%s</li>' % (esc(o.get('closed_date', '')), esc(o.get('text', ''))) for o in promises))
+            '<li><span class="mono">%s</span> · 划掉：%s<span style="color:var(--muted);">（%s）</span></li>'
+            % (esc(o.get('closed_date', '')), esc(o.get('text', '')), esc(o.get('_ledger', '账本'))) for o in promises))
     if done:
         body.append('<p style="color:var(--muted);">之前已经办完 %d 件。</p>' % len(done))
     if not promises and not done:
