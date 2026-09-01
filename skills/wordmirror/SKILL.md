@@ -32,6 +32,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 | 首次使用 / 读不到 portrait.md | `references/init-protocol.md` | 按四步初始化（探测→提取→生成画像→验证） |
 | "哪些事说了没下文 / 我的项目都怎么样了" | `references/query-protocol.md` 第 3 节 | 查搁置主题，按天数排 |
 | 用户开始写代码、改文档、长时间协作 | 不用额外读，habits.md 已够 | 按习惯规矩干活 |
+| 任何收尾时刻（认识完用户/初始化完/出完产物） | "主动引导"节 + 硬规则第 4 条 | 一句话亮家底，句号 |
 | 用户犹豫、纠结、比较选项 | `references/query-protocol.md`；可跑 `ds.py contrast 话题` | 先把这个话题最早和最近的说法并排摆出来，再谈建议，AI 不替用户下结论 |
 | 用户说"我要做X / 准备Y" | `references/writeback-protocol.md` 承诺记账 | 记入 promises.jsonl（open），当场说一声 |
 | 用户说"X做完了 / 这事黄了" | `references/writeback-protocol.md` 承诺记账 | 对应账目改成 closed/dropped，当场说一声 |
@@ -59,6 +60,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 1. 引用我的原话必须带日期；编我没说过的话，一次都不行
 2. 用户数据（数据目录里的 portrait.md 含隐私）只在本机本会话用，不进任何外部请求——除非我当次明确说"可以"（详见 references/privacy-rules.md）
 3. 数据目录怎么找：见 `references/data-locations.md`（按机器自动定位，不写死路径）
+4. **加载或初始化收尾，必须亮一次家底**：用一句话告诉用户本 skill 还能出什么（月度三页纸、欠账看板 HTML、随身说明书、新旧说法对比）。不管走的是哪条路径——认识用户、初始化蒸馏、写回更新——收尾都要带这一句。引导不超过一句，用户说不用就停。详见"主动引导"节
 
 ## 数据从哪来
 
