@@ -14,10 +14,11 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 1. 环境变量 `WORD_MIRROR_HOME`
 2. `~/.wordmirror/bind.json` 里写的位置（`ds.py bind <目录>` 接上已有数据）
 3. `~/.wordmirror/`
-4. 都没有 → `~/.wordmirror/`（第一次用时建）
+4. 从 skill 目录向上找含 `data/corpus_dedup.jsonl` 的祖先目录（skill 装在完整仓库里时自动生效）
+5. 都没有 → `~/.wordmirror/`（第一次用时建）
 详细见 `references/data-locations.md`。
 
-**项目层**（这个项目的事：说过要做的事）——在哪个目录干活就记哪：`<当前目录>/.wordmirror/promises.jsonl`。
+**项目层**（这个项目的事：说过要做的事）——在哪个目录干活就记哪：`<当前目录>/.wordmirror/promises.jsonl`。⚠️ **账本里是原话，可能含隐私——默认别让它进 git**（项目 `.gitignore` 加一行 `.wordmirror/`）。
 
 数据就位后，主力文件在数据目录 `data/` 下：
 - `corpus_dedup.jsonl` 你说的每句话，每行一条 `{agent, date, proj, sid, msg}`
@@ -49,7 +50,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit
 ### 记事 / 写回
 用户亲口确认的事实才记："我决定了 X""这事完了/黄了""不是 22 万是 20 万"。你的推断、他随口的情绪、"我在想要不要"都**不记**。拿不准就问一句"这个要记吗"。
 - 说要做的事 → `python scripts/ds.py promise add "事"`；做完了 `promise done 关键词`，不做了 `promise drop 关键词`
-- 确认过的事实 → `python scripts/ds.py wb add "事实" --topic 主题 --ref 依据`
+- 确认过的事实 → `python scripts/ds.py wb add "事实" --topic 主题 --ref 依据 --agent 当前工具名`
 **这两类写操作只走命令，不要自己手写 jsonl**——命令保证格式对、坏行拦得住。写完当场回一声"记下了：X"。详见 `references/writeback-protocol.md`。
 
 ### 把情况分享给别的 AI

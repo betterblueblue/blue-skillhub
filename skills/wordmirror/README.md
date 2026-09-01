@@ -38,13 +38,13 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 2. 对你的 agent 说：**初始化 wordmirror**
 3. 日常使用不用任何命令——"我之前说过什么""记住这个""这个能发出去吗"，直接说就行
 
-命令行入口（可选）：`scripts/ds.py`——`init`（看看你机器上有哪些 AI 的记录）、`ingest`（把你说过话提取出来）、`ask`（搜，自动带近义词）、`contrast`（同一件事前后说法并排看）、`promise`（说过要做的事：add 记一笔 / done 划掉）、`export`（随身说明书，只含能公开的内容）、`monthly`（这个月的报告）、`install`（装进别的 AI）、`bind`（把已有数据接上）、`where`（数据在哪、你的情况多久没更新）。
+命令行入口（可选）：`scripts/ds.py`——`ingest`（把你说过话提取出来）、`promise`（说过要做的事：add 记一笔 / done 划掉）、`wb`（记你确认过的事：add / list）、`vec`（按意思搜：build / status）、`monthly`（这个月的报告）、`bind`（把已有数据接上）、`check`（自检）、`open`（浏览器打开产物首页）。
 
 ## 数据放在哪（两层）
 
 **全局层**——"你是谁"（你的情况/规矩/你说的话/月报），不分项目，跟着你走。怎么找到它：环境变量 `WORD_MIRROR_HOME` → `ds.py bind` 接上的那个位置 → `~/.wordmirror/` → skill 所在仓库 → 默认 `~/.wordmirror/`（第一次用时自动建）。旧名字 `DIGITAL_SELF_HOME`、`~/.digital-self/` 也能认。详见 `references/data-locations.md`。
 
-**项目层**——"这个项目的事"（说过要做的事/记的事），在哪个目录干活就记哪：`<当前目录>/.wordmirror/promises.jsonl`，第一次记时自动建，可以跟着项目进 git。每次开工两层都看；月报里"办完的事"也收两层。
+**项目层**——"这个项目的事"（说过要做的事/记的事），在哪个目录干活就记哪：`<当前目录>/.wordmirror/promises.jsonl`，第一次记时自动建。⚠️ **注意：账本里存的是你的原话，可能含隐私（姓名/公司/薪资…）。默认不要把它提交进 git**——建议在项目 `.gitignore` 里加一行 `.wordmirror/`；真想跟着项目走，先把内容过一遍再手动挑出来。每次开工两层都看；月报里"办完的事"也收两层。
 
 ## 单装 vs 完整仓库
 
@@ -52,6 +52,16 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 
 - **数据已在完整仓库里**：`python ds.py bind <完整仓库根>` 一条命令接上（推荐），或设环境变量 `WORD_MIRROR_HOME`
 - **还没有数据**：克隆完整仓库后从那边初始化
+
+## 支持哪些 agent
+
+ingest 会探测并提取你在这些工具里说过的话（清单在完整仓库的 `engine/detect_agents.py` 维护）：
+
+- Claude Code、Codex、Cursor、DeepSeek Harness、美团 CatPaw、zcode、Qwen、WorkBuddy、Pi、AtomCode、Google Antigravity（Grok 仅能采 shell 输入）
+
+各工具存档格式不同，个别要多装一个依赖：**DeepSeek Harness 需要 `pip install zstandard`**（解压它的 zstd 会话文件）。缺了不影响其他工具，只是 dsh 跳过并在跑 ingest 时提示。
+
+想加一个新的 agent：在 `engine/detect_agents.py` 加一行探测，再在 `extract_all.py` / `extract_ai.py` 各写一个解析函数。
 
 ## 目录导览
 

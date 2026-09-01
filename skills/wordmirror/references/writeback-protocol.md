@@ -22,7 +22,7 @@
 **硬门槛：写回和欠账记账一律跑命令，禁止直接编辑 jsonl 文件。** 命令保证格式永远正确、坏账本永远进不了写入路径（手写没有这个保证——模型换个宿主就可能写出坏行）。命令不可用（找不到脚本/Python）才允许按下面格式手写，且写完跑 `ds.py promise` 验证能读出来。
 
 ```bash
-python <skill目录>/scripts/ds.py wb add "事实内容" --topic 主题 --ref "用户原话"
+python <skill目录>/scripts/ds.py wb add "事实内容" --topic 主题 --ref "用户原话" [--agent 工具名]
 # 欠账本见下节：promise add / promise done
 ```
 
@@ -32,7 +32,7 @@ python <skill目录>/scripts/ds.py wb add "事实内容" --topic 主题 --ref "�
 {"date": "YYYY-MM-DD", "source": "当前agent名", "topic": "主题（如 jobsearch/项目名）", "msg": "事实内容，用用户的说法", "ref": "依据或用户原话"}
 ```
 
-示例：
+示例（日期换成当天，`YYYY-MM-DD`）：
 ```json
 {"date": "2026-08-30", "source": "zcode", "topic": "project/demo", "msg": "demo 项目 7/19 提交，无回复，确认关闭等待", "ref": "用户原话「没有消息」"}
 ```
@@ -53,7 +53,7 @@ python <skill目录>/scripts/ds.py wb add "事实内容" --topic 主题 --ref "�
 **一律走命令**（格式保证 + 坏账本拦截都在命令里）：
 
 ```bash
-python <skill目录>/scripts/ds.py promise add 要做的事          # 记一笔（open）
+python <skill目录>/scripts/ds.py promise add 要做的事 [--agent 工具名]  # 记一笔（open）
 python <skill目录>/scripts/ds.py promise done 关键词           # 划掉（closed）
 python <skill目录>/scripts/ds.py promise drop 关键词           # 不做了（dropped）
 python <skill目录>/scripts/ds.py promise                       # 看两层欠账

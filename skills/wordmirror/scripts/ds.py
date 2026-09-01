@@ -14,7 +14,7 @@
 记账 / 写回（中护栏：只走命令，保证格式对、坏行拦得住）：
     python ds.py promise           看说过要做的事（哪些还没做完）
     python ds.py promise add 要做的事 / promise done 关键词 / promise drop 关键词
-    python ds.py wb add "事实" --topic 主题   记下一条你确认过的事（--ref 附依据）
+    python ds.py wb add "事实" --topic 主题 [--agent 工具名]   记下一条你确认过的事（--ref 附依据）
     python ds.py wb list           看记下的事
 
 地基 / 护栏：
@@ -38,9 +38,11 @@ def _find_base():
     def _has_data(p):
         return os.path.isdir(os.path.join(p, 'data'))
     env = os.environ.get('WORD_MIRROR_HOME') or os.environ.get('DIGITAL_SELF_HOME')
-    if env and _has_data(env):
+    if env:
         how = 'WORD_MIRROR_HOME' if os.environ.get('WORD_MIRROR_HOME') else 'DIGITAL_SELF_HOME'
-        return env, '环境变量 %s' % how
+        if _has_data(env):
+            return env, '环境变量 %s' % how
+        return env, '环境变量 %s（还没有数据，首次写入时创建）' % how
     home = os.path.join(os.path.expanduser('~'), '.wordmirror')
     bind_p = os.path.join(home, 'bind.json')
     if os.path.isfile(bind_p):
@@ -101,7 +103,19 @@ def run(script, **kw):
         sys.exit(1)
     return r
 
+def _jsonl_count(p):
+    if not os.path.exists(p):
+        return 0
+    return sum(1 for line in open(p, encoding='utf-8') if line.strip())
+
+def _ledger_snapshot():
+    """ingest 前快照：writebacks + 两层 promises 的行数，用于结束后确认没被清空。"""
+    n_wb = _jsonl_count(os.path.join(DATA, 'user_writebacks.jsonl'))
+    n_prom = sum(_jsonl_count(p) for p in _ledger_paths())
+    return n_wb, n_prom
+
 def cmd_ingest():
+    before = _ledger_snapshot()
     steps = [
         ('提取你说的话', 'extract_all.py'),
         ('提取 AI 的回复', 'extract_ai.py'),
@@ -120,6 +134,9 @@ def cmd_ingest():
     _dedup()
     # 汇报第一口糖
     _sugar_report()
+    after = _ledger_snapshot()
+    if after[0] < before[0] or after[1] < before[1]:
+        print('警告：ingest 后 writebacks（%d→%d）/ promises（%d→%d）行数变少，疑似被清空或覆盖，请检查。' % (before[0], after[0], before[1], after[1]))
     print('=' * 56)
     print('完成。看结果：')
     print('  python ds.py open   （浏览器打开「翻给你看」入口页）')
@@ -132,8 +149,8 @@ def _dedup():
     seen, out = set(), []
     for line in open(src, encoding='utf-8'):
         o = json.loads(line)
-        # 去重键 = 全文归一化哈希。截前 150 字符会把长消息误判成同一条
-        k = hashlib.sha1(re.sub(r'\s+', '', o['msg']).encode('utf-8')).hexdigest()
+        # 去重键 = 日期 + 全文归一化哈希。带日期：同一天的同内容才去重，跨日期的同内容保留（保住引文日期）
+        k = hashlib.sha1((o.get('date', '') + '|' + re.sub(r'\s+', '', o['msg'])).encode('utf-8')).hexdigest()
         if k in seen:
             continue
         seen.add(k)
@@ -208,7 +225,7 @@ def cmd_check():
 
 def cmd_wb(args):
     if not args or args[0] not in ('add', 'list'):
-        print('用法：python ds.py wb add "事实内容" --topic 主题 [--ref 依据]')
+        print('用法：python ds.py wb add "事实内容" --topic 主题 [--ref 依据] [--agent 工具名]')
         print('      python ds.py wb list           # 看已写回的事实')
         return
     wb_p = os.path.join(DATA, 'user_writebacks.jsonl')
@@ -230,14 +247,16 @@ def cmd_wb(args):
         if len(rows) > 20:
             print('  …（共 %d 条，显示最近 20 条）' % len(rows))
         return
-    # add：解析 --topic/--ref 选项，其余为内容
-    text, topic, ref = [], 'general', ''
+    # add：解析 --topic/--ref/--agent 选项，其余为内容
+    text, topic, ref, agent = [], 'general', '', 'cli'
     i = 1
     while i < len(args):
         if args[i] == '--topic' and i + 1 < len(args):
             topic = args[i + 1]; i += 2
         elif args[i] == '--ref' and i + 1 < len(args):
             ref = args[i + 1]; i += 2
+        elif args[i] == '--agent' and i + 1 < len(args):
+            agent = args[i + 1]; i += 2
         else:
             text.append(args[i]); i += 1
     msg = ' '.join(text).strip()
@@ -255,7 +274,7 @@ def cmd_wb(args):
                 except Exception:
                     print('写回文件 %s 第 %d 行不是合法 JSON。先手工修复或删掉那行，我不替你静默改账。' % (wb_p, i))
                     sys.exit(1)
-    row = {'date': datetime.date.today().isoformat(), 'source': 'cli',
+    row = {'date': datetime.date.today().isoformat(), 'source': agent,
            'topic': topic, 'msg': msg, 'ref': ref or '用户当次确认'}
     with open(wb_p, 'a', encoding='utf-8') as f:
         f.write(json.dumps(row, ensure_ascii=False) + '\n')
@@ -328,14 +347,32 @@ def cmd_promise(args):
         return
     sub = args[0]
     if sub == 'add':
-        text = ' '.join(args[1:]).strip()
+        # 解析 --agent 选项（可选），其余为要做的事
+        text_parts, agent = [], 'cli'
+        i = 1
+        while i < len(args):
+            if args[i] == '--agent' and i + 1 < len(args):
+                agent = args[i + 1]; i += 2
+            else:
+                text_parts.append(args[i]); i += 1
+        text = ' '.join(text_parts).strip()
         if not text:
-            print('用法：python ds.py promise add 要做的事')
+            print('用法：python ds.py promise add 要做的事 [--agent 工具名]')
             sys.exit(1)
         pf = _promises_file()
         os.makedirs(os.path.dirname(pf), exist_ok=True)
+        # 坏行拦截：写操作前确认现有文件每行都合法（写入不修复也不吞坏行），与 wb add 对齐
+        if os.path.exists(pf):
+            for i, line in enumerate(open(pf, encoding='utf-8'), 1):
+                line = line.strip()
+                if line:
+                    try:
+                        json.loads(line)
+                    except Exception:
+                        print('欠账本 %s 第 %d 行不是合法 JSON。先手工修复或删掉那行，我不替你静默改账。' % (pf, i))
+                        sys.exit(1)
         row = {'date': datetime.date.today().isoformat(), 'text': text,
-               'status': 'open', 'agent': 'cli'}
+               'status': 'open', 'agent': agent}
         with open(pf, 'a', encoding='utf-8') as f:
             f.write(json.dumps(row, ensure_ascii=False) + '\n')
         print('记下了：%s（%s）' % (text, pf))
@@ -344,21 +381,30 @@ def cmd_promise(args):
         if not kw:
             print('必须给关键词，否则分不清要划哪笔。用法：python ds.py promise done 关键词')
             sys.exit(1)
+        # 先扫两层账本，收集全部 open 命中项（先不划，避免静默划错）
+        hits = []  # (pf, items, o)
         for pf in _ledger_paths():
             items = _load_promises(pf, strict=True)  # 写操作前严格查损，坏账本宁可停也不吞
-            hit = next((o for o in items if o.get('status') == 'open' and kw in o.get('text', '')), None)
-            if not hit:
-                continue
-            hit['status'] = 'closed' if sub == 'done' else 'dropped'
-            hit['closed_date'] = datetime.date.today().isoformat()
-            with open(pf, 'w', encoding='utf-8') as f:
-                for o in items:
-                    line = dict(o); line.pop('_line', None)
-                    f.write(json.dumps(line, ensure_ascii=False) + '\n')
-            print('划掉了：%s（%s）' % (hit['text'], pf))
-            return
-        print('没找到开着的事里含「%s」的。' % kw)
-        sys.exit(1)
+            for o in items:
+                if o.get('status') == 'open' and kw in o.get('text', ''):
+                    hits.append((pf, items, o))
+        if not hits:
+            print('没找到开着的事里含「%s」的。' % kw)
+            sys.exit(1)
+        if len(hits) > 1:
+            print('关键词「%s」命中 %d 条开着的事项——为避免划错，先停手不划。请用更精确的关键词重跑，或按下面清单确认要划哪条：' % (kw, len(hits)))
+            for n, (pf, _, o) in enumerate(hits, 1):
+                print('  %d) [%s] %s 记的（%s）| %s' % (n, _ledger_tag(pf), o.get('date', '?'), pf, o.get('text', '')))
+            sys.exit(1)
+        pf, items, hit = hits[0]
+        hit['status'] = 'closed' if sub == 'done' else 'dropped'
+        hit['closed_date'] = datetime.date.today().isoformat()
+        with open(pf, 'w', encoding='utf-8') as f:
+            for o in items:
+                line = dict(o); line.pop('_line', None)
+                f.write(json.dumps(line, ensure_ascii=False) + '\n')
+        print('划掉了：%s（%s）' % (hit['text'], pf))
+        return
     else:
         print('用法：python ds.py promise / promise add 文本 / promise done 关键词')
 

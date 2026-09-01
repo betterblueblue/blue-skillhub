@@ -20,7 +20,7 @@ python <skill目录>/scripts/ds.py bind E:\path\to\digital-self
 
 之后所有命令（ingest / vec / monthly / promise / wb / open）都用绑定的数据；查旧话、看数据这种活你直接读绑定位置的文件就行。解绑：`ds.py bind --clear`。
 
-**项目层（欠账/写回专用）**：当前目录 `.wordmirror/promises.jsonl`——在哪个目录干活，账记哪，随项目走（可进项目 git）。全局层和项目层开场都查；`ds.py promise` 也扫两层。
+**项目层（欠账/写回专用）**：当前目录 `.wordmirror/promises.jsonl`——在哪个目录干活，账记哪，随项目走。⚠️ **账本存的是你的原话、可能含隐私，默认别进 git**——项目 `.gitignore` 加一行 `.wordmirror/`；真想跟着项目走，先把内容过一遍再手动挑出来。全局层和项目层开场都查；`ds.py promise` 也扫两层。
 
 ## 验证找对了
 

@@ -229,8 +229,8 @@ let data = [];
 const statusLabel = { stalled: '说了没下文（30 天+）', cooling: '自己放凉了', waiting: '在等对方消息', done: '办完了' };
 
 function loadData() {
-  const j = __TRACKER_DATA__;
-  data = j.items;
+  data = __TRACKER_DATA__;
+  if (!Array.isArray(data)) data = data.items || [];
   // "86d" 这类缩写统一显示成 "86 天"
   data.forEach(it => { it.age = String(it.age).replace(/^(\d+)d$/i, '$1 天'); });
   // 侧边栏计数动态刷新
@@ -249,6 +249,10 @@ let selectedId = null;
 
 loadData();
 
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function render() {
   const container = document.getElementById('rowsContainer');
   const keyword = document.getElementById('filterInput').value.trim().toLowerCase();
@@ -262,16 +266,16 @@ function render() {
   document.getElementById('itemCountLabel').innerText = filtered.length + ' 个事项';
 
   container.innerHTML = filtered.map(item => `
-    <div class="issue-row ${item.id === selectedId ? 'selected' : ''}" onclick="selectRow('${item.id}')">
-      <div class="row-id">${item.id}</div>
-      <div class="row-status-icon"><span class="status-dot ${item.status}"></span></div>
+    <div class="issue-row ${item.id === selectedId ? 'selected' : ''}" data-id="${esc(item.id)}" onclick="selectRow(this.dataset.id)">
+      <div class="row-id">${esc(item.id)}</div>
+      <div class="row-status-icon"><span class="status-dot ${esc(item.status)}"></span></div>
       <div class="row-title-wrap">
-        <span class="row-title">${item.title}</span>
-        <span class="row-desc-preview">— ${item.desc}</span>
+        <span class="row-title">${esc(item.title)}</span>
+        <span class="row-desc-preview">— ${esc(item.desc)}</span>
       </div>
-      <div class="row-proj"><span class="proj-badge">${item.proj}</span></div>
-      <div class="row-age ${item.ageClass}">${item.age}</div>
-      <div class="row-date">${item.date}</div>
+      <div class="row-proj"><span class="proj-badge">${esc(item.proj)}</span></div>
+      <div class="row-age ${esc(item.ageClass)}">${esc(item.age)}</div>
+      <div class="row-date">${esc(item.date)}</div>
     </div>
   `).join('');
 }

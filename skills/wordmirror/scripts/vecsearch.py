@@ -60,12 +60,6 @@ def _load_model():
     return SentenceTransformer(MODEL_NAME)
 
 
-def _open_collection():
-    import chromadb
-    client = chromadb.PersistentClient(path=INDEX_DIR)
-    return client.get_or_create_collection('wordmirror_corpus', metadata={'hnsw:space': 'cosine'})
-
-
 def _iter_rows():
     """语料行：corpus_dedup 为主，user_writebacks 也入库（写回是确认过的事实，检索该能查到）。"""
     for f in ('corpus_dedup.jsonl', 'user_writebacks.jsonl'):
@@ -194,9 +188,14 @@ def status():
     col = _open_collection()
     print('按意思搜的索引：%d 条 | 模型 %s | 建于 %s' % (col.count(), meta.get('model', '?'), meta.get('built', '?')))
     try:
-        n = sum(1 for _ in open(os.path.join(ds.DATA, 'corpus_dedup.jsonl'), encoding='utf-8'))
-        if n and abs(n - col.count()) > 50:
-            print('（你说的话有 %d 条，索引里是 %d 条——跑 python ds.py vec build --update 补齐）' % (n, col.count()))
+        # 索引口径 = corpus_dedup + user_writebacks（见 _iter_rows），两边都数才不误报
+        n = 0
+        for f in ('corpus_dedup.jsonl', 'user_writebacks.jsonl'):
+            p = os.path.join(ds.DATA, f)
+            if os.path.exists(p):
+                n += sum(1 for _ in open(p, encoding='utf-8'))
+        if n - col.count() > 50:
+            print('（数据里共 %d 条，索引里是 %d 条，有 %d 条还没入库——跑 python ds.py vec build --update 补齐）' % (n, col.count(), n - col.count()))
     except FileNotFoundError:
         pass
 

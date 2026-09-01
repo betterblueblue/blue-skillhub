@@ -95,15 +95,25 @@ def build_portrait():
     body = ['<h1 class="display">我是谁，<br>怎么跟我共事</h1>']
     if src:
         body.append('<div class="band"><p>%s</p></div>' % inline(src.group(1)))
-    body.append(render_markdown(md[md.index('## 一句话'):]))
+    idx = md.find('## 一句话')
+    body.append(render_markdown(md[idx:] if idx != -1 else md))
     return ('html/01_我是谁_怎么跟我共事.html',
             page('我是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s <span class="dot">·</span> 言镜整理' % (tag, date), '\n'.join(body)))
 
 
 def build_wrapped():
-    months = load_json(os.path.join(ds.DATA, 'materials_monthly.json'))
-    wf = load_json(os.path.join(ds.DATA, 'stats_wordfreq.json'))
-    ag = load_json(os.path.join(ds.DATA, 'stats_agents.json'))
+    paths = {
+        'materials_monthly': os.path.join(ds.DATA, 'materials_monthly.json'),
+        'stats_wordfreq': os.path.join(ds.DATA, 'stats_wordfreq.json'),
+        'stats_agents': os.path.join(ds.DATA, 'stats_agents.json'),
+    }
+    missing = [k for k, p in paths.items() if not os.path.exists(p)]
+    if missing:
+        print('跳过 10 那页：统计素材还没生成（先跑 ingest），缺 %s' % '、'.join(missing))
+        return None
+    months = load_json(paths['materials_monthly'])
+    wf = load_json(paths['stats_wordfreq'])
+    ag = load_json(paths['stats_agents'])
     total = sum(a['msgs'] for a in ag.values())
     keys = sorted(months)
     span = '%s ~ %s' % (keys[0], keys[-1])
@@ -142,7 +152,11 @@ def build_wrapped():
 
 
 def build_index():
-    ag = load_json(os.path.join(ds.DATA, 'stats_agents.json'))
+    ag_p = os.path.join(ds.DATA, 'stats_agents.json')
+    if not os.path.exists(ag_p):
+        print('跳过首页：统计素材 stats_agents.json 还没生成（先跑 ingest）')
+        return None
+    ag = load_json(ag_p)
     tr_p = os.path.join(ds.DATA, 'tracker_items.json')
     rows = []
     if os.path.exists(tr_p):
@@ -312,7 +326,10 @@ def build_tracker():
     if not os.path.exists(tr_p):
         print('跳过 03 那页：还没生成（先跑 ingest）')
         return None
-    data_text = open(tr_p, encoding='utf-8').read().strip()
+    items = load_json(tr_p)
+    items = items if isinstance(items, list) else items.get('items', [])
+    # 内联进 <script> 的 JSON 必须转义 `</`，否则用户原话里的 </script> 会在解析阶段提前闭合脚本块
+    data_text = json.dumps(items, ensure_ascii=False).replace('</', '<\\/')
     out = tpl.replace('__TRACKER_DATA__', data_text)
     return ('html/03_我说过要做的事_现在都怎么样了.html', out)
 

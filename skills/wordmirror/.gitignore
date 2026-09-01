@@ -1,0 +1,6 @@
+# Python 编译产物
+__pycache__/
+*.pyc
+
+# 项目层账本：存用户原话、可能含隐私，默认不进 git（想进 git 的用户自己挑出来）
+.wordmirror/
