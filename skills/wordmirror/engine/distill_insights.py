@@ -16,7 +16,7 @@ SOP 第 3 步的机器部分：把散落在语料/欠账/写回里的"事实落�
 """
 import json, re, collections, os, datetime, sys
 
-BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', 'wordmirror'))
+BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', '.wordmirror'))
 DATA = os.path.join(BASE, 'data')
 BS = chr(92)
 TODAY = datetime.date.today()

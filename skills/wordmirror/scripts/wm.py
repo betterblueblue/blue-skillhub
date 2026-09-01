@@ -27,23 +27,22 @@ import os, sys, subprocess, json, webbrowser, re, datetime
 
 # 定位两层（data-locations.md 的同款顺序）：
 # 全局层（画像/语料/月报——"你是谁"，不分项目）：
-#   1) 环境变量 WORD_MIRROR_HOME（旧名 DIGITAL_SELF_HOME 兼容）
-#   2) bind 指针 ~/wordmirror/bind.json（数据在别处时接上）
-#   3) ~/wordmirror（旧 ~/.digital-self 兼容）
+#   1) 环境变量 WORD_MIRROR_HOME
+#   2) bind 指针 ~/.wordmirror/bind.json（数据在别处时接上）
+#   3) ~/.wordmirror（默认数据根）
 #   4) 脚本祖先逐级向上找仓库布局（data/ 下有语料签名才算，防无关 data/ 目录劫持）
-#   5) 都没有 → 默认 ~/wordmirror，首次写入时自动创建
+#   5) 都没有 → 默认 ~/.wordmirror，首次写入时自动创建
 # 项目层（欠账/写回——"这个项目的事"）：<当前目录>/.wordmirror/，在哪个目录干活账记哪
 def _find_base():
     """返回 (数据仓库根, 定位方式说明)。"""
     def _has_data(p):
         return os.path.isdir(os.path.join(p, 'data'))
-    env = os.environ.get('WORD_MIRROR_HOME') or os.environ.get('DIGITAL_SELF_HOME')
+    env = os.environ.get('WORD_MIRROR_HOME')
     if env:
-        how = 'WORD_MIRROR_HOME' if os.environ.get('WORD_MIRROR_HOME') else 'DIGITAL_SELF_HOME'
         if _has_data(env):
-            return env, '环境变量 %s' % how
-        return env, '环境变量 %s（还没有数据，首次写入时创建）' % how
-    home = os.path.join(os.path.expanduser('~'), 'wordmirror')
+            return env, '环境变量 WORD_MIRROR_HOME'
+        return env, '环境变量 WORD_MIRROR_HOME（还没有数据，首次写入时创建）'
+    home = os.path.join(os.path.expanduser('~'), '.wordmirror')
     bind_p = os.path.join(home, 'bind.json')
     if os.path.isfile(bind_p):
         try:
@@ -53,10 +52,7 @@ def _find_base():
         if target and _has_data(target):
             return target, 'bind 指针（%s）' % bind_p
     if _has_data(home):
-        return home, '标准位置 ~/wordmirror'
-    legacy = os.path.join(os.path.expanduser('~'), '.digital-self')
-    if _has_data(legacy):
-        return legacy, '旧目录 ~/.digital-self'
+        return home, '标准位置 ~/.wordmirror'
     d = os.path.dirname(os.path.abspath(__file__))
     while True:
         if _has_data(d) and any(os.path.exists(os.path.join(d, 'data', f))
@@ -66,7 +62,7 @@ def _find_base():
         if parent == d:
             break
         d = parent
-    return home, '默认 ~/wordmirror（还没有数据，首次写入时创建）'
+    return home, '默认 ~/.wordmirror（还没有数据，首次写入时创建）'
 
 def _promises_file():
     """账本分两层：在仓库实例目录里干活 → 全局 data/；在其他项目目录 → 该目录 .wordmirror/。"""
@@ -189,8 +185,8 @@ def cmd_vec(args):
 
 
 def cmd_bind(args):
-    """数据在别处时，用 bind 把两者接上。指针在 ~/wordmirror/bind.json。"""
-    home = os.path.join(os.path.expanduser('~'), 'wordmirror')
+    """数据在别处时，用 bind 把两者接上。指针在 ~/.wordmirror/bind.json。"""
+    home = os.path.join(os.path.expanduser('~'), '.wordmirror')
     bind_p = os.path.join(home, 'bind.json')
     if args and args[0] == '--clear':
         if os.path.isfile(bind_p):
