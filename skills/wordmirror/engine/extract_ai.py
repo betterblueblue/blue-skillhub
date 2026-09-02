@@ -10,6 +10,7 @@ OUT = os.path.join(BASE, 'data', 'ai_messages.jsonl')
 MAXLEN = 1200
 
 def write(out, agent, date, proj, sid, msg):
+    msg = clean_ai(msg)
     if msg and len(msg) >= 10:
         out.write(json.dumps({'agent': agent, 'date': date, 'proj': proj, 'sid': sid, 'msg': msg[:MAXLEN]}, ensure_ascii=False) + '\n')
         return 1
@@ -28,8 +29,20 @@ def rec(agent, n, files):
     stats[agent] = (n, files)
 
 BOILER_AI = (
-    'The user wants me', 'I need to', 'I\'ll start', 'Let me',  # 这些是思考,过滤
+    'The user wants me', 'I need to', 'I\'ll start', 'I\'ll begin',
+    'Let me first', 'I should first', 'First, I', 'Let me',  # 这些是思考/开场白,过滤
 )
+
+
+def clean_ai(m):
+    """过滤 AI 的思考/开场白，只留正式回复。"""
+    m = (m or '').strip()
+    if not m:
+        return None
+    for p in BOILER_AI:
+        if m.startswith(p):
+            return None
+    return m
 
 def ex_codex(out):
     n = f = 0
@@ -322,22 +335,30 @@ def ex_dsh(out):
 def ex_cursor(out):
     # Cursor AI 气泡：type=2 的 bubbleId，正文在 text 字段（markdown）。
     n = f = 0
+    bases = []
     appdata = os.environ.get('APPDATA')
-    if not appdata:
-        appdata = os.path.join(H, 'AppData', 'Roaming')
-    base = os.path.join(appdata, 'Cursor', 'User')
-    if not os.path.isdir(base):
-        return rec('cursor', 0, 0)
+    if appdata:
+        bases.append(os.path.join(appdata, 'Cursor', 'User'))
+    bases += [
+        os.path.join(H, 'Library', 'Application Support', 'Cursor', 'User'),  # macOS
+        os.path.join(H, '.config', 'Cursor', 'User'),                          # Linux
+        os.path.join(H, 'AppData', 'Roaming', 'Cursor', 'User'),               # Windows 兜底
+    ]
     dbs = []
-    g = os.path.join(base, 'globalStorage', 'state.vscdb')
-    if os.path.isfile(g):
-        dbs.append(g)
-    ws = os.path.join(base, 'workspaceStorage')
-    if os.path.isdir(ws):
-        for d in os.listdir(ws):
-            p = os.path.join(ws, d, 'state.vscdb')
-            if os.path.isfile(p):
-                dbs.append(p)
+    for base in bases:
+        if not os.path.isdir(base):
+            continue
+        g = os.path.join(base, 'globalStorage', 'state.vscdb')
+        if os.path.isfile(g):
+            dbs.append(g)
+        ws = os.path.join(base, 'workspaceStorage')
+        if os.path.isdir(ws):
+            for d in os.listdir(ws):
+                p = os.path.join(ws, d, 'state.vscdb')
+                if os.path.isfile(p):
+                    dbs.append(p)
+    if not dbs:
+        return rec('cursor', 0, 0)
     for db in dbs:
         f += 1
         cid_ws = {}

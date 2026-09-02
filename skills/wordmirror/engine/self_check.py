@@ -88,15 +88,9 @@ else:
     check('index 链接', not dead and not orphan,
           '%d 链接零死链' % len(links) if not dead and not orphan else '死链:%s 孤儿:%s' % (dead, orphan))
 
-# ===== 4. 模板与产物同步 =====
-tpl_ok = True
-tpl = os.path.join('templates', 'tracker.html')
-prod = os.path.join(PROD, 'html/03_我说过要做的事_现在都怎么样了.html')
-if os.path.exists(tpl) and os.path.exists(prod):
-    a = open(tpl, encoding='utf-8').read()[:2000]
-    b = open(prod, encoding='utf-8').read()[:2000]
-    tpl_ok = a == b
-check('模板与产物同步', tpl_ok, 'tracker 一致（模板在 skill 包）' if tpl_ok else '模板改了没重渲染？跑 python scripts/render.py tracker')
+# ===== 4. 读页模板存在 =====
+tpl_ok = os.path.exists(os.path.join('templates', 'read_shell.html'))
+check('读页模板存在', tpl_ok, 'read_shell.html 在' if tpl_ok else '缺 templates/read_shell.html')
 
 # ===== 5. skill 引用路径 =====
 sk = open('SKILL.md', encoding='utf-8').read()
@@ -185,6 +179,7 @@ required = {
     'references/privacy-rules.md': '隐私规则',
     'references/ingest-protocol.md': '更新协议',
     'references/mirror-protocol.md': '照见协议',
+    'references/distill-report-protocol.md': '报告蒸馏协议',
     'references/data-locations.md': '数据定位',
     'scripts/wm.py': 'agent 可调用的脚本',
 }
@@ -248,8 +243,8 @@ check('开工三句话就位', ok17 and ok17b,
 if '--web' in sys.argv:
     try:
         from playwright.sync_api import sync_playwright
-        pages = ['index.html', '01_我是谁_怎么跟我共事.html',
-                 '03_我说过要做的事_现在都怎么样了.html', '10_翻给你看.html']
+        pages = ['index.html', '01_我是谁.html', '02_我做过的重要决定.html',
+                 '03_说过要做的事.html', '04_该注意的事.html', '09_走过的这几个月.html']
         pages = [p for p in pages if os.path.exists(os.path.join(PROD, 'html/') + p)]
         errs = []
         with sync_playwright() as pw:

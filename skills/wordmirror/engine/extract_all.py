@@ -359,12 +359,15 @@ def ex_cursor(out):
     # type=1 用户 / type=2 AI，正文在 richText（ProseMirror JSON，递归取 text 节点），
     # createdAt 是 ISO 日期；会话头 composerHeaders 给 composerId -> workspaceId 映射。
     n = f = 0
+    bases = []
     appdata = os.environ.get('APPDATA')
-    if not appdata:
-        appdata = os.path.join(H, 'AppData', 'Roaming')
-    base = os.path.join(appdata, 'Cursor', 'User')
-    if not os.path.isdir(base):
-        return rec('cursor', 0, 0)
+    if appdata:
+        bases.append(os.path.join(appdata, 'Cursor', 'User'))
+    bases += [
+        os.path.join(H, 'Library', 'Application Support', 'Cursor', 'User'),  # macOS
+        os.path.join(H, '.config', 'Cursor', 'User'),                          # Linux
+        os.path.join(H, 'AppData', 'Roaming', 'Cursor', 'User'),               # Windows 兜底
+    ]
 
     def _texts(node, acc):
         if isinstance(node, dict):
@@ -378,15 +381,20 @@ def ex_cursor(out):
                 _texts(v, acc)
 
     dbs = []
-    g = os.path.join(base, 'globalStorage', 'state.vscdb')
-    if os.path.isfile(g):
-        dbs.append(g)
-    ws = os.path.join(base, 'workspaceStorage')
-    if os.path.isdir(ws):
-        for d in os.listdir(ws):
-            p = os.path.join(ws, d, 'state.vscdb')
-            if os.path.isfile(p):
-                dbs.append(p)
+    for base in bases:
+        if not os.path.isdir(base):
+            continue
+        g = os.path.join(base, 'globalStorage', 'state.vscdb')
+        if os.path.isfile(g):
+            dbs.append(g)
+        ws = os.path.join(base, 'workspaceStorage')
+        if os.path.isdir(ws):
+            for d in os.listdir(ws):
+                p = os.path.join(ws, d, 'state.vscdb')
+                if os.path.isfile(p):
+                    dbs.append(p)
+    if not dbs:
+        return rec('cursor', 0, 0)
     for db in dbs:
         f += 1
         cid_ws = {}
