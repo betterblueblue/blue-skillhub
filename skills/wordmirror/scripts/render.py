@@ -37,6 +37,27 @@ def inline(s):
     return re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', s)
 
 
+# 带日期原话的三种合法写法（口径统一在这里，新增写法只改这张表）：
+#   「原话」（YYYY-MM-DD） / 「原话」（YYYY-MM-DD，来源） / - YYYY-MM-DD「原话」 / （「原话」，YYYY-MM-DD）
+_QUOTE_PATTERNS = [
+    (re.compile(r'「([^」]+)」[（(]\s*(\d{4}-\d{2}-\d{2})(?:\s*，\s*([^」）)]+))?[）)]'),
+     lambda m: (m.group(2), m.group(1), (m.group(3) or '').strip())),
+    (re.compile(r'[（(]\s*「([^」]+)」\s*，\s*(\d{4}-\d{2}-\d{2})\s*[）)]'),
+     lambda m: (m.group(2), m.group(1), '')),
+    (re.compile(r'(\d{4}-\d{2}-\d{2})「([^」]+)」'),
+     lambda m: (m.group(1), m.group(2), '')),
+]
+
+
+def _extract_quotes(line):
+    """一行里抽出带日期的原话，返回 ([(日期, 原话, 来源)...], 剩下的话)。
+    没带日期的「引号」不动——那不是能上卡的原话，留在正文里。"""
+    quotes = []
+    for pat, grab in _QUOTE_PATTERNS:
+        line = pat.sub(lambda m: (quotes.append(grab(m)), '')[1], line)
+    return quotes, line.strip()
+
+
 def render_markdown(md):
     """portrait.md 用到的 md 子集：##/###/-/**/表格/引用行。"""
     lines = md.splitlines()
@@ -70,6 +91,13 @@ def render_markdown(md):
                 out.append('<tr>%s</tr>' % ''.join(cells))
             out.append('</table>')
             i = j - 1
+        elif re.match(r'^\d+\. ', ln):
+            out.append('<ol>')
+            while i < len(lines) and re.match(r'^\d+\. ', lines[i]):
+                out.append('<li>%s</li>' % inline(re.sub(r'^\d+\. ', '', lines[i])))
+                i += 1
+            out.append('</ol>')
+            continue
         elif ln.startswith('- '):
             out.append('<ul>')
             while i < len(lines) and lines[i].startswith('- '):
@@ -181,10 +209,9 @@ def _timeline_section(section):
         line = line.strip()
         if not line or line.startswith('<!--'):
             continue
-        found = re.findall(r'「([^」]+)」[（(](\d{4}-\d{2}-\d{2})[）)]', line)
-        for quote, date in found:
-            quotes.append((quote, date))
-            line = re.sub(r'「[^」]+」[（(]\d{4}-\d{2}-\d{2}[）)]', '', line).strip(' -—')
+        got, line = _extract_quotes(line)
+        quotes.extend((q, d) for d, q, s in got)
+        line = line.strip(' -—')
         if line:
             text.append(line[2:] if line.startswith('- ') else line)
     out = ['<article class="timeline-chapter">', '<div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % inline(title)]
@@ -206,13 +233,12 @@ def _timeline_special(section, title, kind):
         line = raw.strip()
         if not line or line.startswith('<!--'):
             continue
-        found = re.findall(r'「([^」]+)」[（(](\d{4}-\d{2}-\d{2})[）)]', line)
-        if found:
-            quotes.extend((d, q) for q, d in found)
-            line = re.sub(r'「[^」]+」[（(]\d{4}-\d{2}-\d{2}[）)]', '', line).strip(' -—')
+        got, line = _extract_quotes(line)
+        quotes.extend((d, q) for d, q, s in got)
         em = re.match(r'^-\s+(\d{4}-\d{2}-\d{2})\s+(.+)$', line)
-        if em and not found:
+        if em:
             events.append(em.groups()); continue
+        line = line.strip(' -—')
         if line: prose.append(line[2:] if line.startswith('- ') else line)
     out = ['<article class="timeline-chapter timeline-%s">' % kind, '<div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % inline(title)]
     if kind == 'facing' and len(quotes) >= 2:
@@ -394,20 +420,31 @@ AGENT_NAMES = {
 
 
 def _parse_agent_section(section):
+    """解析各工具章节：## 大标题 + ### 子标题分组；子块内收集引文和承接文字。"""
     lines = section.splitlines()
     title = lines[0][3:].strip() if lines and lines[0].startswith('## ') else ''
-    quotes, prose = [], []
+    blocks = []
+
+    def new_block():
+        b = {'head': '', 'quotes': [], 'prose': []}
+        blocks.append(b)
+        return b
+
+    cur = new_block()
     for raw in lines[1:]:
         line = raw.strip()
         if not line or line.startswith('<!--'):
             continue
-        found = re.findall(r'「([^」]+)」[（(](\d{4}-\d{2}-\d{2})(?:，([^」）)]+))?[）)]', line)
-        if found:
-            quotes.extend((d, q, s.strip() if s else '') for q, d, s in found)
-            line = re.sub(r'「[^」]+」[（(]\d{4}-\d{2}-\d{2}(?:，[^」）)]+)?[）)]', '', line).strip(' -—：:')
+        if line.startswith('### '):
+            cur = new_block()
+            cur['head'] = line[4:].strip()
+            continue
+        got, line = _extract_quotes(line)
+        cur['quotes'].extend(got)
+        line = line.strip(' -—：:')
         if line:
-            prose.append(line[2:] if line.startswith('- ') else line)
-    return title, quotes, prose
+            cur['prose'].append(line[2:] if line.startswith('- ') else line)
+    return title, blocks
 
 
 def _agent_quote(date, quote, source=''):
@@ -417,11 +454,12 @@ def _agent_quote(date, quote, source=''):
 def render_agents(md):
     """把各工具的统计说明排成“不同场景里的自己”，兼容旧版 agents.md。"""
     sections = re.split(r'(?=^## )', md, flags=re.MULTILINE)
-    out, current = [], None
+    out = []
     for section in sections:
         if not section.strip():
             continue
-        title, quotes, prose = _parse_agent_section(section)
+        title, blocks = _parse_agent_section(section)
+        blocks = [b for b in blocks if b['head'] or b['quotes'] or b['prose']]
         if not title:
             continue
         if '换了 AI' in title:
@@ -436,16 +474,24 @@ def render_agents(md):
             current = 'legacy'
         cls = 'agent-section agent-%s' % current
         out.append('<article class="%s"><div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % (cls, inline(title)))
-        if current == 'facing' and len(quotes) >= 2:
-            out.append('<div class="facing-row agent-facing"><div class="facing-col"><div class="facing-label">第一种说法</div>%s</div><div class="facing-col"><div class="facing-label">另一种说法</div>%s</div></div>' % (_agent_quote(*quotes[0]), _agent_quote(*quotes[1])))
+        all_quotes = [q for b in blocks for q in b['quotes']]
+        if current == 'facing' and len(all_quotes) >= 2:
+            out.append('<div class="facing-row agent-facing"><div class="facing-col"><div class="facing-label">第一种说法</div>%s</div><div class="facing-col"><div class="facing-label">另一种说法</div>%s</div></div>' % (_agent_quote(*all_quotes[0]), _agent_quote(*all_quotes[1])))
+        elif current == 'agents':
+            # 每个 AI 一张场景卡：### 子标题做卡头，承接文字 + 原话都收进卡里
+            for b in blocks:
+                out.append('<div class="agent-scene"><div class="agent-scene-label">%s</div>' % inline(b['head'] or title))
+                if b['prose']:
+                    out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in b['prose']))
+                out.extend(_agent_quote(*q) for q in b['quotes'])
+                out.append('</div>')
         else:
-            if current == 'agents':
-                for q in quotes:
-                    out.append('<div class="agent-scene"><div class="agent-scene-label">%s</div>%s</div>' % (inline(title), _agent_quote(*q)))
-            else:
-                out.extend(_agent_quote(*q) for q in quotes)
-        if prose:
-            out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in prose))
+            for b in blocks:
+                if b['head']:
+                    out.append('<div class="agent-scene-label">%s</div>' % inline(b['head']))
+                out.extend(_agent_quote(*q) for q in b['quotes'])
+                if b['prose']:
+                    out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in b['prose']))
         out.append('</article>')
     return '\n'.join(out)
 
@@ -623,10 +669,9 @@ def render_tasks(md):
             line = raw.strip()
             if not line or line.startswith('<!--'):
                 continue
-            found = re.findall(r'「([^」]+)」[（(](\d{4}-\d{2}-\d{2})(?:，([^」）)]+))?[）)]', line)
-            if found:
-                quotes.extend((d, q, s.strip() if s else '') for q, d, s in found)
-                line = re.sub(r'「[^」]+」[（(]\d{4}-\d{2}-\d{2}(?:，[^」）)]+)?[）)]', '', line).strip(' -—：:')
+            got, line = _extract_quotes(line)
+            quotes.extend(got)
+            line = line.strip(' -—：:')
             if line:
                 prose.append(line[2:] if line.startswith('- ') else line)
         out.append('<article class="task-section"><div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % inline(title))
@@ -660,11 +705,9 @@ def _parse_ai_section(section):
         line = raw.strip()
         if not line or line.startswith('<!--'):
             continue
-        found = re.findall(r'「([^」]+)」[（(](\d{4}-\d{2}-\d{2})(?:，([^」）)]+))?[）)]', line)
-        if found:
-            for quote, date, source in found:
-                quotes.append((date, quote, source.strip() if source else ''))
-            line = re.sub(r'「[^」]+」[（(]\d{4}-\d{2}-\d{2}(?:，[^」）)]+)?[）)]', '', line).strip(' -—：:')
+        got, line = _extract_quotes(line)
+        quotes.extend(got)
+        line = line.strip(' -—：:')
         if line:
             prose.append(line[2:] if line.startswith('- ') else line)
     return title, quotes, prose

@@ -143,6 +143,9 @@ td.mono, .mono { font-family: var(--font-mono); font-size: 13px; color: var(--mu
 ul { list-style: none; margin: 16px 0; }
 li { padding-left: 20px; position: relative; margin-bottom: 12px; }
 li::before { content: '·'; color: var(--accent); position: absolute; left: 4px; font-weight: 700; }
+ol { margin: 16px 0; padding-left: 0; list-style: none; counter-reset: wm-ol; }
+ol li { padding-left: 34px; counter-increment: wm-ol; }
+ol li::before { content: counter(wm-ol); left: 0; font-family: var(--font-mono); font-size: 13px; color: var(--accent); }
 
 /* 提醒卡 */
 .insight-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 24px; }
