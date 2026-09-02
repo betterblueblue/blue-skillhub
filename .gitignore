@@ -34,3 +34,7 @@ skills/whydump/评审prompt.txt
 .claude/worktrees/
 .playwright-mcp/
 .tmp/
+
+# === 工具自动生成的本地产物(不入库) ===
+change-impact/
+.dsh-shots/
