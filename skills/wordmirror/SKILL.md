@@ -15,7 +15,9 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 - **你（Agent）负责一切"报告内容"**：你是谁、你纠结什么、AI 怎么看你、这几个月怎么过的……都要你读语料后用人话写出来，写到 `data/profile/` 下的 MD。脚本不会替你说话，也写不出人话。
 - **脚本只做两件事**：①数据初始化（提取存档、去重、算统计素材）；②排版渲染（把你写的 MD 排成 HTML）。
 - 脚本能直接上页的，只有"数字本身就说明问题"的事实（排名、总量、完成率、时间跨度）。正则抓的句子、词表分类、文件夹名、"中位/占比"这类统计维度，只能当你写报告的**素材**，不许直接上页。
-- 出报告走 `references/distill-report-protocol.md`，写 6 份 MD；照见走 `references/mirror-protocol.md`。
+- **报告的目的不是做统计看板，而是以言为镜。** 把用户说给 AI 的话重新放回时间和关系里，让用户看见自己以前没注意到的变化、坚持、转向和未完成；读完应该愿意停下来想一会儿。
+- **温度来自原话，不来自煽情。** 原话是主角，数字退到背景；用用户听得懂的白话承接前后关系；没有证据就留白，不用泛泛总结凑页；不做人格标签、动机推断或心理诊断。
+- 出报告走 `references/distill-report-protocol.md`，写 6 份 MD；照见走 `references/mirror-protocol.md`。写完必须运行 `python scripts/render.py all` 刷新页面，再运行 `python scripts/self_check.py`。
 
 ## 数据在哪
 
@@ -75,6 +77,19 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 
 ### 生成网页
 用户要看报告页面 → 跑 `python scripts/render.py all`（生成网页是重活，见下），出完告诉他文件在哪、双击就能看。报告页的内容来自 Agent 蒸馏写的 MD（见 `references/distill-report-protocol.md`），没有 MD 那几页就是空的。
+
+报告页要回答的问题：
+- **01 我是谁**：我现在在哪里，怎么跟我共事？
+- **02 重要决定**：那些决定后来把我带到了哪里？
+- **03 说过要做的事**：这些事后来各自怎么样了？
+- **04 该注意的事**：哪些有证据的反差，我可能还没注意到？
+- **05 反复提的事**：我是不是一直在问同一个问题？
+- **06 各个 AI 里的样子**：换了工具，我是不是换了说法？
+- **07 总让 AI 干什么**：我把什么活交给了 AI，自己还抓着什么？
+- **08 AI 怎么看我**：不同 AI 是怎样认识我的？
+- **09 走过的这几个月**：这几个月我是怎么走过来的？
+
+每页至少要有一处“原话 → 时间/关系 → 白话承接”的发现；没有足够证据就少写，不用数字或项目名凑内容。详情按 `references/distill-report-protocol.md`，照见按 `references/mirror-protocol.md`。
 
 ### 首次初始化
 读不到 portrait.md → 走 `references/init-protocol.md` 四步：探测存档 → 按 `references/ingest-protocol.md` 的 8 步提取 → 你照着模板整理出 portrait.md + habits.md → 念给用户听、当场纠错。
