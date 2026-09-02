@@ -115,6 +115,7 @@ def _ledger_snapshot():
 def cmd_ingest():
     before = _ledger_snapshot()
     steps = [
+        ('探测 agent 存档', 'detect_agents.py'),
         ('提取你说的话', 'extract_all.py'),
         ('提取 AI 的回复', 'extract_ai.py'),
         # 去重要放在消费脚本之前——extract_all 产出未去重版，下面三个脚本都读 dedup 版

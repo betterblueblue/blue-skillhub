@@ -4,11 +4,12 @@
 SOP 第 3 步的机器部分：把散落在语料/欠账/写回里的"事实落差"粗筛成候选，
 写 data/materials_insights.json。LLM 只做筛选 + 话术（见 references/mirror-protocol.md）。
 
-四类候选（只粗筛、宁多勿漏，AI 再筛）：
+三类候选（只粗筛、宁多勿漏，AI 再筛）：
   say_do     说了没做：open 欠账 >30 天，且之后没再提
-  recur      反复提没下文：同一 topic 跨 >=3 个不同月份，且没有已关闭/放弃的对应欠账
   flip       前后说法并排：同一 topic 最早/最新相隔 >30 天（是否矛盾交给 AI）
   word_drift 词频漂移：最近两个有数据的月，本月>=10 且本月/上月>=2 的词
+
+（"反复提没下文"不在这里产——它归 references/distill-report-protocol.md 的 recurs.md，由 AI 读语料自己归纳）
 
 容错：语料不存在/为空 → 打印一句正常退出，不 crash；promises 缺失 → 只跳过对应类型。
 
@@ -32,8 +33,13 @@ rows = [json.loads(l) for l in open(_cdp, encoding='utf-8')]
 rows.sort(key=lambda r: r['date'])
 
 def topic(r):
-    p = r.get('proj') or ''
-    return p.split(BS)[-1] if BS in p else (p[:30] if p else '(none)')
+    p = (r.get('proj') or '').replace('\\', '/')
+    seg = p.rstrip('/').split('/')[-1] if p else ''
+    seg = seg.strip('-').replace('--', ' ').strip()
+    # 纯十六进制哈希（如 antigravity 的 cid 前 8 位）不是主题
+    if seg and re.fullmatch(r'[0-9a-fA-F]{6,40}', seg):
+        return '(none)'
+    return seg[:30] if seg else '(none)'
 
 # ---- 通用词表（与 compute_stats.py 的 WORDS 对齐）：kw() 过滤与 word_drift 回退共用 ----
 _BASE_WORDS = ['这个', '那个', '这样', '那样', '可以', '应该', '需要', '觉得', '认为', '可能',
@@ -140,30 +146,10 @@ if prom_files:
             emit('say_do', '你 %s 月说要做「%s」，之后没再提。' % (d[:7], text[:40]),
                  [{'date': d, 'msg': text, 'src': tag}], 'high')
 
-# ---- topic 聚合（recur / flip 共用）----
+# ---- topic 聚合（flip 用）----
 by_topic = collections.defaultdict(list)
 for r in rows:
     by_topic[topic(r)].append(r)
-
-closed_texts = [o.get('text', '') for plist in prom_files.values() for o in plist
-                if o.get('status') in ('closed', 'dropped')]
-
-# ---- 2. recur：反复提没下文 ----
-for t, rs in by_topic.items():
-    if t in ('(none)', ''):
-        continue
-    months = sorted({r['date'][:7] for r in rs if r.get('date')})
-    if len(months) < 3:
-        continue
-    # 有对应已关闭/放弃的欠账 → 已收线，不点
-    tkw = kw(t)
-    if tkw and any(any(k in ct for k in tkw) for ct in closed_texts):
-        continue
-    rs.sort(key=lambda r: r['date'])
-    ev = [{'date': rs[0]['date'], 'msg': rs[0].get('msg', '')[:120], 'src': 'corpus'}]
-    if len(rs) >= 2:
-        ev.append({'date': rs[-1]['date'], 'msg': rs[-1].get('msg', '')[:120], 'src': 'corpus'})
-    emit('recur', '「%s」这件事提了 %d 次（跨 %d 个月），没下文。' % (t, len(rs), len(months)), ev, 'mid')
 
 # ---- 3. flip：前后说法并排（不判断是否矛盾，但只在端点消息有转折/否定信号时才产）----
 # 窄触发：不窄触发的话，每个正常推进的 topic（≥2 条、跨度 >30 天）都产一条"最早 vs 最新"，

@@ -319,12 +319,14 @@ def ex_dsh(out):
                 if t == 'text-chunks':
                     d = o.get('data') or {}
                     key = (d.get('turn'), d.get('step'))
-                    s = steps.setdefault(key, {'texts': [], 'time': o.get('time', '')})
+                    # dsh 的 text-chunks 时间戳在 time0（不是 time），date 全空就是取错了字段
+                    ts = o.get('time0') or o.get('time', '')
+                    s = steps.setdefault(key, {'texts': [], 'time': ts})
                     for x in (d.get('texts') or []):
                         if isinstance(x, str):
                             s['texts'].append(x)
                     if not s['time']:
-                        s['time'] = o.get('time', '')
+                        s['time'] = ts
             for key in sorted(steps):
                 s = steps[key]
                 m = ''.join(s['texts']).strip()

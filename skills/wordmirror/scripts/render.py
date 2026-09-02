@@ -43,6 +43,9 @@ def render_markdown(md):
     out, i = [], 0
     while i < len(lines):
         ln = lines[i]
+        if ln.strip().startswith('<!--'):
+            i += 1
+            continue
         if ln.startswith('## '):
             out.append('<h2>%s</h2>' % inline(ln[3:]))
         elif ln.startswith('### '):
@@ -117,6 +120,33 @@ def insight_card(o):
 
 # ---------- READ 页 ----------
 
+def _portrait_src():
+    """画像头部的数字从 stats + 语料实时算，不读画像里手写的旧数字（ingest 重跑会过期）。"""
+    ag_p = os.path.join(wm.DATA, 'stats_agents.json')
+    if not os.path.exists(ag_p):
+        return None
+    try:
+        ag = load_json(ag_p)
+    except Exception:
+        return None
+    if not ag:
+        return None
+    total = sum(v.get('msgs', 0) for v in ag.values())
+    d0 = d1 = ''
+    for o in load_jsonl('corpus_dedup.jsonl'):
+        d = o.get('date', '')
+        if not d:
+            continue
+        if not d0 or d < d0:
+            d0 = d
+        if not d1 or d > d1:
+            d1 = d
+    tops = sorted(ag.items(), key=lambda kv: -kv[1].get('msgs', 0))[:5]
+    parts = ' / '.join('%s %s' % (AGENT_NAMES.get(k, k), v.get('msgs', 0)) for k, v in tops)
+    return ('这些结论来自：%s ~ %s，你在 %d 个 AI 工具里说的 %s 条原话（重复的只算一次，%s）'
+            % (d0, d1, len(ag), format(total, ','), parts))
+
+
 def build_portrait():
     p = os.path.join(wm.DATA, 'profile', 'portrait.md')
     if not os.path.exists(p):
@@ -125,11 +155,10 @@ def build_portrait():
     md = open(p, encoding='utf-8', errors='replace').read()
     ver = re.search(r'# 我是谁（(v\d+) · (\d{4}-\d{2}-\d{2})）', md)
     tag, date = (ver.group(1), ver.group(2)) if ver else ('v1', '')
-    src = (re.search(r'> 这些结论来自：(.+)', md)
-           or re.search(r'> 数据源：(.+)', md))  # 旧版头行兼容
     body = ['<h1 class="display">我是谁，<br>怎么跟我共事</h1>']
+    src = _portrait_src()
     if src:
-        body.append('<div class="band"><p>%s</p></div>' % inline(src.group(1)))
+        body.append('<div class="band"><p>%s</p></div>' % inline(src))
     idx = md.find('## 一句话')
     body.append(render_markdown(md[idx:] if idx != -1 else md))
     return ('html/01_我是谁.html',

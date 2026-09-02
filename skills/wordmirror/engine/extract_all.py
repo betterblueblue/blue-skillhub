@@ -17,6 +17,26 @@ BOILER_PREFIX = (
     '<local-command-caveat', '<command-name>', '<system-reminder', '[Request interrupted',
     '<skill name=', 'You are AtomCode', '# Apps are currently in',
     'The approval policy changed',  # dsh 把审批策略变更也注入 user/message，非用户原话
+    'Base directory for this skill',  # claude code 加载 skill 注入的路径提示
+    '[Your previous response had no visible output',  # 无输出时的系统重试提示
+    '这个会话即将结束',  # 会话收尾的交接文档提示，非用户原话
+    'Please continue and',  # 系统续写提示
+)
+
+# 注入块（system-reminder / cb_summary / subagent 通知等）：从句子中间剥掉
+_INJECT_RE = re.compile(
+    r'<system-reminder>.*?</system-reminder>'
+    r'|<cb_summary>.*?</cb_summary>'
+    r'|<subagent_notification>.*?</subagent_notification>'
+    r'|<in-app-browser-context>.*?</in-app-browser-context>',
+    re.S,
+)
+
+# 纯工具/系统噪声：命中就整条丢
+NOISE_MARKERS = (
+    'TodoWrite tool hasn\'t been used',
+    'Background subagent',
+    '# Open Design charter',
 )
 
 def clean(m):
@@ -32,6 +52,11 @@ def clean(m):
     if m.startswith('|# Files mentioned') or m.startswith('|<in-app-browser'): return None
     if re.match(r'^\[\d+\] (tool|assistant)', m): return None
     if re.match(r'^<[\w-]+[ >]', m): return None
+    if m.startswith('# Instructions (read first)'): return None
+    m = _INJECT_RE.sub(' ', m).strip()
+    if not m: return None
+    for k in NOISE_MARKERS:
+        if k in m: return None
     m2 = re.sub(r'^\[\$[\w-]+\]\([^)]*\)\s*', '', m)
     return m2.strip() or None
 
@@ -122,6 +147,13 @@ def ex_claude(out):
                             for item in c:
                                 if isinstance(item, dict) and item.get('type') == 'text':
                                     parts.append(item.get('text', ''))
+                        elif v.get('contentHash'):  # 只有哈希：去 paste-cache 找正文
+                            cf = os.path.join(H, '.claude', 'paste-cache', v['contentHash'] + '.txt')
+                            if os.path.isfile(cf):
+                                try:
+                                    parts.append(open(cf, encoding='utf-8', errors='replace').read())
+                                except Exception:
+                                    pass
                 full = '\n'.join(x for x in parts if x).strip()
                 if full:
                     m = full

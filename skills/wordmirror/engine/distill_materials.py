@@ -12,8 +12,13 @@ rows = [json.loads(l) for l in open(os.path.join(DATA, 'corpus_dedup.jsonl'), en
 rows.sort(key=lambda r: r['date'])
 
 def topic(r):
-    p = r.get('proj') or ''
-    return p.split(BS)[-1] if BS in p else (p[:30] if p else '(none)')
+    p = (r.get('proj') or '').replace('\\', '/')
+    seg = p.rstrip('/').split('/')[-1] if p else ''
+    seg = seg.strip('-').replace('--', ' ').strip()
+    # 纯十六进制哈希（如 antigravity 的 cid 前 8 位）不是主题
+    if seg and re.fullmatch(r'[0-9a-fA-F]{6,40}', seg):
+        return '(none)'
+    return seg[:30] if seg else '(none)'
 
 def sents(msg):
     return [s.strip() for s in re.split(r'[。！？\n]', msg.replace(chr(10), ' ')) if 6 < len(s.strip()) < 160]

@@ -13,7 +13,8 @@ AI 筛选 + 改话术（本协议）→ 定稿追加写 data/profile/insights.js
 开工时挑一条点破（SKILL.md「开工前瞄一眼」第 3 条，最多一条）
 ```
 
-- 候选四类（宁多勿漏）：`say_do`（说了没做）/ `recur`（反复提没下文）/ `flip`（前后说法并排）/ `word_drift`（词频漂移）
+- 候选三类（宁多勿漏）：`say_do`（说了没做）/ `flip`（前后说法并排）/ `word_drift`（词频漂移）
+- **「反复提没下文」不在这里**——它归 `distill-report-protocol.md` 的 recurs.md（05 页），由 AI 读语料自己归纳，别写进 insights.jsonl。
 - 脚本只做粗筛、不判断动机和矛盾；**筛选和话术是 AI 的活**。
 - insights.jsonl 是 append-only：**新照见只追加**；状态更新允许原地改 status（active→confirmed/dismissed），不删行、不改事实。
 
