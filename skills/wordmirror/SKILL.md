@@ -83,7 +83,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 
 | 活 | 工具 | 什么时候调 |
 |---|---|---|
-| 按意思搜（算向量，你现场算不了） | `python scripts/vecsearch.py query "问题"` / `build` | 字面搜不到、用户记不清原词时 |
+| 按意思搜（算向量，你现场算不了） | 先 `python scripts/vecsearch.py status` 探测；建过就直接 `query`，没建才问用户要不要 `build` | 字面搜不到、用户记不清原词时 |
 | 生成网页（排版渲染：把你写的 MD 排成 HTML，样式一致） | `python scripts/render.py read / all` | 用户要看报告页面 |
 | 提取存档（要啃好几个 AI 的原始记录 + 去重） | `scripts/extract_all.py` + `extract_ai.py` + `dedup.py`（按 `references/ingest-protocol.md`） | 首次初始化 / 更新数据 |
 

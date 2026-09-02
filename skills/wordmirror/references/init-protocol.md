@@ -15,6 +15,8 @@
 
 输出：每步脚本打印产物条数；最后跑 `python scripts/render.py all` 出全 10 页 HTML。
 
+**依赖先探测，别再每次都问**：zstandard（dsh 用）先跑 `python -c "import zstandard"`，能 import 就直接用；按意思搜索引先跑 `python scripts/vecsearch.py status`，建过就直接用。**只有真没装/真没建，才问用户一次要不要装/建。**
+
 ### 第 3 步：整理出你的情况（portrait.md / habits.md）
 
 数据就位后，**你（AI）来写这两份文件**，写到数据目录（定位见 `references/data-locations.md`）下：
