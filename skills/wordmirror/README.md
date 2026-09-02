@@ -41,7 +41,9 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 2. 对你的 agent 说：**初始化 wordmirror**
 3. 日常使用不用任何命令——"我之前说过什么""记住这个""这个能发出去吗"，直接说就行
 
-生成报告后会得到 9 页回望：
+生成报告后会得到 9 页回望。你不需要自己编排这些 Python 脚本：由加载了本 Skill 的 Agent 按 `SKILL.md` 逐步调用它们；脚本负责提取、去重、统计和排版，Agent 负责读原话、筛选证据、写出真正的内容。
+
+9 页回望分别是：
 
 | 页面 | 它想让你看见什么 |
 |---|---|
@@ -59,7 +61,7 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 
 命令行入口（可选）：`scripts/wm.py`——`ingest`（把你说过话提取出来）、`promise`（说过要做的事：add 记一笔 / done 划掉）、`wb`（记你确认过的事：add / list）、`vec`（按意思搜：build / status）、`bind`（把已有数据接上）、`check`（自检）、`open`（浏览器打开报告首页）。
 
-更新报告页的流程是：先提取数据（`references/ingest-protocol.md` 的 8 步），再由 AI 读你的话写成各页 MD，最后运行 `python scripts/render.py all` 刷新页面并 `python scripts/self_check.py` 自检。没有 MD 的页会显示空态，不会用数字凑数。
+更新报告页的流程是：由 Agent 读取 `SKILL.md`，按 `references/ingest-protocol.md` 逐步调用本地脚本完成探测、提取、去重、统计、素材和渲染；随后 Agent 自己读原话、筛选证据、更新各页 MD、promises 和 insights，最后运行 `python scripts/render.py all` 刷新页面并 `python scripts/self_check.py` 自检。用户不需要自己编排 Python 脚本；没有足够证据的页或栏目显示诚实空态，不会用数字凑数。
 
 ## 数据放在哪（两层）
 
