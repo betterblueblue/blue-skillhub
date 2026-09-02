@@ -71,7 +71,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 对外发的东西，发之前把要发的清单给他过目、他点头才发。
 
 ### 更新数据 / 重新提取
-用户说"更新数据 / 重新提取 / 我的情况过期了" → 走 `references/ingest-protocol.md`，**按它写的 8 步逐步执行**（每步一个脚本，顺序不能乱；提取存档是重活，见下）。你说过的话变多了，补一句 `python scripts/wm.py vec build --update`（建过按意思搜的话）。**报告页（决定 / 反复提 / 总让 AI 干什么 / AI 怎么看我 / 各 AI 里我什么样 / 这几个月怎么过的）不是自动的**——提取完按 `references/distill-report-protocol.md` 读语料写那 6 份 MD。
+用户说"更新数据 / 重新提取 / 我的情况过期了" → 走 `references/ingest-protocol.md`，**按它写的 8 步逐步执行**（每步一个脚本，顺序不能乱；提取存档是重活，见下）。你说过的话变多了，补一句 `python scripts/wm.py vec build --update`（建过按意思搜的话）。**报告页（决定 / 反复提 / 总让 AI 干什么 / AI 怎么看我 / 各 AI 里我什么样 / 这几个月怎么过的）+ 说过要做的事（promises）+ 照见（insights）都不是自动的**——提取完按 `references/distill-report-protocol.md`（6 份 MD + 补录 promises）和 `references/mirror-protocol.md`（照见定稿）一起补齐，别让任何一页空着。
 
 ### 生成网页
 用户要看报告页面 → 跑 `python scripts/render.py all`（生成网页是重活，见下），出完告诉他文件在哪、双击就能看。报告页的内容来自 Agent 蒸馏写的 MD（见 `references/distill-report-protocol.md`），没有 MD 那几页就是空的。
