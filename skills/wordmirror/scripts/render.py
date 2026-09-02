@@ -150,8 +150,12 @@ def _portrait_src():
 def build_portrait():
     p = os.path.join(wm.DATA, 'profile', 'portrait.md')
     if not os.path.exists(p):
-        print('跳过 01 那页：你的情况还没整理出来（先初始化）')
-        return None
+        print('01 那页：你的情况还没整理出来，先生成空态页')
+        body = ['<h1 class="display">我是谁，<br>怎么跟我共事</h1>',
+                '<div class="refract"></div>',
+                '<div class="band"><p>还没初始化——说一句「初始化 wordmirror」，AI 会先探测、提取、再整理出你的情况。</p></div>']
+        return ('html/01_我是谁.html',
+                page('我是谁 · 言镜', '说明书', '\n'.join(body)))
     md = open(p, encoding='utf-8', errors='replace').read()
     ver = re.search(r'# 我是谁（(v\d+) · (\d{4}-\d{2}-\d{2})）', md)
     tag, date = (ver.group(1), ver.group(2)) if ver else ('v1', '')
@@ -169,8 +173,12 @@ def build_wrapped():
     """09 走过的这几个月：内容由 Agent 读语料写 timeline.md，脚本只渲染，不挑月度主题/开场收尾原话。"""
     p = os.path.join(wm.DATA, 'profile', 'timeline.md')
     if not os.path.exists(p):
-        print('跳过 09 那页：这几个月怎么过的还没整理出来（先跑蒸馏，见 distill-report-protocol）')
-        return None
+        print('09 那页：这几个月怎么过的还没整理出来，先生成空态页')
+        body = ['<h1 class="display">走过的这几个月，<br>我是怎么过的</h1>',
+                '<div class="refract"></div>',
+                '<div class="band"><p>这页的内容还没整理出来——说一句「更新报告」，AI 会按 distill-report-protocol 写好。</p></div>']
+        return ('html/09_走过的这几个月.html',
+                page('走过的这几个月 · 言镜', '按时间回看', '\n'.join(body)))
     md = open(p, encoding='utf-8', errors='replace').read()
     body = ['<h1 class="display">走过的这几个月，<br>我是怎么过的</h1>',
             '<div class="refract"></div>',
@@ -350,7 +358,7 @@ def _md_page(name, md_name, title, eyebrow, filename):
     MD 没写好时生成一个空态页，告诉用户怎么补，不 404、也不拿脚本凑数。"""
     p = os.path.join(wm.DATA, 'profile', md_name)
     if not os.path.exists(p):
-        print('跳过 %s：还没整理出来（先跑蒸馏，见 references/distill-report-protocol.md）' % name)
+        print('%s：还没整理出来，先生成空态页（见 references/distill-report-protocol.md）' % name)
         body = ['<h1 class="display">%s</h1>' % title,
                 '<div class="refract"></div>',
                 '<div class="band"><p>这页的内容还没整理出来——要 AI 读完你的聊天记录后写。'
