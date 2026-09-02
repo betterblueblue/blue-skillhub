@@ -202,22 +202,22 @@ def build_portrait():
     p = os.path.join(wm.DATA, 'profile', 'portrait.md')
     if not os.path.exists(p):
         print('01 那页：你的情况还没整理出来，先生成空态页')
-        body = ['<h1 class="display">我是谁，<br>怎么跟我共事</h1>',
+        body = ['<h1 class="display">你是谁，<br>怎么跟你共事</h1>',
                 '<div class="refract"></div>',
                 '<div class="band"><p>还没初始化——说一句「初始化 wordmirror」，AI 会先探测、提取、再整理出你的情况。</p></div>']
         return ('html/01_我是谁.html',
-                page('我是谁 · 言镜', '说明书', '\n'.join(body)))
+                page('你是谁 · 言镜', '说明书', '\n'.join(body)))
     md = open(p, encoding='utf-8', errors='replace').read()
-    ver = re.search(r'# 我是谁（(v\d+) · (\d{4}-\d{2}-\d{2})）', md)
+    ver = re.search(r'# (?:你|我)是谁（(v\d+) · (\d{4}-\d{2}-\d{2})）', md)
     tag, date = (ver.group(1), ver.group(2)) if ver else ('v1', '')
-    body = ['<h1 class="display">我是谁，<br>怎么跟我共事</h1>']
+    body = ['<h1 class="display">你是谁，<br>怎么跟你共事</h1>']
     src = _portrait_src()
     if src:
         body.append('<div class="band"><p>%s</p></div>' % inline(src))
     idx = md.find('## 一句话')
     body.append(render_markdown(md[idx:] if idx != -1 else md))
     return ('html/01_我是谁.html',
-            page('我是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s' % (tag, date), '\n'.join(body)))
+            page('你是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s' % (tag, date), '\n'.join(body)))
 
 
 def _timeline_section(section):
@@ -264,8 +264,8 @@ def _timeline_special(section, title, kind):
         if line: prose.append(line[2:] if line.startswith('- ') else line)
     out = ['<article class="timeline-chapter timeline-%s">' % kind, '<div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % inline(title)]
     if kind == 'facing' and len(quotes) >= 2:
-        if '以前的我' in title:
-            labels = ('以前的我', '后来的我')
+        if '以前的我' in title or '以前的你' in title:
+            labels = ('以前的你', '后来的你')
         elif '以前的想法' in title:
             labels = ('以前的想法', '后来的选择')
         else:
@@ -298,7 +298,7 @@ def render_timeline(md):
             continue
         title = section.splitlines()[0][3:].strip() if section.startswith('## ') else ''
         kind = None
-        if '以前的我' in title or '原来这两句话有关' in title:
+        if '以前的我' in title or '以前的你' in title or '原来这两句话有关' in title:
             kind = 'facing'
         elif '这句话后来去了哪里' in title:
             kind = 'turning'
@@ -306,7 +306,7 @@ def render_timeline(md):
             kind = 'persistent'
         elif '这件事后来怎么样了' in title:
             kind = 'setaside'
-        elif '现在的我' in title:
+        elif '现在的我' in title or '现在的你' in title:
             kind = 'now'
         out.append(_timeline_special(section, title, kind) if kind else _timeline_section(section))
     return '\n'.join(out)
@@ -317,13 +317,13 @@ def build_wrapped():
     p = os.path.join(wm.DATA, 'profile', 'timeline.md')
     if not os.path.exists(p):
         print('09 那页：这几个月怎么过的还没整理出来，先生成空态页')
-        body = ['<h1 class="display">走过的这几个月，<br>我是怎么过的</h1>',
+        body = ['<h1 class="display">走过的这几个月，<br>你是怎么过的</h1>',
                 '<div class="refract"></div>',
                 '<div class="band"><p>这页的内容还没整理出来——说一句「更新报告」，AI 会按 distill-report-protocol 写好。</p></div>']
         return ('html/09_走过的这几个月.html',
                 page('走过的这几个月 · 言镜', '按时间回看', '\n'.join(body)))
     md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">走过的这几个月，<br>我是怎么过的</h1>',
+    body = ['<h1 class="display">走过的这几个月，<br>你是怎么过的</h1>',
             '<div class="refract"></div>',
             '<p class="timeline-intro">把当时说过的话，放回当时的时间里。这里没有给你下结论，只把那些转向、坚持和停下来的时刻重新摆出来。</p>',
             render_timeline(md)]
@@ -348,10 +348,17 @@ def build_index():
     ins = [o for o in load_insights() if o.get('type') != 'recur']
     n_ins = len(ins)
 
-    body = ['<h1 class="display">以言为镜，<br><span class="accent">可以知自己</span></h1>',
+    body = ['<h1 class="display">让 AI 认识你，<br><span class="accent">也让你看见自己</span></h1>',
             '<div class="refract"></div>',
-            '<p style="color:var(--muted);max-width:560px;">你跟好几个 AI 说过的话，都在这儿了。'
-            '欠着没做的、反复提又放下的、前后改口的——一眼看清。</p>']
+            '<p style="color:var(--muted);max-width:560px;">一个装进 agent skills 目录的技能包：你跟各个 AI 说过的每句话都留在这台电脑上，'
+            '由 AI 把它们变成两样东西——一份给 AI 看的说明书，一份给你自己看的回望。不联网、不收集，你的话是你的。</p>',
+            '<div class="facing-row" style="margin-top:30px;">'
+            '<div class="facing-col"><div class="facing-label">说明书 · 给每个 AI</div>'
+            '<p style="margin-top:12px;">装上之后，你开的每个新会话，AI 都是老熟人：开局就知道你是谁、在忙什么、怎么跟你说话；'
+            '查旧账引原话、带日期，查不到就直说。<br><a href="01_我是谁.html">翻开 01 你是谁 →</a></p></div>'
+            '<div class="facing-col"><div class="facing-label">回望 · 给你自己</div>'
+            '<p style="margin-top:12px;">把你说给 AI 的话重新放回时间和关系里：重新遇见某个阶段的自己、看见两句话之间的联系、'
+            '捡回一件曾经认真想过的事。<br><a href="09_走过的这几个月.html">翻开 09 走过的这几个月 →</a></p></div></div>']
 
     body.append('<div class="stats">'
                 '<div class="stat"><div class="n">%s</div><div class="note">条原话，都是你说给 AI 的</div></div>'
@@ -386,15 +393,15 @@ def build_index():
 
     body.append('<h2>翻开更多</h2>')
     cards = [
-        ('01', '我是谁', '我的情况、当前在忙什么、怎么跟我配合', '01_我是谁.html'),
-        ('02', '我做过的重要决定', '那些决定后来去了哪里', '02_我做过的重要决定.html'),
+        ('01', '你是谁', '你的情况、当前在忙什么、怎么跟你配合', '01_我是谁.html'),
+        ('02', '你做过的重要决定', '那些决定后来把你带到了哪里', '02_我做过的重要决定.html'),
         ('03', '说过要做的事', '这些事后来各自怎么样了', '03_说过要做的事.html'),
         ('04', '该注意的事', '有哪些你自己还没注意到的事', '04_该注意的事.html'),
-        ('05', '我反复提的事', '你是不是一直在问同一个问题', '05_我反复提的事.html'),
-        ('06', '我在各个 AI 里的样子', '换了工具，我是不是换了说法', '06_我在各个AI里的样子.html'),
-        ('07', '我总让 AI 干什么', '我把什么活交给了 AI', '07_我总让AI干什么.html'),
-        ('08', 'AI 怎么看我', '不同 AI 是怎样认识我的', '08_AI怎么看我.html'),
-        ('09', '走过的这几个月', '这几个月我是怎么走过来的', '09_走过的这几个月.html'),
+        ('05', '你反复提的事', '你是不是一直在问同一个问题', '05_我反复提的事.html'),
+        ('06', '你在各个 AI 里的样子', '换了工具，你是不是也换了说法', '06_我在各个AI里的样子.html'),
+        ('07', '你总让 AI 干什么', '你把什么活交给了 AI，自己抓着什么', '07_我总让AI干什么.html'),
+        ('08', 'AI 怎么看你', '不同 AI 是怎样认识你的', '08_AI怎么看我.html'),
+        ('09', '走过的这几个月', '这几个月你是怎么走过来的', '09_走过的这几个月.html'),
     ]
     body.append('<div class="card-grid">')
     for num, title, desc, href in cards:
@@ -403,7 +410,7 @@ def build_index():
     body.append('</div>')
 
     return ('html/index.html',
-            page('言镜 · 首页', '今日镜面', '\n'.join(body), home='index.html'))
+            page('言镜 · 首页', '你的说明书 <span class="dot">·</span> 你的回望', '\n'.join(body), home='index.html'))
 
 
 def build_insights():
@@ -534,7 +541,7 @@ def build_agents():
     top_name = AGENT_NAMES.get(agents[0][0], agents[0][0]) if agents else '—'
     top_share = round(100 * agents[0][1].get('msgs', 0) / total) if agents else 0
 
-    body = ['<h1 class="display">我在各个 AI 里的样子</h1>',
+    body = ['<h1 class="display">你在各个 AI 里的样子</h1>',
             '<div class="refract"></div>',
             '<p style="color:var(--muted);max-width:560px;">你在不同工具里说的话、干的事、说话习惯，都不一样。这页把它们并排摆出来。</p>']
 
@@ -569,7 +576,7 @@ def build_agents():
                     '说一句「更新报告」，AI 会按 distill-report-protocol 写好。</p></div>')
 
     return ('html/06_我在各个AI里的样子.html',
-            page('我在各个 AI 里的样子 · 言镜', '按工具看', '\n'.join(body)))
+            page('你在各个 AI 里的样子 · 言镜', '按工具看', '\n'.join(body)))
 
 
 def _md_page(name, md_name, title, eyebrow, filename):
@@ -594,14 +601,14 @@ def _md_page(name, md_name, title, eyebrow, filename):
 def build_decisions():
     p = os.path.join(wm.DATA, 'profile', 'decisions.md')
     if not os.path.exists(p):
-        return _md_page('02 那页', 'decisions.md', '我做过的重要决定', '决定', 'html/02_我做过的重要决定.html')
+        return _md_page('02 那页', 'decisions.md', '你做过的重要决定', '决定', 'html/02_我做过的重要决定.html')
     md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">我做过的重要决定</h1>',
+    body = ['<h1 class="display">你做过的重要决定</h1>',
             '<div class="refract"></div>',
-            '<p class="timeline-intro">那些当时说出口的决定，后来把我带到了哪里。</p>',
+            '<p class="timeline-intro">那些当时说出口的决定，后来把你带到了哪里。</p>',
             render_decisions(md)]
     return ('html/02_我做过的重要决定.html',
-            page('我做过的重要决定 · 言镜', '决定', '\n'.join(body)))
+            page('你做过的重要决定 · 言镜', '决定', '\n'.join(body)))
 
 
 def render_decisions(md):
@@ -628,14 +635,14 @@ def render_decisions(md):
 def build_recurring():
     p = os.path.join(wm.DATA, 'profile', 'recurs.md')
     if not os.path.exists(p):
-        return _md_page('05 那页', 'recurs.md', '我反复提的事', '反复提的事', 'html/05_我反复提的事.html')
+        return _md_page('05 那页', 'recurs.md', '你反复提的事', '反复提的事', 'html/05_我反复提的事.html')
     md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">我反复提的事，<br>是不是在问同一个问题</h1>',
+    body = ['<h1 class="display">你反复提的事，<br>是不是在问同一个问题</h1>',
             '<div class="refract"></div>',
             '<p class="timeline-intro">有些话题换了名字、换了项目，过一阵还是会回来。这里不替你解释原因，只把它们放在一起。</p>',
             render_recurring(md)]
     return ('html/05_我反复提的事.html',
-            page('我反复提的事 · 言镜', '反复提的事', '\n'.join(body)))
+            page('你反复提的事 · 言镜', '反复提的事', '\n'.join(body)))
 
 
 def render_recurring(md):
@@ -665,14 +672,14 @@ def render_recurring(md):
 def build_tasks():
     p = os.path.join(wm.DATA, 'profile', 'tasks.md')
     if not os.path.exists(p):
-        return _md_page('07 那页', 'tasks.md', '我总让 AI 干什么', '按任务看', 'html/07_我总让AI干什么.html')
+        return _md_page('07 那页', 'tasks.md', '你总让 AI 干什么', '按任务看', 'html/07_我总让AI干什么.html')
     md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">我总让 AI 干什么</h1>',
+    body = ['<h1 class="display">你总让 AI 干什么</h1>',
             '<div class="refract"></div>',
             '<p class="timeline-intro">你把哪些活交给了 AI，自己又一直抓着哪些部分？</p>',
             render_tasks(md)]
     return ('html/07_我总让AI干什么.html',
-            page('我总让 AI 干什么 · 言镜', '按任务看', '\n'.join(body)))
+            page('你总让 AI 干什么 · 言镜', '按任务看', '\n'.join(body)))
 
 
 def render_tasks(md):
@@ -708,14 +715,14 @@ def render_tasks(md):
 def build_ai_view():
     p = os.path.join(wm.DATA, 'profile', 'ai-view.md')
     if not os.path.exists(p):
-        return _md_page('08 那页', 'ai-view.md', 'AI 怎么看我', 'AI 眼中的你', 'html/08_AI怎么看我.html')
+        return _md_page('08 那页', 'ai-view.md', 'AI 怎么看你', 'AI 眼中的你', 'html/08_AI怎么看我.html')
     md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">AI 怎么看我</h1>',
+    body = ['<h1 class="display">AI 怎么看你</h1>',
             '<div class="refract"></div>',
             '<p class="timeline-intro">你说给不同 AI 的话，慢慢变成了它们对你的认识。这页把它们说过的话放在一起，哪里说准了，哪里还需要你自己判断。</p>',
             render_ai_view(md)]
     return ('html/08_AI怎么看我.html',
-            page('AI 怎么看我 · 言镜', 'AI 眼中的你', '\n'.join(body)))
+            page('AI 怎么看你 · 言镜', 'AI 眼中的你', '\n'.join(body)))
 
 
 def _parse_ai_section(section):
