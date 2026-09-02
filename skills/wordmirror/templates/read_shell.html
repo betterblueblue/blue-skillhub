@@ -188,6 +188,23 @@ li::before { content: '·'; color: var(--accent); position: absolute; left: 4px;
 .nav-card h3 { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin: 10px 0 6px; color: var(--ink); }
 .nav-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
 
+/* 工具排名条 + agent 卡 */
+.rank-row {
+  display: grid; grid-template-columns: 160px 1fr 130px; align-items: center; gap: 16px;
+  margin: 12px 0;
+}
+.rank-name { font-weight: 600; color: var(--ink); text-align: right; }
+.rank-track { background: var(--soft); border-radius: 999px; height: 12px; overflow: hidden; }
+.rank-fill { background: var(--accent); height: 100%; border-radius: 999px; }
+.rank-count { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+.agent-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.agent-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--ink); }
+.agent-meta { font-family: var(--font-mono); font-size: 12px; letter-spacing: 1px; color: var(--muted); }
+.agent-props { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px; color: var(--body); }
+.agent-props .k { color: var(--muted); margin-right: 4px; }
+.agent-props .v { font-weight: 600; color: var(--ink); }
+
 /* 落款 */
 .colophon {
   margin-top: 84px; padding: 26px 0 46px; border-top: 1px solid var(--line);

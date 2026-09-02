@@ -124,6 +124,6 @@ type:
 
 ## 8. 现状
 
-- 六页产物（index/01 我是谁/03 说过要做的事/05 提醒/10 时间弧线/月报）由 scripts/render.py 渲染
+- 七页产物（index/01 我是谁/03 说过要做的事/05 提醒/06 我在各个 AI 里的样子/10 时间弧线/月报）由 scripts/render.py 渲染
 - 提醒页读 data/profile/insights.jsonl；说过要做的事读两层 promises.jsonl
 - 改样式先改本文档再动模板，然后重跑 render.py

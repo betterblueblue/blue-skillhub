@@ -249,6 +249,7 @@ def build_index():
         ('01', '我是谁', '你的情况、在忙什么、怎么跟你配合', '01_我是谁_怎么跟我共事.html'),
         ('03', '说过要做的事', '说 vs 做，一眼看清哪件没下文', '03_我说过要做的事_现在都怎么样了.html'),
         ('05', '提醒', '说了没做、反复提、前后矛盾、口头禅变化', '05_提醒.html'),
+        ('06', '我在各个 AI 里的样子', '哪个用得最多、主要干啥、怎么说话', '06_我在各个AI里的样子.html'),
         ('10', '时间弧线', '从第一个月到今天，你的轨迹', '10_翻给你看.html'),
     ]
     monthly = sorted(os.listdir(MON)) if os.path.isdir(MON) else []
@@ -282,6 +283,112 @@ def build_insights():
             body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in rest) + '</div>')
     return ('html/05_提醒.html',
             page('提醒 · 言镜', '提醒', '\n'.join(body)))
+
+
+AGENT_NAMES = {
+    'codex': 'Codex',
+    'claude-code': 'Claude Code',
+    'qwen': 'Qwen',
+    'workbuddy': 'WorkBuddy',
+    'pi': 'Pi',
+    'atomcode': 'AtomCode',
+    'antigravity': 'Google Antigravity',
+    'zcode': 'zcode',
+    'grok': 'Grok',
+    'cursor': 'Cursor',
+    'catpaw': 'CatPaw',
+    'dsh': 'DeepSeek Harness',
+}
+
+
+def build_agents():
+    ag_p = os.path.join(wm.DATA, 'stats_agents.json')
+    if not os.path.exists(ag_p):
+        print('跳过 06 那页：统计素材还没生成（先跑 ingest）')
+        return None
+    ag = load_json(ag_p)
+    if not ag:
+        print('跳过 06 那页：没有分 agent 数据')
+        return None
+
+    # 每个 agent 第一次~最后一次，从语料里算
+    span = {}
+    for o in load_jsonl('corpus_dedup.jsonl'):
+        a = o.get('agent', '')
+        d = o.get('date', '')
+        if not a or not d:
+            continue
+        if a not in span:
+            span[a] = [d, d]
+        else:
+            if d < span[a][0]:
+                span[a][0] = d
+            if d > span[a][1]:
+                span[a][1] = d
+
+    agents = sorted(ag.items(), key=lambda kv: -kv[1].get('msgs', 0))
+    total_msgs = sum(v.get('msgs', 0) for v in ag.values())
+    total = total_msgs or 1
+    top_name = AGENT_NAMES.get(agents[0][0], agents[0][0]) if agents else '—'
+    top_share = round(100 * agents[0][1].get('msgs', 0) / total) if agents else 0
+
+    body = ['<h1 class="display">我在各个 AI 里的样子</h1>',
+            '<div class="refract"></div>',
+            '<p style="color:var(--muted);max-width:560px;">你在不同工具里说的话、干的事、说话习惯，都不一样。这页把它们并排摆出来。</p>']
+
+    body.append(
+        '<div class="stats">'
+        f'<div class="stat"><div class="n">{len(ag)}</div><div class="note">个 AI 工具，跟你有过来往</div></div>'
+        f'<div class="stat"><div class="n">{format(total_msgs, ",")}</div><div class="note">条原话，分布在它们之间</div></div>'
+        f'<div class="stat"><div class="n" style="font-size:24px;">{H.escape(top_name)}</div><div class="note">你用得最多的那个</div></div>'
+        f'<div class="stat"><div class="n">{top_share}%</div><div class="note">第一名占了这么多</div></div>'
+        '</div>'
+    )
+
+    body.append('<h2>哪个用得最多</h2>')
+    for name, v in agents:
+        msgs = v.get('msgs', 0)
+        pct = round(100 * msgs / total)
+        disp = AGENT_NAMES.get(name, name)
+        body.append(
+            f'<div class="rank-row">'
+            f'<div class="rank-name">{H.escape(disp)}</div>'
+            f'<div class="rank-track"><div class="rank-fill" style="width:{pct}%;"></div></div>'
+            f'<div class="rank-count">{format(msgs, ",")} 条 · {pct}%</div>'
+            f'</div>'
+        )
+
+    body.append('<h2>主要用来干什么 · 怎么跟它说话</h2>')
+    for name, v in agents:
+        msgs = v.get('msgs', 0)
+        disp = AGENT_NAMES.get(name, name)
+        s = span.get(name, ['?', '?'])
+        span_txt = ('%s ~ %s' % (s[0], s[1])) if s[0] != '?' else ''
+        projs = v.get('top_projects', []) or []
+        proj_html = ''.join('<span class="pill">%s</span>' % H.escape(p) for p, _ in projs[:3])
+        if not proj_html:
+            proj_html = '<span style="color:var(--muted);">（还看不出主要项目）</span>'
+        median = v.get('median_len', '?')
+        q = v.get('question_pct', 0)
+        long_ = v.get('long_per_100', 0)
+        thanks = v.get('thanks_per_100', 0)
+        body.append(
+            '<div class="card">'
+            f'<div class="agent-head"><span class="agent-name">{H.escape(disp)}</span>'
+            f'<span class="agent-meta">{H.escape(span_txt)} · {format(msgs, ",")} 条</span></div>'
+            f'<div style="margin:12px 0 6px;font-size:13px;color:var(--muted);">主要在干</div>'
+            f'<div>{proj_html}</div>'
+            f'<div style="margin:14px 0 4px;font-size:13px;color:var(--muted);">怎么跟它说话</div>'
+            '<div class="agent-props">'
+            f'<span><span class="k">中位</span>{median} 字</span>'
+            f'<span><span class="k">提问</span>{q}%</span>'
+            f'<span><span class="k">长消息</span>{long_}%</span>'
+            f'<span><span class="k">谢谢</span>{thanks} 次/百条</span>'
+            '</div></div>'
+        )
+
+    return ('html/06_我在各个AI里的样子.html',
+            page('我在各个 AI 里的样子 · 言镜', '工具画像', '\n'.join(body)))
 
 
 # ---------- 月报 ----------
@@ -470,7 +577,7 @@ def main():
     month = sys.argv[2] if len(sys.argv) > 2 and re.match(r'\d{4}-\d{2}$', sys.argv[2]) else None
     jobs = []
     if cmd in ('read', 'all'):
-        jobs += [build_portrait(), build_wrapped(), build_index(), build_insights()]
+        jobs += [build_portrait(), build_wrapped(), build_index(), build_insights(), build_agents()]
     if cmd in ('monthly', 'all'):
         jobs.append(build_monthly(month))
     if cmd in ('tracker', 'all'):

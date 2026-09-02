@@ -21,6 +21,15 @@
 
 （只收 10-15 个真正高频的；次数抄 stats_wordfreq.json）
 
+## 我在不同 AI 里的样子
+
+| AI | 用得多少 | 主要用来干什么 | 怎么跟它说话 |
+|---|---|---|---|
+| <工具名> | <N 条，占 X%> | <top 项目> | <中位 N 字 / 提问 X% / 谢谢 X 次> |
+
+（数据抄 stats_agents.json：msgs / top_projects / median_len / question_pct / thanks_per_100。
+哪个用得最多、主要干啥、怎么跟它说话，都从这来，别凭感觉写。）
+
 ## 跟我搭伙的节奏
 
 - <协作模式：怎么开工、怎么确认、怎么收尾>
@@ -34,5 +43,5 @@
 ## 从哪取材
 
 - `data/stats_wordfreq.json` → 词频表（唯一数字来源）
-- `data/stats_agents.json` → 分 agent 特征（用户在不同工具里的差异）
+- `data/stats_agents.json` → 「我在不同 AI 里的样子」这一节（哪个用得最多、主要干啥）
 - 抽你说过的"教 AI 干活"的话 → 怎么跟我说话的规则
