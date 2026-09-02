@@ -106,7 +106,7 @@ with open('data/corpus_dedup.jsonl', 'w', encoding='utf-8') as f:
 
 ## 第 4 步 · HTML 产物（模板渲染）
 
-数据 json → `assets/templates/` 模板 → `scripts/generate_html_pages.py` 渲染 → `products/html/`。
+数据 json → `assets/templates/` 模板 → `scripts/render.py` 渲染 → `products/html/`。
 **禁止直接手编 products/html/ 下的文件**（样式改 templates，数据改 json）。
 三套设计 token 的来源：awesome-design-md（linear.app / spotify / notion 三套 DESIGN.md）。
 
