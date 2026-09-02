@@ -6,7 +6,7 @@
 ## 数据流
 
 ```
-engine/distill_insights.py（机器粗筛，只产候选）
+scripts/distill_insights.py（机器粗筛，只产候选）
         ↓  data/materials_insights.json
 AI 筛选 + 改话术（本协议）→ 定稿追加写 data/profile/insights.jsonl
         ↓

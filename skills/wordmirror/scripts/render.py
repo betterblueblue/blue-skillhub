@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""言镜生成网页：把 data 里的内容变成 HTML。样式在 ../templates/，数据在数据目录。
+"""言镜生成网页：把 data 里的内容变成 HTML。样式在 ../assets/templates/，数据在数据目录。
 用法：
     python render.py read            # 首页 + 01 你的情况 + 10 翻给你看
     python render.py monthly [YYYY-MM]  # 月报（默认最近有数据的月份）
     python render.py tracker         # 03 说过要做的事
     python render.py all             # 全部
-不依赖 engine/——单装用户数据就位后同样能出（数据由 ingest 生成）。
+不依赖提取脚本（scripts/）——单装用户数据就位后同样能出（数据由 ingest 生成）。
 零联网，产物是双击就能打开的单个文件。
 """
 import os, sys, re, json, datetime
@@ -14,7 +14,7 @@ import html as H
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wm  # 复用数据定位：wm.DATA / wm.PRODUCTS
 
-TPL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'templates')
+TPL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'templates')
 OUT = os.path.join(wm.PRODUCTS, 'html')
 MON = os.path.join(wm.PRODUCTS, 'monthly')
 SHELL = open(os.path.join(TPL, 'read_shell.html'), encoding='utf-8').read()
@@ -166,54 +166,17 @@ def build_portrait():
 
 
 def build_wrapped():
-    paths = {
-        'materials_monthly': os.path.join(wm.DATA, 'materials_monthly.json'),
-        'stats_wordfreq': os.path.join(wm.DATA, 'stats_wordfreq.json'),
-        'stats_agents': os.path.join(wm.DATA, 'stats_agents.json'),
-    }
-    missing = [k for k, p in paths.items() if not os.path.exists(p)]
-    if missing:
-        print('跳过 10 那页：统计素材还没生成（先跑 ingest），缺 %s' % '、'.join(missing))
+    """09 走过的这几个月：内容由 Agent 读语料写 timeline.md，脚本只渲染，不挑月度主题/开场收尾原话。"""
+    p = os.path.join(wm.DATA, 'profile', 'timeline.md')
+    if not os.path.exists(p):
+        print('跳过 09 那页：这几个月怎么过的还没整理出来（先跑蒸馏，见 distill-report-protocol）')
         return None
-    months = load_json(paths['materials_monthly'])
-    wf = load_json(paths['stats_wordfreq'])
-    ag = load_json(paths['stats_agents'])
-    total = sum(a['msgs'] for a in ag.values())
-    keys = sorted(months)
-    span = '%s ~ %s' % (keys[0], keys[-1])
-    # 标题里的月份数按数据实算（2025-11~2026-08 是 10 个月），不写死
-    y0, m0 = map(int, keys[0].split('-'))
-    y1, m1 = map(int, keys[-1].split('-'))
-    n_mon = (y1 * 12 + m1) - (y0 * 12 + m0) + 1
-    span_word = '这' + {1: '一个月', 2: '两个月'}.get(n_mon, ' %d 个月' % n_mon)
-    top = sorted(wf.items(), key=lambda t: -t[1])[:5]
-    top_html = ''.join('<span class="pill">%s <b>%d</b> 次</span>' % (H.escape(w), n) for w, n in top)
-
-    body = ['<h1 class="display">%s，<br>我是怎么过的</h1>' % span_word,
-            '<div class="refract"></div>']
-    body.append('<div class="bignum-row">'
-                '<div class="bignum"><div class="n">%s</div><div class="note">条原话，都是你说给 AI 的</div></div>'
-                '<div class="bignum"><div class="n">%d</div><div class="note">个 AI 工具跟你聊过</div></div>'
-                '<div class="bignum"><div class="n mono" style="font-size:26px;padding-top:8px;">%s</div>'
-                '<div class="note">从第一条到最新一条</div></div></div>' % (format(total, ','), len(ag), span))
-    body.append('<h2>你说得多的常用词</h2>')
-    body.append('<div style="margin:16px 0 8px;">%s</div>' % top_html)
-    body.append('<h2>按月翻</h2>')
-    for k in keys:
-        m = months[k]
-        topics = ''.join('<span class="pill">%s</span>' % H.escape(t) for t, _ in m.get('top_topics', [])[:3])
-        body.append('<div class="card">')
-        body.append('<div class="eyebrow">%s <span class="dot">·</span> %d 条</div>' % (k, m.get('n', 0)))
-        body.append('<div style="margin-bottom:8px;">%s</div>' % topics)
-        if m.get('opener'):
-            body.append('<div class="quote"><span class="q-eyebrow">开场第一句</span>'
-                        '<div class="q-text">「%s」</div></div>' % H.escape(m['opener'][:120]))
-        if m.get('closer'):
-            body.append('<div class="quote"><span class="q-eyebrow">收尾一句</span>'
-                        '<div class="q-text">「%s」</div></div>' % H.escape(m['closer'][:120]))
-        body.append('</div>')
+    md = open(p, encoding='utf-8', errors='replace').read()
+    body = ['<h1 class="display">走过的这几个月，<br>我是怎么过的</h1>',
+            '<div class="refract"></div>',
+            render_markdown(md)]
     return ('html/09_走过的这几个月.html',
-            page('走过的这几个月 · 言镜', '按时间回看 · %s' % span, '\n'.join(body)))
+            page('走过的这几个月 · 言镜', '按时间回看', '\n'.join(body)))
 
 
 def build_index():
@@ -337,21 +300,6 @@ def build_agents():
         print('跳过 06 那页：没有分 agent 数据')
         return None
 
-    # 每个 agent 第一次~最后一次，从语料里算
-    span = {}
-    for o in load_jsonl('corpus_dedup.jsonl'):
-        a = o.get('agent', '')
-        d = o.get('date', '')
-        if not a or not d:
-            continue
-        if a not in span:
-            span[a] = [d, d]
-        else:
-            if d < span[a][0]:
-                span[a][0] = d
-            if d > span[a][1]:
-                span[a][1] = d
-
     agents = sorted(ag.items(), key=lambda kv: -kv[1].get('msgs', 0))
     total_msgs = sum(v.get('msgs', 0) for v in ag.values())
     total = total_msgs or 1
@@ -384,34 +332,13 @@ def build_agents():
             f'</div>'
         )
 
-    body.append('<h2>主要用来干什么 · 怎么跟它说话</h2>')
-    for name, v in agents:
-        msgs = v.get('msgs', 0)
-        disp = AGENT_NAMES.get(name, name)
-        s = span.get(name, ['?', '?'])
-        span_txt = ('%s ~ %s' % (s[0], s[1])) if s[0] != '?' else ''
-        projs = v.get('top_projects', []) or []
-        proj_html = ''.join('<span class="pill">%s</span>' % H.escape(p) for p, _ in projs[:3])
-        if not proj_html:
-            proj_html = '<span style="color:var(--muted);">（还看不出主要项目）</span>'
-        median = v.get('median_len', '?')
-        q = v.get('question_pct', 0)
-        long_ = v.get('long_per_100', 0)
-        thanks = v.get('thanks_per_100', 0)
-        body.append(
-            '<div class="card">'
-            f'<div class="agent-head"><span class="agent-name">{H.escape(disp)}</span>'
-            f'<span class="agent-meta">{H.escape(span_txt)} · {format(msgs, ",")} 条</span></div>'
-            f'<div style="margin:12px 0 6px;font-size:13px;color:var(--muted);">主要在干</div>'
-            f'<div>{proj_html}</div>'
-            f'<div style="margin:14px 0 4px;font-size:13px;color:var(--muted);">怎么跟它说话</div>'
-            '<div class="agent-props">'
-            f'<span><span class="k">中位</span>{median} 字</span>'
-            f'<span><span class="k">提问</span>{q}%</span>'
-            f'<span><span class="k">长消息</span>{long_}%</span>'
-            f'<span><span class="k">谢谢</span>{thanks} 次/百条</span>'
-            '</div></div>'
-        )
+    # 判断部分：主要干啥 + 怎么跟它说话，Agent 读语料写 agents.md，脚本不替它下结论
+    md_path = os.path.join(wm.DATA, 'profile', 'agents.md')
+    if os.path.exists(md_path):
+        body.append(render_markdown(open(md_path, encoding='utf-8', errors='replace').read()))
+    else:
+        body.append('<div class="band"><p>每个 AI 里你主要干啥、怎么跟它说话，还没整理出来——'
+                    '说一句「更新报告」，AI 会按 distill-report-protocol 写好。</p></div>')
 
     return ('html/06_我在各个AI里的样子.html',
             page('我在各个 AI 里的样子 · 言镜', '按工具看', '\n'.join(body)))
@@ -646,10 +573,11 @@ def main():
     if cmd in ('read', 'all'):
         jobs += [build_portrait(), build_decisions(), build_insights(), build_recurring(),
                  build_agents(), build_tasks(), build_ai_view(), build_wrapped(), build_index()]
-    if cmd in ('monthly', 'all'):
-        jobs.append(build_monthly(month))
     if cmd in ('tracker', 'all'):
         jobs.append(build_tracker())
+    # 月报已并入 09 走过的这几个月（timeline.md 的「最近这个月」一节），不再单独脚本生成
+    if cmd == 'monthly':
+        print('月报已并入 09 页（timeline.md），不再单独生成。')
     for j in jobs:
         if j:
             write_out(*j)

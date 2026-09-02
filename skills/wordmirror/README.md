@@ -48,29 +48,29 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 
 ## 装完就能用（自包含）
 
-这个 skill 包自带提取引擎（`engine/`）——ingest、查旧账、记你确认过的事、生成网页、按意思搜，装完就能用，不需要再找一个"完整仓库"。数据默认产在用户主目录 `~/.wordmirror/data`（含你的原话，跟着你的机器走，不在 skill 包里）。
+这个 skill 包自带提取引擎（`scripts/`）——ingest、查旧账、记你确认过的事、生成网页、按意思搜，装完就能用，不需要再找一个"完整仓库"。数据默认产在用户主目录 `~/.wordmirror/data`（含你的原话，跟着你的机器走，不在 skill 包里）。
 
 如果你的数据在别处（比如旧版留下的），`python wm.py bind <数据目录>` 一条命令接上，或设环境变量 `WORD_MIRROR_HOME`。
 
 ## 支持哪些 agent
 
-ingest 会探测并提取你在这些工具里说过的话（清单在 skill 包的 `engine/detect_agents.py` 维护）：
+ingest 会探测并提取你在这些工具里说过的话（清单在 skill 包的 `scripts/detect_agents.py` 维护）：
 
 - Claude Code、Codex、Cursor、DeepSeek Harness、美团 CatPaw、zcode、Qwen、WorkBuddy、Pi、AtomCode、Google Antigravity（Grok 仅能采 shell 输入）
 
 各工具存档格式不同，个别要多装一个依赖：**DeepSeek Harness 需要 `pip install zstandard`**（解压它的 zstd 会话文件）。缺了不影响其他工具，只是 dsh 跳过并在跑 ingest 时提示。
 
-想加一个新的 agent：在 `engine/detect_agents.py` 加一行探测，再在 `extract_all.py` / `extract_ai.py` 各写一个解析函数。
+想加一个新的 agent：在 `scripts/detect_agents.py` 加一行探测，再在 `extract_all.py` / `extract_ai.py` 各写一个解析函数。
 
 ## 目录导览
 
 ```
 SKILL.md          AI 的入口：按场景干活，AI 只读这一个文件就够
-references/       六份协议（初始化/翻旧账/记事/隐私/更新/数据放哪）+ 两份生成模板
-layers/           隐私层模板（出厂是空的）：真实的 public.md 和 redact_list.json 在数据目录 data/layers/，整理生成；清单本身含敏感词，绝不外传
+references/       协议 + 生成模板（初始化/翻旧账/记事/隐私/更新/照见/报告蒸馏/数据放哪）
+assets/layers/    隐私层模板（出厂是空的）：真实的 public.md 和 redact_list.json 在数据目录 data/layers/，整理生成；清单本身含敏感词，绝不外传
 scripts/wm.py     命令行入口（翻旧账/记事/导出/月报）
-scripts/render.py  网页生成：read（首页/你的情况/翻给你看）/ monthly / tracker / all
-templates/        视觉规矩：DESIGN.md + read_shell.html + tracker.html（改样式只改这里）
+scripts/render.py  网页生成：read（9 页报告）/ all
+assets/templates/ 视觉规矩：DESIGN.md + read_shell.html + tracker.html（改样式只改这里）
 ```
 
 ## 诚实边界

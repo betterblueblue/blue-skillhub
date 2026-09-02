@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """薄壳：委托 skill 自带渲染器（scripts/render.py）出月报。真正的逻辑在 skill 包里。
-用法：python engine/make_monthly.py [YYYY-MM]
+用法：python scripts/make_monthly.py [YYYY-MM]
 """
 import os, sys, subprocess
 

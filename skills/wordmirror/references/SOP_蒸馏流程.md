@@ -11,13 +11,13 @@
 >
 > 本文档写的是**旧完整仓库**时代的产物体系（9 封信 / 15 个项目 / proj_genes_raw /
 > manifest.json / 三套设计 token / git commit 收尾）。当前 wordmirror 已自包含，
-> 渲染只出 index / 01 / 03 / 10 / 月报，全部由 `scripts/render.py` + `templates/` 完成。
+> 渲染只出 index / 01 / 03 / 10 / 月报，全部由 `scripts/render.py` + `assets/templates/` 完成。
 >
 > **以这些为准（不再按本文档）：**
 > - 数据提取/去重/统计/素材/渲染：一律走 `python scripts/wm.py ingest`（顺序已内置，别手工分步）
 > - portrait.md / habits.md 的章节结构：**按 `references/portrait-template.md` 和 `references/habits-template.md`**，
 >   不是本文 2.1/2.2 的固定章节
-> - 自检：`python scripts/wm.py check`（调 `engine/self_check.py`），不看本文档第 5 步的 git 收尾
+> - 自检：`python scripts/wm.py check`（调 `scripts/self_check.py`），不看本文档第 5 步的 git 收尾
 > - 产物只有 4 页 + 月报，本文 3.1–3.7 那些专题产物已不再产出
 >
 > 本文 2.1/2.2、第 3 步、①处的「待固化 compute_stats」、文末 TODO 均作废。
@@ -28,9 +28,9 @@
 
 ```bash
 cd <skill 包目录>   # skill 装在哪就在哪跑，如 ~/.agents/skills/wordmirror
-python engine/extract_all.py          # → data/corpus_all.jsonl（用户侧，10,799 条）
-python engine/extract_ai.py           # → data/ai_messages.jsonl（AI 侧，48,874 条）
-python engine/build_session_cards.py  # → data/sessions.jsonl（会话卡）
+python scripts/extract_all.py          # → data/corpus_all.jsonl（用户侧，10,799 条）
+python scripts/extract_ai.py           # → data/ai_messages.jsonl（AI 侧，48,874 条）
+python scripts/build_session_cards.py  # → data/sessions.jsonl（会话卡）
 ```
 
 **去重（extract_all.py 尚未内置，手工执行）**：
@@ -62,7 +62,7 @@ with open('data/corpus_dedup.jsonl', 'w', encoding='utf-8') as f:
 # 统一输出到控制台，产物文档引用的每个数字都能在这里复现
 ```
 
-（待固化：`engine/compute_stats.py`——P2 骨架任务，见文末 TODO）
+（待固化：`scripts/compute_stats.py`——P2 骨架任务，见文末 TODO）
 
 ## 第 2 步 · 画像蒸馏（LLM 环节，核心 SOP）
 
@@ -106,14 +106,14 @@ with open('data/corpus_dedup.jsonl', 'w', encoding='utf-8') as f:
 
 ## 第 4 步 · HTML 产物（模板渲染）
 
-数据 json → `templates/` 模板 → `engine/generate_html_pages.py` 渲染 → `products/html/`。
+数据 json → `assets/templates/` 模板 → `scripts/generate_html_pages.py` 渲染 → `products/html/`。
 **禁止直接手编 products/html/ 下的文件**（样式改 templates，数据改 json）。
 三套设计 token 的来源：awesome-design-md（linear.app / spotify / notion 三套 DESIGN.md）。
 
 ## 第 5 步 · 收尾（每次蒸馏必做）
 
 ```bash
-python engine/self_check.py        # 14 项自检，全绿才继续（--web 连浏览器一起验）
+python scripts/self_check.py        # 14 项自检，全绿才继续（--web 连浏览器一起验）
 git add -A
 git commit -m "蒸馏 YYYY-MM-DD：语料 N 条→M 条，画像/产物更新点简述"
 ```
@@ -138,6 +138,6 @@ git commit -m "蒸馏 YYYY-MM-DD：语料 N 条→M 条，画像/产物更新点
 
 ## TODO（P2 骨架收尾）
 
-- [ ] `engine/compute_stats.py`：把第 1 步的统计固化成脚本（信号词/长度/分agent/月度/搁置主题 一次出全）
-- [ ] `engine/distill_materials.py`：把第 3 步的"素材提取"（决策句式/被问住句式/月度切片/项目基因）固化成脚本，LLM 只做最后的成文
+- [ ] `scripts/compute_stats.py`：把第 1 步的统计固化成脚本（信号词/长度/分agent/月度/搁置主题 一次出全）
+- [ ] `scripts/distill_materials.py`：把第 3 步的"素材提取"（决策句式/被问住句式/月度切片/项目基因）固化成脚本，LLM 只做最后的成文
 - [ ] 去重步骤并入 extract_all.py

@@ -37,7 +37,7 @@ python <skill目录>/scripts/wm.py ingest
 
 | 属于 skill 包（出厂自带） | 属于用户（初始化生成） |
 |---|---|
-| SKILL.md / references/ / scripts/ / layers/（模板） | portrait.md / habits.md |
+| SKILL.md / references/ / scripts/ / assets/layers/（模板） | portrait.md / habits.md |
 | protocols、模板、隐私清单 | data/ 全部（你说的话、对话记录、统计） |
 | 别人 clone 得到同样的东西 | 每个人完全不同 |
 

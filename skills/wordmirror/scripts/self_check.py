@@ -19,8 +19,8 @@
   19 tracker 日期全格式
   20 skill 包 layers 零真实数据
 用法：
-  python engine/self_check.py          # 快检（无浏览器）
-  python engine/self_check.py --web    # 连浏览器一起验
+  python scripts/self_check.py          # 快检（无浏览器）
+  python scripts/self_check.py --web    # 连浏览器一起验
 """
 import os, sys, glob, json, re, subprocess
 
@@ -46,12 +46,12 @@ OLD_NAMES = ['产出样例', '承诺追踪器', '画像与协作', '年度之书
 # 新名清单出现旧词不算（如"时间胶囊"不再使用；但 SOP 反例示范行豁免）
 hits = []
 scan_files = []
-for pat in ['engine/*.py', 'engine/*.md', '*', 'templates/*',
+for pat in ['scripts/*.py', 'references/*.md', '*', 'assets/templates/*',
             os.path.join(PROD, '*.md'), os.path.join(PROD, 'html/*.html'), os.path.join(DATA, '*.json'),
             '*.md']:
     scan_files += [f for f in glob.glob(pat) if os.path.isfile(f)]
 for f in scan_files:
-    if 'A1_' in f or '手调版' in f or f.replace(chr(92), '/').endswith('engine/self_check.py'):
+    if 'A1_' in f or '手调版' in f or f.replace(chr(92), '/').endswith('scripts/self_check.py'):
         continue  # 历史备份不动；自检脚本自身存有检查词表，豁免
     try:
         t = open(f, encoding='utf-8', errors='replace').read()
@@ -69,8 +69,8 @@ check('旧命名残留', not hits, '; '.join(hits[:5]) if hits else '扫描 %d �
 
 # ===== 2. 关键文件存在 =====
 missing_core = [f for f in ['SKILL.md', 'README.md', 'scripts/wm.py', 'scripts/render.py',
-                             'scripts/vecsearch.py', 'engine/extract_all.py', 'engine/extract_ai.py',
-                             'engine/distill_insights.py']
+                             'scripts/vecsearch.py', 'scripts/extract_all.py', 'scripts/extract_ai.py',
+                             'scripts/distill_insights.py']
                 if not os.path.exists(f)]
 check('关键文件存在', not missing_core, '核心文件齐全' if not missing_core else '缺: ' + ', '.join(missing_core))
 
@@ -89,19 +89,19 @@ else:
           '%d 链接零死链' % len(links) if not dead and not orphan else '死链:%s 孤儿:%s' % (dead, orphan))
 
 # ===== 4. 读页模板存在 =====
-tpl_ok = os.path.exists(os.path.join('templates', 'read_shell.html'))
-check('读页模板存在', tpl_ok, 'read_shell.html 在' if tpl_ok else '缺 templates/read_shell.html')
+tpl_ok = os.path.exists(os.path.join('assets', 'templates', 'read_shell.html'))
+check('读页模板存在', tpl_ok, 'read_shell.html 在' if tpl_ok else '缺 assets/templates/read_shell.html')
 
 # ===== 5. skill 引用路径 =====
 sk = open('SKILL.md', encoding='utf-8').read()
 bad_ref = []
 for seg in [os.path.join(DATA, 'corpus_dedup.jsonl'), os.path.join(DATA, 'corpus_all.jsonl'), os.path.join(DATA, 'ai_messages.jsonl'),
             os.path.join(DATA, 'sessions.jsonl'), os.path.join(DATA, 'user_writebacks.jsonl'),
-            'engine/extract_all.py', 'engine/SOP_蒸馏流程.md']:
+            'scripts/extract_all.py', 'references/SOP_蒸馏流程.md']:
     if not os.path.exists(seg):
         bad_ref.append(seg)
 # 数据文件是 ingest 产物——空数据机器上没有属正常，只把代码/文档引用当硬失败
-code_bad = [s for s in bad_ref if s.startswith('engine/')]
+code_bad = [s for s in bad_ref if s.startswith('scripts/') or s.startswith('references/')]
 data_bad = [s for s in bad_ref if s.startswith(os.path.join(DATA, ''))]
 if code_bad:
     check('skill 引用路径', False, '代码/文档引用失效: ' + ','.join(code_bad))
@@ -121,7 +121,7 @@ if not os.path.exists(_cdp):
 elif not any(l.strip() for l in open(_cdp, encoding='utf-8')):
     check('compute_stats 可跑', None, '语料为空（corpus_dedup.jsonl 0 行），跳过')
 else:
-    r = subprocess.run(['python', 'engine/compute_stats.py'], capture_output=True, text=True)
+    r = subprocess.run(['python', 'scripts/compute_stats.py'], capture_output=True, text=True)
     check('compute_stats 可跑', r.returncode == 0, '正常' if r.returncode == 0 else r.stderr[:120])
 
 # ===== 8. SOP 数字口径 =====
@@ -131,9 +131,9 @@ else:
     try:
         n_all = sum(1 for _ in open(os.path.join(DATA, 'corpus_all.jsonl'), encoding='utf-8'))
         n_ai = sum(1 for _ in open(os.path.join(DATA, 'ai_messages.jsonl'), encoding='utf-8'))
-        sop = open('engine/SOP_蒸馏流程.md', encoding='utf-8').read()
+        sop = open('references/SOP_蒸馏流程.md', encoding='utf-8').read()
         ok = ('%s' % format(n_all, ',')) in sop and ('%s' % format(n_ai, ',')) in sop
-        check('SOP 数字口径', ok if ok else None, '语料 %d 条 / AI %d 条，SOP 有记载' % (n_all, n_ai) if ok else '语料 %d / AI %d，SOP 数字旧了（更新 engine/SOP_蒸馏流程.md）' % (n_all, n_ai))
+        check('SOP 数字口径', ok if ok else None, '语料 %d 条 / AI %d 条，SOP 有记载' % (n_all, n_ai) if ok else '语料 %d / AI %d，SOP 数字旧了（更新 references/SOP_蒸馏流程.md）' % (n_all, n_ai))
     except Exception as e:
         check('SOP 数字口径', False, str(e))
 
@@ -275,7 +275,7 @@ else:
 
 # ===== 20. skill 包 layers 零真实数据（脱敏清单含敏感词本身，永不进包/公开仓）=====
 try:
-    rl = json.load(open('layers/redact_list.json', encoding='utf-8'))
+    rl = json.load(open(os.path.join('assets', 'layers', 'redact_list.json'), encoding='utf-8'))
     leak = [k for k, v in rl.items() if isinstance(v, list) and v]
     check('skill layers 零真实数据', not leak, '清单全空，安全' if not leak else '清单混入真实数据: %s' % leak)
 except Exception as e:

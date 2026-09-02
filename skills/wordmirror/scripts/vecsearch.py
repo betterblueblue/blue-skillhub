@@ -7,7 +7,7 @@
     python vecsearch.py query "问题"      按意思搜，输出最相关的几条（带日期）
     python vecsearch.py status           看索引状态（多少条、用什么模型、多久没更新）
 
-设计原则（DESIGN.md + README 诚实边界）：
+设计原则（references/DESIGN.md + README 诚实边界）：
 - 模型必须在本机跑（sentence-transformers / paraphrase-multilingual-MiniLM-L12-v2，
   117MB，下载到 ~/.cache/huggingface，是下载工具，不是把你的话传出去）
 - 索引的存法跟着 chromadb 的版本走（0.4x 和 1.x 不通用）。装了新版本就固定用它，

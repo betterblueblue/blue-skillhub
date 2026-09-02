@@ -21,7 +21,7 @@
     python wm.py bind <仓库根>     把已有完整仓库的数据接上（--clear 取消）
     python wm.py check             跑一遍自检（检查项看输出）
 
-设计原则（DESIGN.md）：每人自己跑自己的；数据全程在自己电脑上；不写死路径。
+设计原则（references/DESIGN.md）：每人自己跑自己的；数据全程在自己电脑上；不写死路径。
 """
 import os, sys, subprocess, json, webbrowser, re, datetime
 
@@ -81,7 +81,7 @@ def _ledger_paths():
 
 BASE, BASE_SOURCE = _find_base()
 SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ENGINE = os.path.join(SKILL_DIR, 'engine')
+ENGINE = os.path.join(SKILL_DIR, 'scripts')
 DATA = os.path.join(BASE, 'data')
 PRODUCTS = os.path.join(BASE, 'products')
 
@@ -89,7 +89,7 @@ def run(script, **kw):
     """跑 engine 下的脚本，把数据根目录经环境变量透传。"""
     path = os.path.join(ENGINE, script)
     if not os.path.exists(path):
-        print('缺少引擎脚本 engine/%s —— 检查 skill 包是否完整。' % script)
+        print('缺少脚本 scripts/%s —— 检查 skill 包是否完整。' % script)
         sys.exit(1)
     env = dict(os.environ)
     env['WORD_MIRROR_HOME'] = BASE

@@ -8,6 +8,15 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 
 这个 skill 干一件事：让你在任何 AI 里开工时，它都认识你——你是谁、在忙什么、跟你说话要守什么规矩；你随口问"我说过啥"，它能翻出原话、带日期。你的话全部存在自己电脑上，不上传。
 
+## 核心分工（最重要的一条）
+
+**判断归你，脚本只做管道。**
+
+- **你（Agent）负责一切"报告内容"**：你是谁、你纠结什么、AI 怎么看你、这几个月怎么过的……都要你读语料后用人话写出来，写到 `data/profile/` 下的 MD。脚本不会替你说话，也写不出人话。
+- **脚本只做两件事**：①数据初始化（提取存档、去重、算统计素材）；②排版渲染（把你写的 MD 排成 HTML）。
+- 脚本能直接上页的，只有"数字本身就说明问题"的事实（排名、总量、完成率、时间跨度）。正则抓的句子、词表分类、文件夹名、"中位/占比"这类统计维度，只能当你写报告的**素材**，不许直接上页。
+- 出报告走 `references/distill-report-protocol.md`，写 6 份 MD；照见走 `references/mirror-protocol.md`。
+
 ## 数据在哪
 
 **全局层**（你是谁：你的情况 / 规矩 / 你说的话 / 月报）——不分项目，跟着你走。怎么找到：
@@ -62,7 +71,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 对外发的东西，发之前把要发的清单给他过目、他点头才发。
 
 ### 更新数据 / 重新提取
-用户说"更新数据 / 重新提取 / 我的情况过期了" → 走 `references/ingest-protocol.md`，跑 `python scripts/wm.py ingest`（提取存档是重活，见下）。你说过的话变多了，补一句 `python scripts/wm.py vec build --update`（建过按意思搜的话）。**报告页（决定 / 反复提 / 总让 AI 干什么 / AI 怎么看我）不是自动的**——ingest 后按 `references/distill-report-protocol.md` 读语料重写那 4 份 MD。
+用户说"更新数据 / 重新提取 / 我的情况过期了" → 走 `references/ingest-protocol.md`，跑 `python scripts/wm.py ingest`（提取存档是重活，见下）。你说过的话变多了，补一句 `python scripts/wm.py vec build --update`（建过按意思搜的话）。**报告页（决定 / 反复提 / 总让 AI 干什么 / AI 怎么看我 / 各 AI 里我什么样 / 这几个月怎么过的）不是自动的**——ingest 后按 `references/distill-report-protocol.md` 读语料写那 6 份 MD。
 
 ### 生成网页
 用户要看报告页面 → 跑 `python scripts/render.py all`（生成网页是重活，见下），出完告诉他文件在哪、双击就能看。报告页的内容来自 Agent 蒸馏写的 MD（见 `references/distill-report-protocol.md`），没有 MD 那几页就是空的。
@@ -75,7 +84,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 | 活 | 工具 | 什么时候调 |
 |---|---|---|
 | 按意思搜（算向量，你现场算不了） | `python scripts/vecsearch.py query "问题"` / `build` | 字面搜不到、用户记不清原词时 |
-| 生成网页（要样式一致，你现写会漂） | `python scripts/render.py read / monthly / tracker / all` | 用户要月度报告 / 看板 / 翻给你看 |
+| 生成网页（排版渲染：把你写的 MD 排成 HTML，样式一致） | `python scripts/render.py read / all` | 用户要看报告页面 |
 | 提取存档（要啃好几个 AI 的原始记录 + 去重） | `python scripts/wm.py ingest` | 首次初始化 / 更新数据 |
 
 ## 硬规则（任何时候）
