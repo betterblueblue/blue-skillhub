@@ -80,6 +80,41 @@ def render_markdown(md):
     return '\n'.join(out)
 
 
+def load_insights():
+    """读照见定稿 insights.jsonl（每行一条），容忍缺失/坏行。"""
+    p = os.path.join(wm.DATA, 'profile', 'insights.jsonl')
+    out = []
+    if not os.path.exists(p):
+        return out
+    for line in open(p, encoding='utf-8'):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except Exception:
+            continue
+    return out
+
+
+INSIGHT_TYPE = {'say_do': '说了没做', 'recur': '反复提没下文', 'flip': '前后矛盾', 'word_drift': '口头禅漂移'}
+INSIGHT_STATUS = {'active': '待点破', 'confirmed': '认了', 'dismissed': '否了'}
+
+
+def insight_card(o):
+    """照见卡：类型标签 + 事实 + 证据引文。"""
+    t = INSIGHT_TYPE.get(o.get('type', ''), o.get('type', '照见'))
+    st = INSIGHT_STATUS.get(o.get('status', 'active'), o.get('status', '待点破'))
+    quotes = []
+    for e in (o.get('evidence') or [])[:2]:
+        if isinstance(e, dict):
+            quotes.append('<div class="insight-quote"><div class="date">%s</div><div class="txt">「%s」</div></div>'
+                          % (H.escape(str(e.get('date', ''))), H.escape(str(e.get('msg', '')))))
+    return ('<article class="insight-card"><div class="insight-type">%s · %s</div>'
+            '<p class="insight-fact">%s</p>%s</article>'
+            % (H.escape(t), H.escape(st), H.escape(o.get('fact', '')), ''.join(quotes)))
+
+
 # ---------- READ 页 ----------
 
 def build_portrait():
@@ -125,7 +160,8 @@ def build_wrapped():
     top = sorted(wf.items(), key=lambda t: -t[1])[:5]
     top_html = ''.join('<span class="pill">%s <b>%d</b> 次</span>' % (H.escape(w), n) for w, n in top)
 
-    body = ['<h1 class="display">%s，<br>翻给你看</h1>' % span_word]
+    body = ['<h1 class="display">%s，<br>你的时间弧线</h1>' % span_word,
+            '<div class="refract"></div>']
     body.append('<div class="bignum-row">'
                 '<div class="bignum"><div class="n">%s</div><div class="note">条原话，都是你说给 AI 的</div></div>'
                 '<div class="bignum"><div class="n">%d</div><div class="note">个 AI 工具跟你聊过</div></div>'
@@ -148,48 +184,104 @@ def build_wrapped():
                         '<div class="q-text">「%s」</div></div>' % H.escape(m['closer'][:120]))
         body.append('</div>')
     return ('html/10_翻给你看.html',
-            page('翻给你看 · 言镜', '按月回顾 · %s' % span, '\n'.join(body)))
+            page('时间弧线 · 言镜', '时间弧线 · %s' % span, '\n'.join(body)))
 
 
 def build_index():
     ag_p = os.path.join(wm.DATA, 'stats_agents.json')
-    if not os.path.exists(ag_p):
-        print('跳过首页：统计素材 stats_agents.json 还没生成（先跑 ingest）')
-        return None
-    ag = load_json(ag_p)
-    tr_p = os.path.join(wm.DATA, 'tracker_items.json')
-    rows = []
-    if os.path.exists(tr_p):
-        tr = load_json(tr_p)
-        rows = tr if isinstance(tr, list) else tr.get('items', [])
-    stalled = sum(1 for r in rows if r.get('status') == 'stalled')
-    total = sum(a['msgs'] for a in ag.values())
+    ag = {}
+    if os.path.exists(ag_p):
+        try:
+            ag = load_json(ag_p)
+        except Exception:
+            ag = {}
+    total = sum(a.get('msgs', 0) for a in ag.values()) if isinstance(ag, dict) else 0
+    n_agents = len(ag) if isinstance(ag, dict) else 0
 
+    promises = _promises_all_layers()
+    n_open = sum(1 for o in promises if o.get('status') == 'open')
+    n_done = sum(1 for o in promises if o.get('status') == 'closed')
+    n_drop = sum(1 for o in promises if o.get('status') == 'dropped')
+
+    ins = load_insights()
+    n_ins = len(ins)
+
+    body = ['<h1 class="display">以言为镜，<br><span class="accent">可以知自己</span></h1>',
+            '<div class="refract"></div>',
+            '<p style="color:var(--muted);max-width:560px;">你跟好几个 AI 说过的话，都在这儿了。'
+            '欠着没做的、反复提又放下的、前后改口的——一眼看清。</p>']
+
+    body.append('<div class="stats">'
+                '<div class="stat"><div class="n">%s</div><div class="note">条原话，都是你说给 AI 的</div></div>'
+                '<div class="stat"><div class="n">%d</div><div class="note">个 AI 工具，跟你聊过天</div></div>'
+                '<div class="stat"><div class="n">%d</div><div class="note">件欠着的事，一直没下文</div></div>'
+                '<div class="stat"><div class="n">%d</div><div class="note">件事，今天想提醒你</div></div>'
+                '</div>' % (format(total, ','), n_agents, n_open, n_ins))
+
+    body.append('<h2>今天想提醒你的几件事</h2>')
+    active = [o for o in ins if o.get('status') in ('active', None, '')][:3]
+    if active:
+        body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in active) + '</div>')
+    else:
+        body.append('<div class="band"><p>现在还没什么要提醒你的。等你说的话多了，这里会挑出你说了没做、前后矛盾的事。</p></div>')
+
+    body.append('<h2>这个月的你</h2>')
+    if n_done + n_drop + n_open > 0:
+        seg = max(1, n_done + n_drop + n_open)
+        done_pct = round(100 * n_done / seg)
+        drop_pct = round(100 * n_drop / seg)
+        open_pct = 100 - done_pct - drop_pct
+        body.append('<div class="gap-bar">'
+                    '<span class="done" style="width:%d%%;"></span>'
+                    '<span class="cool" style="width:%d%%;"></span>'
+                    '<span class="stall" style="width:%d%%;"></span></div>'
+                    % (done_pct, drop_pct, open_pct))
+        body.append('<div class="gap-legend">'
+                    '<span><i style="background:var(--done);"></i>办完 %d 件</span>'
+                    '<span><i style="background:var(--cooling);"></i>不做了 %d 件</span>'
+                    '<span><i style="background:var(--stalled);"></i>还没做 %d 件</span></div>'
+                    % (n_done, n_drop, n_open))
+    else:
+        body.append('<div class="band"><p>还没记过要做的事。说一句"我要做 X"，AI 就会记上。</p></div>')
+
+    body.append('<h2>翻开更多</h2>')
     cards = [
-        ('01', '我是谁，怎么跟我共事', '你的说明书：你是谁、在忙什么、AI 该怎么跟你配合', '01_我是谁_怎么跟我共事.html'),
-        ('03', '我说过要做的事，现在都怎么样了', '哪件说了没下文，一眼看清', '03_我说过要做的事_现在都怎么样了.html'),
-        ('10', '翻给你看', '一个月一页，翻回去看', '10_翻给你看.html'),
+        ('01', '我是谁', '你的情况、在忙什么、怎么跟你配合', '01_我是谁_怎么跟我共事.html'),
+        ('03', '说过要做的事', '说 vs 做，一眼看清哪件没下文', '03_我说过要做的事_现在都怎么样了.html'),
+        ('05', '照见', '说了没做、反复提、前后矛盾、口头禅变化', '05_照见.html'),
+        ('10', '时间弧线', '从第一个月到今天，你的轨迹', '10_翻给你看.html'),
     ]
     monthly = sorted(os.listdir(MON)) if os.path.isdir(MON) else []
     if monthly:
-        cards.append(('08', '%s · 这个月你对 AI 说了什么' % monthly[-1].replace('.html', ''),
-                      '这个月说了多少、定了什么、办完了几件', '../monthly/' + monthly[-1]))
-    body = ['<h1 class="display">言镜</h1>',
-            '<p style="font-size:18px;color:var(--body-strong);">你跟 AI 说过的话，都在这儿了。'
-            '换个 AI 干活时，让它先读一遍你的情况——省得每次重新自我介绍。</p>',
-            '<div class="bignum-row">'
-            '<div class="bignum"><div class="n">%s</div><div class="note">条对话记录（重复的只算一次）</div></div>'
-            '<div class="bignum"><div class="n">%d</div><div class="note">个 AI 工具的聊天记录</div></div>'
-            '<div class="bignum"><div class="n" style="color:var(--stalled);">%d</div>'
-            '<div class="note">件说了没下文的事（超过 30 天），最该看看</div></div></div>' % (format(total, ','), len(ag), stalled)]
-    body.append('<h2>页面</h2>')
+        cards.append(('月报', '这个月的报告', '说了多少、定了什么、办完几件', '../monthly/' + monthly[-1]))
+    body.append('<div class="card-grid">')
     for num, title, desc, href in cards:
-        body.append('<div class="card"><div class="eyebrow">%s</div>'
-                    '<p style="font-size:19px;margin-bottom:4px;"><strong><a href="%s">%s</a></strong></p>'
-                    '<p style="color:var(--muted);">%s</p></div>'
-                    % (num, href, H.escape(title), H.escape(desc)))
+        body.append('<a class="nav-card" href="%s"><div class="idx">%s</div><h3>%s</h3><p>%s</p></a>'
+                    % (href, H.escape(num), H.escape(title), H.escape(desc)))
+    body.append('</div>')
+
     return ('html/index.html',
             page('言镜 · 首页', '首页 <span class="dot">·</span> 言镜 · wordmirror', '\n'.join(body), home='index.html'))
+
+
+def build_insights():
+    ins = load_insights()
+    body = ['<h1 class="display">照见</h1>',
+            '<div class="refract"></div>',
+            '<p style="color:var(--muted);max-width:560px;">这里都是你说了没做、反复提、前后矛盾的事。'
+            '只摆事实、带日期和原话，结论你自己下。</p>']
+    active = [o for o in ins if o.get('status') in ('active', None, '')]
+    if not active:
+        body.append('<div class="band"><p>现在还没什么要提醒你的。等你说的话多了，这里会挑出你说了没做、前后矛盾的事。</p></div>')
+    else:
+        body.append('<h2>还没跟你说的</h2>')
+        body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in active) + '</div>')
+        rest = [o for o in ins if o not in active]
+        if rest:
+            body.append('<h2>已经说过的</h2>')
+            body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in rest) + '</div>')
+    return ('html/05_照见.html',
+            page('照见 · 言镜', '照见 <span class="dot">·</span> 言镜', '\n'.join(body)))
 
 
 # ---------- 月报 ----------
@@ -274,7 +366,8 @@ def build_monthly(month=None):
 
     def esc(s):
         return H.escape(str(s))
-    body = ['<h1 class="display">这个月，<br>你说给 AI 的话</h1>']
+    body = ['<h1 class="display">这个月，<br>你说给 AI 的话</h1>',
+            '<div class="refract"></div>']
     body.append('<div class="bignum-row">'
                 '<div class="bignum"><div class="n">%d</div><div class="note">条原话%s</div></div>'
                 '<div class="bignum"><div class="n mono" style="font-size:26px;padding-top:8px;">%s</div>'
@@ -304,22 +397,57 @@ def build_monthly(month=None):
         body.append('<p style="color:var(--muted);">之前已经办完 %d 件。</p>' % len(done))
     if not promises and not done:
         body.append('<p>这个月还没有办完的事。你说一句"这事做完了"，AI 就会记上。</p>')
+    ins_top = [o for o in load_insights() if o.get('status') in ('active', None, '')][:3]
+    body.append('<h2>这个月的提醒</h2>')
+    if ins_top:
+        body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in ins_top) + '</div>')
+    else:
+        body.append('<p>还没有照见。</p>')
     body.append('<p style="color:var(--muted-soft);font-size:13px;">生成于 %s</p>' % datetime.date.today().isoformat())
     return (os.path.join('monthly', '%s.html' % month),
             page('言镜月报 · %s' % month, '月报 <span class="dot">·</span> %s' % month,
                  '\n'.join(body), home='../html/index.html'))
 
 
-# ---------- tracker 看板 ----------
+# ---------- 说过要做的事（03 看板，读两层 promises） ----------
 
 def build_tracker():
     tpl = open(os.path.join(TPL, 'tracker.html'), encoding='utf-8').read()
-    tr_p = os.path.join(wm.DATA, 'tracker_items.json')
-    if not os.path.exists(tr_p):
-        print('跳过 03 那页：还没生成（先跑 ingest）')
-        return None
-    items = load_json(tr_p)
-    items = items if isinstance(items, list) else items.get('items', [])
+    today = datetime.date.today()
+    items = []
+    seq = 0
+    for p in wm._ledger_paths():
+        for o in load_jsonl_path(p):
+            o = dict(o)
+            seq += 1
+            st = o.get('status', 'open')
+            d = o.get('date', '')
+            age_days = None
+            if d:
+                try:
+                    age_days = (today - datetime.date.fromisoformat(d)).days
+                except Exception:
+                    age_days = None
+            if st == 'open':
+                status = 'stalled' if (age_days is not None and age_days >= 30) else 'cooling'
+                age_class = 'red' if status == 'stalled' else 'amber'
+                age_txt = ('%d 天' % age_days) if age_days is not None else '—'
+                desc = '说了没下文' if status == 'stalled' else '说过，还没下文'
+            elif st == 'closed':
+                status, age_class, age_txt, desc = 'done', 'gray', (o.get('closed_date', '') or '已办完'), '办完了'
+            else:  # dropped
+                status, age_class, age_txt, desc = 'done', 'gray', (o.get('closed_date', '') or '不做了'), '不做了'
+            items.append({
+                'id': 'WM-%03d' % seq,
+                'title': o.get('text', '')[:60],
+                'desc': desc,
+                'quote': o.get('text', ''),
+                'status': status,
+                'proj': wm._ledger_tag(p),
+                'age': age_txt,
+                'ageClass': age_class,
+                'legacy': '',
+            })
     # 内联进 <script> 的 JSON 必须转义 `</`，否则用户原话里的 </script> 会在解析阶段提前闭合脚本块
     data_text = json.dumps(items, ensure_ascii=False).replace('</', '<\\/')
     out = tpl.replace('__TRACKER_DATA__', data_text)
@@ -341,7 +469,7 @@ def main():
     month = sys.argv[2] if len(sys.argv) > 2 and re.match(r'\d{4}-\d{2}$', sys.argv[2]) else None
     jobs = []
     if cmd in ('read', 'all'):
-        jobs += [build_portrait(), build_wrapped(), build_index()]
+        jobs += [build_portrait(), build_wrapped(), build_index(), build_insights()]
     if cmd in ('monthly', 'all'):
         jobs.append(build_monthly(month))
     if cmd in ('tracker', 'all'):
