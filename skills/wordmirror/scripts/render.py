@@ -351,7 +351,7 @@ def build_index():
     body = ['<h1 class="display">让 AI 认识你，<br><span class="accent">也让你看见自己</span></h1>',
             '<div class="refract"></div>',
             '<p style="color:var(--muted);max-width:560px;">一个装进 agent skills 目录的技能包：你跟各个 AI 说过的每句话都留在这台电脑上，'
-            '由 AI 把它们变成两样东西——一份给 AI 看的说明书，一份给你自己看的回望。不联网、不收集，你的话是你的。</p>',
+            '由 AI 把它们变成两样东西：一份给 AI 看的说明书，一份给你自己看的回望。不联网、不收集，你的话是你的。</p>',
             '<div class="facing-row" style="margin-top:30px;">'
             '<div class="facing-col"><div class="facing-label">说明书 · 给每个 AI</div>'
             '<p style="margin-top:12px;">装上之后，你开的每个新会话，AI 都是老熟人：开局就知道你是谁、在忙什么、怎么跟你说话；'
