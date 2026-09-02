@@ -39,10 +39,7 @@ BS = chr(92)
 
 # ===== 1. 旧命名残留 =====
 OLD_NAMES = ['产出样例', '承诺追踪器', '画像与协作', '年度之书', '项目基因库', '决策档案',
-             '能力光谱', '文娟记忆包', '时间胶囊', '提问模式', '每日传记', '跨agent人格',
-             'digital-self/work/', 'digital-self' + BS + 'work' + BS, 'work/extractors',
-             'E:/agent/digital-self/产出',
-             'skill/digital-self']
+             '能力光谱', '文娟记忆包', '时间胶囊', '提问模式', '每日传记', '跨agent人格']
 # 新名清单出现旧词不算（如"时间胶囊"不再使用；但 SOP 反例示范行豁免）
 hits = []
 scan_files = []
