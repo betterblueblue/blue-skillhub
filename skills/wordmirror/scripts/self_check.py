@@ -74,7 +74,7 @@ check('关键文件存在', not missing_core, '核心文件齐全' if not missin
 # ===== 3. index 链接 =====
 idx_p = os.path.join(PROD, 'html/index.html')
 if not os.path.exists(idx_p):
-    check('index 链接', None, '还没有产物（先跑 wm.py ingest 生成），跳过')
+    check('index 链接', None, '还没有产物（先按 ingest-protocol.md 提取 + render.py all），跳过')
 else:
     t = open(idx_p, encoding='utf-8').read()
     links = re.findall(r'href="file:///([^"]+)"', t)

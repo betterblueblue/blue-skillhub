@@ -1,29 +1,24 @@
 # -*- coding: utf-8 -*-
-"""wm · 言镜（wordmirror）—— AI 干不了的重活工具 + 记账/写回的唯一入口。
+"""wm · 言镜（wordmirror）——记账/写回 + 按意思搜 + 数据绑定的入口。
 
-查旧话、看数据在哪、导出说明书这些活 AI 用自己的本事就能干（见 SKILL.md），
-不在这做命令。这里只留两类：
+查旧话、看数据、出报告、提取存档，这些活 AI 按 SKILL.md / references 自己干（逐个脚本跑），
+不在这做编排。这里只留 AI 干不了、或必须保格式的命令：
 
-三件 AI 干不了的活：
-    python wm.py ingest            提取你各 AI 的原始记录 → 去掉重复的 → 生成网页
-    python wm.py vec build [--update]   建/更新按意思搜的索引（见 scripts/vecsearch.py）
-    python wm.py vec status        看按意思搜的索引状态
-    python wm.py monthly [YYYY-MM] 生成这个月的报告（调 render.py）
-    python wm.py open              用浏览器打开首页
-
-记账 / 写回（中护栏：只走命令，保证格式对、坏行拦得住）：
-    python wm.py promise           看说过要做的事（哪些还没做完）
+记账 / 写回（只走命令，保证格式对、坏行拦得住）：
+    python wm.py promise           看说过要做的事
     python wm.py promise add 要做的事 / promise done 关键词 / promise drop 关键词
-    python wm.py wb add "事实" --topic 主题 [--agent 工具名]   记下一条你确认过的事（--ref 附依据）
+    python wm.py wb add "事实" --topic 主题 [--agent 工具名]   记下一条确认过的事
     python wm.py wb list           看记下的事
 
-地基 / 护栏：
-    python wm.py bind <仓库根>     把已有完整仓库的数据接上（--clear 取消）
-    python wm.py check             跑一遍自检（检查项看输出）
+按意思搜（向量，AI 现场算不了）：
+    python wm.py vec build [--update] / vec query "问题" / vec status
+
+数据绑定（数据在别处时接上）：
+    python wm.py bind <仓库根> / bind --clear
 
 设计原则（references/DESIGN.md）：每人自己跑自己的；数据全程在自己电脑上；不写死路径。
 """
-import os, sys, subprocess, json, webbrowser, re, datetime
+import os, sys, subprocess, json, datetime
 
 # 定位两层（data-locations.md 的同款顺序）：
 # 全局层（画像/语料/月报——"你是谁"，不分项目）：
@@ -80,102 +75,8 @@ def _ledger_paths():
     return paths
 
 BASE, BASE_SOURCE = _find_base()
-SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-ENGINE = os.path.join(SKILL_DIR, 'scripts')
 DATA = os.path.join(BASE, 'data')
 PRODUCTS = os.path.join(BASE, 'products')
-
-def run(script, **kw):
-    """跑 engine 下的脚本，把数据根目录经环境变量透传。"""
-    path = os.path.join(ENGINE, script)
-    if not os.path.exists(path):
-        print('缺少脚本 scripts/%s —— 检查 skill 包是否完整。' % script)
-        sys.exit(1)
-    env = dict(os.environ)
-    env['WORD_MIRROR_HOME'] = BASE
-    r = subprocess.run([sys.executable, path], capture_output=True, text=True, encoding='utf-8', env=env, **kw)
-    if r.stdout:
-        print(r.stdout.rstrip())
-    if r.returncode != 0:
-        print(r.stderr[:500])
-        sys.exit(1)
-    return r
-
-def _jsonl_count(p):
-    if not os.path.exists(p):
-        return 0
-    return sum(1 for line in open(p, encoding='utf-8') if line.strip())
-
-def _ledger_snapshot():
-    """ingest 前快照：writebacks + 两层 promises 的行数，用于结束后确认没被清空。"""
-    n_wb = _jsonl_count(os.path.join(DATA, 'user_writebacks.jsonl'))
-    n_prom = sum(_jsonl_count(p) for p in _ledger_paths())
-    return n_wb, n_prom
-
-def cmd_ingest():
-    before = _ledger_snapshot()
-    steps = [
-        ('探测 agent 存档', 'detect_agents.py'),
-        ('提取你说的话', 'extract_all.py'),
-        ('提取 AI 的回复', 'extract_ai.py'),
-        # 去重要放在消费脚本之前——extract_all 产出未去重版，下面三个脚本都读 dedup 版
-        ('去掉重复的', '_dedup'),
-        ('拼会话卡', 'build_session_cards.py'),
-        ('算数字底座（你的高频词/消息长度/分 agent 特征）', 'compute_stats.py'),
-        ('挖素材（决定时刻/被问住的瞬间/月度切片/项目基因）', 'distill_materials.py'),
-        ('挖照见候选（说vs做/反复/前后矛盾/口头禅漂移）', 'distill_insights.py'),
-        ('渲染产物页面', 'generate_html_pages.py'),
-    ]
-    print('wm ingest · 开始（全程在你自己电脑上跑，数据不上传）')
-    print('=' * 56)
-    for i, (label, script) in enumerate(steps, 1):
-        print('[%d/%d] %s ...' % (i, len(steps), label))
-        if script == '_dedup':
-            _dedup()
-        else:
-            run(script)
-    # 汇报第一口糖
-    _sugar_report()
-    after = _ledger_snapshot()
-    if after[0] < before[0] or after[1] < before[1]:
-        print('警告：ingest 后 writebacks（%d→%d）/ promises（%d→%d）行数变少，疑似被清空或覆盖，请检查。' % (before[0], after[0], before[1], after[1]))
-    print('=' * 56)
-    print('完成。看结果：')
-    print('  python wm.py open   （浏览器打开「翻给你看」入口页）')
-
-def _dedup():
-    src = os.path.join(DATA, 'corpus_all.jsonl')
-    dst = os.path.join(DATA, 'corpus_dedup.jsonl')
-    import re
-    import hashlib
-    seen, out = set(), []
-    for line in open(src, encoding='utf-8'):
-        o = json.loads(line)
-        # 去重键 = 日期 + 全文归一化哈希。带日期：同一天的同内容才去重，跨日期的同内容保留（保住引文日期）
-        k = hashlib.sha1((o.get('date', '') + '|' + re.sub(r'\s+', '', o['msg'])).encode('utf-8')).hexdigest()
-        if k in seen:
-            continue
-        seen.add(k)
-        out.append(o)
-    with open(dst, 'w', encoding='utf-8') as f:
-        for o in out:
-            f.write(json.dumps(o, ensure_ascii=False) + '\n')
-    print('     去掉重复后：共 %d 条' % len(out))
-
-def _sugar_report():
-    # 第一口糖：数字汇报 + 提示画像方向
-    try:
-        n = sum(1 for _ in open(os.path.join(DATA, 'corpus_dedup.jsonl'), encoding='utf-8'))
-    except FileNotFoundError:
-        return
-    print()
-    print('你跟 AI 说过的话：%d 条（重复的只算一次）' % n)
-    if n < 500:
-        print('（还不到 500 条——了解得还比较粗，先用着，以后会越来越全）')
-    elif n < 3000:
-        print('（中等量级：高频词和习惯已经很准，决定类文档开始有料）')
-    else:
-        print('（重度用户量级：全部产物都会很扎实）')
 
 def cmd_vec(args):
     """语义检索入口。转发给 vecsearch.py（依赖 chromadb + sentence-transformers，本机跑）。"""
@@ -210,18 +111,6 @@ def cmd_bind(args):
     print('已绑定：%s（指针写在 %s）' % (target, bind_p))
     print('之后查旧话、生成网页、记账都用这份数据了。')
     print('解绑：python wm.py bind --clear')
-
-def cmd_open():
-    for name in ['index.html', '10_翻给你看.html']:
-        p = os.path.join(PRODUCTS, 'html', name)
-        if os.path.exists(p):
-            webbrowser.open('file:///' + p.replace(chr(92), '/'))
-            print('已打开：%s' % name)
-            return
-    print('产物页面不存在，先跑 python wm.py ingest')
-
-def cmd_check():
-    run('self_check.py')
 
 # ===== 写回（"记住这个"——走命令保证格式，见 writeback-protocol.md 硬门槛）=====
 
@@ -410,25 +299,12 @@ def cmd_promise(args):
     else:
         print('用法：python wm.py promise / promise add 文本 / promise done 关键词')
 
-def cmd_monthly(args):
-    """月度三页纸：渲染是 skill 自带能力（scripts/render.py），不再依赖 engine。"""
-    month = args[0] if args and re.match(r'\d{4}-\d{2}$', args[0]) else None
-    rp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'render.py')
-    r = subprocess.run([sys.executable, rp, 'monthly'] + ([month] if month else []))
-    sys.exit(r.returncode)
-
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
         return
     cmd = sys.argv[1]
-    if cmd == 'ingest':
-        cmd_ingest()
-    elif cmd == 'open':
-        cmd_open()
-    elif cmd == 'check':
-        cmd_check()
-    elif cmd == 'promise':
+    if cmd == 'promise':
         cmd_promise(sys.argv[2:])
     elif cmd == 'bind':
         cmd_bind(sys.argv[2:])
@@ -436,8 +312,6 @@ def main():
         cmd_vec(sys.argv[2:])
     elif cmd == 'wb':
         cmd_wb(sys.argv[2:])
-    elif cmd == 'monthly':
-        cmd_monthly(sys.argv[2:])
     else:
         print('不认识的命令：%s' % cmd)
         print(__doc__)

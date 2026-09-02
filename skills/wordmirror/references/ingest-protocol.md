@@ -1,29 +1,30 @@
 # 更新协议 · "重新提取 / 你的情况过期了"
 
-> 触发场景：用户要求数据更新（新对话没进来）、你的情况过期了、换了机器要初始化。
-> 原则：重复跑不会重复入库（按消息内容去掉重复的），放心执行。
+> 触发场景：用户要求数据更新、你的情况过期了、换机器要初始化。
+> 原则：**你（Agent）按下面 8 步逐步执行**，每步一个脚本，顺序不能乱（去重必须排在统计/素材之前，否则数字会虚高）。重复跑不会重复入库（按内容去重）。
 
-## 一条命令
+## 8 步（每步跑完、看到产物再往下）
 
-```bash
-python <skill目录>/scripts/wm.py ingest
-```
+| 步 | 命令 | 干什么 | 产物 |
+|---|---|---|---|
+| 1 | `python scripts/detect_agents.py` | 探测哪些 agent 有存档 | 报告（哪个能采、哪个跳过） |
+| 2 | `python scripts/extract_all.py` | 提取你说的话 | `data/corpus_all.jsonl` |
+| 3 | `python scripts/extract_ai.py` | 提取 AI 的回复 | `data/ai_messages.jsonl` |
+| 4 | `python scripts/dedup.py` | 去重 | `data/corpus_dedup.jsonl` |
+| 5 | `python scripts/build_session_cards.py` | 拼会话卡 | `data/sessions.jsonl` |
+| 6 | `python scripts/compute_stats.py` | 词频/长度/分 agent 特征 | `data/stats_*.json` |
+| 7 | `python scripts/distill_materials.py` 和 `distill_insights.py` | 挖素材 + 照见候选 | `data/materials_*.json` |
+| 8 | `python scripts/render.py all` | 出全 10 页 HTML | `products/html/` |
 
-它会串联：提取（你的话+AI 的话）→ 去掉重复的 → 拼对话记录 → 统计 → 整理素材 → 挖照见候选 → 生成网页。全程在你自己电脑上。
-
-## 就一条命令
-
-更新数据就 `python scripts/wm.py ingest` 一条，它会自己串联：提取你说的话 → 去掉重复的 → 拼对话记录 → 统计 → 整理素材 → 挖照见候选 → 生成网页。中间那几步不用你分开跑。
-
-（提取存档是三件"AI 干不了的活"之一，所以留成命令；查旧话、看数据这些你自己读文件就行，不用命令。）
+> 数据根目录经环境变量 `WORD_MIRROR_HOME` 指定；脚本自己会找到 `~/.wordmirror` 或绑定位置（见 `data-locations.md`）。
 
 ## 注意
 
-1. **首次跑要花的时间和你说过的话有多少成正比**（话多的话约几分钟）；以后只补新的，很快
-2. 跑完报告里的"量级提示"（<500 条=了解得还比较粗）要转告用户，管理预期
-3. **你的情况文件（portrait.md / habits.md）不自动重写**——你说过的话更新后，按 `references/SOP_蒸馏流程.md` 重新整理才更新
-4. **报告页（决定 / 反复提 / 总让 AI 干什么 / AI 怎么看我）也不是自动的**——ingest 只产候选素材，这 4 份内容要按 `references/distill-report-protocol.md` 由 Agent 读语料写 MD，脚本只渲染
-4. **照见候选不自动定稿**：ingest 会产出 `data/materials_insights.json`（照见候选），但**不会**自动写 `data/profile/insights.jsonl`——你要按 `references/mirror-protocol.md` 筛一遍、改话术、定稿追加写进去；不定稿，开工的照见永远不会点破
-5. 更新完建议跑 `python scripts/wm.py check`（自检），全绿才算完成
-6. 探测不到某 agent → 正常（报告"没找到，跳过"），不是错误；新 agent 支持要改 `scripts/detect_agents.py` 的表
-7. **DeepSeek Harness（dsh）提取需要 zstandard**（解压 zstd）：`pip install zstandard`；没装时该 agent 自动跳过并提示，不影响其他 agent
+1. 首次跑的时间和你话量成正比（话多约几分钟）；以后只补新的，快。
+2. 每步看脚本输出：会打印产物条数；条数比上次暴跌（>30%）要怀疑提取器坏了，别闷头往下跑。
+3. **portrait.md / habits.md 不自动重写**——更新后按 `references/SOP_蒸馏流程.md` 重新整理。
+4. **报告页（决定/反复/任务/AI看/各AI样子/这几个月）不自动写**——按 `references/distill-report-protocol.md` 由你读语料写 6 份 MD。
+5. **照见候选不自动定稿**——按 `references/mirror-protocol.md` 筛一遍写 `insights.jsonl`。
+6. 更新完跑 `python scripts/self_check.py` 自检，全绿才算完。
+7. 探测不到某 agent 是正常（报告"没找到，跳过"）；新 agent 改 `scripts/detect_agents.py` 的表。
+8. DeepSeek Harness（dsh）提取需要 zstandard（`pip install zstandard`）；没装自动跳过并提示。

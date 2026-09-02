@@ -14,10 +14,10 @@
 > 渲染只出 index / 01 / 03 / 10 / 月报，全部由 `scripts/render.py` + `assets/templates/` 完成。
 >
 > **以这些为准（不再按本文档）：**
-> - 数据提取/去重/统计/素材/渲染：一律走 `python scripts/wm.py ingest`（顺序已内置，别手工分步）
+> - 数据提取/去重/统计/素材/渲染：按 `references/ingest-protocol.md` 的 8 步逐步执行，别手工乱序
 > - portrait.md / habits.md 的章节结构：**按 `references/portrait-template.md` 和 `references/habits-template.md`**，
 >   不是本文 2.1/2.2 的固定章节
-> - 自检：`python scripts/wm.py check`（调 `scripts/self_check.py`），不看本文档第 5 步的 git 收尾
+> - 自检：`python scripts/self_check.py`，不看本文档第 5 步的 git 收尾
 > - 产物只有 4 页 + 月报，本文 3.1–3.7 那些专题产物已不再产出
 >
 > 本文 2.1/2.2、第 3 步、①处的「待固化 compute_stats」、文末 TODO 均作废。

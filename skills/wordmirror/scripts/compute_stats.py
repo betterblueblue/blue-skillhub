@@ -15,7 +15,7 @@ BS = chr(92)
 if not rows:
     print('语料为空：corpus_dedup.jsonl 里一条话都没有。')
     print('说明各 AI 的存档还没提取出来（或提取后全是空行）——先让 agent 走初始化，')
-    print('有存档了再跑 wm.py ingest，否则统计（中位数/最长等）无从算起。')
+    print('有存档了再按 references/ingest-protocol.md 提取，否则统计（中位数/最长等）无从算起。')
     sys.exit(1)
 
 def topic(r):

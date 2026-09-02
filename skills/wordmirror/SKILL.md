@@ -71,13 +71,13 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 对外发的东西，发之前把要发的清单给他过目、他点头才发。
 
 ### 更新数据 / 重新提取
-用户说"更新数据 / 重新提取 / 我的情况过期了" → 走 `references/ingest-protocol.md`，跑 `python scripts/wm.py ingest`（提取存档是重活，见下）。你说过的话变多了，补一句 `python scripts/wm.py vec build --update`（建过按意思搜的话）。**报告页（决定 / 反复提 / 总让 AI 干什么 / AI 怎么看我 / 各 AI 里我什么样 / 这几个月怎么过的）不是自动的**——ingest 后按 `references/distill-report-protocol.md` 读语料写那 6 份 MD。
+用户说"更新数据 / 重新提取 / 我的情况过期了" → 走 `references/ingest-protocol.md`，**按它写的 8 步逐步执行**（每步一个脚本，顺序不能乱；提取存档是重活，见下）。你说过的话变多了，补一句 `python scripts/wm.py vec build --update`（建过按意思搜的话）。**报告页（决定 / 反复提 / 总让 AI 干什么 / AI 怎么看我 / 各 AI 里我什么样 / 这几个月怎么过的）不是自动的**——提取完按 `references/distill-report-protocol.md` 读语料写那 6 份 MD。
 
 ### 生成网页
 用户要看报告页面 → 跑 `python scripts/render.py all`（生成网页是重活，见下），出完告诉他文件在哪、双击就能看。报告页的内容来自 Agent 蒸馏写的 MD（见 `references/distill-report-protocol.md`），没有 MD 那几页就是空的。
 
 ### 首次初始化
-读不到 portrait.md → 走 `references/init-protocol.md` 四步：探测存档 → ingest 提取 → 你照着模板整理出 portrait.md + habits.md → 念给用户听、当场纠错。
+读不到 portrait.md → 走 `references/init-protocol.md` 四步：探测存档 → 按 `references/ingest-protocol.md` 的 8 步提取 → 你照着模板整理出 portrait.md + habits.md → 念给用户听、当场纠错。
 
 ## 三件干不了的活（才调工具）
 
@@ -85,7 +85,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 |---|---|---|
 | 按意思搜（算向量，你现场算不了） | `python scripts/vecsearch.py query "问题"` / `build` | 字面搜不到、用户记不清原词时 |
 | 生成网页（排版渲染：把你写的 MD 排成 HTML，样式一致） | `python scripts/render.py read / all` | 用户要看报告页面 |
-| 提取存档（要啃好几个 AI 的原始记录 + 去重） | `python scripts/wm.py ingest` | 首次初始化 / 更新数据 |
+| 提取存档（要啃好几个 AI 的原始记录 + 去重） | `scripts/extract_all.py` + `extract_ai.py` + `dedup.py`（按 `references/ingest-protocol.md`） | 首次初始化 / 更新数据 |
 
 ## 硬规则（任何时候）
 

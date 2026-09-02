@@ -11,11 +11,9 @@
 
 ### 第 2 步：提取（第一次跑，量大的话要几分钟）
 
-```bash
-python <skill目录>/scripts/wm.py ingest
-```
+按 `references/ingest-protocol.md` 的 **8 步逐步执行**（探测 → 提取你的话 → 提取 AI 回复 → 去重 → 会话卡 → 数字底座 → 素材 → 渲染），每步一个脚本，顺序不能乱。
 
-输出：你说过的话有多少条 + 量级提示（<500 条会提示"了解得还比较粗"）。
+输出：每步脚本打印产物条数；最后跑 `python scripts/render.py all` 出全 10 页 HTML。
 
 ### 第 3 步：整理出你的情况（portrait.md / habits.md）
 
