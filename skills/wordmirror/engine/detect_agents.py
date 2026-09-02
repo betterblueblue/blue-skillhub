@@ -17,8 +17,8 @@ AGENT_PATTERNS = {
         'kind': 'jsonl', 'how': '按年/月/日分层的 rollout 文件',
     },
     'claude-code': {
-        'patterns': ['.claude/projects/*/*.jsonl'],
-        'kind': 'jsonl', 'how': '按项目分目录的会话文件',
+        'patterns': ['.claude/history.jsonl', '.claude/projects/*/*.jsonl'],
+        'kind': 'jsonl', 'how': 'history.jsonl 主历史 + 按项目分目录的会话文件',
     },
     'qwen': {
         'patterns': ['.qwen/projects/*/chats/*.jsonl'],

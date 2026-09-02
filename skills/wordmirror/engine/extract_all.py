@@ -100,6 +100,36 @@ def ex_claude(out):
                         texts.append(part.get('text',''))
             for t in texts:
                 n += write(out, 'claude-code', d2s(o.get('timestamp','')), proj, sid, clean(t))
+    # history.jsonl：Claude Code 主历史，每行一条用户 prompt（含已被清理会话的旧 prompt）。
+    # display 是用户输入；/ 开头是斜杠命令，跳过；粘贴的内容在 pastedContents 里。
+    hp = os.path.join(H, '.claude', 'history.jsonl')
+    if os.path.isfile(hp):
+        f += 1
+        for line in open(hp, encoding='utf-8', errors='replace'):
+            try: o = json.loads(line)
+            except Exception: continue
+            m = (o.get('display') or '').strip()
+            if not m or m.startswith('/'):
+                continue
+            if m.startswith('[Pasted text'):
+                parts = []
+                for v in (o.get('pastedContents') or {}).values():
+                    if isinstance(v, dict):
+                        c = v.get('content')
+                        if isinstance(c, str):
+                            parts.append(c)
+                        elif isinstance(c, list):
+                            for item in c:
+                                if isinstance(item, dict) and item.get('type') == 'text':
+                                    parts.append(item.get('text', ''))
+                full = '\n'.join(x for x in parts if x).strip()
+                if full:
+                    m = full
+                else:
+                    continue
+            m = clean(m)
+            if m:
+                n += write(out, 'claude-code', d2s(o.get('timestamp', '')), o.get('project', ''), o.get('sessionId', ''), m)
     rec('claude-code', n, f)
 
 def ex_qwen(out):
