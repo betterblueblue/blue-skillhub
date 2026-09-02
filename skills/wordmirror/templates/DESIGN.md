@@ -44,7 +44,7 @@ spectrum: "linear-gradient(90deg, #F97316, #EC4899, #8B5CF6, #3B82F6)"
 - 只允许出现在**页面大标题下的一条 180px × 3px 细线**（class `.refract`），代表"光折了一下"。
 - 其余任何地方（卡片、数字、边框、按钮）**禁止使用光谱渐变**。
 
-### 状态色（说 vs 做 / 照见状态）
+### 状态色（说 vs 做 / 提醒状态）
 
 ```yaml
 semantic:
@@ -61,7 +61,7 @@ semantic:
 ```yaml
 type:
   display:  "'Songti SC','Noto Serif SC','Source Han Serif SC',SimSun,Georgia,serif"
-            # 衬线：大标题、照见事实、引文、大数字。字重 600-700
+            # 衬线：大标题、提醒事实、引文、大数字。字重 600-700
   body:     "-apple-system,'SF Pro Display','PingFang SC','HarmonyOS Sans SC','MiSans','Segoe UI','Microsoft YaHei',sans-serif"
             # 正文与 UI
   mono:     "'JetBrains Mono','SF Mono',Consolas,'Cascadia Code',ui-monospace,monospace"
@@ -77,9 +77,9 @@ type:
 
 大标题下方一条 180px 宽、3px 高、圆角的光谱细线。全站唯一。读页 hero 出现一次。
 
-### 照见卡 `.insight-card`
+### 提醒卡 `.insight-card`
 
-白底 + 1px 边线 + 4px 圆角。内容：mono 青色类型标签 + 衬线照见事实 +
+白底 + 1px 边线 + 4px 圆角。内容：mono 青色类型标签 + 衬线提醒事实 +
 青色左边线引文块（mono 日期 + 衬线原文）。
 
 ### 数字带 `.stats`
@@ -92,7 +92,7 @@ type:
 
 ### 说 vs 做条 `.gap-bar`
 
-一条 8px 高圆角条，三段（办完青 / 放凉琥珀 / 没下文红），下方图例。落差一眼可见。
+一条 8px 高圆角条，三段（办完青 / 放凉琥珀 / 没下文红），下方图例。说没做 / 办完一眼看清。
 
 ### 导航卡 `.nav-card`
 
@@ -109,7 +109,7 @@ type:
 **必须：** 引文必带全日期；状态只用语义色四档；每页落款"言镜 · 数据只存在你自己的电脑上"；
 每页有顶部铭牌；行高 ≥1.6。
 
-**文案说人话：** 用户看得见的每个字用大白话（「你说的话」「重复的只算一次」「照见」），
+**文案说人话：** 用户看得见的每个字用大白话（「你说的话」「重复的只算一次」「提醒」），
 不出现「语料/画像/蒸馏/去重/语义索引/向量/脱敏」这类内部词。
 
 **禁止：** 霓虹色、大投影、发光、玻璃拟态、极光底、整页渐变（渐变只允许 `.refract` 一处）；
@@ -124,6 +124,6 @@ type:
 
 ## 8. 现状
 
-- 六页产物（index/01 我是谁/03 说过要做的事/05 照见/10 时间弧线/月报）由 scripts/render.py 渲染
-- 照见页读 data/profile/insights.jsonl；说过要做的事读两层 promises.jsonl
+- 六页产物（index/01 我是谁/03 说过要做的事/05 提醒/10 时间弧线/月报）由 scripts/render.py 渲染
+- 提醒页读 data/profile/insights.jsonl；说过要做的事读两层 promises.jsonl
 - 改样式先改本文档再动模板，然后重跑 render.py

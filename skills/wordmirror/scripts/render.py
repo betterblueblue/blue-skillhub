@@ -97,14 +97,14 @@ def load_insights():
     return out
 
 
-INSIGHT_TYPE = {'say_do': '说了没做', 'recur': '反复提没下文', 'flip': '前后矛盾', 'word_drift': '口头禅漂移'}
-INSIGHT_STATUS = {'active': '待点破', 'confirmed': '认了', 'dismissed': '否了'}
+INSIGHT_TYPE = {'say_do': '说了没做', 'recur': '反复提没下文', 'flip': '前后矛盾', 'word_drift': '口头禅变化'}
+INSIGHT_STATUS = {'active': '还没说', 'confirmed': '你认了', 'dismissed': '你否了'}
 
 
 def insight_card(o):
     """照见卡：类型标签 + 事实 + 证据引文。"""
-    t = INSIGHT_TYPE.get(o.get('type', ''), o.get('type', '照见'))
-    st = INSIGHT_STATUS.get(o.get('status', 'active'), o.get('status', '待点破'))
+    t = INSIGHT_TYPE.get(o.get('type', ''), o.get('type', '提醒'))
+    st = INSIGHT_STATUS.get(o.get('status', 'active'), o.get('status', '还没说'))
     quotes = []
     for e in (o.get('evidence') or [])[:2]:
         if isinstance(e, dict):
@@ -133,7 +133,7 @@ def build_portrait():
     idx = md.find('## 一句话')
     body.append(render_markdown(md[idx:] if idx != -1 else md))
     return ('html/01_我是谁_怎么跟我共事.html',
-            page('我是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s <span class="dot">·</span> 言镜整理' % (tag, date), '\n'.join(body)))
+            page('我是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s' % (tag, date), '\n'.join(body)))
 
 
 def build_wrapped():
@@ -248,7 +248,7 @@ def build_index():
     cards = [
         ('01', '我是谁', '你的情况、在忙什么、怎么跟你配合', '01_我是谁_怎么跟我共事.html'),
         ('03', '说过要做的事', '说 vs 做，一眼看清哪件没下文', '03_我说过要做的事_现在都怎么样了.html'),
-        ('05', '照见', '说了没做、反复提、前后矛盾、口头禅变化', '05_照见.html'),
+        ('05', '提醒', '说了没做、反复提、前后矛盾、口头禅变化', '05_提醒.html'),
         ('10', '时间弧线', '从第一个月到今天，你的轨迹', '10_翻给你看.html'),
     ]
     monthly = sorted(os.listdir(MON)) if os.path.isdir(MON) else []
@@ -261,12 +261,12 @@ def build_index():
     body.append('</div>')
 
     return ('html/index.html',
-            page('言镜 · 首页', '首页 <span class="dot">·</span> 言镜 · wordmirror', '\n'.join(body), home='index.html'))
+            page('言镜 · 首页', '今日镜面', '\n'.join(body), home='index.html'))
 
 
 def build_insights():
     ins = load_insights()
-    body = ['<h1 class="display">照见</h1>',
+    body = ['<h1 class="display">这几件，<br>你可能没注意</h1>',
             '<div class="refract"></div>',
             '<p style="color:var(--muted);max-width:560px;">这里都是你说了没做、反复提、前后矛盾的事。'
             '只摆事实、带日期和原话，结论你自己下。</p>']
@@ -280,8 +280,8 @@ def build_insights():
         if rest:
             body.append('<h2>已经说过的</h2>')
             body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in rest) + '</div>')
-    return ('html/05_照见.html',
-            page('照见 · 言镜', '照见 <span class="dot">·</span> 言镜', '\n'.join(body)))
+    return ('html/05_提醒.html',
+            page('提醒 · 言镜', '提醒', '\n'.join(body)))
 
 
 # ---------- 月报 ----------
@@ -402,7 +402,7 @@ def build_monthly(month=None):
     if ins_top:
         body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in ins_top) + '</div>')
     else:
-        body.append('<p>还没有照见。</p>')
+        body.append('<p>还没有提醒。</p>')
     body.append('<p style="color:var(--muted-soft);font-size:13px;">生成于 %s</p>' % datetime.date.today().isoformat())
     return (os.path.join('monthly', '%s.html' % month),
             page('言镜月报 · %s' % month, '月报 <span class="dot">·</span> %s' % month,
@@ -446,6 +446,7 @@ def build_tracker():
                 'proj': wm._ledger_tag(p),
                 'age': age_txt,
                 'ageClass': age_class,
+                'date': d or (o.get('closed_date') or ''),
                 'legacy': '',
             })
     # 内联进 <script> 的 JSON 必须转义 `</`，否则用户原话里的 </script> 会在解析阶段提前闭合脚本块
