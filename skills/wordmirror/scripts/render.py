@@ -8,7 +8,7 @@
 不依赖提取脚本（scripts/）——单装用户数据就位后同样能出（数据由 ingest 生成）。
 零联网，产物是双击就能打开的单个文件。
 """
-import os, sys, re, json, datetime
+import os, sys, re, json, datetime, base64
 import html as H
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -20,16 +20,38 @@ MON = os.path.join(wm.PRODUCTS, 'monthly')
 SHELL = open(os.path.join(TPL, 'read_shell.html'), encoding='utf-8').read()
 
 
+def _hero_img_css():
+    """hero 背景画：assets/templates/hero-dawn.jpg 存在就内嵌成 base64（产物仍是零外联单文件）。
+    没有画就返回 none，模板里的纯 CSS 晨景渐变兑底。"""
+    p = os.path.join(TPL, 'hero-dawn.jpg')
+    if not os.path.exists(p):
+        return 'none'
+    with open(p, 'rb') as f:
+        b = base64.b64encode(f.read()).decode('ascii')
+    return 'url("data:image/jpeg;base64,%s")' % b
+
+
+HERO_IMG = _hero_img_css()
+
+
 def load_json(p):
     with open(p, encoding='utf-8') as f:
         return json.load(f)
 
 
 def page(title, eyebrow, body, home='index.html'):
+    """组装页面：开场的大标题和折射线自动进夜幕 hero，其余落回纸白阅读带。"""
+    m = re.match(r'^(.*?</h1>)(\s*<div class="refract"></div>)?(.*)$', body, re.S)
+    if m:
+        hero, rest = m.group(1) + (m.group(2) or ''), m.group(3)
+    else:
+        hero, rest = '', body
     return (SHELL.replace('__TITLE__', H.escape(title))
                  .replace('__HOME__', home)
                  .replace('__EYEBROW__', eyebrow)
-                 .replace('__BODY__', body))
+                 .replace('__HERO_IMG__', HERO_IMG)
+                 .replace('__HERO__', hero)
+                 .replace('__BODY__', rest))
 
 
 def inline(s):
