@@ -3,10 +3,10 @@
 输出: {agent, date, proj, sid, msg}  msg 取 AI 回复正文（截断到前 1200 字符，蒸馏够用）"""
 import json, os, glob, re, sqlite3, datetime
 
-import wm
+import _common as common
 H = os.path.expanduser('~')
-BASE = wm.BASE
-OUT = os.path.join(wm.DATA, 'ai_messages.jsonl')
+BASE = common.BASE
+OUT = os.path.join(common.DATA, 'ai_messages.jsonl')
 MAXLEN = 1200
 
 def write(out, agent, date, proj, sid, msg):

@@ -17,15 +17,15 @@ SOP 第 3 步的机器部分：把散落在语料/欠账/写回里的"事实落�
 """
 import json, re, collections, os, datetime, sys
 
-import wm
-DATA = wm.DATA
+import _common as common
+DATA = common.DATA
 BS = chr(92)
 TODAY = datetime.date.today()
 TODAY8 = TODAY.strftime('%Y%m%d')
 
 # ---- 容错：语料不存在/为空 → 正常退出（不 crash，ingest 照常继续）----
 _cdp = os.path.join(DATA, 'corpus_dedup.jsonl')
-rows, skipped = wm._read_jsonl(_cdp)
+rows, skipped = common.read_jsonl(_cdp)
 if not rows:
     print('照见候选跳过（语料不存在、为空或全是坏行），正常退出。')
     sys.exit(0)
@@ -34,7 +34,7 @@ if skipped:
 rows.sort(key=lambda r: r['date'])
 
 # kw() 过滤再加高频虚词/动作词（单字 + 多字），让 say_do 只留真正的实体词（项目/主题/专有词）
-FUNC = set(wm.WORDS) | set(['还', '就', '也', '都', '要', '想', '会', '能', '没', '很',
+FUNC = set(common.WORDS) | set(['还', '就', '也', '都', '要', '想', '会', '能', '没', '很',
                                '吧', '吗', '呢', '把', '给', '跟', '和', '与', '及', '或',
                                '但', '而', '并', '只', '才', '又', '最', '太', '真', '挺',
                                '有点', '一下', '你', '我', '他', '她', '它', '这', '那',
@@ -130,7 +130,7 @@ if prom_files:
 # ---- topic 聚合（flip 用）----
 by_topic = collections.defaultdict(list)
 for r in rows:
-    by_topic[wm.topic(r)].append(r)
+    by_topic[common.topic(r)].append(r)
 
 # ---- 3. flip：前后说法并排（不判断是否矛盾，但只在端点消息有转折/否定信号时才产）----
 # 窄触发：不窄触发的话，每个正常推进的 topic（≥2 条、跨度 >30 天）都产一条"最早 vs 最新"，
@@ -168,7 +168,7 @@ def load_words():
                 return list(wf.keys())
         except Exception:
             pass
-    return list(wm.WORDS)
+    return list(common.WORDS)
 
 words = load_words()
 month_map = collections.defaultdict(collections.Counter)  # month -> {word: count}

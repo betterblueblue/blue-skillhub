@@ -71,7 +71,7 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 
 报告里的每个判断都应有带日期的真实原话。没有证据就留白，数字只用来支撑确实需要它的事实。
 
-命令行入口（可选）：`scripts/wm.py`——`ingest`（把你说过话提取出来）、`promise`（说过要做的事：add 记一笔 / done 划掉）、`wb`（记你确认过的事：add / list）、`vec`（按意思搜：build / status）、`bind`（把已有数据接上）、`check`（自检）、`open`（浏览器打开报告首页）。
+命令行工具（可选）：`scripts/wm.py`；Agent 的统一入口是 `SKILL.md`——`ingest`（把你说过话提取出来）、`promise`（说过要做的事：add 记一笔 / done 划掉）、`wb`（记你确认过的事：add / list）、`vec`（按意思搜：build / status）、`bind`（把已有数据接上）、`check`（自检）、`open`（浏览器打开报告首页）。
 
 更新报告页的流程是：由 Agent 读取 `SKILL.md`，按 `references/ingest-protocol.md` 逐步调用本地脚本完成探测、提取、去重、统计、素材和渲染；随后 Agent 自己读原话、筛选证据、更新各页 MD、promises 和 insights，最后运行 `python scripts/render.py all` 刷新页面并 `python scripts/self_check.py` 自检。用户不需要自己编排 Python 脚本；没有足够证据的页或栏目显示诚实空态，不会用数字凑数。
 
@@ -103,7 +103,7 @@ ingest 会探测并提取你在这些工具里说过的话（清单在 skill 包
 SKILL.md          AI 的入口：第一眼讲清「判断归你，脚本只做管道」，按场景干活
 references/       协议 + 宪法（DESIGN.md）+ SOP + 生成模板（按需加载）
 assets/layers/    隐私层模板（出厂是空的）：真实的 public.md 和 redact_list.json 在数据目录 data/layers/，整理生成；清单本身含敏感词，绝不外传
-scripts/wm.py     命令行入口（翻旧账/记事/自检/打开报告）
+scripts/wm.py     命令行工具（记账/写回/绑定/向量检索；SKILL.md 才是 Agent 入口）
 scripts/render.py 网页生成：read（9 页报告）/ tracker（说过要做的事）/ all
 assets/templates/ 视觉规矩：DESIGN.md + read_shell.html（改样式只改这里）
 ```

@@ -4,11 +4,11 @@
 产物文档里引用的每个数字都必须能从这里复现。"""
 import json, collections, statistics, os, datetime, sys
 
-import wm
-DATA = wm.DATA
+import _common as common
+DATA = common.DATA
 TODAY = datetime.date.today().isoformat()
 
-rows, skipped = wm._read_jsonl(os.path.join(DATA, 'corpus_dedup.jsonl'))
+rows, skipped = common.read_jsonl(os.path.join(DATA, 'corpus_dedup.jsonl'))
 if skipped:
     print('警告：语料中有 %d 行坏行已跳过。' % skipped)
 rows.sort(key=lambda r: r['date'])
@@ -24,9 +24,9 @@ print('=' * 60)
 print('数字底座 · 生成于 %s · 语料 %d 条' % (TODAY, len(rows)))
 print('=' * 60)
 
-# 1. 词频（在语料里数统一词表的出现次数；词表定义在 wm.py）
+# 1. 词频（在语料里数统一词表的出现次数；词表定义在 _common.py）
 print('\n[1] 词频（通用词表计数，top 高频）')
-freq = {w: sum(m['msg'].count(w) for m in rows) for w in wm.WORDS}
+freq = {w: sum(m['msg'].count(w) for m in rows) for w in common.WORDS}
 for w, n in sorted(freq.items(), key=lambda x: -x[1]):
     if n: print('  %5d  %s' % (n, w))
 json.dump(freq, open(os.path.join(DATA, 'stats_wordfreq.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
@@ -54,7 +54,7 @@ for a, ms in sorted(by_agent.items(), key=lambda x: -len(x[1])):
         'short_per_100': round(100 * sum(1 for m in ms if len(m['msg']) <= 20) / len(ms), 1),
         'thanks_per_100': round(100 * sum(m['msg'].count('谢谢') for m in ms) / len(ms), 1),
         'question_pct': round(100 * sum(('？' in m['msg'] or '?' in m['msg']) for m in ms) / len(ms), 1),
-        'top_projects': collections.Counter(wm.topic(m) for m in ms).most_common(3),
+        'top_projects': collections.Counter(common.topic(m) for m in ms).most_common(3),
     }
     agent_stats[a] = s
     print('  %-13s %5d条 中位%3d字 长%.1f 短%.1f 谢%.1f 问%.0f%%' % (
@@ -65,7 +65,7 @@ json.dump(agent_stats, open(os.path.join(DATA, 'stats_agents.json'), 'w', encodi
 print('\n[4] 月度主题（top3）')
 months = collections.defaultdict(collections.Counter)
 for r in rows:
-    if r['date']: months[r['date'][:7]][wm.topic(r)] += 1
+    if r['date']: months[r['date'][:7]][common.topic(r)] += 1
 for m in sorted(months):
     print('  %s | %d 条 | %s' % (m, sum(months[m].values()), ', '.join('%s(%d)' % kv for kv in months[m].most_common(3))))
 
@@ -75,7 +75,7 @@ last = {}
 recent_cutoff = (datetime.date.today() - datetime.timedelta(days=180)).isoformat()
 for r in rows:
     if r['date'] < recent_cutoff: continue
-    c = wm.topic(r)
+    c = common.topic(r)
     if c not in last or r['date'] > last[c]: last[c] = r['date']
 stalled = []
 for c, d in last.items():

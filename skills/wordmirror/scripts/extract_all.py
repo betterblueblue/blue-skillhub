@@ -3,10 +3,10 @@
 输出格式: {agent, date, proj, sid, msg}"""
 import json, os, glob, re, sqlite3, datetime
 
-import wm
+import _common as common
 H = os.path.expanduser('~')
-BASE = wm.BASE
-OUT = os.path.join(wm.DATA, 'corpus_all.jsonl')
+BASE = common.BASE
+OUT = os.path.join(common.DATA, 'corpus_all.jsonl')
 
 BOILER_PREFIX = (
     '# AGENTS.md', '# Context from my IDE setup', 'The following is the Codex agent history',

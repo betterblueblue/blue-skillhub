@@ -25,10 +25,10 @@ import os, sys, glob, json, re, subprocess
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(BASE)
-import wm
-DATA_ROOT = wm.BASE
-DATA = wm.DATA
-PROD = wm.PRODUCTS
+import _common as common
+DATA_ROOT = common.BASE
+DATA = common.DATA
+PROD = common.PRODUCTS
 
 PASS, FAIL, WARN = '✓', '✗', '!'
 results = []

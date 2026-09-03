@@ -4,10 +4,10 @@
 import json, os, re, collections
 
 import os
-import wm
-WORK = wm.DATA
-users, user_skipped = wm._read_jsonl(os.path.join(WORK, 'corpus_dedup.jsonl'))
-ais, ai_skipped = wm._read_jsonl(os.path.join(WORK, 'ai_messages.jsonl'))
+import _common as common
+WORK = common.DATA
+users, user_skipped = common.read_jsonl(os.path.join(WORK, 'corpus_dedup.jsonl'))
+ais, ai_skipped = common.read_jsonl(os.path.join(WORK, 'ai_messages.jsonl'))
 if user_skipped or ai_skipped:
     print('警告：语料坏行已跳过（用户 %d，AI %d）。' % (user_skipped, ai_skipped))
 

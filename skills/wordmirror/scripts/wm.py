@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""wm · 言镜（wordmirror）——记账/写回 + 按意思搜 + 数据绑定的入口。
+"""wm · 言镜（wordmirror）——记账/写回 + 按意思搜 + 数据绑定的命令行工具。
 
 查旧话、看数据、出报告、提取存档，这些活 AI 按 SKILL.md / references 自己干（逐个脚本跑），
 不在这做编排。这里只留 AI 干不了、或必须保格式的命令：
@@ -20,44 +20,7 @@
 """
 import os, sys, subprocess, json, datetime, re
 
-# 定位两层（data-locations.md 的同款顺序）：
-# 全局层（画像/语料/月报——"你是谁"，不分项目）：
-#   1) 环境变量 WORD_MIRROR_HOME
-#   2) bind 指针 ~/.wordmirror/bind.json（数据在别处时接上）
-#   3) ~/.wordmirror（默认数据根）
-#   4) 脚本祖先逐级向上找仓库布局（data/ 下有语料签名才算，防无关 data/ 目录劫持）
-#   5) 都没有 → 默认 ~/.wordmirror，首次写入时自动创建
-# 项目层（欠账/写回——"这个项目的事"）：<当前目录>/.wordmirror/，在哪个目录干活账记哪
-def _find_base():
-    """返回 (数据仓库根, 定位方式说明)。"""
-    def _has_data(p):
-        return os.path.isdir(os.path.join(p, 'data'))
-    env = os.environ.get('WORD_MIRROR_HOME')
-    if env:
-        if _has_data(env):
-            return env, '环境变量 WORD_MIRROR_HOME'
-        return env, '环境变量 WORD_MIRROR_HOME（还没有数据，首次写入时创建）'
-    home = os.path.join(os.path.expanduser('~'), '.wordmirror')
-    bind_p = os.path.join(home, 'bind.json')
-    if os.path.isfile(bind_p):
-        try:
-            target = json.load(open(bind_p, encoding='utf-8')).get('home', '')
-        except Exception:
-            target = ''
-        if target and _has_data(target):
-            return target, 'bind 指针（%s）' % bind_p
-    if _has_data(home):
-        return home, '标准位置 ~/.wordmirror'
-    d = os.path.dirname(os.path.abspath(__file__))
-    while True:
-        if _has_data(d) and any(os.path.exists(os.path.join(d, 'data', f))
-                                for f in ('corpus_dedup.jsonl', 'corpus_all.jsonl')):
-            return d, '仓库布局（向上找到 %s）' % d
-        parent = os.path.dirname(d)
-        if parent == d:
-            break
-        d = parent
-    return home, '默认 ~/.wordmirror（还没有数据，首次写入时创建）'
+from _common import BASE, BASE_SOURCE, DATA, PRODUCTS, WORDS, topic, read_jsonl, valid_date
 
 def _promises_file():
     """账本分两层：在仓库实例目录里干活 → 全局 data/；在其他项目目录 → 该目录 .wordmirror/。"""
@@ -74,49 +37,6 @@ def _ledger_paths():
         paths.append(g)
     return paths
 
-BASE, BASE_SOURCE = _find_base()
-DATA = os.path.join(BASE, 'data')
-PRODUCTS = os.path.join(BASE, 'products')
-
-WORDS = ['这个', '那个', '这样', '那样', '可以', '应该', '需要', '觉得', '认为', '可能',
-         '看看', '试试', '试试看', '先', '再', '然后', '但是', '所以', '因为', '如果',
-         '我们', '你们', '他们', '自己', '什么', '怎么', '为什么', '哪里', '多少',
-         '继续', '完成', '搞定', '做完', '算了', '不做了', '放弃', '定了', '决定',
-         '写', '改', '做', '用', '建', '删', '加', '提', '记', '查', '翻', '试',
-         '代码', '项目', '方案', '数据库', '接口', '前端', '后端', '部署', '发布', '上线',
-         '谢谢', '好的', '明白', '清楚了', '麻烦', '帮忙', '帮我', '安排',
-         '问题', '报错', '错了', '不对', '还原', '从头', '重新', '重试', '等一下',
-         '月报', '周报', '总结', '复盘', 'TODO', 'OK', '版本',
-         '是的', '嗯', '对', '好', '行', '了解', '同步', '确认', '理解']
-
-def topic(r):
-    p = (r.get('proj') or '').replace('\\', '/')
-    seg = p.rstrip('/').split('/')[-1] if p else ''
-    seg = seg.strip('-').replace('--', ' ').strip()
-    if seg and re.fullmatch(r'[0-9a-fA-F]{6,40}', seg):
-        return '(none)'
-    return seg[:30] if seg else '(none)'
-
-def _read_jsonl(path):
-    rows, skipped = [], 0
-    if not os.path.exists(path):
-        return rows, skipped
-    for line in open(path, encoding='utf-8', errors='replace'):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            rows.append(json.loads(line))
-        except Exception:
-            skipped += 1
-    return rows, skipped
-
-def _valid_date(value):
-    try:
-        datetime.date.fromisoformat(value)
-        return bool(re.fullmatch(r'\d{4}-\d{2}-\d{2}', value))
-    except (TypeError, ValueError):
-        return False
 
 def cmd_vec(args):
     """语义检索入口。转发给 vecsearch.py（依赖 chromadb + sentence-transformers，本机跑）。"""
@@ -296,7 +216,7 @@ def cmd_promise(args):
         if not text:
             print('用法：python wm.py promise add 要做的事 [--agent 工具名] [--date 原始日期] [--proj 项目] [--ref 原话]')
             sys.exit(1)
-        if src_date and not _valid_date(src_date):
+        if src_date and not valid_date(src_date):
             print('原始日期必须是有效的 YYYY-MM-DD。')
             sys.exit(1)
         pf = _promises_file()
@@ -335,7 +255,7 @@ def cmd_promise(args):
         if not kw or not updates:
             print('用法：python wm.py promise revise 关键词 [--date 原始日期] [--proj 项目] [--ref 原话]')
             sys.exit(1)
-        if 'date' in updates and not _valid_date(updates['date']):
+        if 'date' in updates and not valid_date(updates['date']):
             print('原始日期必须是有效的 YYYY-MM-DD。')
             sys.exit(1)
         hits = []
