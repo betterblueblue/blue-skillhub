@@ -238,17 +238,23 @@ def cmd_promise(args):
         return
     sub = args[0]
     if sub == 'add':
-        # 解析 --agent 选项（可选），其余为要做的事
-        text_parts, agent = [], 'cli'
+        # 解析可选元数据 --agent/--date/--proj/--ref，其余为要做的事
+        text_parts, agent, src_date, proj, ref = [], 'cli', '', '', ''
         i = 1
         while i < len(args):
             if args[i] == '--agent' and i + 1 < len(args):
                 agent = args[i + 1]; i += 2
+            elif args[i] == '--date' and i + 1 < len(args):
+                src_date = args[i + 1]; i += 2
+            elif args[i] == '--proj' and i + 1 < len(args):
+                proj = args[i + 1]; i += 2
+            elif args[i] == '--ref' and i + 1 < len(args):
+                ref = args[i + 1]; i += 2
             else:
                 text_parts.append(args[i]); i += 1
         text = ' '.join(text_parts).strip()
         if not text:
-            print('用法：python wm.py promise add 要做的事 [--agent 工具名]')
+            print('用法：python wm.py promise add 要做的事 [--agent 工具名] [--date 原始日期] [--proj 项目] [--ref 原话]')
             sys.exit(1)
         pf = _promises_file()
         os.makedirs(os.path.dirname(pf), exist_ok=True)
@@ -262,11 +268,51 @@ def cmd_promise(args):
                     except Exception:
                         print('欠账本 %s 第 %d 行不是合法 JSON。先手工修复或删掉那行，我不替你静默改账。' % (pf, i))
                         sys.exit(1)
-        row = {'date': datetime.date.today().isoformat(), 'text': text,
+        row = {'date': src_date or datetime.date.today().isoformat(), 'text': text,
                'status': 'open', 'agent': agent}
+        if proj:
+            row['proj'] = proj
+        if ref:
+            row['ref'] = ref
         with open(pf, 'a', encoding='utf-8') as f:
             f.write(json.dumps(row, ensure_ascii=False) + '\n')
         print('记下了：%s（%s）' % (text, pf))
+    elif sub == 'revise':
+        kw_parts, updates = [], {}
+        i = 1
+        while i < len(args):
+            if args[i] in ('--date', '--proj') and i + 1 < len(args):
+                updates['date' if args[i] == '--date' else 'proj'] = args[i + 1]
+                i += 2
+            else:
+                kw_parts.append(args[i]); i += 1
+        kw = ' '.join(kw_parts).strip()
+        # 仅用于修正已登记事项的来源元数据，不改变状态或历史原话
+        if '--date' in args:
+            i = args.index('--date')
+            if i + 1 < len(args): updates['date'] = args[i + 1]
+        if '--proj' in args:
+            i = args.index('--proj')
+            if i + 1 < len(args): updates['proj'] = args[i + 1]
+        if not kw or not updates:
+            print('用法：python wm.py promise revise 关键词 --date 原始日期 [--proj 项目]')
+            sys.exit(1)
+        hits = []
+        for pf in _ledger_paths():
+            items = _load_promises(pf, strict=True)
+            for o in items:
+                if kw in o.get('text', ''): hits.append((pf, items, o))
+        if len(hits) != 1:
+            print('关键词命中 %d 条，未修改；请使用能唯一定位事项的关键词。' % len(hits))
+            sys.exit(1)
+        pf, items, hit = hits[0]
+        hit.update(updates)
+        with open(pf, 'w', encoding='utf-8') as f:
+            for o in items:
+                line = dict(o); line.pop('_line', None)
+                f.write(json.dumps(line, ensure_ascii=False) + '\n')
+        print('已修正：%s（%s）' % (hit['text'], pf))
+        return
     elif sub in ('done', 'drop'):
         kw = ' '.join(args[1:]).strip()
         if not kw:

@@ -13,20 +13,47 @@
 
 按 `references/ingest-protocol.md` 的 **8 步逐步执行**（探测 → 提取你的话 → 提取 AI 回复 → 去重 → 会话卡 → 数字底座 → 素材 → 渲染），每步一个脚本，顺序不能乱。
 
-输出：每步脚本打印产物条数；最后跑 `python scripts/render.py all` 出全 10 页 HTML。
+输出：每步脚本打印产物条数；第 8 步的渲染必须放到第 6 步完成之后，不能在最终内容定稿前提前宣布报告完成。
 
 **依赖先探测，别再每次都问**：zstandard（dsh 用）先跑 `python -c "import zstandard"`，能 import 就直接用；按意思搜索引先跑 `python scripts/vecsearch.py status`，建过就直接用。**只有真没装/真没建，才问用户一次要不要装/建。**
 
-### 第 3 步：整理出你的情况（portrait.md / habits.md）
+### 第 3 步：整理情况和报告（Agent 判断，不能只跑脚本）
 
-数据就位后，**你（AI）来写这两份文件**，写到数据目录（定位见 `references/data-locations.md`）下：
+数据就位后，**你（AI）来读原话并写成最终内容**，写到数据目录（定位见 `references/data-locations.md`）下：
 
-- `portrait.md` —— 按 `references/portrait-template.md` 的结构，从你说过的话里整理
+- `portrait.md` —— 按 `references/portrait-template.md` 的结构
 - `habits.md` —— 按 `references/habits-template.md` 的结构
+- 6 份报告 MD：`decisions.md`、`recurs.md`、`tasks.md`、`ai-view.md`、`agents.md`、`timeline.md`
 
-整理方法：读 `data/stats_wordfreq.json`（高频词频率，通用词表计数）+ `data/materials_*.json`（素材）+ 抽读你说过的话，按模板章节填。**说人话规则**：用户的词优先，禁用发明术语；每条判断要有原话+日期支撑。
+整理方法：读 `data/stats_*.json` 和 `data/materials_*.json` 只当线索，再抽读 `corpus_dedup.jsonl` / `ai_messages.jsonl` 核实。**说人话规则**：用户的词优先，禁用发明术语；每条判断要有原话+日期支撑；没有料就留白，不能把统计或候选直接上页。
 
-### 第 4 步：验证 + 告知
+### 第 4 步：补录说过要做的事
+
+从历史原话中筛选明确承诺（“我要做 / 我准备做 / 我打算做”），排除假设、讨论稿、示例和普通执行指令。逐条调用 `python scripts/wm.py promise add "事项" --agent initialization` 写入承诺账本；不要手写 JSONL。
+
+- `promises.jsonl` 可以为空，但必须完成判断，并明确告诉用户“目前没有足够明确的承诺被登记”。
+- 有承诺时，登记后运行 `python scripts/wm.py promise` 验证账本可读。
+
+### 第 5 步：筛选并定稿照见
+
+读取 `data/materials_insights.json`，逐条回查语料。只有确实存在“说了没做 / 前后说法相反 / 口头禅变化”的证据才追加到 `data/profile/insights.jsonl`，格式和状态遵循 `references/mirror-protocol.md`。
+
+- 候选是假阳性就丢掉，不直接复制。
+- `insights.jsonl` 可以为空，但不能静默跳过；要向用户说明“本次没有足够可靠的照见”。
+- 不做动机推断、性格标签或心理诊断。
+
+### 第 6 步：渲染、自检和交付
+
+所有画像、6 份报告 MD、promises 和 insights 定稿后，才运行：
+
+```bash
+python scripts/render.py all
+python scripts/self_check.py
+```
+
+核对 03、04 是否有数据或明确空态原因；把实际生成的页面路径、03/04 状态、以及自检结果告诉用户。初始化只有完成上述交接才算完成。
+
+### 第 7 步：验证 + 告知
 
 - 让用户看一眼你的情况要点（念给他听），当场纠错——用户说"不对"的直接改
 - 自己确认数据目录找对了（按 `references/data-locations.md`，主力文件在不在）

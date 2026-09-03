@@ -102,7 +102,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 每页至少要有一处“原话 → 时间/关系 → 白话承接”的发现；没有足够证据就少写，不用数字或项目名凑内容。**全部页面文案统一用第二人称「你」称呼用户**（页面是 Agent 整理给用户看的），小节标题同样用「你」；引号里的用户原话除外。详情按 `references/distill-report-protocol.md`，照见按 `references/mirror-protocol.md`。
 
 ### 首次初始化
-读不到 portrait.md → 走 `references/init-protocol.md` 四步：探测存档 → 按 `references/ingest-protocol.md` 的 8 步提取 → 你照着模板整理出 portrait.md + habits.md → 念给用户听、当场纠错。
+读不到 portrait.md → 走 `references/init-protocol.md`：探测存档 → 按 `references/ingest-protocol.md` 的 8 步提取 → Agent 读原话整理 portrait/habits 和 6 份报告 MD → 判断并补录 promises → 筛选并定稿 insights → 渲染 HTML → 自检 → 念给用户听、当场纠错。初始化不能只生成画像或空态页面就结束；03/04 可以没有可靠数据，但必须完成判断并把原因告诉用户。
 
 ## 三件干不了的活（才调工具）
 
