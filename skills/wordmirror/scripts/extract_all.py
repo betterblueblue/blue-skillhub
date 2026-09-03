@@ -3,10 +3,10 @@
 输出格式: {agent, date, proj, sid, msg}"""
 import json, os, glob, re, sqlite3, datetime
 
+import wm
 H = os.path.expanduser('~')
-import os
-BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', '.wordmirror'))
-OUT = os.path.join(BASE, 'data', 'corpus_all.jsonl')
+BASE = wm.BASE
+OUT = os.path.join(wm.DATA, 'corpus_all.jsonl')
 
 BOILER_PREFIX = (
     '# AGENTS.md', '# Context from my IDE setup', 'The following is the Codex agent history',
@@ -81,6 +81,8 @@ def rec(agent, n, files):
 def ex_codex(out):
     n = f = 0
     base = os.path.join(H, '.codex', 'sessions')
+    if not os.path.isdir(base):
+        return rec('codex', 0, 0)
     for year in sorted(os.listdir(base)):
         yd = os.path.join(base, year)
         if not os.path.isdir(yd): continue

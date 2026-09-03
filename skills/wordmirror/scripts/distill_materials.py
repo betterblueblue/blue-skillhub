@@ -4,21 +4,14 @@ LLM 只负责最后的成文——素材（决策句/被问住句/月度切片/�
 输出: data/materials_*.json"""
 import json, re, collections, os, datetime
 
-BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', '.wordmirror'))
-DATA = os.path.join(BASE, 'data')
+import wm
+DATA = wm.DATA
 BS = chr(92)
 
-rows = [json.loads(l) for l in open(os.path.join(DATA, 'corpus_dedup.jsonl'), encoding='utf-8')]
+rows, skipped = wm._read_jsonl(os.path.join(DATA, 'corpus_dedup.jsonl'))
+if skipped:
+    print('警告：语料中有 %d 行坏行已跳过。' % skipped)
 rows.sort(key=lambda r: r['date'])
-
-def topic(r):
-    p = (r.get('proj') or '').replace('\\', '/')
-    seg = p.rstrip('/').split('/')[-1] if p else ''
-    seg = seg.strip('-').replace('--', ' ').strip()
-    # 纯十六进制哈希（如 antigravity 的 cid 前 8 位）不是主题
-    if seg and re.fullmatch(r'[0-9a-fA-F]{6,40}', seg):
-        return '(none)'
-    return seg[:30] if seg else '(none)'
 
 def sents(msg):
     return [s.strip() for s in re.split(r'[。！？\n]', msg.replace(chr(10), ' ')) if 6 < len(s.strip()) < 160]
@@ -33,7 +26,7 @@ for r in rows:
     for s in sents(r['msg']):
         if dec_pat.search(s) and not NOISE.match(s) and s[:25] not in seen:
             seen.add(s[:25])
-            decisions.append({'date': r['date'], 'proj': topic(r), 'text': s})
+            decisions.append({'date': r['date'], 'proj': wm.topic(r), 'text': s})
 json.dump(decisions, open(os.path.join(DATA, 'materials_decisions.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print('决策候选句:', len(decisions))
 
@@ -59,7 +52,7 @@ monthly = {}
 for m, rs in sorted(months.items()):
     monthly[m] = {
         'n': len(rs),
-        'top_topics': collections.Counter(topic(r) for r in rs).most_common(3),
+        'top_topics': collections.Counter(wm.topic(r) for r in rs).most_common(3),
         'opener': rs[0]['msg'][:80],
         'closer': rs[-1]['msg'][:80],
         'longest': max(rs, key=lambda r: len(r['msg']) if len(r['msg']) < 3000 else 0)['msg'][:120],
@@ -70,7 +63,7 @@ print('月度切片:', len(monthly), '个月')
 # ---- 3.5 项目基因 ----
 proj_cards = collections.defaultdict(list)
 for r in rows:
-    proj_cards[topic(r)].append(r)
+    proj_cards[wm.topic(r)].append(r)
 genes = {}
 for t, rs in sorted(proj_cards.items(), key=lambda x: -len(x[1]))[:15]:
     rs.sort(key=lambda r: r['date'])

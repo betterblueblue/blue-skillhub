@@ -3,10 +3,10 @@
 输出: {agent, date, proj, sid, msg}  msg 取 AI 回复正文（截断到前 1200 字符，蒸馏够用）"""
 import json, os, glob, re, sqlite3, datetime
 
+import wm
 H = os.path.expanduser('~')
-import os
-BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', '.wordmirror'))
-OUT = os.path.join(BASE, 'data', 'ai_messages.jsonl')
+BASE = wm.BASE
+OUT = os.path.join(wm.DATA, 'ai_messages.jsonl')
 MAXLEN = 1200
 
 def write(out, agent, date, proj, sid, msg):
@@ -47,6 +47,8 @@ def clean_ai(m):
 def ex_codex(out):
     n = f = 0
     base = os.path.join(H, '.codex', 'sessions')
+    if not os.path.isdir(base):
+        return rec('codex', 0, 0)
     for year in sorted(os.listdir(base)):
         yd = os.path.join(base, year)
         if not os.path.isdir(yd): continue

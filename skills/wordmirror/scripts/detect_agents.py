@@ -89,4 +89,4 @@ if __name__ == '__main__':
             note = '没找到，跳过' if kind != 'none' else '本机无正文，跳过'
             print(' - %-13s %s' % (agent, note))
     print('=' * 62)
-    print('可采集 agent: %d 个。探测结果可存为 data/agents_detected.json 供 ingest 使用。' % n_ok)
+    print('可采集 agent: %d 个。' % n_ok)

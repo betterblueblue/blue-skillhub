@@ -18,7 +18,7 @@
 
 设计原则（references/DESIGN.md）：每人自己跑自己的；数据全程在自己电脑上；不写死路径。
 """
-import os, sys, subprocess, json, datetime
+import os, sys, subprocess, json, datetime, re
 
 # 定位两层（data-locations.md 的同款顺序）：
 # 全局层（画像/语料/月报——"你是谁"，不分项目）：
@@ -77,6 +77,46 @@ def _ledger_paths():
 BASE, BASE_SOURCE = _find_base()
 DATA = os.path.join(BASE, 'data')
 PRODUCTS = os.path.join(BASE, 'products')
+
+WORDS = ['这个', '那个', '这样', '那样', '可以', '应该', '需要', '觉得', '认为', '可能',
+         '看看', '试试', '试试看', '先', '再', '然后', '但是', '所以', '因为', '如果',
+         '我们', '你们', '他们', '自己', '什么', '怎么', '为什么', '哪里', '多少',
+         '继续', '完成', '搞定', '做完', '算了', '不做了', '放弃', '定了', '决定',
+         '写', '改', '做', '用', '建', '删', '加', '提', '记', '查', '翻', '试',
+         '代码', '项目', '方案', '数据库', '接口', '前端', '后端', '部署', '发布', '上线',
+         '谢谢', '好的', '明白', '清楚了', '麻烦', '帮忙', '帮我', '安排',
+         '问题', '报错', '错了', '不对', '还原', '从头', '重新', '重试', '等一下',
+         '月报', '周报', '总结', '复盘', 'TODO', 'OK', '版本',
+         '是的', '嗯', '对', '好', '行', '了解', '同步', '确认', '理解']
+
+def topic(r):
+    p = (r.get('proj') or '').replace('\\', '/')
+    seg = p.rstrip('/').split('/')[-1] if p else ''
+    seg = seg.strip('-').replace('--', ' ').strip()
+    if seg and re.fullmatch(r'[0-9a-fA-F]{6,40}', seg):
+        return '(none)'
+    return seg[:30] if seg else '(none)'
+
+def _read_jsonl(path):
+    rows, skipped = [], 0
+    if not os.path.exists(path):
+        return rows, skipped
+    for line in open(path, encoding='utf-8', errors='replace'):
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rows.append(json.loads(line))
+        except Exception:
+            skipped += 1
+    return rows, skipped
+
+def _valid_date(value):
+    try:
+        datetime.date.fromisoformat(value)
+        return bool(re.fullmatch(r'\d{4}-\d{2}-\d{2}', value))
+    except (TypeError, ValueError):
+        return False
 
 def cmd_vec(args):
     """语义检索入口。转发给 vecsearch.py（依赖 chromadb + sentence-transformers，本机跑）。"""
@@ -256,6 +296,9 @@ def cmd_promise(args):
         if not text:
             print('用法：python wm.py promise add 要做的事 [--agent 工具名] [--date 原始日期] [--proj 项目] [--ref 原话]')
             sys.exit(1)
+        if src_date and not _valid_date(src_date):
+            print('原始日期必须是有效的 YYYY-MM-DD。')
+            sys.exit(1)
         pf = _promises_file()
         os.makedirs(os.path.dirname(pf), exist_ok=True)
         # 坏行拦截：写操作前确认现有文件每行都合法（写入不修复也不吞坏行），与 wb add 对齐
@@ -291,6 +334,9 @@ def cmd_promise(args):
         # 仅用于修正已登记事项的来源元数据，不改变状态或历史原话
         if not kw or not updates:
             print('用法：python wm.py promise revise 关键词 [--date 原始日期] [--proj 项目] [--ref 原话]')
+            sys.exit(1)
+        if 'date' in updates and not _valid_date(updates['date']):
+            print('原始日期必须是有效的 YYYY-MM-DD。')
             sys.exit(1)
         hits = []
         for pf in _ledger_paths():

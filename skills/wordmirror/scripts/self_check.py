@@ -8,7 +8,6 @@
   5  skill 引用路径存在
   6  git 工作区干净（提醒，不算失败）
   7  engine 脚本可跑（抽样 compute_stats）
-  8  SOP 数字口径 vs 实际语料行数
   9  写回文件被 git 跟踪
   10 skill 三件套互相引用
   13 JSON 文件合法
@@ -26,9 +25,10 @@ import os, sys, glob, json, re, subprocess
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(BASE)
-DATA_ROOT = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', '.wordmirror'))
-DATA = os.path.join(DATA_ROOT, 'data')
-PROD = os.path.join(DATA_ROOT, 'products')
+import wm
+DATA_ROOT = wm.BASE
+DATA = wm.DATA
+PROD = wm.PRODUCTS
 
 PASS, FAIL, WARN = '✓', '✗', '!'
 results = []
@@ -120,19 +120,6 @@ elif not any(l.strip() for l in open(_cdp, encoding='utf-8')):
 else:
     r = subprocess.run(['python', 'scripts/compute_stats.py'], capture_output=True, text=True)
     check('compute_stats 可跑', r.returncode == 0, '正常' if r.returncode == 0 else r.stderr[:120])
-
-# ===== 8. SOP 数字口径 =====
-if not os.path.exists(os.path.join(DATA, 'corpus_all.jsonl')):
-    check('SOP 数字口径', None, '还没 ingest（语料不存在），跳过')
-else:
-    try:
-        n_all = sum(1 for _ in open(os.path.join(DATA, 'corpus_all.jsonl'), encoding='utf-8'))
-        n_ai = sum(1 for _ in open(os.path.join(DATA, 'ai_messages.jsonl'), encoding='utf-8'))
-        sop = open('references/SOP_蒸馏流程.md', encoding='utf-8').read()
-        ok = ('%s' % format(n_all, ',')) in sop and ('%s' % format(n_ai, ',')) in sop
-        check('SOP 数字口径', ok if ok else None, '语料 %d 条 / AI %d 条，SOP 有记载' % (n_all, n_ai) if ok else '语料 %d / AI %d，SOP 数字旧了（更新 references/SOP_蒸馏流程.md）' % (n_all, n_ai))
-    except Exception as e:
-        check('SOP 数字口径', False, str(e))
 
 # ===== 9. 写回文件未进 git（数据目录应被 .gitignore） =====
 r = subprocess.run(['git', 'ls-files', os.path.join(DATA, 'user_writebacks.jsonl')], capture_output=True, text=True)

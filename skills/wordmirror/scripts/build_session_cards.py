@@ -4,10 +4,12 @@
 import json, os, re, collections
 
 import os
-BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', '.wordmirror'))
-WORK = os.path.join(BASE, 'data')
-users = [json.loads(l) for l in open(WORK + '/corpus_dedup.jsonl', encoding='utf-8')]
-ais = [json.loads(l) for l in open(WORK + '/ai_messages.jsonl', encoding='utf-8')]
+import wm
+WORK = wm.DATA
+users, user_skipped = wm._read_jsonl(os.path.join(WORK, 'corpus_dedup.jsonl'))
+ais, ai_skipped = wm._read_jsonl(os.path.join(WORK, 'ai_messages.jsonl'))
+if user_skipped or ai_skipped:
+    print('警告：语料坏行已跳过（用户 %d，AI %d）。' % (user_skipped, ai_skipped))
 
 # 按 (agent, sid) 聚合
 sessions = {}

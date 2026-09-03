@@ -17,43 +17,24 @@ SOP 第 3 步的机器部分：把散落在语料/欠账/写回里的"事实落�
 """
 import json, re, collections, os, datetime, sys
 
-BASE = os.environ.get('WORD_MIRROR_HOME') or os.path.expanduser(os.path.join('~', '.wordmirror'))
-DATA = os.path.join(BASE, 'data')
+import wm
+DATA = wm.DATA
 BS = chr(92)
 TODAY = datetime.date.today()
 TODAY8 = TODAY.strftime('%Y%m%d')
 
 # ---- 容错：语料不存在/为空 → 正常退出（不 crash，ingest 照常继续）----
 _cdp = os.path.join(DATA, 'corpus_dedup.jsonl')
-if not os.path.exists(_cdp) or not any(l.strip() for l in open(_cdp, encoding='utf-8')):
-    print('照见候选跳过（语料不存在或为空），正常退出。')
+rows, skipped = wm._read_jsonl(_cdp)
+if not rows:
+    print('照见候选跳过（语料不存在、为空或全是坏行），正常退出。')
     sys.exit(0)
-
-rows = [json.loads(l) for l in open(_cdp, encoding='utf-8')]
+if skipped:
+    print('警告：语料中有 %d 行坏行已跳过。' % skipped)
 rows.sort(key=lambda r: r['date'])
 
-def topic(r):
-    p = (r.get('proj') or '').replace('\\', '/')
-    seg = p.rstrip('/').split('/')[-1] if p else ''
-    seg = seg.strip('-').replace('--', ' ').strip()
-    # 纯十六进制哈希（如 antigravity 的 cid 前 8 位）不是主题
-    if seg and re.fullmatch(r'[0-9a-fA-F]{6,40}', seg):
-        return '(none)'
-    return seg[:30] if seg else '(none)'
-
-# ---- 通用词表（与 compute_stats.py 的 WORDS 对齐）：kw() 过滤与 word_drift 回退共用 ----
-_BASE_WORDS = ['这个', '那个', '这样', '那样', '可以', '应该', '需要', '觉得', '认为', '可能',
-               '看看', '试试', '试试看', '先', '再', '然后', '但是', '所以', '因为', '如果',
-               '我们', '你们', '他们', '自己', '什么', '怎么', '为什么', '哪里', '多少',
-               '继续', '完成', '搞定', '做完', '算了', '不做了', '放弃', '定了', '决定',
-               '写', '改', '做', '用', '建', '删', '加', '提', '记', '查', '翻', '试',
-               '代码', '项目', '方案', '数据库', '接口', '前端', '后端', '部署', '发布', '上线',
-               '谢谢', '好的', '明白', '清楚了', '麻烦', '帮忙', '帮我', '安排',
-               '问题', '报错', '错了', '不对', '还原', '从头', '重新', '重试', '等一下',
-               '月报', '周报', '总结', '复盘', 'TODO', 'OK', '版本',
-               '是的', '嗯', '对', '好', '行', '了解', '同步', '确认', '理解']
 # kw() 过滤再加高频虚词/动作词（单字 + 多字），让 say_do 只留真正的实体词（项目/主题/专有词）
-FUNC = set(_BASE_WORDS) | set(['还', '就', '也', '都', '要', '想', '会', '能', '没', '很',
+FUNC = set(wm.WORDS) | set(['还', '就', '也', '都', '要', '想', '会', '能', '没', '很',
                                '吧', '吗', '呢', '把', '给', '跟', '和', '与', '及', '或',
                                '但', '而', '并', '只', '才', '又', '最', '太', '真', '挺',
                                '有点', '一下', '你', '我', '他', '她', '它', '这', '那',
@@ -149,7 +130,7 @@ if prom_files:
 # ---- topic 聚合（flip 用）----
 by_topic = collections.defaultdict(list)
 for r in rows:
-    by_topic[topic(r)].append(r)
+    by_topic[wm.topic(r)].append(r)
 
 # ---- 3. flip：前后说法并排（不判断是否矛盾，但只在端点消息有转折/否定信号时才产）----
 # 窄触发：不窄触发的话，每个正常推进的 topic（≥2 条、跨度 >30 天）都产一条"最早 vs 最新"，
@@ -187,7 +168,7 @@ def load_words():
                 return list(wf.keys())
         except Exception:
             pass
-    return list(_BASE_WORDS)
+    return list(wm.WORDS)
 
 words = load_words()
 month_map = collections.defaultdict(collections.Counter)  # month -> {word: count}
