@@ -25,18 +25,18 @@
 - `habits.md` —— 按 `references/habits-template.md` 的结构
 - 6 份报告 MD：`decisions.md`、`recurs.md`、`tasks.md`、`ai-view.md`、`agents.md`、`timeline.md`
 
-整理方法：读 `data/stats_*.json` 和 `data/materials_*.json` 只当线索，再抽读 `corpus_dedup.jsonl` / `ai_messages.jsonl` 核实。**说人话规则**：用户的词优先，禁用发明术语；每条判断要有原话+日期支撑；没有料就留白，不能把统计或候选直接上页。
+整理方法：读 `data/stats_*.json` 和 `data/materials_*.json` 只当线索，再抽读 `corpus_dedup.jsonl` / `ai_messages.jsonl` 核实。**说人话规则**：用户的词优先，禁用发明术语；每条判断要有原话+日期支撑；没有料就留白，不能把统计或候选直接上页。**每个产物的具体写法见 `references/distill-prompts.md` 第二部分的对应提示词。**
 
 ### 第 4 步：补录说过要做的事
 
-从历史原话中筛选明确承诺（“我要做 / 我准备做 / 我打算做”），排除假设、讨论稿、示例和普通执行指令。逐条调用 `python scripts/wm.py promise add "事项" --agent initialization` 写入承诺账本；不要手写 JSONL。
+从历史原话中筛选明确承诺（“我要做 / 我准备做 / 我打算做”），排除假设、讨论稿、示例和普通执行指令。逐条调用 `python scripts/wm.py promise add "事项" --agent initialization` 写入承诺账本；不要手写 JSONL。**判断标准和写回字段见 `references/distill-prompts.md` 的 promises 提示词。**
 
 - `promises.jsonl` 可以为空，但必须完成判断，并明确告诉用户“目前没有足够明确的承诺被登记”。
 - 有承诺时，登记后运行 `python scripts/wm.py promise` 验证账本可读。
 
 ### 第 5 步：筛选并定稿照见
 
-读取 `data/materials_insights.json`，逐条回查语料。只有确实存在“说了没做 / 前后说法相反 / 口头禅变化”的证据才追加到 `data/profile/insights.jsonl`，格式和状态遵循 `references/mirror-protocol.md`。
+读取 `data/materials_insights.json`，逐条回查语料。只有确实存在“说了没做 / 前后说法相反 / 口头禅变化”的证据才追加到 `data/profile/insights.jsonl`，格式和状态遵循 `references/mirror-protocol.md`。**筛选和成文标准见 `references/distill-prompts.md` 的 insights 提示词。**
 
 - 候选是假阳性就丢掉，不直接复制。
 - `insights.jsonl` 可以为空，但不能静默跳过；要向用户说明“本次没有足够可靠的照见”。

@@ -18,6 +18,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 - **报告的目的不是做统计看板，而是以言为镜。** 把用户说给 AI 的话重新放回时间和关系里，让用户看见自己以前没注意到的变化、坚持、转向和未完成；读完应该愿意停下来想一会儿。
 - **温度来自原话，不来自煽情。** 原话是主角，数字退到背景；用用户听得懂的白话承接前后关系；没有证据就留白，不用泛泛总结凑页；不做人格标签、动机推断或心理诊断。
 - 出报告走 `references/distill-report-protocol.md`，更新画像、6 份报告 MD、promises 和 insights；照见走 `references/mirror-protocol.md`。写完必须运行 `python scripts/render.py all` 刷新页面，再运行 `python scripts/self_check.py`。
+- **单独蒸馏某个产物时，先读 `references/distill-prompts.md`（提示词总表）**：它为每个 MD/promises/insights 都给了可直接执行的八字段提示词（任务/输入/证据/输出/结构/引用/禁止/验收）和初始化交接检查表。总表是执行入口，细节仍以对应协议为准。
 
 ## 数据在哪
 
