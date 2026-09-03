@@ -29,7 +29,7 @@
 
 ### 第 4 步：补录说过要做的事
 
-从历史原话中筛选明确承诺（“我要做 / 我准备做 / 我打算做”），排除假设、讨论稿、示例和普通执行指令。逐条调用 `python scripts/wm.py promise add "事项" --agent initialization` 写入承诺账本；不要手写 JSONL。**判断标准和写回字段见 `references/distill-prompts.md` 的 promises 提示词。**
+从历史原话中筛选明确承诺（“我要做 / 我准备做 / 我打算做”），排除技术执行指令、普通执行指令、示例文本、讨论中的假设、AI 生成模板句和“我在想要不要”。逐条调用 `python scripts/wm.py promise add "事项" --date 原始日期 --proj 项目 --ref 原话 --agent initialization` 写入承诺账本；不要手写 JSONL。**补录历史承诺必须带 `--date` 原始日期（不是登记当天），判断标准和写回字段见 `references/distill-prompts.md` 的 promises 提示词。**
 
 - `promises.jsonl` 可以为空，但必须完成判断，并明确告诉用户“目前没有足够明确的承诺被登记”。
 - 有承诺时，登记后运行 `python scripts/wm.py promise` 验证账本可读。

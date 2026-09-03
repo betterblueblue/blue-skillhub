@@ -56,11 +56,11 @@ python <skill目录>/scripts/wm.py wb add "事实内容" --topic 主题 --ref "�
 python <skill目录>/scripts/wm.py promise add 要做的事 [--agent 工具名] [--date 原始日期] [--proj 项目] [--ref 原话]  # 记一笔（open）
 python <skill目录>/scripts/wm.py promise done 关键词           # 划掉（closed）
 python <skill目录>/scripts/wm.py promise drop 关键词           # 不做了（dropped）
-python <skill目录>/scripts/wm.py promise revise 关键词 --date 原始日期 [--proj 项目]  # 修正来源元数据
+python <skill目录>/scripts/wm.py promise revise 关键词 [--date 原始日期] [--proj 项目] [--ref 原话]  # 修正来源元数据
 python <skill目录>/scripts/wm.py promise                       # 看两层欠账
 ```
 
-**补录历史承诺时务必带 `--date`**：`promise add` 默认把 `date` 写成今天，那是“登记日”，不是用户当初说这句话的日期。从旧语料补录时，要回查原话，用 `--date` 写原始日期、`--proj` 写项目；必要时用 `promise revise 关键词 --date ...` 修正已登记项的来源元数据。宁可少补、保证每条能回查原话，也不要把技术指令、示例文本、普通执行指令或“我在想要不要”误当成承诺。
+**补录历史承诺时务必带 `--date`**：`promise add` 默认把 `date` 写成今天，那是“登记日”，不是用户当初说这句话的日期。从旧语料补录时，要回查原话，用 `--date` 写原始日期、`--proj` 写项目；必要时用 `promise revise 关键词 --date ...` 修正已登记项的来源元数据。宁可少补、保证每条能回查原话，也不要把技术执行指令、普通执行指令、示例文本、讨论中的假设、AI 生成模板句或“我在想要不要”误当成承诺。
 
 命令不可用时手写兜底——对应账本末尾追加一行（文件不存在就创建）：
 

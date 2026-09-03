@@ -149,8 +149,8 @@ Agent 负责：读原话、筛选候选、判断哪些内容有价值、归并�
 - **输入文件**：`materials_monthly.json`、`corpus_dedup.jsonl`。
 - **允许的证据**：你的原话 + 日期。
 - **输出文件**：`data/profile/timeline.md`。
-- **章节结构**：按时间阶段的叙述 + 白话栏目——`以前的你，后来的你`、`这句话后来去了哪里`（配 `- YYYY-MM-DD 事实`）、`隔了几个月，还是这件事`、`原来这两句话有关`、`这件事后来怎么样了`、`现在的你，停在这里`。
-- **引用规则**：阶段标题用人话；引文格式 `「原话」（YYYY-MM-DD）`，从语料检索后复制。
+- **章节结构**：按时间阶段的叙述 + 白话栏目——`以前的你，后来的你`、`这句话后来去了哪里`、`隔了几个月，还是这件事`、`原来这两句话有关`、`这件事后来怎么样了`、`现在的你，停在这里`。
+- **引用规则**：阶段标题用人话；用户引文统一用 `「原话」（YYYY-MM-DD）`，从语料检索后复制；只有“这句话后来去了哪里”中的后续节点才使用无引号的 `- YYYY-MM-DD 事实`，不要把它当用户引文。
 - **禁止事项**：罗列每月条数；长表格堆数字；把未完成的事写成结束。
 - **验收标准**：重点写转向和变化；最近这月单独当“月报”用。详情见 `distill-report-protocol.md`。
 
@@ -159,15 +159,15 @@ Agent 负责：读原话、筛选候选、判断哪些内容有价值、归并�
 - **任务目标**：回答“这些事后来各自怎么样了”，登记用户明确说过要做的事，不制造噪音清单。
 - **输入文件**：`corpus_dedup.jsonl`、`materials_decisions.json`。
 - **允许的证据**：用户明确说“我要做/我准备做/我打算做/我决定去做”的原话。
-- **输出文件**：`data/promises.jsonl`（全局）/ 当前目录 `.wordmirror/promises.jsonl`（项目层）。
+- **输出文件**：由 `wm.py` 按运行目录自动决定——在数据根目录运行写全局 `data/promises.jsonl`，否则写当前目录 `.wordmirror/promises.jsonl`（项目层）。**渲染 03 时两层都会扫，但记账时落在哪层取决于你从哪个目录执行命令**；补录前先确认工作目录，避免账本落到错误的项目层。
 - **写入方式**：**只走命令，不手写 JSONL**：
   ```bash
   python scripts/wm.py promise add "事项" --date 原始日期 --proj 项目 --ref 原话 [--agent 工具名]
-  python scripts/wm.py promise revise 关键词 --date 原始日期 [--proj 项目]
+  python scripts/wm.py promise revise 关键词 [--date 原始日期] [--proj 项目] [--ref 原话]
   ```
 - **章节结构**（渲染层）：还没做完 / 办完了 / 已经收线（按 status=open/closed/dropped）。
-- **引用规则**：补录历史承诺必须带 `--date` 原始日期（回查原话，不是登记当天）；保留 `--proj` 和 `--ref` 原话依据。
-- **禁止事项**：把“我在想要不要”、技术执行指令、示例文本、讨论假设、AI 生成模板句当承诺；用登记日期冒充历史日期。
+- **引用规则**：补录历史承诺必须带 `--date` 原始日期（回查原话，不是登记当天）；保留 `--proj` 和 `--ref` 原话依据。已登记项缺 `--ref` 时用 `promise revise 关键词 --ref 原话` 补正。
+- **禁止事项**：把“我在想要不要”、技术执行指令、普通执行指令、示例文本、讨论中的假设、AI 生成模板句当承诺；用登记日期冒充历史日期。排除词表以 `writeback-protocol.md` 为准，本文件和 init-protocol 与其一致。
 - **验收标准**：每一条能回查你什么时候说的、原话是什么；宁可少补，不塞噪音。详情见 `writeback-protocol.md`。
 
 ## 10. insights.jsonl（照见）
@@ -179,8 +179,10 @@ Agent 负责：读原话、筛选候选、判断哪些内容有价值、归并�
 - **三类**：`say_do`（说了没做）/ `flip`（前后说法相反）/ `word_drift`（词频或表达漂移）。
 - **每行格式**：
   ```json
-  {"id":"gap-YYYYMMDD-N","type":"say_do","fact":"…问句…","evidence":[{"date":"…","msg":"…"}],"confidence":"high|mid","first_said":"…","last_said":"…","status":"active","user_reply":""}
+  {"id":"gap-YYYYMMDD-N","type":"say_do","fact":"…问句…","evidence":[{"date":"…","msg":"…","src":"corpus|ai_messages"}],"confidence":"high|mid","first_said":"…","last_said":"…","status":"active|confirmed|dismissed","user_reply":""}
   ```
+- **字段含义**：`evidence[].src` 记录证据来源（corpus 或 ai_messages），后续可按工具归因；`status` 用三态状态机——`active`（待点破）/ `confirmed`（用户认了）/ `dismissed`（用户否了并记 `user_reply`，之后不再点）。
+- **confidence 门控**：只有 `high` 才在开工自动点破；`mid` 只在月底月初或用户问起时点。AI 定稿时核对证据属实，可把 mid 升级为 high。
 - **写法规则**：`fact` 必须带原话和日期；用问句收尾、给台阶；结论权归用户；脚本候选是假阳性就丢，Agent 也可从语料自己发现。
 - **禁止事项**：把“你 X 月说过 Y 之后没提”这种万能句式当照见；说破动机、性格、情绪、心理（你在逃避/你焦虑/你不成熟）；把没再提当放弃。
 - **验收标准**：冲击力来自原话本身；事实带日期，用户能当场反查；不加定性判断。详情见 `mirror-protocol.md`。
@@ -189,7 +191,9 @@ Agent 负责：读原话、筛选候选、判断哪些内容有价值、归并�
 
 # 第三部分 · 初始化交接检查表
 
-从 `references/init-protocol.md` 抽出，用于确认初始化不是“只提取 + 只生成空态 HTML”就完成。
+本检查表是 `references/init-protocol.md` 的执行层镜像；**判完成以 init-protocol.md 为准**，若它更新了步骤，这里要同步，不要只勾这份表就宣布完成。
+
+03 / 04 指渲染产出的页面：**03 = 说过要做的事**（读 promises.jsonl），**04 = 该注意的事**（读 insights.jsonl）。
 
 ```text
 □ portrait.md 是否已由 Agent 读原话定稿？
@@ -199,7 +203,7 @@ Agent 负责：读原话、筛选候选、判断哪些内容有价值、归并�
 □ insights：是否已从候选筛选并定稿？为空是否说明了原因？
 □ 是否在所有最终内容定稿后才运行 python scripts/render.py all？
 □ 是否运行 python scripts/self_check.py 并确认无新增失败？
-□ 03 是否有承诺数据、04 是否有照见数据，或是否已向用户说明空态的真实原因？
+□ 03（说过要做的事）是否有承诺数据、04（该注意的事）是否有照见数据，或是否已向用户说明空态的真实原因？
 □ 是否已把产物文件和 03/04 状态告诉用户？
 ```
 

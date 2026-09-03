@@ -281,21 +281,16 @@ def cmd_promise(args):
         kw_parts, updates = [], {}
         i = 1
         while i < len(args):
-            if args[i] in ('--date', '--proj') and i + 1 < len(args):
-                updates['date' if args[i] == '--date' else 'proj'] = args[i + 1]
+            if args[i] in ('--date', '--proj', '--ref') and i + 1 < len(args):
+                key = {'--date': 'date', '--proj': 'proj', '--ref': 'ref'}[args[i]]
+                updates[key] = args[i + 1]
                 i += 2
             else:
                 kw_parts.append(args[i]); i += 1
         kw = ' '.join(kw_parts).strip()
         # 仅用于修正已登记事项的来源元数据，不改变状态或历史原话
-        if '--date' in args:
-            i = args.index('--date')
-            if i + 1 < len(args): updates['date'] = args[i + 1]
-        if '--proj' in args:
-            i = args.index('--proj')
-            if i + 1 < len(args): updates['proj'] = args[i + 1]
         if not kw or not updates:
-            print('用法：python wm.py promise revise 关键词 --date 原始日期 [--proj 项目]')
+            print('用法：python wm.py promise revise 关键词 [--date 原始日期] [--proj 项目] [--ref 原话]')
             sys.exit(1)
         hits = []
         for pf in _ledger_paths():
