@@ -1,10 +1,16 @@
 ---
 name: intent-issues
-description: 读取 INTENT.md、PRD、architecture.md 和 design.md，按垂直切片拆分工单。工单的 Acceptance criteria 自动引用验收路径编号，输出前自动检查所有路径被覆盖。工单的"涉及模块"字段引用架构文档中定义的模块名。强制要求 INTENT.md、PRD、architecture.md 和 design.md 作为输入。
+description: 按垂直切片从设计文档拆分工单，工单验收标准自动引用验收路径编号并校验覆盖。
+disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
 # Intent-Issues
+
+## 写入边界
+
+- 写入：`issues.md` / 工单文档。
+- 不写其他文件。
 
 ## 目标
 

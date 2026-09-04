@@ -1,8 +1,15 @@
 ---
 name: impact
 description: 面向现有系统的变更影响分析与受监督实施。支持多技术栈（Java/Spring/MyBatis、Node/Express/Prisma、Python/FastAPI、Go/Gin/GORM、前端框架等），通过靶向提问把模糊变更意图变成基于证据的影响分析，按 light/full 两档输出文档并协助执行。不用于从 0 到 1 搭建新系统。Use when user says '影响分析', '变更需求', '改个字段', '删张表', 'impact', 'impact-pro', 或要求在现有系统上做变更且需要先评估影响时.
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, mcp__dbhub__execute_sql, mcp__database__query, mcp__database__describeTable, mcp__database__listTables
 ---
+
+## 写入边界
+
+- 写入：`change-impact/<需求>/` 多阶段文档；受 `确认 Step N` 授权的代码实施。
+- DB 写操作默认生成脚本、不直接执行；生产 DB 禁止 agent 直接 DDL/DML。
+- 其余现有代码只读。
 
 > **架构说明**：本文件是通用内核，不含任何栈专属规则。技术栈规则位于 `profiles/`，数据库规则位于 `db-adapters/`，可选结构化代码图规则位于 `code-graph-adapters/`。Phase 2 自动探测并按需加载。
 >

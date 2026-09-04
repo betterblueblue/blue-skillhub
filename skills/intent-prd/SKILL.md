@@ -1,10 +1,16 @@
 ---
 name: intent-prd
-description: 读取 INTENT.md，原生引用能力表、验收路径、设计标准和术语表，生成结构化 PRD。强制要求 INTENT.md 作为输入。适用于 intent-anchor 完成后、任务拆分之前的阶段。
+description: 从 INTENT.md 生成结构化 PRD，原生引用能力表、验收路径、设计标准和术语表。
+disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
 # Intent-PRD
+
+## 写入边界
+
+- 写入：PRD 文档（`prd.md`）。
+- 不写其他文件。
 
 ## 目标
 

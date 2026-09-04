@@ -1,10 +1,16 @@
 ---
 name: intent-dev
-description: 管理工单开发过程。按 TDD 循环（Red-Green-Refactor）开发每个工单，工单完成后实际运行验证确认通过。全部工单开发完成后交接给 intent-verify 做端到端验收。强制要求 INTENT.md、PRD、工单文件、architecture.md 和 design.md 作为输入。
+description: 按 TDD 循环开发工单并记录 dev-record，完成后交接给 intent-verify 验收。
+disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
 
 # Intent-Dev
+
+## 写入边界
+
+- 写入：业务源码、测试与 `dev-record`；遵循目标项目的确认流程。
+- 不写无关文件。
 
 ## 目标
 

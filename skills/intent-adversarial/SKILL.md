@@ -1,10 +1,16 @@
 ---
 name: intent-adversarial
-description: 对抗性验证环节。在 intent-dev 全部工单完成后、intent-verify 之前运行：安全攻击实测（垂直/横向/跨角色越权、未授权访问、业务逻辑攻击、暴力破解）、性能压测三步法（数据放大→基准采集→并发压测）、并发一致性断言（INTENT.md CC 类逐条攻击实测，如超卖/重复抢单/重复支付）。发现的高危缺陷自动生成 FIX-* 缺陷工单并阻止交付，修复后定向复验。强制要求 INTENT.md、issues.md、dev-record.md、architecture.md 作为输入。
+description: 工单开发完成后的对抗性验证（安全/性能/并发），产出 FIX-* 缺陷工单并阻止交付。
+disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
 # Intent-Adversarial
+
+## 写入边界
+
+- 写入：`FIX-*` 缺陷工单与对抗验证记录（`adversarial-record`）。
+- 安全攻击实测仅限被测系统；不写无关文件。
 
 ## 目标
 

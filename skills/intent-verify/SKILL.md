@@ -1,10 +1,16 @@
 ---
 name: intent-verify
-description: 所有工单开发完成后的整体验收。先跑全量测试确认老功能没被改坏，再按 INTENT.md 的验收路径逐条走通，核对保留能力是否都有证据，检查有没有偷偷丢掉或加上什么。如果 INTENT.md 有性能或安全要求，按要求验证。根据 architecture.md 和 design.md 做技术漂移复核。强制要求 INTENT.md、PRD、工单文件、dev-record、architecture.md 和 design.md 作为输入。
+description: 全链路端到端验收，核对保留能力与漂移，产出验收记录与缺陷清单。
+disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
 # Intent-Verify
+
+## 写入边界
+
+- 写入：验收记录 / 证据 / 缺陷清单（`verify-record`）。
+- 不改源码。
 
 ## 目标
 

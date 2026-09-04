@@ -1,10 +1,16 @@
 ---
 name: wordmirror
 description: 用户本人的说明书：他是谁、在忙什么、怎么跟他说话。任何 AI 加载本 skill 即认识用户。当用户提到"我之前说过什么""我上次怎么想的""按我的习惯来""记住这个决定""我说话有什么口头禅""我哪几个项目没下文""更新我的画像""我要做X""这个事做完了"，或用户犹豫纠结、AI 需要用户背景/偏好/历史决策才能答好问题时使用。
+disable-model-invocation: false
 allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 ---
 
 # 言镜 · wordmirror · 认识我
+
+## 写入边界
+
+- 写入：`~/.wordmirror` 数据（profile / 画像 / 报告），本地路径 + 用户确认。
+- 不上传用户话语；skill 包内 `references/` 不写入个人数据。
 
 这个 skill 干一件事：让你在任何 AI 里开工时，它都认识你——你是谁、在忙什么、跟你说话要守什么规矩；你随口问"我说过啥"，它能翻出原话、带日期。你的话全部存在自己电脑上，不上传。
 

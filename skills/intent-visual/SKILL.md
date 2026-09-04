@@ -1,10 +1,16 @@
 ---
 name: intent-visual
-description: 读取 INTENT.md、PRD、architecture.md 和 design.md，为无设计素材但需要用户界面的项目生成视觉规范 visual-design.md 和验收基线 visual-baseline.html，并登记进 INTENT.md 第 12 节激活下游既有视觉门禁。支持参考池推荐、常备方向样张、实测提取三种风格来源。适用于 intent-design 完成后、intent-issues 之前；已有设计素材或无界面的项目不使用本 skill。
+description: 为无设计素材的 UI 项目生成视觉规范 visual-design.md 与验收基线 visual-baseline.html，并登记进 INTENT.md 第 12 节。
+disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Write, Edit, Bash, WebFetch
 ---
 
 # Intent-Visual
+
+## 写入边界
+
+- 写入：`visual-design.md`、`visual-baseline.html`；回写 `INTENT.md` 第 12 节。
+- 不写其他文件。
 
 ## 目标
 

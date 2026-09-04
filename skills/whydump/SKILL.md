@@ -13,6 +13,11 @@ allowed-tools: Bash, pwsh, Read, Write, Grep, Glob
 
 # whydump — Java OOM 排查（先引导，再取证，再分析）
 
+## 写入边界
+
+- 取证 / 分析产出写入用户确认的路径；修改启动参数需先确认。
+- 其余内容只读。
+
 > utility，不是 pathfinder / impact 同类。用户对 OOM 没头绪时用。
 > **对用户说话用人话。** 不要一上来甩 `histo.txt`、MAT、HeapDump 这种词。
 > 要材料时说明：这是什么、谁来跑命令、跑完得到什么。

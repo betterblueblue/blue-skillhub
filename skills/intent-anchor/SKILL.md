@@ -1,10 +1,16 @@
 ---
 name: intent-anchor
-description: 在 brainstorm、PRD 或开发之前，通过类比、反面和场景对话澄清尚未成形的产品或功能意图，并产出可交接的 INTENT.md。适用于用户明确要求“意图锚定”“先把想法说清楚”，或正在描述一个仍有关键取舍未决定的新产品、系统转换、现有系统新增能力。不要用于普通文件格式转换、代码语法迁移、已有明确规格的实现任务。
+description: 意图锚定：通过对话澄清尚未成形的产品意图，产出可交接的 INTENT.md。
+disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Write, Bash, WebSearch, WebFetch
 ---
 
 # IntentAnchor
+
+## 写入边界
+
+- 写入：`INTENT.md`（目标项目根）。
+- 不写其他文件；目标项目其余内容只读。
 
 ## 目标
 

@@ -1,10 +1,16 @@
 ---
 name: intent-design
-description: 读取 INTENT.md 和 PRD，产出架构文档和功能设计文档。架构文档写全局技术决策（分层、模块边界、技术选型、数据流、额外结构与假设），功能设计文档写每个能力在架构里怎么落地。强制要求 INTENT.md 和 PRD 作为输入。适用于 intent-prd 完成后、任务拆分之前的阶段。
+description: 从 INTENT.md 与 PRD 产出架构文档 architecture.md 和功能设计文档 design.md。
+disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Write, Bash
 ---
 
 # Intent-Design
+
+## 写入边界
+
+- 写入：`architecture.md` 与 `design.md`。
+- 不写其他文件。
 
 ## 目标
 

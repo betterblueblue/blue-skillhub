@@ -9,6 +9,11 @@ allowed-tools: Read, Bash
 
 # VL Vision — 识图工具（Utility）
 
+## 写入边界
+
+- 不写文件；本 skill 只读识图。
+- 按需调用外部视觉语言模型 API 完成识别，结果交回主流程。
+
 > **定位**：本工具是 utility，不是核心 Skill（pathfinder / impact / triage 等的同类）。
 > 不参与 Skill 评测体系的 L0/L1/L2 评测，不纳入变更影响分析流程。
 > 仅在 agent 遇到图片处理需求时按需调用。
