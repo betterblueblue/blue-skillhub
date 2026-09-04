@@ -58,9 +58,23 @@ def _match(needles, normed_msgs):
     return any(nd in m for nd in needles for m in normed_msgs)
 
 
-def _populate(path, rows_user, rows_ai, user_present, ai_present, out):
+def _record_quote(quote, messages, out, path, line, reason, stats):
+    """记录一条引文；把可验证、截断和无法验证分开统计。"""
+    stats['checked'] += 1
+    matched = bool(_needles(quote)) and _match(_needles(quote), messages)
+    if matched:
+        stats['verified'] += 1
+        if re.search(r'[…．]+', quote):
+            stats['truncated'] += 1
+    else:
+        stats['unverifiable'] += 1
+        out.append((path, line, quote, reason))
+
+
+def _populate(path, rows_user, rows_ai, user_present, ai_present, out, stats):
     try:
-        text = open(path, encoding='utf-8', errors='replace').read()
+        with open(path, encoding='utf-8', errors='replace') as f:
+            text = f.read()
     except OSError:
         return
     for ln, line in enumerate(text.splitlines(), 1):
@@ -69,15 +83,20 @@ def _populate(path, rows_user, rows_ai, user_present, ai_present, out):
             is_ai = bool(qual) and qual.strip() in KNOWN_AGENTS
             if is_ai:
                 if not ai_present:
+                    stats['checked'] += 1
+                    stats['unverifiable'] += 1
+                    stats['source_missing'] += 1
                     out.append((path, ln, quote, 'AI 语料缺失，无法校验 AI 来源引文'))
-                elif not _match(_needles(quote), rows_ai):
-                    out.append((path, ln, quote, '未在 AI 语料中找到原话'))
-            elif not _match(_needles(quote), rows_user):
-                out.append((path, ln, quote, '未在用户语料中找到原话'))
+                else:
+                    _record_quote(quote, rows_ai, out, path, ln,
+                                  '未在 AI 语料中找到原话', stats)
+            else:
+                _record_quote(quote, rows_user, out, path, ln,
+                              '未在用户语料中找到原话', stats)
         for m in RE_PREFIX.finditer(line):
             quote = m.group(2)
-            if not _match(_needles(quote), rows_user):
-                out.append((path, ln, quote, '未在用户语料中找到原话'))
+            _record_quote(quote, rows_user, out, path, ln,
+                          '未在用户语料中找到原话', stats)
 
 
 def _md_files(data, products):
@@ -87,33 +106,51 @@ def _md_files(data, products):
     return out
 
 
-def check_quotes(data=DATA, products=PRODUCTS, out=None):
-    """扫描所有报告引文，返回 [(path, line, quote, reason), ...]。"""
+def check_quotes(data=DATA, products=PRODUCTS, out=None, stats=None):
+    """扫描报告引文，返回未能验证的引文；可选填充分级统计。"""
     if out is None:
         out = []
+    if stats is None:
+        stats = {}
+    stats.setdefault('checked', 0)
+    stats.setdefault('verified', 0)
+    stats.setdefault('truncated', 0)
+    stats.setdefault('unverifiable', 0)
+    stats.setdefault('source_missing', 0)
     rows_u, _ = common.read_jsonl(os.path.join(data, 'corpus_dedup.jsonl'))
     rows_a, _ = common.read_jsonl(os.path.join(data, 'ai_messages.jsonl'))
     for f in _md_files(data, products):
         _populate(f, [_norm(r.get('msg', '')) for r in rows_u],
                   [_norm(r.get('msg', '')) for r in rows_a],
-                  bool(rows_u), bool(rows_a), out)
+                  bool(rows_u), bool(rows_a), out, stats)
     return out
 
 
 def main():
-    violations = check_quotes()
+    stats = {'checked': 0, 'verified': 0, 'truncated': 0,
+             'unverifiable': 0, 'source_missing': 0}
+    violations = check_quotes(stats=stats)
     md_count = len(_md_files(DATA, PRODUCTS))
     if not md_count:
         print('还没有报告可查（profile/*.md、products/*.md 均无），跳过引文检查。')
         return 0
+    verified = stats['verified']
+    truncated = stats['truncated']
+    direct = verified - truncated
+    unverifiable = stats['unverifiable']
+    print('引文核验分级：共检查 %d 条 · 直接匹配 %d · 允许截断 %d · 无法验证 %d'
+          % (stats['checked'], direct, truncated, unverifiable))
     if not violations:
-        print('引文可追溯性：%d 个报告里所有带日期引文均在语料中反查到。' % md_count)
+        print('%d 个报告里所有带日期引文均可反查。' % md_count)
         return 0
-    print('以下引文不是逐字原话（作者改写/浓缩，非编造；可核原语料）：')
+    print('无法验证的引文（可能是改写/浓缩，也可能来源缺失；可核原语料）：')
     for path, ln, quote, reason in violations:
         bare = path.replace(DATA, 'data').replace(PRODUCTS, 'products')
         print('  ✗ %s:%s  「%s」   -> %s' % (bare, ln, quote[:24], reason))
-    print('共 %d 处未通过。' % len(violations))
+    if '--strict' in sys.argv:
+        print('严格模式：存在 %d 条无法验证的引用，阻止交付。' % unverifiable)
+        return 2
+    print('非严格模式：%d 条无法验证的引用，仅提示。' % unverifiable)
     return 1
 
 

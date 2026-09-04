@@ -62,17 +62,18 @@ def ex_codex(out):
                     if not fn.endswith('.jsonl'): continue
                     f += 1
                     sid = cwd = None
-                    for line in open(os.path.join(dd, fn), encoding='utf-8', errors='replace'):
-                        try: o = json.loads(line)
-                        except Exception: continue
-                        t, p = o.get('type'), o.get('payload', {})
-                        if t == 'session_meta':
-                            sid, cwd = p.get('id'), p.get('cwd'); continue
-                        # agent_message = AI 给用户的正式回复（非工具/思考）
-                        if t == 'event_msg' and p.get('type') == 'agent_message':
-                            m = p.get('message')
-                            if isinstance(m, str) and len(m) > 30:
-                                n += write(out, 'codex', d2s(o.get('timestamp','')), cwd, sid, m)
+                    with open(os.path.join(dd, fn), encoding='utf-8', errors='replace') as _fh:
+                        for line in _fh:
+                            try: o = json.loads(line)
+                            except Exception: continue
+                            t, p = o.get('type'), o.get('payload', {})
+                            if t == 'session_meta':
+                                sid, cwd = p.get('id'), p.get('cwd'); continue
+                            # agent_message = AI 给用户的正式回复（非工具/思考）
+                            if t == 'event_msg' and p.get('type') == 'agent_message':
+                                m = p.get('message')
+                                if isinstance(m, str) and len(m) > 30:
+                                    n += write(out, 'codex', d2s(o.get('timestamp','')), cwd, sid, m)
     rec('codex', n, f)
 
 def ex_claude(out):
@@ -81,18 +82,19 @@ def ex_claude(out):
         f += 1
         proj = os.path.basename(os.path.dirname(path))
         sid = os.path.splitext(os.path.basename(path))[0]
-        for line in open(path, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            if o.get('type') != 'assistant': continue
-            msg = o.get('message', {})
-            texts = []
-            for part in (msg.get('content') or []):
-                if isinstance(part, dict) and part.get('type') == 'text':
-                    texts.append(part.get('text',''))
-            m = '\n'.join(texts).strip()
-            if len(m) > 30:
-                n += write(out, 'claude-code', d2s(o.get('timestamp','')), proj, sid, m)
+        with open(path, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                if o.get('type') != 'assistant': continue
+                msg = o.get('message', {})
+                texts = []
+                for part in (msg.get('content') or []):
+                    if isinstance(part, dict) and part.get('type') == 'text':
+                        texts.append(part.get('text',''))
+                m = '\n'.join(texts).strip()
+                if len(m) > 30:
+                    n += write(out, 'claude-code', d2s(o.get('timestamp','')), proj, sid, m)
     rec('claude-code', n, f)
 
 def ex_qwen(out):
@@ -101,24 +103,25 @@ def ex_qwen(out):
         f += 1
         proj = os.path.basename(os.path.dirname(os.path.dirname(path)))
         sid = os.path.splitext(os.path.basename(path))[0]
-        for line in open(path, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            if o.get('type') != 'assistant': continue
-            msg = o.get('message', {})
-            texts = []
-            c = msg.get('content')
-            if isinstance(c, str): texts.append(c)
-            elif isinstance(c, list):
-                for part in c:
-                    if isinstance(part, dict) and part.get('type') == 'text':
-                        texts.append(part.get('text',''))
-            for part in (msg.get('parts') or []):
-                if isinstance(part, dict) and isinstance(part.get('text'), str):
-                    texts.append(part['text'])
-            m = '\n'.join(texts).strip()
-            if len(m) > 30:
-                n += write(out, 'qwen', d2s(o.get('timestamp','')), proj, sid, m)
+        with open(path, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                if o.get('type') != 'assistant': continue
+                msg = o.get('message', {})
+                texts = []
+                c = msg.get('content')
+                if isinstance(c, str): texts.append(c)
+                elif isinstance(c, list):
+                    for part in c:
+                        if isinstance(part, dict) and part.get('type') == 'text':
+                            texts.append(part.get('text',''))
+                for part in (msg.get('parts') or []):
+                    if isinstance(part, dict) and isinstance(part.get('text'), str):
+                        texts.append(part['text'])
+                m = '\n'.join(texts).strip()
+                if len(m) > 30:
+                    n += write(out, 'qwen', d2s(o.get('timestamp','')), proj, sid, m)
     rec('qwen', n, f)
 
 def ex_workbuddy(out):
@@ -127,18 +130,19 @@ def ex_workbuddy(out):
         f += 1
         proj = os.path.basename(os.path.dirname(path))
         sid = os.path.splitext(os.path.basename(path))[0]
-        for line in open(path, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            if o.get('type') != 'message' or o.get('role') != 'assistant': continue
-            if o.get('status') == 'incomplete': continue  # 429错误等
-            texts = []
-            for part in o.get('content', []):
-                if isinstance(part, dict) and isinstance(part.get('text'), str):
-                    texts.append(part['text'])
-            m = '\n'.join(texts).strip()
-            if len(m) > 30:
-                n += write(out, 'workbuddy', d2s(o.get('timestamp','')), proj, sid, m)
+        with open(path, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                if o.get('type') != 'message' or o.get('role') != 'assistant': continue
+                if o.get('status') == 'incomplete': continue  # 429错误等
+                texts = []
+                for part in o.get('content', []):
+                    if isinstance(part, dict) and isinstance(part.get('text'), str):
+                        texts.append(part['text'])
+                m = '\n'.join(texts).strip()
+                if len(m) > 30:
+                    n += write(out, 'workbuddy', d2s(o.get('timestamp','')), proj, sid, m)
     rec('workbuddy', n, f)
 
 def ex_zcode(out):
@@ -173,19 +177,20 @@ def ex_pi(out):
     for path in glob.glob(os.path.join(H, '.pi', 'agent', 'sessions', '*', '*.jsonl')):
         f += 1
         proj = os.path.basename(os.path.dirname(path))
-        for line in open(path, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            if o.get('type') != 'message': continue
-            msg = o.get('message', {})
-            if msg.get('role') != 'assistant': continue
-            texts = []
-            for part in msg.get('content', []):
-                if isinstance(part, dict) and part.get('type') == 'text':
-                    texts.append(part.get('text',''))
-            m = '\n'.join(texts).strip()
-            if len(m) > 30:
-                n += write(out, 'pi', d2s(o.get('timestamp','')), proj, str(o.get('id','')), m)
+        with open(path, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                if o.get('type') != 'message': continue
+                msg = o.get('message', {})
+                if msg.get('role') != 'assistant': continue
+                texts = []
+                for part in msg.get('content', []):
+                    if isinstance(part, dict) and part.get('type') == 'text':
+                        texts.append(part.get('text',''))
+                m = '\n'.join(texts).strip()
+                if len(m) > 30:
+                    n += write(out, 'pi', d2s(o.get('timestamp','')), proj, str(o.get('id','')), m)
     rec('pi', n, f)
 
 def ex_atomcode(out):
@@ -195,15 +200,16 @@ def ex_atomcode(out):
         proj = os.path.basename(os.path.dirname(path))
         base = os.path.splitext(os.path.basename(path))[0]
         date = base[:10]
-        for line in open(path, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            for msg in o.get('messages', []):
-                if str(msg.get('role','')).lower() != 'assistant': continue
-                c = msg.get('content', {})
-                t = c.get('Text') if isinstance(c, dict) else None
-                if t and len(t) > 30:
-                    n += write(out, 'atomcode', date, proj, base, t)
+        with open(path, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                for msg in o.get('messages', []):
+                    if str(msg.get('role','')).lower() != 'assistant': continue
+                    c = msg.get('content', {})
+                    t = c.get('Text') if isinstance(c, dict) else None
+                    if t and len(t) > 30:
+                        n += write(out, 'atomcode', date, proj, base, t)
     rec('atomcode', n, f)
 
 def ex_antigravity(out):
@@ -211,14 +217,15 @@ def ex_antigravity(out):
     for tf in glob.glob(os.path.join(H, '.gemini', 'antigravity', 'brain', '*', '.system_generated', 'logs', 'transcript.jsonl')):
         f += 1
         cid = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(tf))))
-        for line in open(tf, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            # AI 的正式回复类型
-            if o.get('type') not in ('MODEL_FINAL', 'FINAL_RESPONSE', 'AGENT_RESPONSE', 'MODEL_RESPONSE'): continue
-            c = o.get('content', '')
-            if isinstance(c, str) and len(c) > 30:
-                n += write(out, 'antigravity', d2s(o.get('created_at','')), cid[:8], cid, c)
+        with open(tf, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                # AI 的正式回复类型
+                if o.get('type') not in ('MODEL_FINAL', 'FINAL_RESPONSE', 'AGENT_RESPONSE', 'MODEL_RESPONSE'): continue
+                c = o.get('content', '')
+                if isinstance(c, str) and len(c) > 30:
+                    n += write(out, 'antigravity', d2s(o.get('created_at','')), cid[:8], cid, c)
     rec('antigravity', n, f)
 
 def ex_catpaw(out):
@@ -242,34 +249,35 @@ def ex_catpaw(out):
             buf = []
             in_ai = False
             in_tool = False
-            for line in open(tf, encoding='utf-8', errors='replace'):
-                st = line.strip()
-                if st == 'assistant:':
-                    if in_ai and buf:
-                        m = '\n'.join(buf).strip()
-                        if len(m) >= 10:
-                            n += write(out, 'catpaw', date, proj, sid, m)
-                    in_ai = True
-                    in_tool = False
-                    buf = []
-                    continue
-                if st == 'user:' or st == '<user_query>':
-                    if in_ai and buf:
-                        m = '\n'.join(buf).strip()
-                        if len(m) >= 10:
-                            n += write(out, 'catpaw', date, proj, sid, m)
-                    in_ai = False
-                    in_tool = False
-                    buf = []
-                    continue
-                if st.startswith('[Tool call]') or st.startswith('[Tool result]'):
-                    in_tool = True
-                    continue
-                if st.startswith('[Thinking]'):
-                    in_tool = False
-                    continue
-                if in_ai and not in_tool:
-                    buf.append(line.rstrip('\n'))
+            with open(tf, encoding='utf-8', errors='replace') as _fh:
+                for line in _fh:
+                    st = line.strip()
+                    if st == 'assistant:':
+                        if in_ai and buf:
+                            m = '\n'.join(buf).strip()
+                            if len(m) >= 10:
+                                n += write(out, 'catpaw', date, proj, sid, m)
+                        in_ai = True
+                        in_tool = False
+                        buf = []
+                        continue
+                    if st == 'user:' or st == '<user_query>':
+                        if in_ai and buf:
+                            m = '\n'.join(buf).strip()
+                            if len(m) >= 10:
+                                n += write(out, 'catpaw', date, proj, sid, m)
+                        in_ai = False
+                        in_tool = False
+                        buf = []
+                        continue
+                    if st.startswith('[Tool call]') or st.startswith('[Tool result]'):
+                        in_tool = True
+                        continue
+                    if st.startswith('[Thinking]'):
+                        in_tool = False
+                        continue
+                    if in_ai and not in_tool:
+                        buf.append(line.rstrip('\n'))
             if in_ai and buf:
                 m = '\n'.join(buf).strip()
                 if len(m) >= 10:

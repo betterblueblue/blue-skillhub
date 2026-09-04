@@ -96,16 +96,17 @@ def ex_codex(out):
                     if not fn.endswith('.jsonl'): continue
                     f += 1
                     sid = cwd = None
-                    for line in open(os.path.join(dd, fn), encoding='utf-8', errors='replace'):
-                        try: o = json.loads(line)
-                        except Exception: continue
-                        t, p = o.get('type'), o.get('payload', {})
-                        if t == 'session_meta':
-                            sid, cwd = p.get('id'), p.get('cwd'); continue
-                        if t == 'event_msg' and p.get('type') == 'user_message':
-                            m = p.get('message')
-                            if isinstance(m, str):
-                                n += write(out, 'codex', d2s(o.get('timestamp','')), cwd, sid, clean(m))
+                    with open(os.path.join(dd, fn), encoding='utf-8', errors='replace') as _fh:
+                        for line in _fh:
+                            try: o = json.loads(line)
+                            except Exception: continue
+                            t, p = o.get('type'), o.get('payload', {})
+                            if t == 'session_meta':
+                                sid, cwd = p.get('id'), p.get('cwd'); continue
+                            if t == 'event_msg' and p.get('type') == 'user_message':
+                                m = p.get('message')
+                                if isinstance(m, str):
+                                    n += write(out, 'codex', d2s(o.get('timestamp','')), cwd, sid, clean(m))
     rec('codex', n, f)
 
 def ex_claude(out):
@@ -114,56 +115,58 @@ def ex_claude(out):
         f += 1
         proj = os.path.basename(os.path.dirname(path))
         sid = os.path.splitext(os.path.basename(path))[0]
-        for line in open(path, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            if o.get('type') != 'user': continue
-            c = o.get('message', {}).get('content')
-            texts = []
-            if isinstance(c, str): texts.append(c)
-            elif isinstance(c, list):
-                for part in c:
-                    if isinstance(part, dict) and part.get('type') == 'text':
-                        texts.append(part.get('text',''))
-            for t in texts:
-                n += write(out, 'claude-code', d2s(o.get('timestamp','')), proj, sid, clean(t))
+        with open(path, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                if o.get('type') != 'user': continue
+                c = o.get('message', {}).get('content')
+                texts = []
+                if isinstance(c, str): texts.append(c)
+                elif isinstance(c, list):
+                    for part in c:
+                        if isinstance(part, dict) and part.get('type') == 'text':
+                            texts.append(part.get('text',''))
+                for t in texts:
+                    n += write(out, 'claude-code', d2s(o.get('timestamp','')), proj, sid, clean(t))
     # history.jsonl：Claude Code 主历史，每行一条用户 prompt（含已被清理会话的旧 prompt）。
     # display 是用户输入；/ 开头是斜杠命令，跳过；粘贴的内容在 pastedContents 里。
     hp = os.path.join(H, '.claude', 'history.jsonl')
     if os.path.isfile(hp):
         f += 1
-        for line in open(hp, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            m = (o.get('display') or '').strip()
-            if not m or m.startswith('/'):
-                continue
-            if m.startswith('[Pasted text'):
-                parts = []
-                for v in (o.get('pastedContents') or {}).values():
-                    if isinstance(v, dict):
-                        c = v.get('content')
-                        if isinstance(c, str):
-                            parts.append(c)
-                        elif isinstance(c, list):
-                            for item in c:
-                                if isinstance(item, dict) and item.get('type') == 'text':
-                                    parts.append(item.get('text', ''))
-                        elif v.get('contentHash'):  # 只有哈希：去 paste-cache 找正文
-                            cf = os.path.join(H, '.claude', 'paste-cache', v['contentHash'] + '.txt')
-                            if os.path.isfile(cf):
-                                try:
-                                    parts.append(open(cf, encoding='utf-8', errors='replace').read())
-                                except Exception:
-                                    pass
-                full = '\n'.join(x for x in parts if x).strip()
-                if full:
-                    m = full
-                else:
+        with open(hp, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                m = (o.get('display') or '').strip()
+                if not m or m.startswith('/'):
                     continue
-            m = clean(m)
-            if m:
-                n += write(out, 'claude-code', d2s(o.get('timestamp', '')), o.get('project', ''), o.get('sessionId', ''), m)
+                if m.startswith('[Pasted text'):
+                    parts = []
+                    for v in (o.get('pastedContents') or {}).values():
+                        if isinstance(v, dict):
+                            c = v.get('content')
+                            if isinstance(c, str):
+                                parts.append(c)
+                            elif isinstance(c, list):
+                                for item in c:
+                                    if isinstance(item, dict) and item.get('type') == 'text':
+                                        parts.append(item.get('text', ''))
+                            elif v.get('contentHash'):  # 只有哈希：去 paste-cache 找正文
+                                cf = os.path.join(H, '.claude', 'paste-cache', v['contentHash'] + '.txt')
+                                if os.path.isfile(cf):
+                                    try:
+                                        parts.append(open(cf, encoding='utf-8', errors='replace').read())
+                                    except Exception:
+                                        pass
+                    full = '\n'.join(x for x in parts if x).strip()
+                    if full:
+                        m = full
+                    else:
+                        continue
+                m = clean(m)
+                if m:
+                    n += write(out, 'claude-code', d2s(o.get('timestamp', '')), o.get('project', ''), o.get('sessionId', ''), m)
     rec('claude-code', n, f)
 
 def ex_qwen(out):
@@ -172,23 +175,24 @@ def ex_qwen(out):
         f += 1
         proj = os.path.basename(os.path.dirname(os.path.dirname(path)))
         sid = os.path.splitext(os.path.basename(path))[0]
-        for line in open(path, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            if o.get('type') != 'user': continue
-            texts = []
-            msg = o.get('message', {})
-            c = msg.get('content')
-            if isinstance(c, str): texts.append(c)
-            elif isinstance(c, list):
-                for part in c:
-                    if isinstance(part, dict) and part.get('type') == 'text':
-                        texts.append(part.get('text',''))
-            for part in (msg.get('parts') or []):
-                if isinstance(part, dict) and isinstance(part.get('text'), str):
-                    texts.append(part['text'])
-            for t in texts:
-                n += write(out, 'qwen', d2s(o.get('timestamp','')), o.get('cwd') or proj, sid, clean(t))
+        with open(path, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                if o.get('type') != 'user': continue
+                texts = []
+                msg = o.get('message', {})
+                c = msg.get('content')
+                if isinstance(c, str): texts.append(c)
+                elif isinstance(c, list):
+                    for part in c:
+                        if isinstance(part, dict) and part.get('type') == 'text':
+                            texts.append(part.get('text',''))
+                for part in (msg.get('parts') or []):
+                    if isinstance(part, dict) and isinstance(part.get('text'), str):
+                        texts.append(part['text'])
+                for t in texts:
+                    n += write(out, 'qwen', d2s(o.get('timestamp','')), o.get('cwd') or proj, sid, clean(t))
     rec('qwen', n, f)
 
 def ex_workbuddy(out):
@@ -197,20 +201,21 @@ def ex_workbuddy(out):
         f += 1
         proj = os.path.basename(os.path.dirname(path))
         sid = os.path.splitext(os.path.basename(path))[0]
-        for line in open(path, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            if o.get('type') != 'message' or o.get('role') != 'user': continue
-            texts = []
-            for part in o.get('content', []):
-                if isinstance(part, dict) and isinstance(part.get('text'), str):
-                    texts.append(part['text'])
-            m = '\n'.join(texts)
-            m = re.sub(r'<system-reminder.*?</system-reminder>', ' ', m, flags=re.S)
-            m = re.sub(r'<cb_summary>.*?</cb_summary>', ' ', m, flags=re.S)
-            m = re.sub(r'<user_query>(.*?)</user_query>', r'\1', m, flags=re.S)
-            m = re.sub(r'<previous_assistant_message>.*?</previous_assistant_message>', ' ', m, flags=re.S)
-            n += write(out, 'workbuddy', d2s(o.get('timestamp','')), proj, sid, clean(m))
+        with open(path, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                if o.get('type') != 'message' or o.get('role') != 'user': continue
+                texts = []
+                for part in o.get('content', []):
+                    if isinstance(part, dict) and isinstance(part.get('text'), str):
+                        texts.append(part['text'])
+                m = '\n'.join(texts)
+                m = re.sub(r'<system-reminder.*?</system-reminder>', ' ', m, flags=re.S)
+                m = re.sub(r'<cb_summary>.*?</cb_summary>', ' ', m, flags=re.S)
+                m = re.sub(r'<user_query>(.*?)</user_query>', r'\1', m, flags=re.S)
+                m = re.sub(r'<previous_assistant_message>.*?</previous_assistant_message>', ' ', m, flags=re.S)
+                n += write(out, 'workbuddy', d2s(o.get('timestamp','')), proj, sid, clean(m))
     rec('workbuddy', n, f)
 
 def ex_zcode(out):
@@ -247,13 +252,14 @@ def ex_grok(out):
     path = os.path.join(H, '.grok', 'logs', 'unified.jsonl')
     if not os.path.exists(path):
         return rec('grok', 0, 0)
-    for line in open(path, encoding='utf-8', errors='replace'):
-        try: o = json.loads(line)
-        except Exception: continue
-        if o.get('src') != 'shell': continue
-        ctx = o.get('ctx', {})
-        if isinstance(ctx, dict) and ctx.get('prompt_text'):
-            n += write(out, 'grok', d2s(o.get('ts','')), 'grok', str(o.get('sid','')), clean(str(ctx['prompt_text'])))
+    with open(path, encoding='utf-8', errors='replace') as _fh:
+        for line in _fh:
+            try: o = json.loads(line)
+            except Exception: continue
+            if o.get('src') != 'shell': continue
+            ctx = o.get('ctx', {})
+            if isinstance(ctx, dict) and ctx.get('prompt_text'):
+                n += write(out, 'grok', d2s(o.get('ts','')), 'grok', str(o.get('sid','')), clean(str(ctx['prompt_text'])))
     rec('grok', n, 1)
 
 def ex_pi(out):
@@ -261,17 +267,18 @@ def ex_pi(out):
     for path in glob.glob(os.path.join(H, '.pi', 'agent', 'sessions', '*', '*.jsonl')):
         f += 1
         proj = os.path.basename(os.path.dirname(path))
-        for line in open(path, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            if o.get('type') != 'message': continue
-            msg = o.get('message', {})
-            if msg.get('role') != 'user': continue
-            texts = []
-            for part in msg.get('content', []):
-                if isinstance(part, dict) and part.get('type') == 'text':
-                    texts.append(part.get('text',''))
-            n += write(out, 'pi', d2s(o.get('timestamp','')), proj, str(o.get('id','')), clean('\n'.join(texts)))
+        with open(path, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                if o.get('type') != 'message': continue
+                msg = o.get('message', {})
+                if msg.get('role') != 'user': continue
+                texts = []
+                for part in msg.get('content', []):
+                    if isinstance(part, dict) and part.get('type') == 'text':
+                        texts.append(part.get('text',''))
+                n += write(out, 'pi', d2s(o.get('timestamp','')), proj, str(o.get('id','')), clean('\n'.join(texts)))
     rec('pi', n, f)
 
 def ex_atomcode(out):
@@ -281,15 +288,16 @@ def ex_atomcode(out):
         proj = os.path.basename(os.path.dirname(path))
         base = os.path.splitext(os.path.basename(path))[0]
         date = base[:10]
-        for line in open(path, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            for msg in o.get('messages', []):
-                if str(msg.get('role', '')).lower() != 'user': continue
-                c = msg.get('content', {})
-                t = c.get('Text') if isinstance(c, dict) else None
-                if t:
-                    n += write(out, 'atomcode', date, proj, base, clean(t))
+        with open(path, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                for msg in o.get('messages', []):
+                    if str(msg.get('role', '')).lower() != 'user': continue
+                    c = msg.get('content', {})
+                    t = c.get('Text') if isinstance(c, dict) else None
+                    if t:
+                        n += write(out, 'atomcode', date, proj, base, clean(t))
     rec('atomcode', n, f)
 
 def ex_antigravity(out):
@@ -298,15 +306,16 @@ def ex_antigravity(out):
     for tf in glob.glob(os.path.join(H, '.gemini', 'antigravity', 'brain', '*', '.system_generated', 'logs', 'transcript.jsonl')):
         f += 1
         cid = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(tf))))
-        for line in open(tf, encoding='utf-8', errors='replace'):
-            try: o = json.loads(line)
-            except Exception: continue
-            if o.get('type') != 'USER_INPUT': continue
-            c = o.get('content', '')
-            if not isinstance(c, str) or not c.strip(): continue
-            c = re.sub(r'^<USER_REQUEST>\s*', '', c).strip()
-            c = re.sub(r'</USER_REQUEST>.*$', '', c, flags=re.S).strip()
-            n += write(out, 'antigravity', d2s(o.get('created_at', '')), cid[:8], cid, clean(c))
+        with open(tf, encoding='utf-8', errors='replace') as _fh:
+            for line in _fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                if o.get('type') != 'USER_INPUT': continue
+                c = o.get('content', '')
+                if not isinstance(c, str) or not c.strip(): continue
+                c = re.sub(r'^<USER_REQUEST>\s*', '', c).strip()
+                c = re.sub(r'</USER_REQUEST>.*$', '', c, flags=re.S).strip()
+                n += write(out, 'antigravity', d2s(o.get('created_at', '')), cid[:8], cid, clean(c))
     rec('antigravity', n, f)
 
 def ex_catpaw(out):
@@ -332,34 +341,35 @@ def ex_catpaw(out):
             date = datetime.date.fromtimestamp(os.path.getmtime(tf)).strftime('%Y-%m-%d')
             buf = []
             in_user = False
-            for line in open(tf, encoding='utf-8', errors='replace'):
-                st = line.strip()
-                if st == 'user:':
-                    if in_user and buf:
-                        m = clean('\n'.join(buf))
-                        if m:
-                            n += write(out, 'catpaw', date, proj, sid, m)
-                    in_user = True
-                    buf = []
-                    continue
-                if st == 'assistant:' or st.startswith('[Thinking]') or st.startswith('[Tool call]') or st.startswith('[Tool result]'):
-                    if in_user and buf:
-                        m = clean('\n'.join(buf))
-                        if m:
-                            n += write(out, 'catpaw', date, proj, sid, m)
-                    in_user = False
-                    buf = []
-                    continue
-                if in_user:
-                    t = st
-                    if t == '<user_query>' or t == '</user_query>':
+            with open(tf, encoding='utf-8', errors='replace') as _fh:
+                for line in _fh:
+                    st = line.strip()
+                    if st == 'user:':
+                        if in_user and buf:
+                            m = clean('\n'.join(buf))
+                            if m:
+                                n += write(out, 'catpaw', date, proj, sid, m)
+                        in_user = True
+                        buf = []
                         continue
-                    if t.startswith('<user_query>'):
-                        t = t[len('<user_query>'):].strip()
-                    if t.endswith('</user_query>'):
-                        t = t[:-len('</user_query>')].strip()
-                    if t:
-                        buf.append(t)
+                    if st == 'assistant:' or st.startswith('[Thinking]') or st.startswith('[Tool call]') or st.startswith('[Tool result]'):
+                        if in_user and buf:
+                            m = clean('\n'.join(buf))
+                            if m:
+                                n += write(out, 'catpaw', date, proj, sid, m)
+                        in_user = False
+                        buf = []
+                        continue
+                    if in_user:
+                        t = st
+                        if t == '<user_query>' or t == '</user_query>':
+                            continue
+                        if t.startswith('<user_query>'):
+                            t = t[len('<user_query>'):].strip()
+                        if t.endswith('</user_query>'):
+                            t = t[:-len('</user_query>')].strip()
+                        if t:
+                            buf.append(t)
             if in_user and buf:
                 m = clean('\n'.join(buf))
                 if m:

@@ -86,14 +86,15 @@ def read_jsonl(path):
     rows, skipped = [], 0
     if not os.path.exists(path):
         return rows, skipped
-    for line in open(path, encoding='utf-8', errors='replace'):
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            rows.append(json.loads(line))
-        except Exception:
-            skipped += 1
+    with open(path, encoding='utf-8', errors='replace') as _fh:
+        for line in _fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rows.append(json.loads(line))
+            except Exception:
+                skipped += 1
     return rows, skipped
 
 

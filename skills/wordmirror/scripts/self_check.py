@@ -201,9 +201,21 @@ for need in [os.path.join(DATA, 'profile/portrait.md'), os.path.join(DATA, 'prof
 if not os.path.exists(os.path.join(DATA, 'corpus_dedup.jsonl')):
     check('产物引文可追溯', None, '还没 ingest（语料不存在），跳过')
 else:
-    r = subprocess.run(['python', 'scripts/check_quotes.py'], capture_output=True, text=True)
-    check('产物引文可追溯', True if r.returncode == 0 else None,
-          '报告引文全部可反查' if r.returncode == 0 else '%d 处引文无法在语料反查（多为改写/截断，见 scripts/check_quotes.py 详单）' % r.stdout.count('✗'))
+    strict = '--strict' in sys.argv
+    cmd = ['python', 'scripts/check_quotes.py'] + (['--strict'] if strict else [])
+    r = subprocess.run(cmd, capture_output=True, text=True)
+    unv = 0
+    m = re.search(r'无法验证 (\d+)', r.stdout)
+    if m:
+        unv = int(m.group(1))
+    if r.returncode == 0:
+        check('产物引文可追溯', True, '报告引文全部可反查')
+    elif strict:
+        check('产物引文可追溯', False,
+              '%d 条引文无法验证——严格模式阻止交付，见 scripts/check_quotes.py 详单' % unv)
+    else:
+        check('产物引文可追溯', None,
+              '%d 条引文无法验证（改写/浓缩或来源缺失，仅提示）；--strict 时阻止交付' % unv)
 
 # ===== 16. 承诺账本合法 =====
 pp = os.path.join(DATA, 'promises.jsonl')
@@ -287,4 +299,7 @@ print('结果: %d 通过 / %d 警告 / %d 失败' % (len(results) - len(fails) -
 if fails:
     print('结论: 有问题，按上面 ✗ 修完再 commit')
     sys.exit(1)
-print('结论: 全绿')
+if warns:
+    print('结论: 有警告；严格模式下按上面 ✗ 阻止交付')
+else:
+    print('结论: 全绿')
