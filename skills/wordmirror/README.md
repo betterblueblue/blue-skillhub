@@ -4,13 +4,17 @@
 
 把你说给 AI 的话，变成 AI 对你的认识。
 
+## 隐私一句话
+
+你的原话只存在你自己的机器上，绝不传给任何第三方平台或云数据库。唯一涉及联网的，是可选的按意思搜首次建库时从模型仓库下载一个本地模型（约 117MB）；下载的是现成工具、不是你的话，之后检索全程在本机。安装依赖可能访问软件源（PyPI），默认不开启任何遥测。
+
 ## 这是什么
 
 一个放进 agent skills 目录的技能包。装上之后，你开的每个新会话，AI 都是老熟人：开局就知道你是谁、在忙什么、怎么跟你说话；你查旧账，它引原话、带日期、查不到就直说；你说"记住这个"，它只记你确认过的事实。
 
 它更重要的用途，是**以言为镜，可以知自己**：把你说给 AI 的话重新放回时间和关系里，做成一份让你愿意停下来读的回望，而不是把数字和项目名堆成报表。好的内容应该让你重新遇见某个阶段的自己、看见两句话之间原来有联系，或者捡回一件曾经认真想过的事。
 
-所有数据只存在你自己的机器上。这个包不联网、不收集、不分析——你的话是你的。
+你的原话只存在你自己的机器上——你的话是你的（联网行为详见上方「隐私一句话」）。
 
 ## 装上它，你能得到什么
 
@@ -99,9 +103,13 @@ python scripts/vecsearch.py query "问题"   # 按意思搜（AI 字面搜不到
 
 ## 支持哪些 agent
 
-ingest 会探测并提取你在这些工具里说过的话（清单在 skill 包的 `scripts/detect_agents.py` 维护）：
+ingest 会探测并提取你在这些工具里说过的话（清单在 skill 包的 `scripts/detect_agents.py` 维护）。支持分两级：有真实样本回归测试的稳定支持，以及已经实现探测和提取、但缺少真实样本回归的实验性支持。
 
-- Claude Code、Codex、Cursor、DeepSeek Harness、美团 CatPaw、zcode、Qwen、WorkBuddy、Pi、AtomCode、Google Antigravity（Grok 仅能采 shell 输入）
+| 支持级别 | 工具 | 证据与限制 |
+|---|---|---|
+| 稳定支持 | Claude Code、Codex、Qwen、WorkBuddy、Pi、AtomCode、Google Antigravity、美团 CatPaw | 已有最小真实格式 fixture 回归测试 |
+| 稳定支持（范围受限） | Grok | 已有 fixture 测试，但只采集 shell 输入，不采完整对话 |
+| 实验性支持 | Cursor、zcode、DeepSeek Harness | 已实现探测和提取；当前只有空 HOME 守护测试，没有真实 SQLite/zstd 样本回归 |
 
 各工具存档格式不同，个别要多装一个依赖：**DeepSeek Harness 需要 `pip install zstandard`**（解压它的 zstd 会话文件）。缺了不影响其他工具，只是 dsh 跳过并在跑 ingest 时提示。
 
