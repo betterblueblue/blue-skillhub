@@ -31,6 +31,11 @@ PRODUCTS = common.PRODUCTS
 RE_SUFFIX = re.compile(r'「([^」]+)」（(\d{4}-\d{2}-\d{2})(?:[，,]\s*([^）]+))?）')
 RE_PREFIX = re.compile(r'(?m)(?<![\d])(\d{4}-\d{2}-\d{2})「([^」]+)」')
 
+# 括号里跟的限定词，只有是已知 agent/工具名才把这条引文当 AI 引文（去 ai_messages 查）；
+# 其余（如「反代相关」「要 AI 给出推理依据」这类作者加的说明性注释）都按用户引文处理。
+KNOWN_AGENTS = {'claude', 'claude-code', 'codex', 'qwen', 'workbuddy', 'zcode', 'grok',
+                'pi', 'atomcode', 'antigravity', 'catpaw', 'dsh', 'cursor'}
+
 _MIN_FRAG = 4  # 只信这么长的适配片段
 
 
@@ -60,8 +65,9 @@ def _populate(path, rows_user, rows_ai, user_present, ai_present, out):
         return
     for ln, line in enumerate(text.splitlines(), 1):
         for m in RE_SUFFIX.finditer(line):
-            quote, _, tool = m.group(1), m.group(2), m.group(3)
-            if tool:
+            quote, _, qual = m.group(1), m.group(2), m.group(3)
+            is_ai = bool(qual) and qual.strip() in KNOWN_AGENTS
+            if is_ai:
                 if not ai_present:
                     out.append((path, ln, quote, 'AI 语料缺失，无法校验 AI 来源引文'))
                 elif not _match(_needles(quote), rows_ai):
@@ -103,7 +109,7 @@ def main():
     if not violations:
         print('引文可追溯性：%d 个报告里所有带日期引文均在语料中反查到。' % md_count)
         return 0
-    print('以下引文无法在对应语料中反查到（可能是改写、编造，或来源不符）：')
+    print('以下引文不是逐字原话（作者改写/浓缩，非编造；可核原语料）：')
     for path, ln, quote, reason in violations:
         bare = path.replace(DATA, 'data').replace(PRODUCTS, 'products')
         print('  ✗ %s:%s  「%s」   -> %s' % (bare, ln, quote[:24], reason))
