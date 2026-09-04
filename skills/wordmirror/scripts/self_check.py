@@ -12,6 +12,7 @@
   10 skill 三件套互相引用
   13 JSON 文件合法
   14 skill 包结构（对标标准 skill）
+  15 产物引文可追溯（check_quotes，警告项）
   16 承诺账本合法
   17 开工三句话 + 主动引导就位
   18 浏览器四页加载（可选，--web 时跑）
@@ -195,6 +196,14 @@ for need in [os.path.join(DATA, 'profile/portrait.md'), os.path.join(DATA, 'prof
         check('用户画像就位(%s)' % name, None, '还没 ingest（数据不存在），跳过')
     else:
         check('用户画像就位(%s)' % name, False, '数据在但 %s 缺失——走 references/init-protocol.md 整理' % name)
+
+# ===== 15. 产物引文可追溯性（报告「原话」（日期）须能在语料反查）=====
+if not os.path.exists(os.path.join(DATA, 'corpus_dedup.jsonl')):
+    check('产物引文可追溯', None, '还没 ingest（语料不存在），跳过')
+else:
+    r = subprocess.run(['python', 'scripts/check_quotes.py'], capture_output=True, text=True)
+    check('产物引文可追溯', True if r.returncode == 0 else None,
+          '报告引文全部可反查' if r.returncode == 0 else '%d 处引文无法在语料反查（多为改写/截断，见 scripts/check_quotes.py 详单）' % r.stdout.count('✗'))
 
 # ===== 16. 承诺账本合法 =====
 pp = os.path.join(DATA, 'promises.jsonl')

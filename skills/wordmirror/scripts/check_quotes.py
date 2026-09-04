@@ -1,0 +1,115 @@
+# -*- coding: utf-8 -*-
+"""产物引文可追溯性检查：报告「原话」（日期）必须能在语料里反查。
+
+协议（references/distill-report-protocol.md）要求报告里的引文格式：
+  用户话「原话」（YYYY-MM-DD）            -> 在 data/corpus_dedup.jsonl 反查
+  用户话 - YYYY-MM-DD「原话」             -> 同上（时间线写法）
+  AI 话  「原话」（YYYY-MM-DD，工具）      -> 在 data/ai_messages.jsonl 反查
+
+匹配规则（对真实语料稳健）：
+  - 语义是「这句话至少说过」，不是逐字节复核：去掉空白和中文/英文标点后再比。
+  - 报告常用「…」截断一条长原话：按省略号切成若干片段，任一片段能在语料中找到即算通过；
+    只信足够长的片段（≥4 字），太短的片段不可靠而不判。
+  - 语料按日期跨天保留同文，故「日期精确匹配」噪声大，这里只判话有没有说过，不判日期。
+  - 找不到任何适配片段 = 报告里这话在语料里根本查不到（改写/编造/来源不符）→ 未通过。
+
+普通中文引号、标题、总结句（不带（日期）后跟）不误报。
+
+用法：
+  python scripts/check_quotes.py            # 扫描 profile/*.md + products/*.md，有未通过则退出 1
+"""
+import glob
+import os
+import re
+import sys
+
+import _common as common
+
+DATA = common.DATA
+PRODUCTS = common.PRODUCTS
+
+RE_SUFFIX = re.compile(r'「([^」]+)」（(\d{4}-\d{2}-\d{2})(?:[，,]\s*([^）]+))?）')
+RE_PREFIX = re.compile(r'(?m)(?<![\d])(\d{4}-\d{2}-\d{2})「([^」]+)」')
+
+_MIN_FRAG = 4  # 只信这么长的适配片段
+
+
+def _norm(s):
+    return re.sub(r'[\s，。、！？；：,.;:!?…“”‘’"\'（）()\-—]+', '', s or '')
+
+
+def _needles(quote):
+    """把一条报告引文变成候选片段：按省略号切分，去掉标点，去短、去重。"""
+    frags = re.split(r'[…。．]+', quote or '')
+    out = []
+    for f in frags:
+        nf = _norm(f)
+        if len(nf) >= _MIN_FRAG:
+            out.append(nf)
+    return list(dict.fromkeys(out))
+
+
+def _match(needles, normed_msgs):
+    return any(nd in m for nd in needles for m in normed_msgs)
+
+
+def _populate(path, rows_user, rows_ai, user_present, ai_present, out):
+    try:
+        text = open(path, encoding='utf-8', errors='replace').read()
+    except OSError:
+        return
+    for ln, line in enumerate(text.splitlines(), 1):
+        for m in RE_SUFFIX.finditer(line):
+            quote, _, tool = m.group(1), m.group(2), m.group(3)
+            if tool:
+                if not ai_present:
+                    out.append((path, ln, quote, 'AI 语料缺失，无法校验 AI 来源引文'))
+                elif not _match(_needles(quote), rows_ai):
+                    out.append((path, ln, quote, '未在 AI 语料中找到原话'))
+            elif not _match(_needles(quote), rows_user):
+                out.append((path, ln, quote, '未在用户语料中找到原话'))
+        for m in RE_PREFIX.finditer(line):
+            quote = m.group(2)
+            if not _match(_needles(quote), rows_user):
+                out.append((path, ln, quote, '未在用户语料中找到原话'))
+
+
+def _md_files(data, products):
+    out = []
+    for pat in (os.path.join(data, 'profile', '*.md'), os.path.join(products, '*.md')):
+        out += [f for f in glob.glob(pat) if os.path.isfile(f)]
+    return out
+
+
+def check_quotes(data=DATA, products=PRODUCTS, out=None):
+    """扫描所有报告引文，返回 [(path, line, quote, reason), ...]。"""
+    if out is None:
+        out = []
+    rows_u, _ = common.read_jsonl(os.path.join(data, 'corpus_dedup.jsonl'))
+    rows_a, _ = common.read_jsonl(os.path.join(data, 'ai_messages.jsonl'))
+    for f in _md_files(data, products):
+        _populate(f, [_norm(r.get('msg', '')) for r in rows_u],
+                  [_norm(r.get('msg', '')) for r in rows_a],
+                  bool(rows_u), bool(rows_a), out)
+    return out
+
+
+def main():
+    violations = check_quotes()
+    md_count = len(_md_files(DATA, PRODUCTS))
+    if not md_count:
+        print('还没有报告可查（profile/*.md、products/*.md 均无），跳过引文检查。')
+        return 0
+    if not violations:
+        print('引文可追溯性：%d 个报告里所有带日期引文均在语料中反查到。' % md_count)
+        return 0
+    print('以下引文无法在对应语料中反查到（可能是改写、编造，或来源不符）：')
+    for path, ln, quote, reason in violations:
+        bare = path.replace(DATA, 'data').replace(PRODUCTS, 'products')
+        print('  ✗ %s:%s  「%s」   -> %s' % (bare, ln, quote[:24], reason))
+    print('共 %d 处未通过。' % len(violations))
+    return 1
+
+
+if __name__ == '__main__':
+    sys.exit(main())
