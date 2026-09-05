@@ -1,11 +1,11 @@
 ---
-name: blue-hub
+name: ask-blue
 description: 不知道该用哪个技能时的路由。按用户的处境（模糊想法、陌生项目、已有系统变更、开发卡住、要交接）指到对应的技能和顺序。用户问"该用哪个""从哪开始""这事谁管"时使用。
 disable-model-invocation: true
 allowed-tools: Read
 ---
 
-# Blue Hub
+# Ask Blue
 
 本仓库的技能分成两条主线加一组外围工具。用户说不清要用什么时，按下面的处境表指路。
 

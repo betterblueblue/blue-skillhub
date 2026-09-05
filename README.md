@@ -102,7 +102,7 @@ claude plugin marketplace add betterblueblue/blue-skillhub
 claude plugin install blue-skillhub@blue-skillhub
 ```
 
-装好后就有：blue-hub（路由，不知道用哪个就问它）、律刃（ruleblade）、Pathfinder、ImpactRadar、intent-chain 八件套和 vl-vision。
+装好后就有：ask-blue（路由，不知道用哪个就问它）、律刃（ruleblade）、Pathfinder、ImpactRadar、intent-chain 八件套和 vl-vision。
 
 **方式二：手动复制**。想直接改技能文件时用。克隆本仓库后在根目录执行：
 
@@ -338,7 +338,7 @@ Pathfinder 和 ImpactRadar 完成一次任务后，会在回复中附上一段�
 
 | 技能 | 文档 |
 |---|---|
-| blue-hub（路由） | [docs/skills/blue-hub.md](docs/skills/blue-hub.md) |
+| ask-blue（路由） | [docs/skills/ask-blue.md](docs/skills/ask-blue.md) |
 | IntentAnchor | [docs/skills/intent-anchor.md](docs/skills/intent-anchor.md) |
 | IntentPRD | [docs/skills/intent-prd.md](docs/skills/intent-prd.md) |
 | IntentDesign | [docs/skills/intent-design.md](docs/skills/intent-design.md) |
