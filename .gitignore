@@ -38,3 +38,8 @@ skills/whydump/评审prompt.txt
 # === 工具自动生成的本地产物(不入库) ===
 change-impact/
 .dsh-shots/
+
+# === 内部与个人文件（本地保留，不入库）===
+blue-interview-log/
+HANDOFF.md
+docs/archive/*.txt
