@@ -84,7 +84,7 @@ claude --print -- "/impact 只做测试：请说明 impact 的适用范围，不
 - `/impact` 应说明它面向多技术栈的现有系统变更（Java、Node.js、Python、Go、前端、.NET 等，按 `profiles/` 加载对应规则）。
 - `/impact` 应强调写操作必须 `确认 Step N`。
 
-如果 Claude Code 已配置只读 code graph / repo-map MCP，`/pathfinder` 和 `/impact` 会按各自规则自动探测使用；没有配置也应诚实降级到 Read/Grep，不影响基本流程。Cursor 用户可按 [§4 安装 Codegraph MCP](#4-安装-codegraph-mcp可选) 配置；若 MCP 已连接但没有工具，见 [README FAQ：Codegraph MCP](../README.md#codegraph-mcp-显示已连接但没有工具no-tools)。
+如果 Claude Code 已配置只读 code graph / repo-map MCP，`/pathfinder` 和 `/impact` 会按各自规则自动探测使用；没有配置也应诚实降级到 Read/Grep，不影响基本流程。Cursor 用户可按 [§4 安装 Codegraph MCP](#4-安装-codegraph-mcp可选) 配置；若 MCP 已连接但没有工具，见 [§6 排障](#codegraph-mcp-显示已连接但没有工具no-tools)。
 
 ### intent-chain 八件套（0→1 链路，可选）
 
@@ -267,6 +267,21 @@ python skills\vl-vision\vl_vision.py path\to\image.png
 | 运行 MCP 缺 Chromium | 执行 `npx playwright install chromium` |
 | agent 想直接写文件 | 必须要求它等待 `确认 Step N` |
 | 中断后说“继续”就想写 | 先读 `_active-state.md`、实施文档、preflight 和执行记录，复核磁盘状态后重新要求 `确认 Step N` |
+
+### 中断恢复的正确交互
+
+```text
+用户：继续
+AI：我先读取 change-impact/删除用户备注/_active-state.md、030-implementation.md、
+060-preflight.md 和 090-execution-record.md，并复核当前 Git/磁盘状态。
+当前待执行的是 Step 2，但“继续”不代表授权。Step 2 将修改
+E:\project\ruoyi-system\src\main\resources\mapper\system\SysUserMapper.xml，
+回滚方式是恢复该文件的字段映射，验证方式是检查 Mapper 引用并运行对应测试。
+请回复：确认 Step 2
+
+用户：确认 Step 2
+AI：现在执行 Step 2。完成后会更新 090-execution-record.md 和 _active-state.md。
+```
 
 ### Codegraph MCP 显示已连接，但没有工具（No tools）
 
