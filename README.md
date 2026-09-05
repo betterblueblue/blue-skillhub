@@ -87,28 +87,42 @@ flowchart TD
 | 任务依赖截图、设计稿、架构图或报错图片 | 用 [VL 识图](skills/vl-vision/) 提取图片中的信息 | 把结果交给当前主流程，并回到源码或原图核实关键结论 |
 | 需要查询 GitHub、官方文档或外部资料，而当前客户端不能联网 | 接入 [网搜 MCP](mcp/web-search-mcp/) | 打开原始页面核实关键结论，不要只看搜索摘要 |
 
-[律刃](claudecode行为规范/ruleblade/) 不属于某一个场景。它是一组可以在整个编码过程中常驻的行为规则，要求 AI 先弄清目标和上下文，再进行修改。
+[律刃](skills/ruleblade/) 不属于某一个场景。它是一组可以在整个编码过程中常驻的行为规则，要求 AI 先弄清目标和上下文，再进行修改。
 
 ## 3 分钟上手
 
 按你的场景选择最短路径。更完整的首次上手和排错指南（含"校验 FAIL 了怎么办"）见 [QUICKSTART.md](QUICKSTART.md)。
 
-1. 安装需要的 Skill。在克隆下来的仓库根目录执行：
+1. 安装。两种方式选一种，都装会得到两份重复的技能。
+
+**方式一：Claude Code 插件（推荐）**。整套装好，仓库更新后一条命令升级：
+
+```bash
+claude plugin marketplace add betterblueblue/blue-skillhub
+claude plugin install blue-skillhub@blue-skillhub
+```
+
+装好后就有：律刃（ruleblade）、Pathfinder、ImpactRadar、intent-chain 八件套和 vl-vision。
+
+**方式二：手动复制**。想直接改技能文件时用。克隆本仓库后在根目录执行：
 
 ```powershell
 # 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
-"_common","pathfinder","impact","intent-anchor","intent-prd","intent-design","intent-visual","intent-issues","intent-dev","intent-adversarial","intent-verify" |
+"_common","ruleblade","pathfinder","impact","vl-vision","intent-anchor","intent-prd","intent-design","intent-visual","intent-issues","intent-dev","intent-adversarial","intent-verify" |
   ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
 
 Copy-Item "skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
+Copy-Item "skills\ruleblade" "$env:USERPROFILE\.claude\skills\ruleblade" -Recurse -Force
 Copy-Item "skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
 Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
+Copy-Item "skills\vl-vision" "$env:USERPROFILE\.claude\skills\vl-vision" -Recurse -Force
 Copy-Item "skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
 Copy-Item "skills\intent-prd" "$env:USERPROFILE\.claude\skills\intent-prd" -Recurse -Force
 Copy-Item "skills\intent-design" "$env:USERPROFILE\.claude\skills\intent-design" -Recurse -Force
 Copy-Item "skills\intent-visual" "$env:USERPROFILE\.claude\skills\intent-visual" -Recurse -Force
 Copy-Item "skills\intent-issues" "$env:USERPROFILE\.claude\skills\intent-issues" -Recurse -Force
 Copy-Item "skills\intent-dev" "$env:USERPROFILE\.claude\skills\intent-dev" -Recurse -Force
+Copy-Item "skills\intent-adversarial" "$env:USERPROFILE\.claude\skills\intent-adversarial" -Recurse -Force
 Copy-Item "skills\intent-verify" "$env:USERPROFILE\.claude\skills\intent-verify" -Recurse -Force
 ```
 
@@ -324,7 +338,7 @@ Pathfinder 和 ImpactRadar 完成一次任务后，会在回复中附上一段�
 
 ### 律刃
 
-[claudecode行为规范/ruleblade/](claudecode行为规范/ruleblade/)
+[skills/ruleblade/](skills/ruleblade/)
 
 律刃是一组写给 AI 编码助手的通用行为规则，共 8 条编码规则、1 条评审与迭代纪律和 1 条中文表达要求。它要求模型先弄清目标和上下文，再动手修改；遇到不确定的地方要明确说明，不能靠猜。
 
@@ -332,7 +346,7 @@ Pathfinder 和 ImpactRadar 完成一次任务后，会在回复中附上一段�
 
 律刃最初参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后来结合中文编码任务和复杂变更持续调整。
 
-v3.2 通过了 Claude Code + MiniMax M3 的两轮稳定性复测；v3.3 调整的五处表达通过了 Step 3.7 Flash 的 6 个场景测试；当前版本 v3.4 新增第 9 条「防止过度优化与评审扩张」并做了一轮去重。详细记录见 [律刃 README](claudecode行为规范/ruleblade/README.md)。
+v3.2 通过了 Claude Code + MiniMax M3 的两轮稳定性复测；v3.3 调整的五处表达通过了 Step 3.7 Flash 的 6 个场景测试；当前版本 v3.4 新增第 9 条「防止过度优化与评审扩张」并做了一轮去重。详细记录见 [律刃 README](skills/ruleblade/README.md)。安装插件后，在对话里运行 `/ruleblade` 也可以把规则装进目标项目。
 
 ### 网搜 MCP
 
@@ -520,7 +534,7 @@ ImpactRadar 的长期任务、暂停后恢复、接口返回检查、验证等�
 把规则文件复制到目标项目根目录：
 
 ```powershell
-Copy-Item "claudecode行为规范/ruleblade/CLAUDE.md" "你的项目路径/CLAUDE.md"
+Copy-Item "skills/ruleblade/CLAUDE.md" "你的项目路径/CLAUDE.md"
 ```
 
 然后在目标项目中启动 Claude Code，确认它能读取根目录的 `CLAUDE.md`。Codex 用户可以把同一份内容放进 `AGENTS.md`。
@@ -612,8 +626,6 @@ AI：现在执行 Step 2。完成后会更新 090-execution-record.md 和 _activ
 blue-skillhub/
 ├── .claude/
 │   └── hooks/                # 推荐启用的 Claude Code 写入前检查
-├── claudecode行为规范/
-│   └── ruleblade/
 ├── prompt/                   # 可直接复制使用的 Prompt
 ├── docs/
 │   ├── skill-eval/          # 测评体系说明

@@ -19,13 +19,13 @@ Resolve-Path .
 复制到 Claude Code 项目：
 
 ```powershell
-Copy-Item "claudecode行为规范\ruleblade\CLAUDE.md" "你的项目根目录\CLAUDE.md"
+Copy-Item "skills\ruleblade\CLAUDE.md" "你的项目根目录\CLAUDE.md"
 ```
 
 复制到 Codex 项目：
 
 ```powershell
-Copy-Item "claudecode行为规范\ruleblade\CLAUDE.md" "你的项目根目录\AGENT.md"
+Copy-Item "skills\ruleblade\CLAUDE.md" "你的项目根目录\AGENT.md"
 ```
 
 验证：

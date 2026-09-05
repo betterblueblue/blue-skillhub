@@ -146,7 +146,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 ### Phase 6：完成
 
-`verify-record.md` 已写入 `intent-chain/{链路目录}/`。**交接前必须运行链级校验器 `skills/_common/chain_validate.py`（传入链路目录），全部 PASS 或合法跳过才允许结束；任一 FAIL 不得宣告链路走完。**
+`verify-record.md` 已写入 `intent-chain/{链路目录}/`。**交接前必须运行链级校验器 `{_common 目录}/chain_validate.py`（`_common` 与各技能目录同级；传入链路目录），全部 PASS 或合法跳过才允许结束；任一 FAIL 不得宣告链路走完。**
 
 **链路走完后，执行体系回流（Skill 自我进化环节，不可跳过）**：
 

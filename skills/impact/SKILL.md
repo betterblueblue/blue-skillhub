@@ -55,7 +55,7 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, 
 
 8. **Phase 4 写入前置检查**：写 Phase 4 文档前，必须满足以下任一条件：① 已完成 Phase 3 苏格拉底式探索并获得用户定级确认；② 快速通道条件全部满足（含"无未确认项"——agent 自行识别的歧义也算）。定级确认只确认 light/full 路线,不等于写文件授权；真正写入 `000/010/020/030/040/_active-state.md` 前,必须单独给出 Phase 4 文档写入 Step 并等待当前对话中的 `确认 Step N`。快速通道判定不是最终响应；判定成立后必须继续提出 Phase 4 light 文档写入 Step,除非用户明确要求暂停。提问后不等用户回答就继续执行（假提问）不构成确认。
 
-9. **Phase 4 输出验证（强制）**：文档输出必须按 `templates/` 下对应模板的章节结构产出，不得自创章节编号或跳过模板中的 `##` 级别节。**包括 `_active-state.md`——必须读取 `templates/_active-state.md` 模板并按其章节结构产出，不得自创格式。** full 模式必产出 000/010/020/030 四份文档 + `_active-state.md`；020 必含 `## 6. 全局影响检查`（19 行全局影响检查表，标题不得改名；与 `references/dimensions.md` 的 19 探索维度是不同列表）；030 必含 `## 3.2 API 方法验证`（已有方法 grep 验证表）。light 模式必产出 000 + 040 + `_active-state.md`。**输出完成后必须运行 `python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|full> --repo-root <项目根目录>`，有 FAIL 项不得提交确认。** 脚本运行结果（PASS/FAIL/WARN 汇总）须记入 `_active-state.md`。
+9. **Phase 4 输出验证（强制）**：文档输出必须按 `templates/` 下对应模板的章节结构产出，不得自创章节编号或跳过模板中的 `##` 级别节。**包括 `_active-state.md`——必须读取 `templates/_active-state.md` 模板并按其章节结构产出，不得自创格式。** full 模式必产出 000/010/020/030 四份文档 + `_active-state.md`；020 必含 `## 6. 全局影响检查`（19 行全局影响检查表，标题不得改名；与 `references/dimensions.md` 的 19 探索维度是不同列表）；030 必含 `## 3.2 API 方法验证`（已有方法 grep 验证表）。light 模式必产出 000 + 040 + `_active-state.md`。**输出完成后必须运行 `python "{impact skill 目录}/scripts/impact_validate.py" <需求目录> --mode <light|full> --repo-root <项目根目录>`，有 FAIL 项不得提交确认。** 脚本运行结果（PASS/FAIL/WARN 汇总）须记入 `_active-state.md`。
 
 10. **简化模式安全底线**：用户要求简化文档或直接执行时，可以跳过 full 模式的分析文档（010/020/030），但 **`000-context-pack.md` 和 `040-light.md`（精简影响分析）在任何模式下不得跳过**——它们是最小分析产出，`impact_validate.py` 需要它们才能通过。以下各项也不得跳过：① 创建 `_active-state.md`（恢复基础设施，不是分析文档）；② 执行前检查（Phase 5 入口）；③ 写操作确认（规则 #1）；④ 破坏性变更影响发现（规则 #2/#5）；⑤ 验证方案。简化的是文档形式，不是安全边界。
 
@@ -205,7 +205,7 @@ Phase 2.5 产出的每个不确定项，先判断能不能从代码推断，再�
 **全部文档输出后，必须运行验证脚本（不可跳过）：**
 
 ```bash
-python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|full> --repo-root <项目根目录>
+python "{impact skill 目录}/scripts/impact_validate.py" <需求目录> --mode <light|full> --repo-root <项目根目录>
 ```
 
 - 有 FAIL 项 → 修复后重跑，不得提交确认
@@ -259,7 +259,7 @@ python skills/impact/scripts/impact_validate.py <需求目录> --mode <light|ful
 
 ## 改进记录提示
 
-本次运行暴露出 Skill 自身可能需要改进的具体问题时，才在收尾内容后询问。**完整交互流程见 `references/improvement-log.md`。登记载体**:改进项登记到 `blue-skillhub/_improvements/`（新 backlog 或 REVIEW-PROMPT 回流），按归因三分类（校验器缺口 / SKILL 指引不够 / Agent 违反指引）标注，供 STATUS.md 归因趋势统计。面向用户只说：
+本次运行暴露出 Skill 自身可能需要改进的具体问题时，才在收尾内容后询问。**完整交互流程见 `references/improvement-log.md`。登记载体**:改进项登记到 `blue-skillhub/_improvements/`（新 backlog 或 REVIEW-PROMPT 回流），按归因三分类（校验器缺口 / SKILL 指引不够 / Agent 违反指引）标注，供 STATUS.md 归因趋势统计。`_improvements/` 不存在（如本 skill 被复制到其他仓库独立使用）→ 跳过登记，只保留对话内记录，并提醒用户：这套技能有配套的改进验证体系，位于 blue-skillhub 仓库。面向用户只说：
 
 > 这次发现一个可能值得用于改进 Skill 的问题：<一句话说明问题和后果>。要把它记录下来吗？你回复“记录”或“不用”就行。
 
