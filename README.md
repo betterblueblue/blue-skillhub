@@ -102,7 +102,7 @@ claude plugin marketplace add betterblueblue/blue-skillhub
 claude plugin install blue-skillhub@blue-skillhub
 ```
 
-装好后就有：律刃（ruleblade）、Pathfinder、ImpactRadar、intent-chain 八件套和 vl-vision。
+装好后就有：blue-hub（路由，不知道用哪个就问它）、律刃（ruleblade）、Pathfinder、ImpactRadar、intent-chain 八件套和 vl-vision。
 
 **方式二：手动复制**。想直接改技能文件时用。克隆本仓库后在根目录执行：
 
@@ -329,6 +329,28 @@ Pathfinder 和 ImpactRadar 完成一次任务后，会在回复中附上一段�
 验证任务卡和验证报告清单见 [`verification-cards.md`](_improvements/verification-cards.md) 与 [`verifications/`](_improvements/verifications/)。归因分布的逐轮趋势是判断体系健康度的核心信号：「校验器缺口」占比应逐轮下降，若「Agent 违反指引」持续高位，说明剩余约束必须全部下沉为校验器。
 
 ## 里面有什么
+
+### 技能文档
+
+[docs/skills/](docs/skills/)
+
+每个随插件发布的技能一页，固定四节：它做什么、什么时候用、常见问题、用对了是什么样子。想快速了解某个技能先看这里，机制细节再看技能目录里的 SKILL.md。
+
+| 技能 | 文档 |
+|---|---|
+| blue-hub（路由） | [docs/skills/blue-hub.md](docs/skills/blue-hub.md) |
+| IntentAnchor | [docs/skills/intent-anchor.md](docs/skills/intent-anchor.md) |
+| IntentPRD | [docs/skills/intent-prd.md](docs/skills/intent-prd.md) |
+| IntentDesign | [docs/skills/intent-design.md](docs/skills/intent-design.md) |
+| IntentVisual | [docs/skills/intent-visual.md](docs/skills/intent-visual.md) |
+| IntentIssues | [docs/skills/intent-issues.md](docs/skills/intent-issues.md) |
+| IntentDev | [docs/skills/intent-dev.md](docs/skills/intent-dev.md) |
+| IntentAdversarial | [docs/skills/intent-adversarial.md](docs/skills/intent-adversarial.md) |
+| IntentVerify | [docs/skills/intent-verify.md](docs/skills/intent-verify.md) |
+| ImpactRadar | [docs/skills/impact.md](docs/skills/impact.md) |
+| Pathfinder | [docs/skills/pathfinder.md](docs/skills/pathfinder.md) |
+| VL 识图 | [docs/skills/vl-vision.md](docs/skills/vl-vision.md) |
+| 律刃 | [docs/skills/ruleblade.md](docs/skills/ruleblade.md) |
 
 ### Prompt 工具箱
 

@@ -1,6 +1,6 @@
 {
   "name": "blue-skillhub",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Blue SkillHub 的 AI 编码技能：意图锚定链路（intent-chain）、现有系统变更影响分析（impact）、陌生项目结构总览（pathfinder）、律刃行为规则等。面向真实工程，不是氛围编程。",
   "author": {
     "name": "blue",
@@ -20,6 +20,7 @@
     "ruleblade"
   ],
   "skills": [
+    "./skills/blue-hub",
     "./skills/ruleblade",
     "./skills/pathfinder",
     "./skills/impact",
