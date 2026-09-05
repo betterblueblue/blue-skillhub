@@ -360,6 +360,7 @@ blue-skillhub/
 ├── prompt/                   # 可直接复制使用的 Prompt
 ├── docs/
 │   ├── skills/               # 每个技能一页的四节文档
+│   ├── adr/                  # 重大决定的"当初为什么"备忘卡片
 │   ├── skill-eval/           # 测评体系说明
 │   ├── research.md           # 研究与实验记录
 │   ├── install-and-verify-checklist.md

@@ -18,6 +18,7 @@
   V11: 工单的"涉及模块"引用的模块名必须在 architecture.md 第 2 节中定义（强制检查 architecture.md）
   V12: 数据管理类工单（标题/做什么含 档案/配置/模板/账号/角色/商品/规则）必须分条覆盖新增/编辑/删除，显式「不做什么」可豁免单动作
   V13: 真值追溯——INTENT 有页面清单时，「真值追溯」节必须把每个页面 ID 映射到存在的工单，且不得包含未知页面
+  V14: 决策工单状态必须为「待拍板」或「已拍板：{决议}——{理由}；用户确认于 {日期}」；决议必须来自用户确认
 
 本脚本不能验证工单的技术可行性，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -62,6 +63,14 @@ PERF_ID_RE = re.compile(r"PF\d{2,}")
 SECURITY_ID_RE = re.compile(r"SF\d{2,}")
 ISSUE_HEADING_RE = re.compile(r"^##\s+Issue\s+\d+", re.MULTILINE)
 ISSUE_TYPE_RE = re.compile(r"^-\s*\*\*类型\*\*[：:]\s*(.+)$", re.MULTILINE)
+REQUIRED_DECISION_SUBSECTIONS = [
+    "### 决策问题",
+    "### 选项",
+    "### 状态",
+    "### 决议去向",
+]
+DECISION_TYPE_MARKERS = ("需拍板", "决策")
+DECISION_STATUS_RE = re.compile(r"###\s*状态\s*\n+([^#\n][^\n]*)")
 MANAGE_HINT_RE = re.compile(r"档案|配置|模板|账号|角色|商品|规则")
 CREATE_RE = re.compile(r"新增")
 EDIT_RE = re.compile(r"编辑")
@@ -223,10 +232,11 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
     else:
         missing_subs: list[str] = []
         for i, issue in enumerate(issues, 1):
-            for sub in REQUIRED_ISSUE_SUBSECTIONS:
+            type_m = ISSUE_TYPE_RE.search(issue)
+            is_decision = bool(type_m) and any(m in type_m.group(1) for m in DECISION_TYPE_MARKERS)
+            for sub in (REQUIRED_DECISION_SUBSECTIONS if is_decision else REQUIRED_ISSUE_SUBSECTIONS):
                 if sub not in issue:
                     missing_subs.append(f"Issue {i} 缺少 {sub}")
-            type_m = ISSUE_TYPE_RE.search(issue)
             if type_m and re.search(r"\b(AFK|HITL)\b", type_m.group(1), re.IGNORECASE):
                 missing_subs.append(
                     f"Issue {i} 的类型字段使用了内部术语 AFK/HITL，用户可见处须写「自动完成 / 需人工参与」"
@@ -513,6 +523,34 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
             results.append(("V13", "PASS", f"真值追溯完整：{len(page_ids)} 页全部映射到工单"))
     else:
         results.append(("V13", "PASS", "INTENT 无页面清单，真值追溯不适用"))
+
+    # V14: 决策工单状态合法
+    decision_issues = [
+        (i, issue)
+        for i, issue in enumerate(issues, 1)
+        if (tm := ISSUE_TYPE_RE.search(issue)) and any(m in tm.group(1) for m in DECISION_TYPE_MARKERS)
+    ]
+    if not decision_issues:
+        results.append(("V14", "PASS", "无决策工单，不适用"))
+    else:
+        v14_errors: list[str] = []
+        for i, issue in decision_issues:
+            status_m = DECISION_STATUS_RE.search(issue)
+            if not status_m:
+                v14_errors.append(f"Issue {i} 缺少「状态」内容行")
+                continue
+            status_line = status_m.group(1).strip()
+            if status_line.startswith("待拍板"):
+                continue
+            if status_line.startswith("已拍板") and len(status_line) > len("已拍板") + 1:
+                continue
+            v14_errors.append(
+                f"Issue {i} 的状态必须是「待拍板」或「已拍板：{{决议}}——{{理由}}；用户确认于 {{日期}}」，当前为：{status_line[:40]}"
+            )
+        if v14_errors:
+            results.append(("V14", "FAIL", "; ".join(v14_errors)))
+        else:
+            results.append(("V14", "PASS", f"{len(decision_issues)} 个决策工单状态合法"))
 
     return results
 

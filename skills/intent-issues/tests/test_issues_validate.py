@@ -71,7 +71,7 @@ def _result(issues: str, intent: str, check_id: str, arch: str = _ARCH_CONTENT) 
 class TestValidFixture(unittest.TestCase):
     def test_valid_issues_passes_all_checks(self):
         results = validate(_issues_content(), _intent_content(), "", _ARCH_CONTENT)
-        self.assertEqual(13, len(results))
+        self.assertEqual(14, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -478,3 +478,49 @@ class TestLegacyEnglishHeadings(unittest.TestCase):
         results = validate(legacy, _intent_content(), "", _ARCH_CONTENT)
         fails = [r for r in results if r[1] == "FAIL"]
         self.assertEqual([], fails, fails)
+
+
+_DECISION_PENDING = (
+    "\n\n## Issue 3: [D-01] 押金支付形态：独立支付单还是订单内扣？\n\n"
+    "- **类型**：需拍板（决策，不写代码）\n\n"
+    "### 决策问题\n\n押金从订单里扣还是做成独立支付单？\n\n"
+    "### 选项\n\n- A：独立支付单——对账清晰\n- B：订单内扣——流程少一步\n\n"
+    "### 状态\n\n待拍板\n\n"
+    "### 决议去向\n\ndesign.md「额外结构与假设」押金行\n"
+)
+
+_DECISION_RESOLVED = _DECISION_PENDING.replace(
+    "### 状态\n\n待拍板",
+    "### 状态\n\n已拍板：A——对账清晰；用户确认于 2026-09-05",
+)
+
+_DECISION_BAD_STATUS = _DECISION_PENDING.replace(
+    "### 状态\n\n待拍板",
+    "### 状态\n\n模型建议选 A\n",
+)
+
+
+class TestDecisionTickets(unittest.TestCase):
+    def test_pending_decision_ticket_passes_v2_and_v14(self):
+        results = validate(_issues_content() + _DECISION_PENDING, _intent_content(), "", _ARCH_CONTENT)
+        v2 = [r for r in results if r[0] == "V2"][0]
+        v14 = [r for r in results if r[0] == "V14"][0]
+        self.assertEqual("PASS", v2[1], v2)
+        self.assertEqual("PASS", v14[1], v14)
+        self.assertIn("1 个决策工单", v14[2])
+
+    def test_resolved_decision_ticket_passes_v14(self):
+        results = validate(_issues_content() + _DECISION_RESOLVED, _intent_content(), "", _ARCH_CONTENT)
+        v14 = [r for r in results if r[0] == "V14"][0]
+        self.assertEqual("PASS", v14[1], v14)
+
+    def test_decision_ticket_without_user_confirmation_fails_v14(self):
+        results = validate(_issues_content() + _DECISION_BAD_STATUS, _intent_content(), "", _ARCH_CONTENT)
+        v14 = [r for r in results if r[0] == "V14"][0]
+        self.assertEqual("FAIL", v14[1])
+        self.assertIn("待拍板", v14[2])
+
+    def test_no_decision_tickets_v14_not_applicable(self):
+        results = validate(_issues_content(), _intent_content(), "", _ARCH_CONTENT)
+        v14 = [r for r in results if r[0] == "V14"][0]
+        self.assertEqual(("PASS", "无决策工单，不适用"), (v14[1], v14[2]))
