@@ -2,6 +2,11 @@
 
 本仓库的技能以 Claude Code 插件形式发布，版本记录见下。
 
+## 0.1.2 - 2026-09-05
+
+- 新增共享规则文件 `skills/_common/rules.md`：跨技能重复规则的详细定义（面向用户表述、确认语义、验证声明、改进记录交互、档位升降）收进单一来源。
+- 8 个 SKILL.md 去重（impact、pathfinder、intent-anchor / prd / design / issues / dev / verify）：正文保留一行自足摘要加指针，技能特有约束（如工单类型字段的写法、impact 产物双读者）原文保留。
+
 ## 0.1.1 - 2026-09-05
 
 - 新增 `blue-hub` 路由技能：不知道用哪个技能时，按处境指到对应入口和顺序。
