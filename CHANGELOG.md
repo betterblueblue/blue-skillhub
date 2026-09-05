@@ -2,6 +2,15 @@
 
 本仓库的技能以 Claude Code 插件形式发布，版本记录见下。
 
+## 0.1.3 - 2026-09-05
+
+阶段 3 单源化返工：
+
+- `rules.md` 去掉「改进记录交互」节：用户交互话术按 `tests/test_skill_improvement_prompt.py` 契约回归内联（intent-anchor、pathfinder、impact 三处自包含），并补上 impact 历史缺失的"普通完成不询问"。
+- 修复指针路径：`{_common 目录}` 占位符全部替换为可解析的 `../_common/rules.md`（`_common` 与每个技能目录同级，插件安装与手动复制两种形态下均成立），intent-verify 的 chain_validate 引用同步修正。
+- 说人话与确认语义的正文瘦成主题指针，语义只在 `rules.md` 一处，不再双源。
+- 回归：完整 CI 测试面九项全部通过（契约测试、353 项技能测试、三个校验器直跑、_common 单测、真实项目矩阵、eval 交付检查、run.sh 循环、模板同步 10/10、元数据校验）。
+
 ## 0.1.2 - 2026-09-05
 
 - 新增共享规则文件 `skills/_common/rules.md`：跨技能重复规则的详细定义（面向用户表述、确认语义、验证声明、改进记录交互、档位升降）收进单一来源。
