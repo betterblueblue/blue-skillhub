@@ -14,7 +14,7 @@
 | 5 | `python scripts/build_session_cards.py` | 拼会话卡 | `data/sessions.jsonl` |
 | 6 | `python scripts/compute_stats.py` | 词频/长度/分 agent 特征 | `data/stats_*.json` |
 | 7 | `python scripts/distill_materials.py` 和 `distill_insights.py` | 挖素材 + 照见候选 | `data/materials_*.json` |
-| 8 | `python scripts/render.py all` | 出全 10 页 HTML | `products/html/` |
+| 8 | `python scripts/render.py all` | 出全六页 HTML | `products/html/` |
 
 > 数据根目录经环境变量 `WORD_MIRROR_HOME` 指定；脚本自己会找到 `~/.wordmirror` 或绑定位置（见 `data-locations.md`）。
 
@@ -22,9 +22,9 @@
 
 1. 首次跑的时间和你话量成正比（话多约几分钟）；以后只补新的，快。
 2. 每步看脚本输出：会打印产物条数；条数比上次暴跌（>30%）要怀疑提取器坏了，别闷头往下跑。
-3. **portrait.md / habits.md 不自动重写**——更新后按 `references/SOP_蒸馏流程.md` 重新整理。
-4. **报告页（决定/反复/任务/AI看/各AI样子/这几个月）不自动写**——按 `references/distill-report-protocol.md` 由你读语料写 6 份 MD。
-5. **照见候选不自动定稿**——按 `references/mirror-protocol.md` 筛一遍写 `insights.jsonl`。
+3. **portrait.md / habits.md 不自动重写**——更新后按 `references/distill-report-protocol.md` 重新整理。
+4. **报告页（那几条线/你没看见的/AI眼里的你/这几个月）不自动写**——按 `references/distill-report-protocol.md` 由你读语料写 MD；旧版 decisions/recurs/tasks/agents/ai-view 已并入六页结构，其 MD 以「-历史」保留，不再更新。
+5. **照见候选不自动定稿**——按 `references/mirror-protocol.md` 筛一遍写 `insights.jsonl`；挂着的旧账每次更新复核，过时的归档。
 6. 更新完跑 `python scripts/self_check.py` 自检，全绿才算完。
 7. 探测不到某 agent 是正常（报告"没找到，跳过"）；新 agent 改 `scripts/detect_agents.py` 的表。
 8. DeepSeek Harness（dsh）提取需要 zstandard。**先探测再决定，别每次都问「要不要装」**：跑 `python -c "import zstandard"`，能 import 就直接跑提取；只有真没装时才提示用户 `pip install zstandard`，装完再跑一次这一步。

@@ -74,6 +74,12 @@ def ex_codex(out):
                                 m = p.get('message')
                                 if isinstance(m, str) and len(m) > 30:
                                     n += write(out, 'codex', d2s(o.get('timestamp','')), cwd, sid, m)
+                            # 2026-08+ 新版 rollout：AI 回复改为 response_item/message（role=assistant）
+                            if t == 'response_item' and p.get('type') == 'message' and p.get('role') == 'assistant':
+                                c = p.get('content', [])
+                                m = ' '.join(x.get('text', '') for x in c if isinstance(x, dict)) if isinstance(c, list) else ''
+                                if isinstance(m, str) and len(m) > 30:
+                                    n += write(out, 'codex', d2s(o.get('timestamp','')), cwd, sid, m)
     rec('codex', n, f)
 
 def ex_claude(out):

@@ -248,8 +248,8 @@ check('开工三句话就位', ok17 and ok17b,
 if '--web' in sys.argv:
     try:
         from playwright.sync_api import sync_playwright
-        pages = ['index.html', '01_我是谁.html', '02_我做过的重要决定.html',
-                 '03_说过要做的事.html', '04_该注意的事.html', '09_走过的这几个月.html']
+        pages = ['index.html', '01_我是谁.html', '02_那几条线.html',
+                 '03_说过要做的事.html', '04_你没看见的.html', '06_这几个月.html']
         pages = [p for p in pages if os.path.exists(os.path.join(PROD, 'html/') + p)]
         errs = []
         with sync_playwright() as pw:

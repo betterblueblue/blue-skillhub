@@ -23,7 +23,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 - 脚本能直接上页的，只有"数字本身就说明问题"的事实（排名、总量、完成率、时间跨度）。正则抓的句子、词表分类、文件夹名、"中位/占比"这类统计维度，只能当你写报告的**素材**，不许直接上页。
 - **报告的目的不是做统计看板，而是以言为镜。** 把用户说给 AI 的话重新放回时间和关系里，让用户看见自己以前没注意到的变化、坚持、转向和未完成；读完应该愿意停下来想一会儿。
 - **温度来自原话，不来自煽情。** 原话是主角，数字退到背景；用用户听得懂的白话承接前后关系；没有证据就留白，不用泛泛总结凑页；不做人格标签、动机推断或心理诊断。
-- 出报告走 `references/distill-report-protocol.md`，更新画像、6 份报告 MD、promises 和 insights；照见走 `references/mirror-protocol.md`。写完必须运行 `python scripts/render.py all` 刷新页面，再运行 `python scripts/self_check.py`。
+- 出报告走 `references/distill-report-protocol.md`，更新画像、六页报告 MD（lines / noticed / ai-eyes / timeline）、promises 和 insights；照见走 `references/mirror-protocol.md`。写完必须运行 `python scripts/render.py all` 刷新页面，再运行 `python scripts/self_check.py`。报告页全部给人看：标题、小节名、正文都说人话，禁内部词和翻译腔。
 - **单独蒸馏某个产物时，先读 `references/distill-prompts.md`（提示词总表）**：它为每个 MD/promises/insights 都给了可直接执行的八字段提示词（任务/输入/证据/输出/结构/引用/禁止/验收）和初始化交接检查表。总表是执行入口，细节仍以对应协议为准。
 
 ## 数据在哪
@@ -86,7 +86,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 
 1. 先读 `references/ingest-protocol.md`，按 8 步逐步调用脚本：探测 → 提取用户话 → 提取 AI 回复 → 去重 → 会话卡 → 统计 → 素材/照见候选 → 渲染。每一步看到产物和条数后再进入下一步；不要把所有脚本串成用户需要记住的一条命令。
 2. 读取更新后的 `corpus_dedup.jsonl`、`ai_messages.jsonl`、`stats_*.json` 和 `materials_*.json`。统计与候选只是素材，不是报告成文。
-3. 由你实际抽读原话、筛掉误报，更新 `data/profile/portrait.md`、`habits.md` 以及报告 MD；按 `references/distill-report-protocol.md` 写 01–09，原话带日期，数字退后，没有证据就留白。
+3. 由你实际抽读原话、筛掉误报，更新 `data/profile/portrait.md`、`habits.md` 以及报告 MD；按 `references/distill-report-protocol.md` 写六页（lines / noticed / ai-eyes / timeline，并入 portrait），原话带日期，数字退后，没有证据就留白；顺带复核 insights 旧账，过时的归档。
 4. 用 `python scripts/wm.py promise ...` 补录用户明确说过要做的事，用 `wm.py wb ...` 写回用户当次确认的事实；不要手写 JSONL。照见按 `references/mirror-protocol.md` 筛选和定稿。
 5. 最后由你调用 `python scripts/render.py all` 刷新 HTML，再调用 `python scripts/self_check.py`；把实际结果告诉用户。
 
@@ -95,21 +95,18 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 ### 生成网页
 用户要看报告页面 → 由你调用 `python scripts/render.py all`（生成网页是重活），出完告诉用户文件在哪、双击就能看。报告页的内容来自 Agent 蒸馏写的 MD（见 `references/distill-report-protocol.md`），没有 MD 的页应显示诚实空态，不用脚本候选凑内容。
 
-报告页要回答的问题：
+六页各自要回答的问题：
 - **01 你是谁**：你现在在哪里，怎么跟你共事？
-- **02 重要决定**：那些决定后来把你带到了哪里？
-- **03 说过要做的事**：这些事后来各自怎么样了？
-- **04 该注意的事**：哪些有证据的反差，你可能还没注意到？
-- **05 反复提的事**：你是不是一直在问同一个问题？
-- **06 各个 AI 里的样子**：换了工具，你是不是也换了说法？
-- **07 总让 AI 干什么**：你把什么活交给了 AI，自己还抓着什么？
-- **08 AI 怎么看你**：不同 AI 是怎样认识你的？
-- **09 走过的这几个月**：这几个月你是怎么走过来的？
+- **02 那几条线**：每条线怎么起的、哪里拐的、现在停在哪（还在走 / 已经收线 / 没了下文）？
+- **03 说话算数**：说过要做的事，后来都怎么样了？
+- **04 你没看见的**：这期有什么是你自己可能没意识到的？（硬指标：每期至少 1 条你读完才知道的事，你确认才算数；连续两期产不出就修方法，不凑数）
+- **05 AI 眼里的你**：换了工具你换没换说法？AI 看错过你几次？
+- **06 这几个月**：这个月跟上个月比变了什么？一路走到今天是怎么过来的？
 
-每页至少要有一处“原话 → 时间/关系 → 白话承接”的发现；没有足够证据就少写，不用数字或项目名凑内容。**全部页面文案统一用第二人称「你」称呼用户**（页面是 Agent 整理给用户看的），小节标题同样用「你」；引号里的用户原话除外。详情按 `references/distill-report-protocol.md`，照见按 `references/mirror-protocol.md`。
+每页至少要有一处“原话 → 时间/关系 → 白话承接”的发现；没有足够证据就少写，不用数字或项目名凑内容。**全部页面文案统一用第二人称「你」称呼用户**（页面是 Agent 整理给用户看的），小节标题同样用「你」；引号里的用户原话除外。**大白话宪法**：标题、小节名、正文全部给人看、说人话，禁内部词和翻译腔（详见蒸馏协议）。详情按 `references/distill-report-protocol.md`，照见按 `references/mirror-protocol.md`。
 
 ### 首次初始化
-读不到 portrait.md → 走 `references/init-protocol.md`：探测存档 → 按 `references/ingest-protocol.md` 的 8 步提取 → Agent 读原话整理 portrait/habits 和 6 份报告 MD → 判断并补录 promises → 筛选并定稿 insights → 渲染 HTML → 自检 → 念给用户听、当场纠错。初始化不能只生成画像或空态页面就结束；03/04 可以没有可靠数据，但必须完成判断并把原因告诉用户。
+读不到 portrait.md → 走 `references/init-protocol.md`：探测存档 → 按 `references/ingest-protocol.md` 的 8 步提取 → Agent 读原话整理 portrait/habits 和六页报告 MD → 判断并补录 promises → 筛选并定稿 insights → 渲染 HTML → 自检 → 念给用户听、当场纠错。初始化不能只生成画像或空态页面就结束；03/04 可以没有可靠数据，但必须完成判断并把原因告诉用户。
 
 ## 三件干不了的活（才调工具）
 

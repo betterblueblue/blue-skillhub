@@ -313,22 +313,22 @@ def render_timeline(md):
 
 
 def build_wrapped():
-    """09 走过的这几个月：以带日期的原话为锚点，按阶段渲染成回望卡。"""
+    """06 这几个月：页首本期对账，后面按阶段回看。原话是锚点，脚本只排版。"""
     p = os.path.join(wm.DATA, 'profile', 'timeline.md')
     if not os.path.exists(p):
-        print('09 那页：这几个月怎么过的还没整理出来，先生成空态页')
+        print('06 那页：这几个月怎么过的还没整理出来，先生成空态页')
         body = ['<h1 class="display">走过的这几个月，<br>你是怎么过的</h1>',
                 '<div class="refract"></div>',
                 '<div class="band"><p>这页的内容还没整理出来——说一句「更新报告」，AI 会按 distill-report-protocol 写好。</p></div>']
-        return ('html/09_走过的这几个月.html',
-                page('走过的这几个月 · 言镜', '按时间回看', '\n'.join(body)))
+        return ('html/06_这几个月.html',
+                page('这几个月 · 言镜', '按时间回看', '\n'.join(body)))
     md = open(p, encoding='utf-8', errors='replace').read()
     body = ['<h1 class="display">走过的这几个月，<br>你是怎么过的</h1>',
             '<div class="refract"></div>',
-            '<p class="timeline-intro">把当时说过的话，放回当时的时间里。这里没有给你下结论，只把那些转向、坚持和停下来的时刻重新摆出来。</p>',
+            '<p class="timeline-intro">页首是这个月跟上个月的对账，往回一路走到开始的地方。没有给你下结论，只把那些转向、坚持和停下来的时刻重新摆出来。</p>',
             render_timeline(md)]
-    return ('html/09_走过的这几个月.html',
-            page('走过的这几个月 · 言镜', '按时间回看', '\n'.join(body)))
+    return ('html/06_这几个月.html',
+            page('这几个月 · 言镜', '按时间回看', '\n'.join(body)))
 
 
 def build_index():
@@ -346,7 +346,7 @@ def build_index():
     n_open = sum(1 for o in promises if o.get('status') == 'open')
 
     ins = [o for o in load_insights() if o.get('type') != 'recur']
-    n_ins = len(ins)
+    n_ins = sum(1 for o in ins if o.get('status') in ('active', None, ''))
 
     body = ['<h1 class="display">让 AI 认识你，<br><span class="accent">也让你看见自己</span></h1>',
             '<div class="refract"></div>',
@@ -358,7 +358,7 @@ def build_index():
             '查旧账引原话、带日期，查不到就直说。<br><a href="01_我是谁.html">翻开 01 你是谁 →</a></p></div>'
             '<div class="facing-col"><div class="facing-label">回望 · 给你自己</div>'
             '<p style="margin-top:12px;">把你说给 AI 的话重新放回时间和关系里：重新遇见某个阶段的自己、看见两句话之间的联系、'
-            '捡回一件曾经认真想过的事。<br><a href="09_走过的这几个月.html">翻开 09 走过的这几个月 →</a></p></div></div>']
+            '捡回一件曾经认真想过的事。<br><a href="06_这几个月.html">翻开 06 这几个月 →</a></p></div></div>']
 
     body.append('<div class="stats">'
                 '<div class="stat"><div class="n">%s</div><div class="note">条原话，都是你说给 AI 的</div></div>'
@@ -393,15 +393,12 @@ def build_index():
 
     body.append('<h2>翻开更多</h2>')
     cards = [
-        ('01', '你是谁', '你的情况、当前在忙什么、怎么跟你配合', '01_我是谁.html'),
-        ('02', '你做过的重要决定', '那些决定后来把你带到了哪里', '02_我做过的重要决定.html'),
-        ('03', '说过要做的事', '这些事后来各自怎么样了', '03_说过要做的事.html'),
-        ('04', '该注意的事', '有哪些你自己还没注意到的事', '04_该注意的事.html'),
-        ('05', '你反复提的事', '你是不是一直在问同一个问题', '05_我反复提的事.html'),
-        ('06', '你在各个 AI 里的样子', '换了工具，你是不是也换了说法', '06_我在各个AI里的样子.html'),
-        ('07', '你总让 AI 干什么', '你把什么活交给了 AI，自己抓着什么', '07_我总让AI干什么.html'),
-        ('08', 'AI 怎么看你', '不同 AI 是怎样认识你的', '08_AI怎么看我.html'),
-        ('09', '走过的这几个月', '这几个月你是怎么走过来的', '09_走过的这几个月.html'),
+        ('01', '你是谁', '你现在在哪、在忙什么、怎么跟你共事', '01_我是谁.html'),
+        ('02', '那几条线', '每条线怎么起的、哪里拐的、现在停在哪', '02_那几条线.html'),
+        ('03', '说话算数', '说过要做的事，后来都怎么样了', '03_说过要做的事.html'),
+        ('04', '你没看见的', '这期读出来的新发现，和挂着的有据反差', '04_你没看见的.html'),
+        ('05', 'AI 眼里的你', '换了工具你换没换说法，AI 看错过你几次', '05_AI眼里的你.html'),
+        ('06', '这几个月', '本期对账，加从开始到现在的回看', '06_这几个月.html'),
     ]
     body.append('<div class="card-grid">')
     for num, title, desc, href in cards:
@@ -414,22 +411,30 @@ def build_index():
 
 
 def build_insights():
+    """04 你没看见的：上半页是这期 agent 读出来的新发现（noticed.md，硬指标落点），
+    下半页是有证据的反差账（insights.jsonl）。没有发现就诚实写没有，不凑数。"""
     ins = [o for o in load_insights() if o.get('type') != 'recur']
-    body = ['<h1 class="display">这几件，<br>你可能没注意到</h1>',
+    body = ['<h1 class="display">这几件，<br>你可能没看见</h1>',
             '<div class="refract"></div>',
-            '<p class="timeline-intro">这里都是你有证据、但未必注意到的反差。只摆你的原话和日期，结论你自己下。</p>']
-    active = [o for o in ins if o.get('status') in ('active', None, '')]
-    if not active:
-        body.append('<div class="band"><p>现在还没什么要提醒你的。等你说的话多了，这里会挑出你说了没做、前后矛盾的事。</p></div>')
+            '<p class="timeline-intro">上半页是这期从你的话里读出来的新发现；下半页是有证据的反差账，只摆原话和日期，结论你自己下。</p>']
+    body.append('<h2>这期读出来的</h2>')
+    np = os.path.join(wm.DATA, 'profile', 'noticed.md')
+    if os.path.exists(np):
+        body.append(render_markdown(open(np, encoding='utf-8', errors='replace').read()))
     else:
-        body.append('<h2>还没跟你说的</h2>')
+        body.append('<div class="band"><p>这期还没找到值得写的新发现——不凑数。每期至少要有一条你读完才知道的事，连续两期没有，就该修找的方法了。</p></div>')
+    active = [o for o in ins if o.get('status') in ('active', None, '')]
+    body.append('<h2>挂着的事</h2>')
+    if not active:
+        body.append('<div class="band"><p>现在没有挂着的事。等你说的话多了，这里会摆出你说了没做、前后相反、习惯突变的事。</p></div>')
+    else:
         body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in active) + '</div>')
-        rest = [o for o in ins if o not in active]
-        if rest:
-            body.append('<h2>已经说过的</h2>')
-            body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in rest) + '</div>')
-    return ('html/04_该注意的事.html',
-            page('该注意的事 · 言镜', '该注意的事', '\n'.join(body)))
+    rest = [o for o in ins if o not in active]
+    if rest:
+        body.append('<h2>已经说过的</h2>')
+        body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in rest) + '</div>')
+    return ('html/04_你没看见的.html',
+            page('你没看见的 · 言镜', '你没看见的', '\n'.join(body)))
 
 
 AGENT_NAMES = {
@@ -480,105 +485,6 @@ def _agent_quote(date, quote, source=''):
     return '<div class="quote agent-quote"><span class="q-eyebrow">%s%s</span><span class="q-text">「%s」</span></div>' % (H.escape(date), (' · ' + H.escape(source)) if source else '', H.escape(quote))
 
 
-def render_agents(md):
-    """把各工具的统计说明排成“不同场景里的自己”，兼容旧版 agents.md。"""
-    sections = re.split(r'(?=^## )', md, flags=re.MULTILINE)
-    out = []
-    for section in sections:
-        if not section.strip():
-            continue
-        title, blocks = _parse_agent_section(section)
-        blocks = [b for b in blocks if b['head'] or b['quotes'] or b['prose']]
-        if not title:
-            continue
-        if '换了 AI' in title:
-            current = 'facing'
-        elif '哪些东西一直' in title:
-            current = 'shared'
-        elif '现在回头看' in title:
-            current = 'now'
-        elif '在这里' in title:
-            current = 'agents'
-        else:
-            current = 'legacy'
-        cls = 'agent-section agent-%s' % current
-        out.append('<article class="%s"><div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % (cls, inline(title)))
-        all_quotes = [q for b in blocks for q in b['quotes']]
-        if current == 'facing' and len(all_quotes) >= 2:
-            out.append('<div class="facing-row agent-facing"><div class="facing-col"><div class="facing-label">第一种说法</div>%s</div><div class="facing-col"><div class="facing-label">另一种说法</div>%s</div></div>' % (_agent_quote(*all_quotes[0]), _agent_quote(*all_quotes[1])))
-        elif current == 'agents':
-            # 每个 AI 一张场景卡：### 子标题做卡头，承接文字 + 原话都收进卡里
-            for b in blocks:
-                out.append('<div class="agent-scene"><div class="agent-scene-label">%s</div>' % inline(b['head'] or title))
-                if b['prose']:
-                    out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in b['prose']))
-                out.extend(_agent_quote(*q) for q in b['quotes'])
-                out.append('</div>')
-        else:
-            for b in blocks:
-                if b['head']:
-                    out.append('<div class="agent-scene-label">%s</div>' % inline(b['head']))
-                out.extend(_agent_quote(*q) for q in b['quotes'])
-                if b['prose']:
-                    out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in b['prose']))
-        out.append('</article>')
-    return '\n'.join(out)
-
-
-def build_agents():
-    ag_p = os.path.join(wm.DATA, 'stats_agents.json')
-    if not os.path.exists(ag_p):
-        print('跳过 06 那页：统计素材还没生成（先跑 ingest）')
-        return None
-    ag = load_json(ag_p)
-    if not ag:
-        print('跳过 06 那页：没有分 agent 数据')
-        return None
-
-    agents = sorted(ag.items(), key=lambda kv: -kv[1].get('msgs', 0))
-    total_msgs = sum(v.get('msgs', 0) for v in ag.values())
-    total = total_msgs or 1
-    top_name = AGENT_NAMES.get(agents[0][0], agents[0][0]) if agents else '—'
-    top_share = round(100 * agents[0][1].get('msgs', 0) / total) if agents else 0
-
-    body = ['<h1 class="display">你在各个 AI 里的样子</h1>',
-            '<div class="refract"></div>',
-            '<p style="color:var(--muted);max-width:560px;">你在不同工具里说的话、干的事、说话习惯，都不一样。这页把它们并排摆出来。</p>']
-
-    body.append(
-        '<div class="stats build-agents-rank">'
-        f'<div class="stat"><div class="n">{len(ag)}</div><div class="note">个 AI 工具，跟你有过来往</div></div>'
-        f'<div class="stat"><div class="n">{format(total_msgs, ",")}</div><div class="note">条原话，分布在它们之间</div></div>'
-        f'<div class="stat"><div class="n" style="font-size:24px;">{H.escape(top_name)}</div><div class="note">你用得最多的那个</div></div>'
-        f'<div class="stat"><div class="n">{top_share}%</div><div class="note">第一名占了这么多</div></div>'
-        '</div>'
-    )
-
-    body.append('<h2>先从这里看</h2>')
-    for name, v in agents:
-        msgs = v.get('msgs', 0)
-        pct = round(100 * msgs / total)
-        disp = AGENT_NAMES.get(name, name)
-        body.append(
-            f'<div class="rank-row">'
-            f'<div class="rank-name">{H.escape(disp)}</div>'
-            f'<div class="rank-track"><div class="rank-fill" style="width:{pct}%;"></div></div>'
-            f'<div class="rank-count">{format(msgs, ",")} 条 · {pct}%</div>'
-            f'</div>'
-        )
-
-    # 判断部分：不同工具里的样子由 Agent 读语料写 agents.md，脚本只负责排版
-    md_path = os.path.join(wm.DATA, 'profile', 'agents.md')
-    if os.path.exists(md_path):
-        body.append(render_agents(open(md_path, encoding='utf-8', errors='replace').read()))
-    else:
-        body.append('<div class="band"><p>每个 AI 里你主要干啥、怎么跟它说话，还没整理出来——'
-                    '说一句「更新报告」，AI 会按 distill-report-protocol 写好。</p></div>')
-
-    return ('html/06_我在各个AI里的样子.html',
-            page('你在各个 AI 里的样子 · 言镜', '按工具看', '\n'.join(body)))
-
-
 def _md_page(name, md_name, title, eyebrow, filename):
     """读 data/profile/<md_name>.md 渲染成页。
     判断类内容由 Agent 蒸馏写成 MD（见 references/distill-report-protocol.md），脚本只渲染，不下结论。
@@ -598,21 +504,23 @@ def _md_page(name, md_name, title, eyebrow, filename):
     return (filename, page(title + ' · 言镜', eyebrow, '\n'.join(body)))
 
 
-def build_decisions():
-    p = os.path.join(wm.DATA, 'profile', 'decisions.md')
+def build_lines():
+    """02 那几条线：每条线一节——怎么起的、哪里拐的、现在停在哪。
+    状态只有三种（还在走 / 已经收线 / 没了下文），写在小节标题里，不替用户解释。"""
+    p = os.path.join(wm.DATA, 'profile', 'lines.md')
     if not os.path.exists(p):
-        return _md_page('02 那页', 'decisions.md', '你做过的重要决定', '决定', 'html/02_我做过的重要决定.html')
+        return _md_page('02 那页', 'lines.md', '那几条线', '按线看', 'html/02_那几条线.html')
     md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">你做过的重要决定</h1>',
+    body = ['<h1 class="display">那几条线，<br>各自走到了哪</h1>',
             '<div class="refract"></div>',
-            '<p class="timeline-intro">那些当时说出口的决定，后来把你带到了哪里。</p>',
-            render_decisions(md)]
-    return ('html/02_我做过的重要决定.html',
-            page('你做过的重要决定 · 言镜', '决定', '\n'.join(body)))
+            '<p class="timeline-intro">把你手上的事一条条摆开：怎么起的、哪里拐的、现在停在哪。状态只有三种，写在标题里。</p>',
+            render_lines(md)]
+    return ('html/02_那几条线.html',
+            page('那几条线 · 言镜', '按线看', '\n'.join(body)))
 
 
-def render_decisions(md):
-    """决定页复用时间线版式：普通主题保留，白话栏目展示决定的后续关系。"""
+def render_lines(md):
+    """按线分节渲染；带「- 日期 事件」后续的小节走时间线版式，其余走阶段卡。"""
     sections = re.split(r'(?=^## )', md, flags=re.MULTILINE)
     out = []
     for section in sections:
@@ -621,108 +529,137 @@ def render_decisions(md):
         title = section.splitlines()[0][3:].strip() if section.startswith('## ') else ''
         if not title:
             continue
-        if '这句话后来去了哪里' in title:
-            out.append(_timeline_special(section, title, 'turning'))
-        elif '以前的想法' in title or '后来的选择' in title:
-            out.append(_timeline_special(section, title, 'facing'))
-        elif '还没有答案' in title:
-            out.append(_timeline_special(section, title, 'setaside'))
+        has_events = re.search(r'^-\s+\d{4}-\d{2}-\d{2}\s+', section, flags=re.MULTILINE)
+        out.append(_timeline_special(section, title, 'turning') if has_events else _timeline_section(section))
+    return '\n'.join(out)
+
+
+def _tool_taglines(md):
+    """从 ai-eyes.md 工具卡的「### 工具名：一句人话」提取 名称 → 一行画像，给排行条加层次。"""
+    out = {}
+    for m in re.finditer(r'^###\s+(.+)$', md, flags=re.MULTILINE):
+        name, _, tag = m.group(1).strip().partition('：')
+        if name.strip() and tag.strip():
+            out[name.strip().lower().replace('-', ' ')] = tag.strip()
+    return out
+
+
+def _tagline_for(taglines, names):
+    for cand in names:
+        cand = cand.lower().replace('-', ' ')
+        if cand in taglines:
+            return taglines[cand]
+    for key, tag in taglines.items():
+        for cand in names:
+            cand = cand.lower().replace('-', ' ')
+            if cand and (cand in key or key in cand):
+                return tag
+    return ''
+
+
+def build_ai_eyes():
+    """05 AI 眼里的你：分工具统计 + agent 写的合并观察（工具场景卡 + AI 怎么看你）。"""
+    p = os.path.join(wm.DATA, 'profile', 'ai-eyes.md')
+    if not os.path.exists(p):
+        return _md_page('05 那页', 'ai-eyes.md', 'AI 眼里的你', 'AI 眼中的你', 'html/05_AI眼里的你.html')
+    md = open(p, encoding='utf-8', errors='replace').read()
+    body = ['<h1 class="display">AI 眼里的你</h1>',
+            '<div class="refract"></div>',
+            '<p class="timeline-intro">你在不同工具里的样子，和这些 AI 对你说过的话，都摆在这页。哪里说准了，你自己判断。</p>']
+
+    ag_p = os.path.join(wm.DATA, 'stats_agents.json')
+    if os.path.exists(ag_p):
+        try:
+            ag = load_json(ag_p)
+        except Exception:
+            ag = {}
+        if isinstance(ag, dict) and ag:
+            agents = sorted(ag.items(), key=lambda kv: -kv[1].get('msgs', 0))
+            total_msgs = sum(v.get('msgs', 0) for v in ag.values())
+            total = total_msgs or 1
+            top_name = AGENT_NAMES.get(agents[0][0], agents[0][0])
+            top_share = round(100 * agents[0][1].get('msgs', 0) / total)
+            body.append(
+                '<div class="stats build-agents-rank">'
+                f'<div class="stat"><div class="n">{len(ag)}</div><div class="note">个 AI 工具，跟你有过来往</div></div>'
+                f'<div class="stat"><div class="n">{format(total_msgs, ",")}</div><div class="note">条原话，分布在它们之间</div></div>'
+                f'<div class="stat"><div class="n" style="font-size:24px;">{H.escape(top_name)}</div><div class="note">你用得最多的那个</div></div>'
+                f'<div class="stat"><div class="n">{top_share}%</div><div class="note">第一名占了这么多</div></div>'
+                '</div>')
+            body.append('<h2>先从这里看</h2>')
+            taglines = _tool_taglines(md)
+            for name, v in agents:
+                msgs = v.get('msgs', 0)
+                pct = round(100 * msgs / total)
+                disp = AGENT_NAMES.get(name, name)
+                tag = _tagline_for(taglines, (name, disp))
+                body.append('<div class="rank-item">')
+                body.append(
+                    f'<div class="rank-row">'
+                    f'<div class="rank-name">{H.escape(disp)}</div>'
+                    f'<div class="rank-track"><div class="rank-fill" style="width:{pct}%;"></div></div>'
+                    f'<div class="rank-count">{format(msgs, ",")} 条 · {pct}%</div>'
+                    f'</div>'
+                )
+                if tag:
+                    body.append('<div class="rank-note">%s</div>' % inline(tag))
+                body.append('</div>')
+
+    body.append(render_ai_eyes(md))
+    return ('html/05_AI眼里的你.html',
+            page('AI 眼里的你 · 言镜', 'AI 眼中的你', '\n'.join(body)))
+
+
+def render_ai_eyes(md):
+    """合并版式：带 ### 工具卡的小节走场景卡，其余按白话栏目走 AI 观察版式。"""
+    sections = re.split(r'(?=^## )', md, flags=re.MULTILINE)
+    out = []
+    for section in sections:
+        if not section.strip():
+            continue
+        title = section.splitlines()[0][3:].strip() if section.startswith('## ') else ''
+        if not title:
+            continue
+        if '\n### ' in section:
+            _, blocks = _parse_agent_section(section)
+            blocks = [b for b in blocks if b['head'] or b['quotes'] or b['prose']]
+            out.append('<article class="agent-section agent-agents"><div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % inline(title))
+            for b in blocks:
+                # 卡头拆成两半：工具名做徽章，冒号后面的一句人话做副题
+                head = b['head'] or title
+                name, _, tagline = head.partition('：')
+                label = ('<div class="agent-scene-label"><span class="agent-name">%s</span>'
+                         '<span class="agent-tagline">%s</span></div>' % (inline(name.strip()), inline(tagline.strip())))
+                out.append('<div class="agent-scene">%s' % label)
+                if b['prose']:
+                    out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in b['prose']))
+                out.extend(_agent_quote(*q) for q in b['quotes'])
+                out.append('</div>')
+            out.append('</article>')
+            continue
+        if '换了 AI' in title:
+            kind = 'switch'
+        elif '不同 AI 都看见' in title:
+            kind = 'common'
+        elif '看错过' in title:
+            kind = 'mistake'
+        elif '现在' in title and '认识' in title:
+            kind = 'now'
         else:
-            out.append(_timeline_section(section))
+            kind = 'single'
+        if kind == 'switch':
+            t, quotes, prose = _parse_ai_section(section)
+            out.append('<article class="ai-view-section ai-common"><div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % inline(title))
+            if len(quotes) >= 2:
+                out.append('<div class="facing-row agent-facing"><div class="facing-col"><div class="facing-label">第一种说法</div>%s</div><div class="facing-col"><div class="facing-label">另一种说法</div>%s</div></div>' % (_ai_quote(*quotes[0]), _ai_quote(*quotes[1])))
+                quotes = quotes[2:]
+            out.extend(_ai_quote(d, q, s) for d, q, s in quotes)
+            if prose:
+                out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in prose))
+            out.append('</article>')
+            continue
+        out.append(_render_ai_section(section, kind))
     return '\n'.join(out)
-
-
-def build_recurring():
-    p = os.path.join(wm.DATA, 'profile', 'recurs.md')
-    if not os.path.exists(p):
-        return _md_page('05 那页', 'recurs.md', '你反复提的事', '反复提的事', 'html/05_我反复提的事.html')
-    md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">你反复提的事，<br>是不是在问同一个问题</h1>',
-            '<div class="refract"></div>',
-            '<p class="timeline-intro">有些话题换了名字、换了项目，过一阵还是会回来。这里不替你解释原因，只把它们放在一起。</p>',
-            render_recurring(md)]
-    return ('html/05_我反复提的事.html',
-            page('你反复提的事 · 言镜', '反复提的事', '\n'.join(body)))
-
-
-def render_recurring(md):
-    """按白话标题渲染反复主题；旧主题章节继续使用阶段回望版式。"""
-    sections = re.split(r'(?=^## )', md, flags=re.MULTILINE)
-    out = []
-    for section in sections:
-        if not section.strip():
-            continue
-        title = section.splitlines()[0][3:].strip() if section.startswith('## ') else ''
-        if not title:
-            continue
-        if '这几句话' in title:
-            kind = 'facing'
-        elif '一直回来' in title:
-            kind = 'persistent'
-        elif '没有走完' in title:
-            kind = 'setaside'
-        elif '转去了别处' in title:
-            kind = 'turning'
-        else:
-            kind = None
-        out.append(_timeline_special(section, title, kind) if kind else _timeline_section(section))
-    return '\n'.join(out)
-
-
-def build_tasks():
-    p = os.path.join(wm.DATA, 'profile', 'tasks.md')
-    if not os.path.exists(p):
-        return _md_page('07 那页', 'tasks.md', '你总让 AI 干什么', '按任务看', 'html/07_我总让AI干什么.html')
-    md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">你总让 AI 干什么</h1>',
-            '<div class="refract"></div>',
-            '<p class="timeline-intro">你把哪些活交给了 AI，自己又一直抓着哪些部分？</p>',
-            render_tasks(md)]
-    return ('html/07_我总让AI干什么.html',
-            page('你总让 AI 干什么 · 言镜', '按任务看', '\n'.join(body)))
-
-
-def render_tasks(md):
-    """把任务分类从占比列表改成具体工作的回望卡。"""
-    sections = re.split(r'(?=^## )', md, flags=re.MULTILINE)
-    out = []
-    for section in sections:
-        if not section.strip():
-            continue
-        title = section.splitlines()[0][3:].strip() if section.startswith('## ') else ''
-        if not title:
-            continue
-        lines = section.splitlines()[1:]
-        quotes, prose = [], []
-        for raw in lines:
-            line = raw.strip()
-            if not line or line.startswith('<!--'):
-                continue
-            got, line = _extract_quotes(line)
-            quotes.extend(got)
-            line = line.strip(' -—：:')
-            if line:
-                prose.append(line[2:] if line.startswith('- ') else line)
-        out.append('<article class="task-section"><div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % inline(title))
-        if quotes:
-            out.append('<div class="task-quotes">%s</div>' % ''.join(_agent_quote(d, q, s) for d, q, s in quotes))
-        if prose:
-            out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in prose))
-        out.append('</article>')
-    return '\n'.join(out)
-
-
-def build_ai_view():
-    p = os.path.join(wm.DATA, 'profile', 'ai-view.md')
-    if not os.path.exists(p):
-        return _md_page('08 那页', 'ai-view.md', 'AI 怎么看你', 'AI 眼中的你', 'html/08_AI怎么看我.html')
-    md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">AI 怎么看你</h1>',
-            '<div class="refract"></div>',
-            '<p class="timeline-intro">你说给不同 AI 的话，慢慢变成了它们对你的认识。这页把它们说过的话放在一起，哪里说准了，哪里还需要你自己判断。</p>',
-            render_ai_view(md)]
-    return ('html/08_AI怎么看我.html',
-            page('AI 怎么看你 · 言镜', 'AI 眼中的你', '\n'.join(body)))
 
 
 def _parse_ai_section(section):
@@ -763,28 +700,6 @@ def _render_ai_section(section, kind='single'):
     if prose:
         out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in prose))
     out.append('</article>')
-    return '\n'.join(out)
-
-
-def render_ai_view(md):
-    """按白话栏目渲染 AI 观察；旧版工具章节也能继续显示。"""
-    sections = re.split(r'(?=^## )', md, flags=re.MULTILINE)
-    out = []
-    for section in sections:
-        if not section.strip():
-            continue
-        title = section.splitlines()[0][3:].strip() if section.startswith('## ') else ''
-        if not title:
-            continue
-        if '不同 AI 都看见' in title:
-            kind = 'common'
-        elif '看错过' in title:
-            kind = 'mistake'
-        elif '现在' in title and '认识' in title:
-            kind = 'now'
-        else:
-            kind = 'single'
-        out.append(_render_ai_section(section, kind))
     return '\n'.join(out)
 
 
@@ -864,7 +779,7 @@ def build_tracker():
     if not rows:
         body.append('<div class="band"><p>还没记过要做的事。你明确说“我要做 X”时，AI 才会把它记下来。</p></div>')
     return ('html/03_说过要做的事.html',
-            page('说过要做的事 · 言镜', '说过要做的事', '\n'.join(body)))
+            page('说话算数 · 言镜', '说话算数', '\n'.join(body)))
 
 
 # ---------- 入口 ----------
@@ -882,13 +797,12 @@ def main():
     month = sys.argv[2] if len(sys.argv) > 2 and re.match(r'\d{4}-\d{2}$', sys.argv[2]) else None
     jobs = []
     if cmd in ('read', 'all'):
-        jobs += [build_portrait(), build_decisions(), build_insights(), build_recurring(),
-                 build_agents(), build_tasks(), build_ai_view(), build_wrapped(), build_index()]
+        jobs += [build_portrait(), build_lines(), build_insights(), build_ai_eyes(), build_wrapped(), build_index()]
     if cmd in ('tracker', 'all'):
         jobs.append(build_tracker())
-    # 月报已并入 09 走过的这几个月（timeline.md 的「最近这个月」一节），不再单独脚本生成
+    # 月报已并入 06 这几个月（timeline.md 的「本期对账」一节），不再单独脚本生成
     if cmd == 'monthly':
-        print('月报已并入 09 页（timeline.md），不再单独生成。')
+        print('月报已并入 06 页（timeline.md），不再单独生成。')
     for j in jobs:
         if j:
             write_out(*j)

@@ -18,7 +18,8 @@
 > - portrait.md / habits.md 的章节结构：**按 `references/portrait-template.md` 和 `references/habits-template.md`**，
 >   不是本文 2.1/2.2 的固定章节
 > - 自检：`python scripts/self_check.py`，不看本文档第 5 步的 git 收尾
-> - 产物只有 4 页 + 月报，本文 3.1–3.7 那些专题产物已不再产出
+> - 产物为六页（01 我是谁 / 02 那几条线 / 03 说话算数 / 04 你没看见的 / 05 AI 眼里的你 / 06 这几个月），
+>   报告 MD 写法按 `references/distill-report-protocol.md`；本文 3.1–3.7 那些专题产物已不再产出
 >
 > 本文 2.1/2.2、第 3 步、①处的「待固化 compute_stats」、文末 TODO 均作废。
 

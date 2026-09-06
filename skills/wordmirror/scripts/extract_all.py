@@ -107,6 +107,12 @@ def ex_codex(out):
                                 m = p.get('message')
                                 if isinstance(m, str):
                                     n += write(out, 'codex', d2s(o.get('timestamp','')), cwd, sid, clean(m))
+                            # 2026-08+ 新版 rollout：用户消息改为 response_item/message（role=user，content 数组）
+                            if t == 'response_item' and p.get('type') == 'message' and p.get('role') == 'user':
+                                c = p.get('content', [])
+                                m = ' '.join(x.get('text', '') for x in c if isinstance(x, dict)) if isinstance(c, list) else ''
+                                if isinstance(m, str) and m.strip():
+                                    n += write(out, 'codex', d2s(o.get('timestamp','')), cwd, sid, clean(m))
     rec('codex', n, f)
 
 def ex_claude(out):
@@ -518,6 +524,59 @@ def ex_cursor(out):
 
 ALL = [ex_codex, ex_claude, ex_qwen, ex_workbuddy, ex_zcode, ex_grok, ex_pi, ex_atomcode, ex_antigravity, ex_catpaw, ex_dsh, ex_cursor]
 
+
+def freshness_check():
+    """新鲜度对账：某 agent 的会话文件最近还在更新，但提取到的最新原话停在几天前，
+    大概率是新版本换了存法或有目录没适配（antigravity-cli 漏采 181 条的教训）。
+    只警告不拦截；没提取到任何话的 agent 不查（grok 之类本来就无正文）。"""
+    try:
+        import detect_agents as det
+    except Exception:
+        return
+    latest = {}
+    try:
+        with open(OUT, encoding='utf-8') as fh:
+            for line in fh:
+                try: o = json.loads(line)
+                except Exception: continue
+                a, d = o.get('agent', ''), o.get('date', '')
+                if a and d and d > latest.get(a, ''):
+                    latest[a] = d
+    except OSError:
+        return
+    warn = 0
+    for a, d in sorted(latest.items()):
+        cfg = det.AGENT_PATTERNS.get(a)
+        if not cfg:
+            continue
+        try:
+            d_day = datetime.date.fromisoformat(d)
+        except ValueError:
+            continue
+        newest = ''
+        for pat in cfg.get('patterns', []):
+            for fp in glob.glob(os.path.join(H, pat)):
+                try:
+                    mt = datetime.date.fromtimestamp(os.path.getmtime(fp)).isoformat()
+                except OSError:
+                    continue
+                if mt > newest:
+                    newest = mt
+        if not newest or newest <= d:
+            continue
+        try:
+            gap = (datetime.date.fromisoformat(newest) - d_day).days
+        except ValueError:
+            continue
+        if gap > 3:
+            warn += 1
+            print('⚠ 新鲜度对账：%-14s 会话文件最近改到 %s，但提取到的最新原话停在 %s（差 %d 天）'
+                  % (a, newest, d, gap))
+            print('  可能有新的存档位置没适配——先跑 python scripts/detect_agents.py 对比文件数。')
+    if not warn:
+        print('新鲜度对账：各 agent 的会话文件和提取结果对得上。')
+
+
 if __name__ == '__main__':
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, 'w', encoding='utf-8') as out:
@@ -532,3 +591,4 @@ if __name__ == '__main__':
         print('%-14s msgs=%6d files=%d' % (a, n, f))
         total += n
     print('TOTAL user msgs:', total)
+    freshness_check()

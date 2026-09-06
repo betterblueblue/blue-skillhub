@@ -249,14 +249,17 @@ ol li::before { content: counter(wm-ol); left: 0; font-family: var(--font-mono);
 .nav-card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
 
 /* 工具排名条 + agent 卡 */
+.rank-item { margin: 14px 0; }
 .rank-row {
   display: grid; grid-template-columns: 160px 1fr 130px; align-items: center; gap: 16px;
-  margin: 12px 0;
+  margin: 0;
 }
 .rank-name { font-weight: 600; color: var(--ink); text-align: right; }
 .rank-track { background: var(--soft); border-radius: 999px; height: 12px; overflow: hidden; }
 .rank-fill { background: var(--accent); height: 100%; border-radius: 999px; }
 .rank-count { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.rank-note { margin: 5px 176px 0 0; font-size: 13px; line-height: 1.7; color: var(--muted); }
+@media (max-width: 700px) { .rank-note { margin-right: 0; } }
 
 .agent-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .agent-name { font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--ink); }
@@ -316,7 +319,9 @@ ol li::before { content: counter(wm-ol); left: 0; font-family: var(--font-mono);
 .agent-section { max-width: 860px; margin: 0 0 58px; padding: 0 0 28px 28px; border-left: 1px solid var(--line); }
 .agent-section h2 { margin-top: 0; }
 .agent-scene { background: var(--surface); border: 1px solid var(--line); padding: 8px 22px 14px; margin: 14px 0; border-radius: 14px; box-shadow: var(--shadow-card); }
-.agent-scene-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 1.5px; color: var(--accent); margin-top: 8px; }
+.agent-scene-label { display: flex; align-items: center; gap: 12px; margin-top: 12px; margin-bottom: 2px; }
+.agent-name { font-family: var(--font-mono); font-size: 14px; font-weight: 700; letter-spacing: 1px; color: #fff; background: var(--accent); padding: 4px 14px; border-radius: 999px; white-space: nowrap; }
+.agent-tagline { font-family: var(--font-mono); font-size: 12px; font-weight: 600; letter-spacing: 1.2px; color: var(--accent); }
 .agent-quote { margin: 12px 0 4px; }
 .agent-quote .q-text { font-size: 18px; }
 .agent-facing .facing-col .agent-quote { border-left: 0; padding-left: 0; }

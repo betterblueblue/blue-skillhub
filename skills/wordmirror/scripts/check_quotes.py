@@ -102,7 +102,8 @@ def _populate(path, rows_user, rows_ai, user_present, ai_present, out, stats):
 def _md_files(data, products):
     out = []
     for pat in (os.path.join(data, 'profile', '*.md'), os.path.join(products, '*.md')):
-        out += [f for f in glob.glob(pat) if os.path.isfile(f)]
+        # 「-历史」文件是旧版存档供对照，不是交付物，不进门禁
+        out += [f for f in glob.glob(pat) if os.path.isfile(f) and '历史' not in os.path.basename(f)]
     return out
 
 
