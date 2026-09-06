@@ -2,6 +2,14 @@
 
 本仓库的技能以 Claude Code 插件形式发布，版本记录见下。
 
+## 0.1.8 - 2026-09-06
+
+wordmirror 存档适配 Antigravity CLI：
+
+- 新增 **Antigravity CLI 1.1.x** 支持：CLI 会话存在 `~/.gemini/antigravity-cli/`（与 IDE 的 `~/.gemini/antigravity/` 是两棵独立的树，brain 结构相同），`extract_all.py` 与 `extract_ai.py` 两处补上第二棵树。
+- 修复 antigravity AI 侧提取一直为 0 的问题：transcript 里的正式回复类型是 `PLANNER_RESPONSE`（原类型名单未包含），补进名单；`GENERIC` 经核实为工具输出摘要，不收；空占位由长度门槛挡掉。
+- `detect_agents.py` 探测模式与说明同步覆盖两棵树。
+
 ## 0.1.7 - 2026-09-05
 
 第二档借鉴落地：

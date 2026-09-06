@@ -213,19 +213,23 @@ def ex_atomcode(out):
     rec('atomcode', n, f)
 
 def ex_antigravity(out):
+    # AI 侧：IDE 数据在 .gemini/antigravity/，CLI（1.1.x）在 .gemini/antigravity-cli/，两棵树都收。
+    # transcript 里正式回复是 PLANNER_RESPONSE（AGENT_RESPONSE 等旧类型名留作兼容）；
+    # GENERIC 是工具输出摘要，不收；空 content（占位）由长度门槛挡掉。
     n = f = 0
-    for tf in glob.glob(os.path.join(H, '.gemini', 'antigravity', 'brain', '*', '.system_generated', 'logs', 'transcript.jsonl')):
-        f += 1
-        cid = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(tf))))
-        with open(tf, encoding='utf-8', errors='replace') as _fh:
-            for line in _fh:
-                try: o = json.loads(line)
-                except Exception: continue
-                # AI 的正式回复类型
-                if o.get('type') not in ('MODEL_FINAL', 'FINAL_RESPONSE', 'AGENT_RESPONSE', 'MODEL_RESPONSE'): continue
-                c = o.get('content', '')
-                if isinstance(c, str) and len(c) > 30:
-                    n += write(out, 'antigravity', d2s(o.get('created_at','')), cid[:8], cid, c)
+    roots = ('antigravity', 'antigravity-cli')
+    for root in roots:
+        for tf in glob.glob(os.path.join(H, '.gemini', root, 'brain', '*', '.system_generated', 'logs', 'transcript.jsonl')):
+            f += 1
+            cid = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(tf))))
+            with open(tf, encoding='utf-8', errors='replace') as _fh:
+                for line in _fh:
+                    try: o = json.loads(line)
+                    except Exception: continue
+                    if o.get('type') not in ('PLANNER_RESPONSE', 'MODEL_FINAL', 'FINAL_RESPONSE', 'AGENT_RESPONSE', 'MODEL_RESPONSE'): continue
+                    c = o.get('content', '')
+                    if isinstance(c, str) and len(c) > 30:
+                        n += write(out, 'antigravity', d2s(o.get('created_at','')), cid[:8], cid, c)
     rec('antigravity', n, f)
 
 def ex_catpaw(out):

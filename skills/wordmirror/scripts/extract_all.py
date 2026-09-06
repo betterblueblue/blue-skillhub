@@ -302,20 +302,23 @@ def ex_atomcode(out):
 
 def ex_antigravity(out):
     # 数据源：brain transcript.jsonl（明文，type=USER_INPUT 即用户原话）；conversations/*.db 是 protobuf 二进制，弃用
+    # IDE 数据在 .gemini/antigravity/，CLI（1.1.x）在 .gemini/antigravity-cli/，brain 结构相同，两棵树都收
     n = f = 0
-    for tf in glob.glob(os.path.join(H, '.gemini', 'antigravity', 'brain', '*', '.system_generated', 'logs', 'transcript.jsonl')):
-        f += 1
-        cid = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(tf))))
-        with open(tf, encoding='utf-8', errors='replace') as _fh:
-            for line in _fh:
-                try: o = json.loads(line)
-                except Exception: continue
-                if o.get('type') != 'USER_INPUT': continue
-                c = o.get('content', '')
-                if not isinstance(c, str) or not c.strip(): continue
-                c = re.sub(r'^<USER_REQUEST>\s*', '', c).strip()
-                c = re.sub(r'</USER_REQUEST>.*$', '', c, flags=re.S).strip()
-                n += write(out, 'antigravity', d2s(o.get('created_at', '')), cid[:8], cid, clean(c))
+    roots = ('antigravity', 'antigravity-cli')
+    for root in roots:
+        for tf in glob.glob(os.path.join(H, '.gemini', root, 'brain', '*', '.system_generated', 'logs', 'transcript.jsonl')):
+            f += 1
+            cid = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(tf))))
+            with open(tf, encoding='utf-8', errors='replace') as _fh:
+                for line in _fh:
+                    try: o = json.loads(line)
+                    except Exception: continue
+                    if o.get('type') != 'USER_INPUT': continue
+                    c = o.get('content', '')
+                    if not isinstance(c, str) or not c.strip(): continue
+                    c = re.sub(r'^<USER_REQUEST>\s*', '', c).strip()
+                    c = re.sub(r'</USER_REQUEST>.*$', '', c, flags=re.S).strip()
+                    n += write(out, 'antigravity', d2s(o.get('created_at', '')), cid[:8], cid, clean(c))
     rec('antigravity', n, f)
 
 def ex_catpaw(out):

@@ -37,8 +37,9 @@ AGENT_PATTERNS = {
         'kind': 'jsonl', 'how': 'datalog 目录',
     },
     'antigravity': {
-        'patterns': ['.gemini/antigravity/brain/*/.system_generated/logs/transcript.jsonl'],
-        'kind': 'jsonl', 'how': 'brain transcript（conversations/*.db 是 protobuf，不用）',
+        'patterns': ['.gemini/antigravity/brain/*/.system_generated/logs/transcript.jsonl',
+                     '.gemini/antigravity-cli/brain/*/.system_generated/logs/transcript.jsonl'],
+        'kind': 'jsonl', 'how': 'brain transcript（IDE + CLI 两棵树；conversations/*.db 是 protobuf，不用）',
     },
     'zcode': {
         'patterns': ['.zcode/cli/db/db.sqlite'],
