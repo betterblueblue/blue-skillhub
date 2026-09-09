@@ -161,10 +161,7 @@ h2 + p:not(.band):not(.timeline-intro) {
 .badge-done { background: color-mix(in srgb, #2e8540 18%, transparent); color: #2e8540; }
 .badge-drop { background: color-mix(in srgb, var(--muted) 20%, transparent); color: var(--muted); }
 .line-hook { margin-top: 18px; padding: 14px 18px; border-left: 3px solid var(--accent); background: var(--soft); border-radius: 4px; font-family: var(--font-display); font-size: 16px; line-height: 1.7; color: var(--ink); }
-.copy-respond { margin-top: 14px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 1px; color: var(--accent); background: none; border: 1px solid var(--accent); border-radius: 6px; padding: 6px 14px; cursor: pointer; }
-.copy-respond:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.copy-respond.copied { color: #2e8540; border-color: #2e8540; }
-.copy-hint { display: block; margin-top: 8px; font-size: 12px; color: var(--muted); }
+.respond-hint { display: block; margin-top: 8px; font-size: 12px; color: var(--muted); }
 
 /* 引文块：灵魂组件 */
 .quote { border-left: 3px solid var(--accent); padding: 4px 0 4px 18px; margin: 22px 0; }
@@ -406,28 +403,5 @@ ol li::before { content: counter(wm-ol); left: 0; font-family: var(--font-mono);
   <div class="colophon">言镜 · 数据只存在你自己的电脑上</div>
   </main>
 </div>
-<script>
-document.addEventListener('click', function (e) {
-  var b = e.target.closest ? e.target.closest('.copy-respond') : null;
-  if (!b) return;
-  var txt = b.getAttribute('data-copy') || '';
-  if (!txt) return;
-  function done() {
-    var old = b.textContent;
-    b.textContent = '已复制';
-    b.classList.add('copied');
-    setTimeout(function () { b.textContent = old; b.classList.remove('copied'); }, 1800);
-  }
-  function fallback() {
-    var ta = document.createElement('textarea');
-    ta.value = txt; document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); done(); } catch (err) {}
-    document.body.removeChild(ta);
-  }
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(txt).then(done, fallback);
-  } else { fallback(); }
-});
-</script>
 </body>
 </html>

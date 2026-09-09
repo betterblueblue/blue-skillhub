@@ -57,9 +57,8 @@ def _page_gist(kind):
 def _page_respond(kind):
     _, respond = PAGE_FRAMES[kind]
     return ('<div class="band page-respond"><strong>现在你想怎么处理</strong><p>%s</p>'
-            '<button class="copy-respond" type="button" data-copy="%s">复制这句</button>'
-            '<span class="copy-hint">回到 AI 对话里粘贴，它会按规则记下。</span></div>'
-            % (inline(respond), H.escape(respond)))
+            '<span class="respond-hint">直接对当前这个 AI 说就行，不用复制到别处。</span></div>'
+            % inline(respond))
 
 
 def page(title, eyebrow, body, home='index.html', frame=None):
