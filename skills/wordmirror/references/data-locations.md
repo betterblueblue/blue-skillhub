@@ -37,6 +37,7 @@ profile/portrait.md    # 我是谁（初始化生成，见 init-protocol.md）
 profile/habits.md      # 跟我干活的规矩（同上）
 profile/current-context.md # 当前情境（给 Agent 的轻量状态）
 profile/corrections.jsonl  # 用户确认过的 Agent 纠正记录
+profile/note.md            # 首页"给现在的你"短笺（每期一件事）
 ```
 
 一个都没有 → 数据不存在或还没提取过：读 `references/ingest-protocol.md`，先跑 ingest。

@@ -363,6 +363,19 @@ def build_wrapped():
             page('这几个月 · 言镜', '按时间回看', '\n'.join(body), frame='wrapped'))
 
 
+def _note_card():
+    """首页"给现在的你"：Agent 蒸馏写 note.md，只一件事、证据带日期、不诊断。"""
+    p = os.path.join(wm.DATA, 'profile', 'note.md')
+    inner = ''
+    if os.path.exists(p):
+        md = open(p, encoding='utf-8', errors='replace').read().strip()
+        if md:
+            inner = render_markdown(md)
+    if not inner:
+        inner = '<p>这期还没想说的——等你再多聊几句，AI 会把值得停下来看的那一件事放在这里。</p>'
+    return ['<div class="note-card"><div class="note-head">给现在的你</div>' + inner + '</div>']
+
+
 def build_index():
     ag_p = os.path.join(wm.DATA, 'stats_agents.json')
     ag = {}
@@ -391,6 +404,8 @@ def build_index():
             '<div class="facing-col"><div class="facing-label">回望 · 给你自己</div>'
             '<p style="margin-top:12px;">把你说给 AI 的话重新放回时间和关系里：重新遇见某个阶段的自己、看见两句话之间的联系、'
             '捡回一件曾经认真想过的事。<br><a href="06_这几个月.html">翻开 06 这几个月 →</a></p></div></div>']
+
+    body.extend(_note_card())
 
     body.append('<div class="stats">'
                 '<div class="stat"><div class="n">%s</div><div class="note">条原话，都是你说给 AI 的</div></div>'

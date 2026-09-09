@@ -23,7 +23,7 @@
 1. 首次跑的时间和你话量成正比（话多约几分钟）；以后只补新的，快。
 2. 每步看脚本输出：会打印产物条数；条数比上次暴跌（>30%）要怀疑提取器坏了，别闷头往下跑。
 3. **portrait.md / habits.md 不自动重写**——更新后按 `references/distill-report-protocol.md` 重新整理。
-4. **报告页（那几条线/你没看见的/AI眼里的你/这几个月）不自动写**——按 `references/distill-report-protocol.md` 由你读语料写 MD；旧版 decisions/recurs/tasks/agents/ai-view 已并入六页结构，其 MD 以「-历史」保留，不再更新。
+4. **报告页（那几条线/你没看见的/AI眼里的你/这几个月）不自动写**——按 `references/distill-report-protocol.md` 由你读语料写 MD；旧版 decisions/recurs/tasks/agents/ai-view 已并入六页结构，其 MD 以「-历史」保留，不再更新。**首页 `note.md` 也随这次更新重写**（同协议，只一件事、证据带日期、不诊断）。
 5. **照见候选不自动定稿**——按 `references/mirror-protocol.md` 筛一遍写 `insights.jsonl`；挂着的旧账每次更新复核，过时的归档。
 6. 更新完跑 `python scripts/self_check.py` 自检，全绿才算完。
 7. 探测不到某 agent 是正常（报告"没找到，跳过"）；新 agent 改 `scripts/detect_agents.py` 的表。

@@ -232,6 +232,14 @@ if os.path.exists(os.path.join(DATA, 'profile', 'portrait.md')) or has_corpus:
 else:
     check('当前情境就位', None, '还没数据，跳过')
 
+# 首页回望信 note.md：数据就位后应有；空态允许（可能这期没想说的）
+note_p = os.path.join(DATA, 'profile', 'note.md')
+if os.path.exists(os.path.join(DATA, 'profile', 'portrait.md')) or has_corpus:
+    check('首页回望信就位', True if os.path.exists(note_p) else None,
+          'note.md 在' if os.path.exists(note_p) else '缺 note.md——按 distill-report-protocol.md 写，或留空态')
+else:
+    check('首页回望信就位', None, '还没数据，跳过')
+
 # ===== 15. 产物引文可追溯性（报告「原话」（日期）须能在语料反查）=====
 if not os.path.exists(os.path.join(DATA, 'corpus_dedup.jsonl')):
     check('产物引文可追溯', None, '还没 ingest（语料不存在），跳过')

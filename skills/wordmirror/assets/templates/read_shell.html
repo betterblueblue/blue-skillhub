@@ -135,9 +135,16 @@ h2 + p:not(.band):not(.timeline-intro) {
   border-radius: 14px; padding: 24px 26px; margin: 18px 0;
   box-shadow: var(--shadow-card);
 }
-.band {
-  background: var(--soft); border-radius: 14px; padding: 22px 26px; margin: 18px 0;
+.note-card {
+  background: var(--soft); border: 1px solid var(--line); border-left: 4px solid var(--accent);
+  border-radius: 14px; padding: 28px 32px; margin: 42px 0 48px;
 }
+.note-head {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 1.8px;
+  color: var(--accent); margin-bottom: 16px;
+}
+.note-card p { max-width: 720px; font-family: var(--font-display); font-size: 18px; line-height: 1.85; margin: 0 0 12px; }
+.note-card p:last-child { margin-bottom: 0; }
 .page-gist strong, .page-respond strong { display: block; font-family: var(--font-mono); font-size: 12px; letter-spacing: 1.5px; margin-bottom: 8px; }
 .page-gist { border-left: 3px solid var(--accent); }
 .page-gist p { margin: 0; font-family: var(--font-display); font-size: 18px; line-height: 1.7; color: var(--ink); }
