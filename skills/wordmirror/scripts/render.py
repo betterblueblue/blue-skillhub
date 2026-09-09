@@ -56,7 +56,10 @@ def _page_gist(kind):
 
 def _page_respond(kind):
     _, respond = PAGE_FRAMES[kind]
-    return '<div class="band page-respond"><strong>现在你想怎么处理</strong><p>%s</p></div>' % inline(respond)
+    return ('<div class="band page-respond"><strong>现在你想怎么处理</strong><p>%s</p>'
+            '<button class="copy-respond" type="button" data-copy="%s">复制这句</button>'
+            '<span class="copy-hint">回到 AI 对话里粘贴，它会按规则记下。</span></div>'
+            % (inline(respond), H.escape(respond)))
 
 
 def page(title, eyebrow, body, home='index.html', frame=None):
@@ -149,6 +152,10 @@ def render_markdown(md):
                 i += 1
             out.append('</ul>')
             continue
+        elif re.match(r'^「.+」（\d{4}-\d{2}-\d{2}）$', ln.strip()):
+            mq = re.match(r'^「(.+)」（(\d{4}-\d{2}-\d{2})）$', ln.strip())
+            out.append('<div class="quote"><span class="q-eyebrow">%s · 你当时这样说</span><span class="q-text">「%s」</span></div>'
+                       % (H.escape(mq.group(2)), H.escape(mq.group(1))))
         elif ln.strip():
             out.append('<p>%s</p>' % inline(ln))
         i += 1
@@ -242,23 +249,36 @@ def build_portrait():
             page('你是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s' % (tag, date), '\n'.join(body), frame='portrait'))
 
 
+def _status_badge(title):
+    """从线标题里抽状态（·还在走 / ·已经收线 / ·没了下文），拆成小徽章。"""
+    m = re.search(r'^(.*?)[·\s]*(还在走|已经收线|没了下文)$', title)
+    if not m:
+        return title, ''
+    cls = {'还在走': 'badge-live', '已经收线': 'badge-done', '没了下文': 'badge-drop'}[m.group(2)]
+    return m.group(1).strip(), '<span class="badge %s">%s</span>' % (cls, m.group(2))
+
+
 def _timeline_section(section):
     """普通阶段渲染：原话是锚点，叙述是回望。"""
     lines = section.splitlines()
     if not lines:
         return ''
     title = lines[0].strip()[4:] if lines[0].startswith('### ') else (lines[0].strip()[3:] if lines[0].startswith('## ') else '')
-    text, quotes = [], []
+    title, badge = _status_badge(title)
+    text, quotes, hook = [], [], ''
     for line in lines[1:]:
         line = line.strip()
         if not line or line.startswith('<!--'):
             continue
         got, line = _extract_quotes(line)
         quotes.extend((q, d) for d, q, s in got)
+        if '现在的问题是' in line:
+            hook = line.strip(' -—')
+            continue
         line = line.strip(' -—')
         if line:
             text.append(line[2:] if line.startswith('- ') else line)
-    out = ['<article class="timeline-chapter">', '<div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % inline(title)]
+    out = ['<article class="timeline-chapter">', '<div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s %s</h2></div>' % (inline(title), badge)]
     if quotes:
         quote, date = quotes[0]
         out.append('<div class="quote timeline-quote"><span class="q-eyebrow">%s · 你当时这样说</span><span class="q-text">「%s」</span></div>' % (H.escape(date), H.escape(quote)))
@@ -266,25 +286,31 @@ def _timeline_section(section):
         out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in text))
     for quote, date in quotes[1:]:
         out.append('<div class="timeline-echo"><span class="mono">%s</span><span>「%s」</span></div>' % (H.escape(date), H.escape(quote)))
+    if hook:
+        out.append('<div class="line-hook">%s</div>' % inline(hook))
     out.append('</article>')
     return '\n'.join(out)
 
 
 def _timeline_special(section, title, kind):
     lines = section.splitlines()[1:]
-    quotes, events, prose = [], [], []
+    quotes, events, prose, hook = [], [], [], ''
     for raw in lines:
         line = raw.strip()
         if not line or line.startswith('<!--'):
             continue
         got, line = _extract_quotes(line)
         quotes.extend((d, q) for d, q, s in got)
+        if '现在的问题是' in line:
+            hook = line.strip(' -—')
+            continue
         em = re.match(r'^-\s+(\d{4}-\d{2}-\d{2})\s+(.+)$', line)
         if em:
             events.append(em.groups()); continue
         line = line.strip(' -—')
         if line: prose.append(line[2:] if line.startswith('- ') else line)
-    out = ['<article class="timeline-chapter timeline-%s">' % kind, '<div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % inline(title)]
+    title, badge = _status_badge(title)
+    out = ['<article class="timeline-chapter timeline-%s">' % kind, '<div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s %s</h2></div>' % (inline(title), badge)]
     if kind == 'facing' and len(quotes) >= 2:
         if '以前的我' in title or '以前的你' in title:
             labels = ('以前的你', '后来的你')
@@ -303,6 +329,8 @@ def _timeline_special(section, title, kind):
         out.append('<div class="follow">%s</div>' % ''.join('<div class="follow-node"><span class="mono">%s</span><span>%s</span></div>' % (H.escape(d), inline(t)) for d, t in events))
     if prose:
         out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in prose))
+    if hook:
+        out.append('<div class="line-hook">%s</div>' % inline(hook))
     out.append('</article>')
     return '\n'.join(out)
 
@@ -797,12 +825,13 @@ def _promise_card(o, status_label):
     except (TypeError, ValueError):
         age = None
     age_text = '%d 天' % age if age is not None else '日期不明'
+    badge_cls = {'open': 'badge-live', 'closed': 'badge-done', 'dropped': 'badge-drop'}.get(o.get('status'), '')
     return ('<article class="promise-card">'
-            '<div class="promise-card-head"><span class="mono">%s</span><span class="promise-status">%s</span></div>'
+            '<div class="promise-card-head"><span class="mono">%s</span><span class="promise-status badge %s">%s</span></div>'
             '<div class="promise-text">「%s」</div>'
             '<div class="promise-meta">%s · %s%s</div>'
             '</article>'
-            % (H.escape(date), H.escape(status_label), H.escape(o.get('text', '')),
+            % (H.escape(date), H.escape(badge_cls), H.escape(status_label), H.escape(o.get('text', '')),
                H.escape(age_text), H.escape(o.get('_ledger', '')),
                (' · 收线于 %s' % H.escape(end)) if o.get('closed_date') else ''))
 
