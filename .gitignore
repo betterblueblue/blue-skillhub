@@ -43,3 +43,6 @@ change-impact/
 blue-interview-log/
 HANDOFF.md
 docs/archive/*.txt
+
+# === WorkBuddy 工作区数据（含个人偏好与本地任务日志，含隐私，绝不入库）===
+.workbuddy/
