@@ -47,7 +47,7 @@ AGENT_PATTERNS = {
     },
     'grok': {
         'patterns': ['.grok/logs/unified.jsonl'],
-        'kind': 'none', 'how': '只有运行日志无对话正文——找到了也不采',
+        'kind': 'jsonl', 'how': '只采 shell 输入的 prompt_text，不采完整对话',
     },
     'cursor': {
         'patterns': ['AppData/Roaming/Cursor/User/globalStorage/state.vscdb',

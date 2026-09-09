@@ -86,7 +86,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 
 1. 先读 `references/ingest-protocol.md`，按 8 步逐步调用脚本：探测 → 提取用户话 → 提取 AI 回复 → 去重 → 会话卡 → 统计 → 素材/照见候选 → 渲染。每一步看到产物和条数后再进入下一步；不要把所有脚本串成用户需要记住的一条命令。
 2. 读取更新后的 `corpus_dedup.jsonl`、`ai_messages.jsonl`、`stats_*.json` 和 `materials_*.json`。统计与候选只是素材，不是报告成文。
-3. 由你实际抽读原话、筛掉误报，更新 `data/profile/portrait.md`、`habits.md` 以及报告 MD；按 `references/distill-report-protocol.md` 写六页（lines / noticed / ai-eyes / timeline，并入 portrait），原话带日期，数字退后，没有证据就留白；顺带复核 insights 旧账，过时的归档。
+3. 由你实际抽读原话、筛掉误报，按 `references/distill-report-protocol.md` 更新六页源：01 `portrait.md`、02 `lines.md`、03 两层 `promises.jsonl` 账本、04 `noticed.md` 和 `insights.jsonl`、05 `ai-eyes.md`、06 `timeline.md`；`habits.md` 也按需更新。原话带日期，数字退后，没有证据就留白；顺带复核 insights 旧账，过时的归档。
 4. 用 `python scripts/wm.py promise ...` 补录用户明确说过要做的事，用 `wm.py wb ...` 写回用户当次确认的事实；不要手写 JSONL。照见按 `references/mirror-protocol.md` 筛选和定稿。
 5. 最后由你调用 `python scripts/render.py all` 刷新 HTML，再调用 `python scripts/self_check.py`；把实际结果告诉用户。
 
@@ -121,7 +121,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 1. 引用用户原话必须带日期；编他没说过的一次都不行——引文只从搜出来的原话里取，不从记忆里默写
 2. 用户数据只在自己电脑用，不进任何外部请求——除非他当次明确说"可以"（见 `references/privacy-rules.md`）
 3. 数据目录怎么找：见 `references/data-locations.md`（按机器定位，不写死路径）
-4. **加载或初始化收尾，必须亮一次家底**：一句话告诉他这 skill 还能出月度报告、说过要做的事的网页、随身说明书。不超过一句，他说不用就停
+4. **加载或初始化收尾，必须亮一次家底**：一句话告诉他这 skill 还能出六页回望、说过要做的事的网页、随身说明书。不超过一句，他说不用就停
 5. **记账 / 写回只走命令**（`promise` / `wb`），不手写文件——格式和坏行拦截在命令里
 6. **不评判、不定性、不诊断**：不贴性格标签（"你拖延""你逃避"）、不推断动机、不诊断情绪或心理状态，也不输出"我注意到你最近……"式的价值判断。你的情况和说过要做的事是给 AI 干活用的背景，不是拿来回敬你的；他要复盘时只摆事实和数据，不下诊断
 7. **可以主动说破「事实落差」，但要守四条**：①只点事实——说 vs 做不一致、同一件事反复提起没下文、前后说法相反、口头禅频率突变，不碰动机和性格；②每条带日期和原话，用户问"凭什么"时能当场反查证据；③用问句收尾、给台阶，结论权归用户；④他说"别说了"立刻停，纠正过的下次不再重复点。说破要少而准：开场最多一条，只点最有把握的，其余闭嘴。详见 `references/mirror-protocol.md`
@@ -130,7 +130,7 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 
 用户不知道这 skill 能出什么，不引导他永远不知道：
 - 首次认识完他，收尾带一句家底（硬规则 4）
-- 刚整理完 portrait / habits、月底月初、或他聊到"这个月干了啥"，各补一句对应的（月度报告 / 说过要做的事的网页 / 随身说明书），不超过一句，他说不用就闭嘴
+- 刚整理完 portrait / habits、月底月初、或他聊到"这个月干了啥"，各补一句对应的（六页回望 / 说过要做的事的网页 / 随身说明书），不超过一句，他说不用就闭嘴
 - 画像或报告有一段时间没更新、用户说起近况或完成某件事时，主动带一句"这些能更新进报告，想更新就说『更新我的报告』"，不超过一句
 - 照见也可在月底月初 / 用户聊到"这个月干了啥"时带一句，同样不超过一句
 - 出了任何网页产物，告诉他文件在哪、双击就能看

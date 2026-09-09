@@ -9,7 +9,7 @@ SOP 第 3 步的机器部分：把散落在语料/欠账/写回里的"事实落�
   flip       前后说法并排：同一 topic 最早/最新相隔 >30 天（是否矛盾交给 AI）
   word_drift 词频漂移：最近两个有数据的月，本月>=10 且本月/上月>=2 的词
 
-（"反复提没下文"不在这里产——它归 references/distill-report-protocol.md 的 recurs.md，由 AI 读语料自己归纳）
+（"反复提没下文"不在这里产——它归 references/distill-report-protocol.md 的 noticed.md（04 页），由 AI 读语料自己归纳）
 
 容错：语料不存在/为空 → 打印一句正常退出，不 crash；promises 缺失 → 只跳过对应类型。
 

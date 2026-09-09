@@ -65,6 +65,24 @@ for f in scan_files:
             hits.append('%s -> %s' % (f, k))
 check('旧命名残留', not hits, '; '.join(hits[:5]) if hits else '扫描 %d 个文件零残留' % len(scan_files))
 
+# ===== 1b. 旧六页前身文件名残留（九页→六页迁移后，防止 recurs/decisions/tasks/ai-view 再被当作现行源引用）=====
+OLD6_FILES = ['recurs.md', 'decisions.md', 'tasks.md', 'ai-view.md']
+ALLOW_HIST = ('旧版', '历史', '参考用', '-历史', '前身', '已并入')  # 这些语境是说明旧结构，不算现行引用
+hits6 = []
+for f in scan_files:
+    if 'A1_' in f or f.replace(chr(92), '/').endswith('scripts/self_check.py'):
+        continue  # 不对自指的检查词表自曝做扫描
+    try:
+        t = open(f, encoding='utf-8', errors='replace').read()
+    except Exception:
+        continue
+    for k in OLD6_FILES:
+        for ln in t.splitlines():
+            if k in ln and not any(c in ln for c in ALLOW_HIST):
+                hits6.append('%s -> %s' % (f, k))
+                break
+check('旧六页前身残留', not hits6, '; '.join(sorted(set(hits6))[:5]) if hits6 else '无 recurs/decisions/tasks/ai-view 被引为现行源')
+
 # ===== 2. 关键文件存在 =====
 missing_core = [f for f in ['SKILL.md', 'README.md', 'scripts/wm.py', 'scripts/render.py',
                              'scripts/vecsearch.py', 'scripts/extract_all.py', 'scripts/extract_ai.py',
@@ -196,6 +214,15 @@ for need in [os.path.join(DATA, 'profile/portrait.md'), os.path.join(DATA, 'prof
         check('用户画像就位(%s)' % name, None, '还没 ingest（数据不存在），跳过')
     else:
         check('用户画像就位(%s)' % name, False, '数据在但 %s 缺失——走 references/init-protocol.md 整理' % name)
+
+# 六页报告源文件（数据在时须齐全；缺页就是蒸馏没写全，向导引协议）
+SIX_PAGE_MD = ['lines.md', 'noticed.md', 'ai-eyes.md', 'timeline.md']
+if os.path.exists(os.path.join(DATA, 'profile', 'portrait.md')) or has_corpus:
+    missing_sp = [f for f in SIX_PAGE_MD if not os.path.exists(os.path.join(DATA, 'profile', f))]
+    check('六页报告源就位', not missing_sp,
+          '六页源齐全' if not missing_sp else '缺: ' + ','.join(missing_sp) + '——按 references/distill-report-protocol.md 补写')
+else:
+    check('六页报告源就位', None, '还没数据（portrait/corpus 都不在），跳过')
 
 # ===== 15. 产物引文可追溯性（报告「原话」（日期）须能在语料反查）=====
 if not os.path.exists(os.path.join(DATA, 'corpus_dedup.jsonl')):

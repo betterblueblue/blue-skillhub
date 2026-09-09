@@ -48,11 +48,11 @@ Agent 负责：读原话、筛选候选、判断哪些内容有价值、归并�
 
 | 输入 | 用途 | 主要产物 |
 |---|---|---|
-| `corpus_dedup.jsonl` 用户原话 | 行为、决定、转折、承诺、口头禅证据 | portrait / habits / decisions / recurs / tasks / timeline / promises / insights |
-| `ai_messages.jsonl` AI 原话 | AI 对用户的观察 | ai-view / agents |
+| `corpus_dedup.jsonl` 用户原话 | 行为、决定、转折、承诺、口头禅证据 | portrait / habits / lines / noticed / timeline / promises / insights |
+| `ai_messages.jsonl` AI 原话 | AI 对用户的观察 | ai-eyes |
 | `stats_wordfreq.json` 词频 | 高频词（通用词表计数，非口头禅） | habits 词表 |
-| `stats_agents.json` 分工具 | 各 AI 用量、top 项目 | agents / habits 的 AI 表 |
-| `materials_decisions/insights/monthly/projects.json` 候选人 | 只当线索，不直接上页，需 Agent 回查核实 | decisions / insights / timeline / recurs |
+| `stats_agents.json` 分工具 | 各 AI 用量、top 项目 | ai-eyes / habits 的 AI 表 |
+| `materials_decisions/insights/monthly/projects.json` 候选人 | 只当线索，不直接上页，需 Agent 回查核实 | lines / noticed / insights / timeline |
 
 **有料还是凑数（贯穿所有产物）**
 
