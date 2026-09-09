@@ -23,6 +23,8 @@
 
 - `portrait.md` —— 按 `references/portrait-template.md` 的结构
 - `habits.md` —— 按 `references/habits-template.md` 的结构
+- `current-context.md` —— 按 `references/current-context-protocol.md` 写当前主线和阶段；没有可靠状态就写暂无
+- `corrections.jsonl` —— 初始可以为空；只有用户确认过的 Agent 纠正才写入
 - 四页报告 MD：`lines.md`、`noticed.md`、`ai-eyes.md`、`timeline.md`（结构见 `references/distill-report-protocol.md`）
 
 整理方法：读 `data/stats_*.json` 和 `data/materials_*.json` 只当线索，再抽读 `corpus_dedup.jsonl` / `ai_messages.jsonl` 核实。**说人话规则**：用户的词优先，禁用发明术语；每条判断要有原话+日期支撑；没有料就留白，不能把统计或候选直接上页。**每个产物的具体写法见 `references/distill-prompts.md` 第二部分的对应提示词。**

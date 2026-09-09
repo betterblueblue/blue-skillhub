@@ -224,6 +224,14 @@ if os.path.exists(os.path.join(DATA, 'profile', 'portrait.md')) or has_corpus:
 else:
     check('六页报告源就位', None, '还没数据（portrait/corpus 都不在），跳过')
 
+# 当前情境是 Agent 的运行时记忆；数据就位后应有，纠正账本允许为空
+context_p = os.path.join(DATA, 'profile', 'current-context.md')
+if os.path.exists(os.path.join(DATA, 'profile', 'portrait.md')) or has_corpus:
+    check('当前情境就位', True if os.path.exists(context_p) else None,
+          'current-context.md 在' if os.path.exists(context_p) else '缺 current-context.md——按 references/current-context-protocol.md 整理')
+else:
+    check('当前情境就位', None, '还没数据，跳过')
+
 # ===== 15. 产物引文可追溯性（报告「原话」（日期）须能在语料反查）=====
 if not os.path.exists(os.path.join(DATA, 'corpus_dedup.jsonl')):
     check('产物引文可追溯', None, '还没 ingest（语料不存在），跳过')

@@ -22,7 +22,7 @@
 **硬门槛：写回和欠账记账一律跑命令，禁止直接编辑 jsonl 文件。** 命令保证格式永远正确、坏账本永远进不了写入路径（手写没有这个保证——模型换个宿主就可能写出坏行）。命令不可用（找不到脚本/Python）才允许按下面格式手写，且写完跑 `wm.py promise` 验证能读出来。
 
 ```bash
-python <skill目录>/scripts/wm.py wb add "事实内容" --topic 主题 --ref "用户原话" [--agent 工具名]
+python <skill目录>/scripts/wm.py wb add "事实内容" --topic 主题 --ref "用户原话" [--agent 工具名] [--kind decision --reason 理由 --revisit 重开条件 --status active]
 # 欠账本见下节：promise add / promise done
 ```
 
@@ -52,6 +52,27 @@ python <skill目录>/scripts/wm.py wb add "事实内容" --topic 主题 --ref "�
 - 回响守 `mirror-protocol.md` 的硬规则：只点事实、带日期原话、问句、用户说停即停、纠正过不再重复。
 
 > 这条只给偏好/决定类；随口情绪和普通事实不用回响。回响要少而准，多了就吵。
+
+## 决定类写回
+
+用户确认的是决定或偏好时，除事实本身外，能确认就写 `--kind decision --reason "当时为什么这样定" --revisit "什么情况可以重开" --status active`。这些字段都是可选的，旧记录没有也照常读取；不要替用户补理由。
+
+```bash
+python <skill目录>/scripts/wm.py wb add "先不迁移 X" --topic 主题 --kind decision --reason "迁移收益暂时不足" --revisit "性能或维护条件变化时重开" --status active
+```
+
+之后重新撞到相关方向时，先说当时的理由，再问条件是否变了；不要把旧决定当成永久禁令。
+
+## 纠正记录
+
+用户指出 Agent 的行为或判断错了，且明确确认要记住时，才运行：
+
+```bash
+python <skill目录>/scripts/wm.py corr add "把候选直接当成结论" --rule "候选必须先回查原话" --ref "用户当次纠正" --agent 当前工具名
+python <skill目录>/scripts/wm.py corr list
+```
+
+纠正记录只给后续相关场景作自检依据，不自动写进报告或 HTML；同一纠正不要重复登记。
 
 ## 承诺记账（说要做的事）
 

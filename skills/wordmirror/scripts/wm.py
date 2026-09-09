@@ -7,8 +7,10 @@
 记账 / 写回（只走命令，保证格式对、坏行拦得住）：
     python wm.py promise           看说过要做的事
     python wm.py promise add 要做的事 / promise done 关键词 / promise drop 关键词
-    python wm.py wb add "事实" --topic 主题 [--agent 工具名]   记下一条确认过的事
+    python wm.py wb add "事实" --topic 主题 [--agent 工具名] [--kind decision --reason 理由 --revisit 重开条件]  记下一条确认过的事
     python wm.py wb list           看记下的事
+    python wm.py corr add "纠正内容" --rule 以后怎么做   记一条确认过的 Agent 纠正
+    python wm.py corr list         看纠正记录
 
 按意思搜（向量，AI 现场算不了）：
     python wm.py vec build [--update] / vec query "问题" / vec status
@@ -76,7 +78,7 @@ def cmd_bind(args):
 
 def cmd_wb(args):
     if not args or args[0] not in ('add', 'list'):
-        print('用法：python wm.py wb add "事实内容" --topic 主题 [--ref 依据] [--agent 工具名]')
+        print('用法：python wm.py wb add "事实内容" --topic 主题 [--ref 依据] [--agent 工具名] [--kind decision --reason 理由 --revisit 重开条件]')
         print('      python wm.py wb list           # 看已写回的事实')
         return
     wb_p = os.path.join(DATA, 'user_writebacks.jsonl')
@@ -100,6 +102,7 @@ def cmd_wb(args):
         return
     # add：解析 --topic/--ref/--agent 选项，其余为内容
     text, topic, ref, agent = [], 'general', '', 'cli'
+    kind, reason, revisit, status = '', '', '', ''
     i = 1
     while i < len(args):
         if args[i] == '--topic' and i + 1 < len(args):
@@ -108,6 +111,14 @@ def cmd_wb(args):
             ref = args[i + 1]; i += 2
         elif args[i] == '--agent' and i + 1 < len(args):
             agent = args[i + 1]; i += 2
+        elif args[i] == '--kind' and i + 1 < len(args):
+            kind = args[i + 1]; i += 2
+        elif args[i] == '--reason' and i + 1 < len(args):
+            reason = args[i + 1]; i += 2
+        elif args[i] == '--revisit' and i + 1 < len(args):
+            revisit = args[i + 1]; i += 2
+        elif args[i] == '--status' and i + 1 < len(args):
+            status = args[i + 1]; i += 2
         else:
             text.append(args[i]); i += 1
     msg = ' '.join(text).strip()
@@ -127,10 +138,66 @@ def cmd_wb(args):
                     sys.exit(1)
     row = {'date': datetime.date.today().isoformat(), 'source': agent,
            'topic': topic, 'msg': msg, 'ref': ref or '用户当次确认'}
+    if kind:
+        row['kind'] = kind
+    if reason:
+        row['reason'] = reason
+    if revisit:
+        row['revisit_when'] = revisit
+    if status:
+        row['status'] = status
     with open(wb_p, 'a', encoding='utf-8') as f:
         f.write(json.dumps(row, ensure_ascii=False) + '\n')
     print('记下了：%s（%s）' % (msg, wb_p))
 
+
+
+# ===== 纠正记录（用户确认后，记住以后别再犯） =====
+def cmd_corr(args):
+    if not args or args[0] not in ('add', 'list'):
+        print('用法：python wm.py corr add "纠正内容" --rule "以后怎么做" [--ref 依据] [--agent 工具名]')
+        print('      python wm.py corr list')
+        return
+    p = os.path.join(DATA, 'profile', 'corrections.jsonl')
+    if args[0] == 'list':
+        if not os.path.exists(p):
+            print('还没有纠正记录。')
+            return
+        for line in open(p, encoding='utf-8'):
+            try:
+                row = json.loads(line)
+            except Exception:
+                continue
+            print('  %s | %s' % (row.get('date', '?'), row.get('rule', row.get('correction', ''))))
+        return
+    text, rule, ref, agent = [], '', '', 'cli'
+    i = 1
+    while i < len(args):
+        if args[i] == '--rule' and i + 1 < len(args):
+            rule = args[i + 1]; i += 2
+        elif args[i] == '--ref' and i + 1 < len(args):
+            ref = args[i + 1]; i += 2
+        elif args[i] == '--agent' and i + 1 < len(args):
+            agent = args[i + 1]; i += 2
+        else:
+            text.append(args[i]); i += 1
+    correction = ' '.join(text).strip()
+    if not correction or not rule:
+        print('纠正内容和 --rule 不能为空。')
+        sys.exit(1)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    if os.path.exists(p):
+        for n, line in enumerate(open(p, encoding='utf-8'), 1):
+            if line.strip():
+                try: json.loads(line)
+                except Exception:
+                    print('纠正记录 %s 第 %d 行不是合法 JSON。先修复，不静默改账。' % (p, n))
+                    sys.exit(1)
+    row = {'date': datetime.date.today().isoformat(), 'agent': agent,
+           'correction': correction, 'rule': rule, 'ref': ref or '用户当次确认'}
+    with open(p, 'a', encoding='utf-8') as f:
+        f.write(json.dumps(row, ensure_ascii=False) + '\n')
+    print('记下了这条纠正：%s（%s）' % (rule, p))
 
 
 # ===== 欠账本（说要做的事，两层：项目 + 全局）=====
@@ -319,6 +386,8 @@ def main():
         cmd_vec(sys.argv[2:])
     elif cmd == 'wb':
         cmd_wb(sys.argv[2:])
+    elif cmd == 'corr':
+        cmd_corr(sys.argv[2:])
     else:
         print('不认识的命令：%s' % cmd)
         print(__doc__)
