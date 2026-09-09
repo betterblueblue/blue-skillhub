@@ -548,8 +548,29 @@ AGENT_NAMES = {
 }
 
 
+def _agent_fields(prose):
+    """把工具卡说明拆成字段；空字段不占页面。"""
+    fields = []
+    labels = {'主要干': '主要用来', '怎么跟你说话': '在这里怎么说话', '代表原话': '代表原话', '原话': '代表原话'}
+    for text in prose:
+        parts = re.split(r'(?=(?:主要干|怎么跟你说话|代表原话|原话)[:：])', text)
+        for part in parts:
+            part = part.strip(' -—：:')
+            if not part:
+                continue
+            m = re.match(r'^(主要干|怎么跟你说话|代表原话|原话)[:：]\s*(.*)$', part)
+            if not m:
+                fields.append(('', part))
+                continue
+            value = m.group(2).strip()
+            if not value or value in ('。', '.'):
+                continue
+            fields.append((labels[m.group(1)], value))
+    return fields
+
+
 def _parse_agent_section(section):
-    """解析各工具章节：## 大标题 + ### 子标题分组；子块内收集引文和承接文字。"""
+    """解析各工具章节：###/加粗工具头都能分组；空字段不渲染。"""
     lines = section.splitlines()
     title = lines[0][3:].strip() if lines and lines[0].startswith('## ') else ''
     blocks = []
@@ -559,20 +580,31 @@ def _parse_agent_section(section):
         blocks.append(b)
         return b
 
-    cur = new_block()
+    cur = None
     for raw in lines[1:]:
         line = raw.strip()
         if not line or line.startswith('<!--'):
             continue
         if line.startswith('### '):
+            if line[4:].strip() == '在这里，你是什么样':
+                continue
             cur = new_block()
             cur['head'] = line[4:].strip()
             continue
+        if line.startswith('**') and line.endswith('**') and line.count('**') >= 2:
+            cur = new_block()
+            cur['head'] = line[2:-2].strip()
+            continue
+        if cur is None:
+            cur = new_block()
         got, line = _extract_quotes(line)
         cur['quotes'].extend(got)
         line = line.strip(' -—：:')
-        if line:
-            cur['prose'].append(line[2:] if line.startswith('- ') else line)
+        if not line or re.fullmatch(r'(?:代表原话|原话|主要干|怎么跟你说话)[:：]?。?', line):
+            continue
+        if re.match(r'^(?:代表原话|原话)[:：]\s*[。.]?$', line):
+            continue
+        cur['prose'].append(line[2:] if line.startswith('- ') else line)
     return title, blocks
 
 
@@ -633,12 +665,15 @@ def render_lines(md):
 
 
 def _tool_taglines(md):
-    """从 ai-eyes.md 工具卡的「### 工具名：一句人话」提取 名称 → 一行画像，给排行条加层次。"""
+    """从工具卡头提取 名称 → 一行画像，给排行条加层次。"""
     out = {}
-    for m in re.finditer(r'^###\s+(.+)$', md, flags=re.MULTILINE):
-        name, _, tag = m.group(1).strip().partition('：')
-        if name.strip() and tag.strip():
-            out[name.strip().lower().replace('-', ' ')] = tag.strip()
+    for raw in md.splitlines():
+        line = raw.strip()
+        if line.startswith('**') and line.endswith('**'):
+            head = line[2:-2].strip()
+            name, sep, tag = head.partition('：')
+            if sep and name.strip() and tag.strip():
+                out[name.strip().lower().replace('-', ' ')] = tag.strip()
     return out
 
 
@@ -709,7 +744,8 @@ def build_ai_eyes():
 
 
 def render_ai_eyes(md):
-    """合并版式：带 ### 工具卡的小节走场景卡，其余按白话栏目走 AI 观察版式。"""
+    """合并版式：工具卡与 AI 观察栏目分开渲染，避免所有内容挤成一张卡。"""
+    md = re.sub(r'^### (?=(换了 AI|不同 AI 都看见|AI 这样看你|AI 也看错过|现在，AI 应该))', '## ', md, flags=re.MULTILINE)
     sections = re.split(r'(?=^## )', md, flags=re.MULTILINE)
     out = []
     for section in sections:
@@ -720,18 +756,27 @@ def render_ai_eyes(md):
             continue
         if '\n### ' in section:
             _, blocks = _parse_agent_section(section)
-            blocks = [b for b in blocks if b['head'] or b['quotes'] or b['prose']]
+            blocks = [b for b in blocks if b['head'] and (b['quotes'] or b['prose'])]
             out.append('<article class="agent-section agent-agents"><div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s</h2></div>' % inline(title))
             for b in blocks:
                 # 卡头拆成两半：工具名做徽章，冒号后面的一句人话做副题
                 head = b['head'] or title
                 name, _, tagline = head.partition('：')
                 label = ('<div class="agent-scene-label"><span class="agent-name">%s</span>'
-                         '<span class="agent-tagline">%s</span></div>' % (inline(name.strip()), inline(tagline.strip())))
+                         % inline(name.strip()))
+                if tagline.strip():
+                    label += '<span class="agent-tagline">%s</span>' % inline(tagline.strip())
+                label += '</div>'
+                fields = _agent_fields(b['prose'])
+                if not fields and not b['quotes']:
+                    continue
                 out.append('<div class="agent-scene">%s' % label)
-                if b['prose']:
-                    out.append('<div class="timeline-note">%s</div>' % ''.join('<p>%s</p>' % inline(t) for t in b['prose']))
-                out.extend(_agent_quote(*q) for q in b['quotes'])
+                for field, value in fields:
+                    if field:
+                        out.append('<div class="agent-field"><span class="agent-field-label">%s</span><span class="agent-field-value">%s</span></div>' % (inline(field), inline(value)))
+                    else:
+                        out.append('<div class="agent-field-value agent-field-plain">%s</div>' % inline(value))
+                out.extend(_agent_quote(d, q, name.strip()) for d, q, _ in b['quotes'])
                 out.append('</div>')
             out.append('</article>')
             continue
