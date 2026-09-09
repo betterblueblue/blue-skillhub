@@ -39,13 +39,35 @@ def load_json(p):
         return json.load(f)
 
 
-def page(title, eyebrow, body, home='index.html'):
+PAGE_FRAMES = {
+    'portrait': ('你现在站在哪里，以及接下来怎么跟你共事', '如果你的情况变了，可以对 AI 说：“更新我的当前情境”。'),
+    'lines': ('你手上的几条线，各自走到了哪里', '可以对 AI 说：“这条还在走”“已经收线”或“把这条划掉”。'),
+    'tracker': ('你说过要做的事，后来各自去了哪里', '可以对 AI 说：“这件事办完了”“改一下目标”或“先别提醒我”。'),
+    'insights': ('这一期真正值得你停下来想一下的事', '可以对 AI 说：“这条我认”“不对，其实是这样”或“以后别再提醒我”。'),
+    'ai_eyes': ('不同 AI 认识到的你，是不是同一个你', '可以对 AI 说：“这里说错了，其实是这样”。'),
+    'wrapped': ('你不是突然走到今天的', '可以对 AI 说：“更新这页”或“把这段加入我的当前情境”。'),
+}
+
+
+def _page_gist(kind):
+    gist, _ = PAGE_FRAMES[kind]
+    return '<div class="band page-gist"><strong>这一页想让你看见什么</strong><p>%s。</p></div>' % inline(gist)
+
+
+def _page_respond(kind):
+    _, respond = PAGE_FRAMES[kind]
+    return '<div class="band page-respond"><strong>现在你想怎么处理</strong><p>%s</p></div>' % inline(respond)
+
+
+def page(title, eyebrow, body, home='index.html', frame=None):
     """组装页面：开场的大标题和折射线自动进夜幕 hero，其余落回纸白阅读带。"""
     m = re.match(r'^(.*?</h1>)(\s*<div class="refract"></div>)?(.*)$', body, re.S)
     if m:
         hero, rest = m.group(1) + (m.group(2) or ''), m.group(3)
     else:
         hero, rest = '', body
+    if frame:
+        rest = _page_gist(frame) + rest + _page_respond(frame)
     return (SHELL.replace('__TITLE__', H.escape(title))
                  .replace('__HOME__', home)
                  .replace('__EYEBROW__', eyebrow)
@@ -206,7 +228,7 @@ def build_portrait():
                 '<div class="refract"></div>',
                 '<div class="band"><p>还没初始化——说一句「初始化 wordmirror」，AI 会先探测、提取、再整理出你的情况。</p></div>']
         return ('html/01_你是谁.html',
-                page('你是谁 · 言镜', '说明书', '\n'.join(body)))
+                page('你是谁 · 言镜', '说明书', '\n'.join(body), frame='portrait'))
     md = open(p, encoding='utf-8', errors='replace').read()
     ver = re.search(r'# (?:你|我)是谁（(v\d+) · (\d{4}-\d{2}-\d{2})）', md)
     tag, date = (ver.group(1), ver.group(2)) if ver else ('v1', '')
@@ -217,7 +239,7 @@ def build_portrait():
     idx = md.find('## 一句话')
     body.append(render_markdown(md[idx:] if idx != -1 else md))
     return ('html/01_你是谁.html',
-            page('你是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s' % (tag, date), '\n'.join(body)))
+            page('你是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s' % (tag, date), '\n'.join(body), frame='portrait'))
 
 
 def _timeline_section(section):
@@ -321,14 +343,14 @@ def build_wrapped():
                 '<div class="refract"></div>',
                 '<div class="band"><p>这页的内容还没整理出来——说一句「更新报告」，AI 会按 distill-report-protocol 写好。</p></div>']
         return ('html/06_这几个月.html',
-                page('这几个月 · 言镜', '按时间回看', '\n'.join(body)))
+                page('这几个月 · 言镜', '按时间回看', '\n'.join(body), frame='wrapped'))
     md = open(p, encoding='utf-8', errors='replace').read()
     body = ['<h1 class="display">走过的这几个月，<br>你是怎么过的</h1>',
             '<div class="refract"></div>',
             '<p class="timeline-intro">页首是这个月跟上个月的对账，往回一路走到开始的地方。没有给你下结论，只把那些转向、坚持和停下来的时刻重新摆出来。</p>',
             render_timeline(md)]
     return ('html/06_这几个月.html',
-            page('这几个月 · 言镜', '按时间回看', '\n'.join(body)))
+            page('这几个月 · 言镜', '按时间回看', '\n'.join(body), frame='wrapped'))
 
 
 def build_index():
@@ -434,7 +456,7 @@ def build_insights():
         body.append('<h2>已经说过的</h2>')
         body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in rest) + '</div>')
     return ('html/04_你没看见的.html',
-            page('你没看见的 · 言镜', '你没看见的', '\n'.join(body)))
+            page('你没看见的 · 言镜', '你没看见的', '\n'.join(body), frame='insights'))
 
 
 AGENT_NAMES = {
@@ -516,7 +538,7 @@ def build_lines():
             '<p class="timeline-intro">把你手上的事一条条摆开：怎么起的、哪里拐的、现在停在哪。状态只有三种，写在标题里。</p>',
             render_lines(md)]
     return ('html/02_那几条线.html',
-            page('那几条线 · 言镜', '按线看', '\n'.join(body)))
+            page('那几条线 · 言镜', '按线看', '\n'.join(body), frame='lines'))
 
 
 def render_lines(md):
@@ -607,7 +629,7 @@ def build_ai_eyes():
 
     body.append(render_ai_eyes(md))
     return ('html/05_AI眼里的你.html',
-            page('AI 眼里的你 · 言镜', 'AI 眼中的你', '\n'.join(body)))
+            page('AI 眼里的你 · 言镜', 'AI 眼中的你', '\n'.join(body), frame='ai_eyes'))
 
 
 def render_ai_eyes(md):
@@ -779,7 +801,7 @@ def build_tracker():
     if not rows:
         body.append('<div class="band"><p>还没记过要做的事。你明确说“我要做 X”时，AI 才会把它记下来。</p></div>')
     return ('html/03_说过要做的事.html',
-            page('说话算数 · 言镜', '说话算数', '\n'.join(body)))
+            page('说话算数 · 言镜', '说话算数', '\n'.join(body), frame='tracker'))
 
 
 # ---------- 入口 ----------
