@@ -66,13 +66,14 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 2. 命中的话按日期排，结论先行，引文带日期和当时的 agent
 3. **字面怎么都搜不到** → 调按意思搜（见下），前提是建过索引；没建就先问用户要不要建
 4. 用户问"前后说法变了吗" → 取这个话题最早、最近两条并排摆出来，**别替他判断哪个对**
+同一话题命中多条时，按 `references/query-protocol.md` 的"怎么回才有人味"：点出绕了几次、最早最近并排、一句问句收尾，别只列事实。
 查不到就直说查不到，绝不编。详见 `references/query-protocol.md`。
 
 ### 记事 / 写回
 用户亲口确认的事实才记："我决定了 X""这事完了/黄了""不是 22 万是 20 万"。你的推断、他随口的情绪、"我在想要不要"都**不记**。拿不准就问一句"这个要记吗"。
 - 说要做的事 → `python scripts/wm.py promise add "事"`；做完了 `promise done 关键词`，不做了 `promise drop 关键词`
 - 确认过的事实 → `python scripts/wm.py wb add "事实" --topic 主题 --ref 依据 --agent 当前工具名`
-**这两类写操作只走命令，不要自己手写 jsonl**——命令保证格式对、坏行拦得住。写完当场回一声"记下了：X"。详见 `references/writeback-protocol.md`。
+**这两类写操作只走命令，不要自己手写 jsonl**——命令保证格式对、坏行拦得住。写完当场回一声"记下了：X"。若是"以后别做 X / 决定用 Y"这类偏好或决定，告诉用户之后撞上时会提醒，并呼应 `writeback-protocol.md` 的"回响（记得）"。详见 `references/writeback-protocol.md`。
 
 ### 把情况分享给别的 AI
 用户说"把我的情况告诉这个 AI / 出一页能贴走的"：
