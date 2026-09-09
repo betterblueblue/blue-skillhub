@@ -247,7 +247,7 @@ def _timeline_section(section):
     lines = section.splitlines()
     if not lines:
         return ''
-    title = lines[0].strip()[3:] if lines[0].startswith('## ') else ''
+    title = lines[0].strip()[4:] if lines[0].startswith('### ') else (lines[0].strip()[3:] if lines[0].startswith('## ') else '')
     text, quotes = [], []
     for line in lines[1:]:
         line = line.strip()
@@ -313,12 +313,15 @@ def _quote_markup(date, quote):
 
 def render_timeline(md):
     """按阶段和白话栏目分派不同的回望版式。"""
-    sections = re.split(r'(?=^## )', md, flags=re.MULTILINE)
+    sections = re.split(r'(?=^### )', md, flags=re.MULTILINE)
     out = []
     for section in sections:
         if not section.strip():
             continue
-        title = section.splitlines()[0][3:].strip() if section.startswith('## ') else ''
+        if section.startswith('### '):
+            title = section.splitlines()[0][4:].strip()
+        else:
+            title = ''
         kind = None
         if '以前的我' in title or '以前的你' in title or '原来这两句话有关' in title:
             kind = 'facing'
@@ -330,7 +333,14 @@ def render_timeline(md):
             kind = 'setaside'
         elif '现在的我' in title or '现在的你' in title:
             kind = 'now'
-        out.append(_timeline_special(section, title, kind) if kind else _timeline_section(section))
+        if kind:
+            out.append(_timeline_special(section, title, kind))
+        elif title:
+            out.append(_timeline_section(section))
+        else:
+            body = '\n'.join(l for l in section.splitlines() if l.strip() and not l.startswith('## '))
+            if body.strip():
+                out.append('<p class="timeline-note">%s</p>' % inline(body))
     return '\n'.join(out)
 
 
@@ -543,16 +553,19 @@ def build_lines():
 
 def render_lines(md):
     """按线分节渲染；带「- 日期 事件」后续的小节走时间线版式，其余走阶段卡。"""
-    sections = re.split(r'(?=^## )', md, flags=re.MULTILINE)
+    sections = re.split(r'(?=^### )', md, flags=re.MULTILINE)
     out = []
     for section in sections:
         if not section.strip():
             continue
-        title = section.splitlines()[0][3:].strip() if section.startswith('## ') else ''
-        if not title:
-            continue
-        has_events = re.search(r'^-\s+\d{4}-\d{2}-\d{2}\s+', section, flags=re.MULTILINE)
-        out.append(_timeline_special(section, title, 'turning') if has_events else _timeline_section(section))
+        if section.startswith('### '):
+            title = section.splitlines()[0][4:].strip()
+            has_events = re.search(r'^-\s+\d{4}-\d{2}-\d{2}\s+', section, flags=re.MULTILINE)
+            out.append(_timeline_special(section, title, 'turning') if has_events else _timeline_section(section))
+        else:
+            body = '\n'.join(l for l in section.splitlines() if l.strip() and not l.startswith('## '))
+            if body.strip():
+                out.append('<p class="timeline-note">%s</p>' % inline(body))
     return '\n'.join(out)
 
 
