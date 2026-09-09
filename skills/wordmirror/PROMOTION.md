@@ -10,12 +10,12 @@
 
 ### 1. 配图组合建议（直接在 assets/promo/ 取图）
 * 第 1 图（封面）：`assets/promo/01_xhs_cover.jpg`（大字报：被自己和 AI 聊过的 10,000 句话破防了）
-* 第 2 图（真实对比）：`assets/promo/real_screens/02_跨AI对比_已打码.jpg`（11 个工具、12,404 条原话分布）
-* 第 3 图（决策回望）：`assets/promo/real_screens/03_决策回望_已打码.jpg`（重要决定后来去了哪里）
-* 第 4 图（反复纠结）：`assets/promo/real_screens/04_反复提的事_已打码.jpg`（是不是在问同一个问题）
+* 第 2 图（你是谁）：`assets/promo/real_screens/01_我是谁.jpg`（你现在在哪里，怎么跟你共事）
+* 第 3 图（那几条线）：`assets/promo/real_screens/02_那几条线.jpg`（手上的事怎么起、怎么拐、现在停在哪）
+* 第 4 图（AI 眼里的你）：`assets/promo/real_screens/05_AI眼里的你.jpg`（换了工具，你换没换说法）
 * 第 5 图（本地隐私）：`assets/promo/03_local_privacy_shield.jpg`（零第三方云端·本地优先架构图）
 
-> ⚠️ `real_screens/` 里的截屏取自**旧版 9 页结构**（决策回望 / 反复提的事等页已合并进现在的 6 页）。对外发布前请按新版 6 页重截，别拿旧图冒充现版本。
+> `real_screens/` 已更新为六页新版截图；截图基于本地报告生成，发布前仍应由你最终确认公开范围。
 
 ---
 
