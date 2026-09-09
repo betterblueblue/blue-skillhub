@@ -40,25 +40,17 @@ def load_json(p):
 
 
 PAGE_FRAMES = {
-    'portrait': ('你现在站在哪里，以及接下来怎么跟你共事', '如果你的情况变了，可以对 AI 说：“更新我的当前情境”。'),
-    'lines': ('你手上的几条线，各自走到了哪里', '可以对 AI 说：“这条还在走”“已经收线”或“把这条划掉”。'),
-    'tracker': ('你说过要做的事，后来各自去了哪里', '可以对 AI 说：“这件事办完了”“改一下目标”或“先别提醒我”。'),
-    'insights': ('这一期真正值得你停下来想一下的事', '可以对 AI 说：“这条我认”“不对，其实是这样”或“以后别再提醒我”。'),
-    'ai_eyes': ('不同 AI 认识到的你，是不是同一个你', '可以对 AI 说：“这里说错了，其实是这样”。'),
-    'wrapped': ('你不是突然走到今天的', '可以对 AI 说：“更新这页”或“把这段加入我的当前情境”。'),
+    'portrait': '你现在站在哪里，以及接下来怎么跟你共事',
+    'lines': '你手上的几条线，各自走到了哪里',
+    'tracker': '你说过要做的事，后来各自去了哪里',
+    'insights': '这一期真正值得你停下来想一下的事',
+    'ai_eyes': '不同 AI 认识到的你，是不是同一个你',
+    'wrapped': '你不是突然走到今天的',
 }
 
 
 def _page_gist(kind):
-    gist, _ = PAGE_FRAMES[kind]
-    return '<div class="band page-gist"><strong>这一页想让你看见什么</strong><p>%s。</p></div>' % inline(gist)
-
-
-def _page_respond(kind):
-    _, respond = PAGE_FRAMES[kind]
-    return ('<div class="band page-respond"><strong>现在你想怎么处理</strong><p>%s</p>'
-            '<span class="respond-hint">直接对当前这个 AI 说就行，不用复制到别处。</span></div>'
-            % inline(respond))
+    return '<div class="band page-gist"><strong>这一页想让你看见什么</strong><p>%s。</p></div>' % inline(PAGE_FRAMES[kind])
 
 
 def page(title, eyebrow, body, home='index.html', frame=None):
@@ -69,7 +61,7 @@ def page(title, eyebrow, body, home='index.html', frame=None):
     else:
         hero, rest = '', body
     if frame:
-        rest = _page_gist(frame) + rest + _page_respond(frame)
+        rest = _page_gist(frame) + rest
     return (SHELL.replace('__TITLE__', H.escape(title))
                  .replace('__HOME__', home)
                  .replace('__EYEBROW__', eyebrow)
