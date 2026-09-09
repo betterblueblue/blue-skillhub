@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """言镜生成网页：把 data 里的内容变成 HTML。样式在 ../assets/templates/，数据在数据目录。
 用法：
-    python render.py read            # 首页 + 01 你的情况 + 10 翻给你看
-    python render.py monthly [YYYY-MM]  # 月报（默认最近有数据的月份）
-    python render.py tracker         # 03 说过要做的事
-    python render.py all             # 全部
+    python render.py read            # 首页 + 六页（01 你是谁 / 02 那几条线 / 03 说话算数 / 04 你没看见的 / 05 AI 眼里的你 / 06 这几个月）
+    python render.py tracker         # 03 说过要做的事（单独出）
+    python render.py monthly         # 已废弃：月报并入 06 这几个月，只打印提示
+    python render.py all             # 全部（read + tracker）
 不依赖提取脚本（scripts/）——单装用户数据就位后同样能出（数据由 ingest 生成）。
 零联网，产物是双击就能打开的单个文件。
 """
@@ -205,7 +205,7 @@ def build_portrait():
         body = ['<h1 class="display">你是谁，<br>怎么跟你共事</h1>',
                 '<div class="refract"></div>',
                 '<div class="band"><p>还没初始化——说一句「初始化 wordmirror」，AI 会先探测、提取、再整理出你的情况。</p></div>']
-        return ('html/01_我是谁.html',
+        return ('html/01_你是谁.html',
                 page('你是谁 · 言镜', '说明书', '\n'.join(body)))
     md = open(p, encoding='utf-8', errors='replace').read()
     ver = re.search(r'# (?:你|我)是谁（(v\d+) · (\d{4}-\d{2}-\d{2})）', md)
@@ -216,7 +216,7 @@ def build_portrait():
         body.append('<div class="band"><p>%s</p></div>' % inline(src))
     idx = md.find('## 一句话')
     body.append(render_markdown(md[idx:] if idx != -1 else md))
-    return ('html/01_我是谁.html',
+    return ('html/01_你是谁.html',
             page('你是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s' % (tag, date), '\n'.join(body)))
 
 
@@ -355,7 +355,7 @@ def build_index():
             '<div class="facing-row" style="margin-top:30px;">'
             '<div class="facing-col"><div class="facing-label">说明书 · 给每个 AI</div>'
             '<p style="margin-top:12px;">装上之后，你开的每个新会话，AI 都是老熟人：开局就知道你是谁、在忙什么、怎么跟你说话；'
-            '查旧账引原话、带日期，查不到就直说。<br><a href="01_我是谁.html">翻开 01 你是谁 →</a></p></div>'
+            '查旧账引原话、带日期，查不到就直说。<br><a href="01_你是谁.html">翻开 01 你是谁 →</a></p></div>'
             '<div class="facing-col"><div class="facing-label">回望 · 给你自己</div>'
             '<p style="margin-top:12px;">把你说给 AI 的话重新放回时间和关系里：重新遇见某个阶段的自己、看见两句话之间的联系、'
             '捡回一件曾经认真想过的事。<br><a href="06_这几个月.html">翻开 06 这几个月 →</a></p></div></div>']
@@ -393,7 +393,7 @@ def build_index():
 
     body.append('<h2>翻开更多</h2>')
     cards = [
-        ('01', '你是谁', '你现在在哪、在忙什么、怎么跟你共事', '01_我是谁.html'),
+        ('01', '你是谁', '你现在在哪、在忙什么、怎么跟你共事', '01_你是谁.html'),
         ('02', '那几条线', '每条线怎么起的、哪里拐的、现在停在哪', '02_那几条线.html'),
         ('03', '说话算数', '说过要做的事，后来都怎么样了', '03_说过要做的事.html'),
         ('04', '你没看见的', '这期读出来的新发现，和挂着的有据反差', '04_你没看见的.html'),

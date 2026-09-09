@@ -15,7 +15,7 @@
   15 产物引文可追溯（check_quotes，警告项）
   16 承诺账本合法
   17 开工三句话 + 主动引导就位
-  18 浏览器四页加载（可选，--web 时跑）
+  18 浏览器全页加载（可选，--web 时跑）
   19 tracker 日期全格式
   20 skill 包 layers 零真实数据
 用法：
@@ -244,12 +244,13 @@ check('开工三句话就位', ok17 and ok17b,
       if ok17 and ok17b else
       'SKILL.md 缺开场检查/项目账本/主动引导硬规则，或 init-protocol 收尾没接引导')
 
-# ===== 18. 浏览器四页（--web）=====
+# ===== 18. 浏览器跑一遍全部页面（--web）=====
 if '--web' in sys.argv:
     try:
         from playwright.sync_api import sync_playwright
-        pages = ['index.html', '01_我是谁.html', '02_那几条线.html',
-                 '03_说过要做的事.html', '04_你没看见的.html', '06_这几个月.html']
+        pages = ['index.html', '01_你是谁.html', '02_那几条线.html',
+                 '03_说过要做的事.html', '04_你没看见的.html',
+                 '05_AI眼里的你.html', '06_这几个月.html']
         pages = [p for p in pages if os.path.exists(os.path.join(PROD, 'html/') + p)]
         errs = []
         with sync_playwright() as pw:
@@ -260,11 +261,11 @@ if '--web' in sys.argv:
                 pg.goto('file:///' + BASE.replace(BS, '/') + '/products/html/' + u)
                 pg.wait_for_timeout(400)
             b.close()
-        check('浏览器四页加载', not errs, '%d 页零JS错误' % len(pages) if not errs else str(errs[:2]))
+        check('浏览器全页加载', not errs, '%d 页零JS错误' % len(pages) if not errs else str(errs[:2]))
     except ImportError:
-        check('浏览器四页加载', None, 'playwright 未装，跳过')
+        check('浏览器全页加载', None, 'playwright 未装，跳过')
 else:
-    check('浏览器四页加载', None, '跳过（--web 开启）')
+    check('浏览器全页加载', None, '跳过（--web 开启）')
 
 # ===== 19. tracker 日期全格式（防跨年硬编码回归）=====
 tr_p = os.path.join(DATA, 'tracker_items.json')
