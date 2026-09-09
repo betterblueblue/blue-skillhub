@@ -227,6 +227,32 @@ def _portrait_src():
             % (d0, d1, len(ag), format(total, ','), parts))
 
 
+def _where_card():
+    """01 顶部"你现在站在哪里"：读 current-context.md，把当前主线/阶段/最近决定/最要紧事摆成一张状态卡。"""
+    p = os.path.join(wm.DATA, 'profile', 'current-context.md')
+    if not os.path.exists(p):
+        return ''
+    labels = {'当前主线': '在忙什么', '当前阶段': '阶段', '最近明确决定': '最近定下的',
+              '当前最要紧的事': '最要紧的', '当前更需要的支持': '现在更需要', '暂时不要': '暂时不做'}
+    rows = []
+    for line in open(p, encoding='utf-8', errors='replace'):
+        line = line.strip()
+        if not line.startswith('- '):
+            continue
+        kv = line[2:].split('：', 1)
+        if len(kv) != 2:
+            continue
+        key, val = kv[0].strip(), kv[1].strip()
+        if key == '更新于' or not val:
+            continue
+        rows.append('<div class="where-row"><span class="where-label">%s</span>'
+                    '<span class="where-val">%s</span></div>' % (H.escape(labels.get(key, key)), inline(val)))
+    if not rows:
+        return ''
+    return ('<div class="where-card"><div class="where-head">你现在站在哪里</div>'
+            + ''.join(rows) + '</div>')
+
+
 def build_portrait():
     p = os.path.join(wm.DATA, 'profile', 'portrait.md')
     if not os.path.exists(p):
@@ -243,6 +269,9 @@ def build_portrait():
     src = _portrait_src()
     if src:
         body.append('<div class="band"><p>%s</p></div>' % inline(src))
+    wh = _where_card()
+    if wh:
+        body.append(wh)
     idx = md.find('## 一句话')
     body.append(render_markdown(md[idx:] if idx != -1 else md))
     return ('html/01_你是谁.html',

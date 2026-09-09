@@ -145,6 +145,12 @@ h2 + p:not(.band):not(.timeline-intro) {
 }
 .note-card p { max-width: 720px; font-family: var(--font-display); font-size: 18px; line-height: 1.85; margin: 0 0 12px; }
 .note-card p:last-child { margin-bottom: 0; }
+.where-card { background: var(--soft); border: 1px solid var(--line); border-top: 4px solid var(--accent); border-radius: 14px; padding: 26px 30px; margin: 34px 0 46px; }
+.where-head { font-family: var(--font-mono); font-size: 12px; letter-spacing: 1.8px; color: var(--accent); margin-bottom: 16px; }
+.where-row { display: grid; grid-template-columns: 88px 1fr; gap: 14px; padding: 8px 0; border-top: 1px solid var(--line); }
+.where-row:first-of-type { border-top: none; }
+.where-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 1px; color: var(--muted); padding-top: 2px; }
+.where-val { font-family: var(--font-display); font-size: 16px; line-height: 1.75; color: var(--ink); }
 .page-gist strong, .page-respond strong { display: block; font-family: var(--font-mono); font-size: 12px; letter-spacing: 1.5px; margin-bottom: 8px; }
 .page-gist { border-left: 3px solid var(--accent); }
 .page-gist p { margin: 0; font-family: var(--font-display); font-size: 18px; line-height: 1.7; color: var(--ink); }
