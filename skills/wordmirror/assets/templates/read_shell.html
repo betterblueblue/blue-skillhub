@@ -151,7 +151,7 @@ h2 + p:not(.band):not(.timeline-intro) {
   color: var(--accent); display: block; margin-bottom: 6px;
 }
 .quote .q-text {
-  font-family: var(--font-display); font-size: 18px; line-height: 1.7; color: var(--ink);
+  font-family: var(--font-display); font-size: clamp(20px, 3vw, 28px); line-height: 1.7; color: var(--ink);
 }
 
 /* 大数字带（编辑式横条） */
@@ -164,7 +164,7 @@ h2 + p:not(.band):not(.timeline-intro) {
 .stat:first-child { border-left: none; }
 .stat .n {
   font-family: var(--font-display); font-weight: 700;
-  font-size: clamp(34px, 4.2vw, 52px); line-height: 1; color: var(--ink); letter-spacing: -1px;
+  font-size: clamp(26px, 3.4vw, 42px); line-height: 1; color: var(--body); letter-spacing: -1px;
 }
 .stat .note { margin-top: 12px; font-size: 13px; color: var(--muted); }
 
@@ -289,8 +289,8 @@ ol li::before { content: counter(wm-ol); left: 0; font-family: var(--font-mono);
   border-radius: 50%; background: var(--accent); color: transparent; flex: 0 0 auto;
   box-shadow: 0 0 0 5px var(--paper);
 }
-.timeline-quote { margin: 10px 0 24px; padding-left: 22px; }
-.timeline-quote .q-text { display: block; font-size: clamp(20px, 3vw, 28px); line-height: 1.65; }
+.timeline-quote { margin: 10px 0 26px; padding-left: 22px; }
+.timeline-quote .q-text { display: block; font-size: clamp(22px, 3.4vw, 30px); line-height: 1.6; }
 .timeline-note { max-width: 680px; font-size: 16px; line-height: 1.85; }
 .timeline-note p { margin-bottom: 10px; }
 .timeline-echo {
