@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """言镜生成网页：把 data 里的内容变成 HTML。样式在 ../assets/templates/，数据在数据目录。
-用法：
-    python render.py read            # 首页 + 六页（01 你是谁 / 02 那几条线 / 03 说话算数 / 04 你没看见的 / 05 AI 眼里的你 / 06 这几个月）
-    python render.py tracker         # 03 说过要做的事（单独出）
-    python render.py monthly         # 已废弃：月报并入 06 这几个月，只打印提示
-    python render.py all             # 全部（read + tracker）
+用法（v7 起为单页统一展示，锚点导航，无跨页跳转）：
+    python render.py read            # 统一单页（hero + 六节：01 你是谁 / 02 那几条线 / 03 说话算数 / 04 你没看见的 / 05 AI 眼里的你 / 06 这几个月）
+    python render.py tracker         # 已并入统一页 03 节，只打印提示
+    python render.py monthly         # 已废弃：月报并入统一页 06 节，只打印提示
+    python render.py all             # = read
 不依赖提取脚本（scripts/）——单装用户数据就位后同样能出（数据由 ingest 生成）。
 零联网，产物是双击就能打开的单个文件。
 """
-import os, sys, re, json, datetime, base64
+import os, sys, re, json, datetime
 import html as H
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -20,54 +20,44 @@ MON = os.path.join(wm.PRODUCTS, 'monthly')
 SHELL = open(os.path.join(TPL, 'read_shell.html'), encoding='utf-8').read()
 
 
-def _hero_img_css():
-    """hero 背景画：assets/templates/hero-dawn.jpg 存在就内嵌成 base64（产物仍是零外联单文件）。
-    没有画就返回 none，模板里的纯 CSS 晨景渐变兑底。"""
-    p = os.path.join(TPL, 'hero-dawn.jpg')
-    if not os.path.exists(p):
-        return 'none'
-    with open(p, 'rb') as f:
-        b = base64.b64encode(f.read()).decode('ascii')
-    return 'url("data:image/jpeg;base64,%s")' % b
-
-
-HERO_IMG = _hero_img_css()
-
-
 def load_json(p):
     with open(p, encoding='utf-8') as f:
         return json.load(f)
 
 
-PAGE_FRAMES = {
-    'portrait': '你现在站在哪里，以及接下来怎么跟你共事',
-    'lines': '你手上的几条线，各自走到了哪里',
-    'tracker': '你说过要做的事，后来各自去了哪里',
-    'insights': '这一期真正值得你停下来想一下的事',
-    'ai_eyes': '不同 AI 认识到的你，是不是同一个你',
-    'wrapped': '你不是突然走到今天的',
-}
-
-
-def _page_gist(kind):
-    return '<div class="band page-gist"><strong>这一页想让你看见什么</strong><p>%s。</p></div>' % inline(PAGE_FRAMES[kind])
-
-
-def page(title, eyebrow, body, home='index.html', frame=None):
-    """组装页面：开场的大标题和折射线自动进夜幕 hero，其余落回纸白阅读带。"""
-    m = re.match(r'^(.*?</h1>)(\s*<div class="refract"></div>)?(.*)$', body, re.S)
-    if m:
-        hero, rest = m.group(1) + (m.group(2) or ''), m.group(3)
-    else:
-        hero, rest = '', body
-    if frame:
-        rest = _page_gist(frame) + rest
+def render_unified(title, hero, body, rail, footnote=''):
+    """v7 组装：单页壳。占位符 __HERO__ / __BODY__ / __RAIL__ / __FOOTNOTE__。"""
     return (SHELL.replace('__TITLE__', H.escape(title))
-                 .replace('__HOME__', home)
-                 .replace('__EYEBROW__', eyebrow)
-                 .replace('__HERO_IMG__', HERO_IMG)
                  .replace('__HERO__', hero)
-                 .replace('__BODY__', rest))
+                 .replace('__BODY__', body)
+                 .replace('__RAIL__', rail)
+                 .replace('__FOOTNOTE__', H.escape(footnote)))
+
+
+def section(sid, eyebrow, title, sub, content):
+    """v7 节：眉标 + 节标题 + 一句副题 + 内容。奇偶节灰/白大色块交替（B 方案分区）。
+    content 缺失时由调用方给诚实空态。"""
+    idx = next(i for i, s in enumerate(SECTIONS) if s[0] == sid)
+    tone = 'tone-gray' if idx % 2 == 0 else 'tone-white'
+    head = ['<section id="%s" class="sec %s reveal">' % (sid, tone),
+            '<div class="sec-eyebrow">%s</div>' % H.escape(eyebrow),
+            '<h2>%s</h2>' % inline(title)]
+    if sub:
+        head.append('<p class="section-lead">%s</p>' % inline(sub))
+    head.append(content)
+    head.append('</section>')
+    return '\n'.join(head)
+
+
+# 六节的锚点/眉标/标题/副题（统一页导航和右栏索引与此严格对应）
+SECTIONS = [
+    ('sec-portrait',  '01 · 我是谁',    '你是谁，怎么跟你共事', '先把自己摆上台面：这份索引不是名片，而是此刻的你愿意怎样被记住、被调用。'),
+    ('sec-lines',     '02 · 那几条线',  '那几条线，各自走到了哪', '把手上的事一条条摆开：怎么起的、哪里拐的、现在停在哪。状态只有三种，写在标题里。'),
+    ('sec-promises',  '03 · 说话算数',  '说过要做的事，后来都去了哪里', '这里不替你打分，只把你亲口说过要做的事放回来，看它们后来停在哪里。'),
+    ('sec-insights',  '04 · 你没看见的', '这几件，你可能没看见', '上半是新发现，下半是有证据的反差账，只摆原话和日期，结论你自己下。'),
+    ('sec-ai-eyes',   '05 · AI 眼里的你', 'AI 眼里的你', '你在不同工具里的样子，和这些 AI 对你说过的话，都摆在这节。哪里说准了，你自己判断。'),
+    ('sec-wrapped',   '06 · 这几个月',  '走过的这几个月，你是怎么过的', '页首是这个月跟上个月的对账，往回一路走到开始的地方。没有给你下结论，只把转向、坚持和停下来的时刻重新摆出来。'),
+]
 
 
 def inline(s):
@@ -106,9 +96,9 @@ def render_markdown(md):
             i += 1
             continue
         if ln.startswith('## '):
-            out.append('<h2>%s</h2>' % inline(ln[3:]))
+            out.append('<h3>%s</h3>' % inline(ln[3:]))
         elif ln.startswith('### '):
-            out.append('<h3>%s</h3>' % inline(ln[4:]))
+            out.append('<h4>%s</h4>' % inline(ln[4:]))
         elif ln.startswith('> ') and not (ln.startswith('> 数据源') or ln.startswith('> 这些结论来自')):
             out.append('<p><strong>%s</strong></p>' % inline(ln[2:]))
         elif ln.startswith('|') and i + 1 < len(lines) and re.match(r'^\|[\s\-|]+\|$', lines[i + 1]):
@@ -245,28 +235,27 @@ def _where_card():
 
 
 def build_portrait():
+    """01 我是谁 → 统一页 sec-portrait 节。"""
+    sid, eyebrow, title, sub = SECTIONS[0]
     p = os.path.join(wm.DATA, 'profile', 'portrait.md')
     if not os.path.exists(p):
-        print('01 那页：你的情况还没整理出来，先生成空态页')
-        body = ['<h1 class="display">你是谁，<br>怎么跟你共事</h1>',
-                '<div class="refract"></div>',
-                '<div class="band"><p>还没初始化——说一句「初始化 wordmirror」，AI 会先探测、提取、再整理出你的情况。</p></div>']
-        return ('html/01_你是谁.html',
-                page('你是谁 · 言镜', '说明书', '\n'.join(body), frame='portrait'))
+        print('01 节：你的情况还没整理出来，先生成诚实空态')
+        content = '<div class="band"><p>还没初始化——说一句「初始化 wordmirror」，AI 会先探测、提取、再整理出你的情况。</p></div>'
+        return section(sid, eyebrow, title, sub, content)
     md = open(p, encoding='utf-8', errors='replace').read()
     ver = re.search(r'# (?:你|我)是谁（(v\d+) · (\d{4}-\d{2}-\d{2})）', md)
     tag, date = (ver.group(1), ver.group(2)) if ver else ('v1', '')
-    body = ['<h1 class="display">你是谁，<br>怎么跟你共事</h1>']
     src = _portrait_src()
+    content = ''
     if src:
-        body.append('<div class="band"><p>%s</p></div>' % inline(src))
+        content += '<div class="band"><p>%s</p></div>' % inline(src)
     wh = _where_card()
     if wh:
-        body.append(wh)
+        content += wh
     idx = md.find('## 一句话')
-    body.append(render_markdown(md[idx:] if idx != -1 else md))
-    return ('html/01_你是谁.html',
-            page('你是谁 · 言镜', '说明书 %s <span class="dot">·</span> %s' % (tag, date), '\n'.join(body), frame='portrait'))
+    content += render_markdown(md[idx:] if idx != -1 else md)
+    return section(sid, '%s · %s · %s' % (eyebrow, tag, date) if date else '%s · %s' % (eyebrow, tag),
+                   title, sub, content)
 
 
 def _status_badge(title):
@@ -393,22 +382,16 @@ def render_timeline(md):
 
 
 def build_wrapped():
-    """06 这几个月：页首本期对账，后面按阶段回看。原话是锚点，脚本只排版。"""
+    """06 这几个月 → 统一页 sec-wrapped 节。页首本期对账，后面按阶段回看。原话是锚点，脚本只排版。"""
+    sid, eyebrow, title, sub = SECTIONS[5]
     p = os.path.join(wm.DATA, 'profile', 'timeline.md')
     if not os.path.exists(p):
-        print('06 那页：这几个月怎么过的还没整理出来，先生成空态页')
-        body = ['<h1 class="display">走过的这几个月，<br>你是怎么过的</h1>',
-                '<div class="refract"></div>',
-                '<div class="band"><p>这页的内容还没整理出来——说一句「更新报告」，AI 会按 distill-report-protocol 写好。</p></div>']
-        return ('html/06_这几个月.html',
-                page('这几个月 · 言镜', '按时间回看', '\n'.join(body), frame='wrapped'))
+        print('06 节：这几个月怎么过的还没整理出来，先生成诚实空态')
+        content = '<div class="band"><p>这节的内容还没整理出来——说一句「更新报告」，AI 会按 distill-report-protocol 写好。</p></div>'
+        return section(sid, eyebrow, title, sub, content)
     md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">走过的这几个月，<br>你是怎么过的</h1>',
-            '<div class="refract"></div>',
-            '<p class="timeline-intro">页首是这个月跟上个月的对账，往回一路走到开始的地方。没有给你下结论，只把那些转向、坚持和停下来的时刻重新摆出来。</p>',
-            render_timeline(md)]
-    return ('html/06_这几个月.html',
-            page('这几个月 · 言镜', '按时间回看', '\n'.join(body), frame='wrapped'))
+    content = render_timeline(md)
+    return section(sid, eyebrow, title, sub, content)
 
 
 def _note_card():
@@ -424,7 +407,8 @@ def _note_card():
     return ['<div class="note-card"><div class="note-head">给现在的你</div>' + inner + '</div>']
 
 
-def build_index():
+def _unified_stats():
+    """hero 大数字带 + 右栏状态，全部来自真实数据，缺就给诚实空态。"""
     ag_p = os.path.join(wm.DATA, 'stats_agents.json')
     ag = {}
     if os.path.exists(ag_p):
@@ -437,99 +421,107 @@ def build_index():
 
     promises = _promises_all_layers()
     n_open = sum(1 for o in promises if o.get('status') == 'open')
+    n_done = sum(1 for o in promises if o.get('status') == 'closed')
 
     ins = [o for o in load_insights() if o.get('type') != 'recur']
     n_ins = sum(1 for o in ins if o.get('status') in ('active', None, ''))
 
-    body = ['<h1 class="display">让 AI 认识你，<br><span class="accent">也让你看见自己</span></h1>',
-            '<div class="refract"></div>',
-            '<p style="color:var(--muted);max-width:560px;">一个装进 agent skills 目录的技能包：你跟各个 AI 说过的每句话都留在这台电脑上，'
-            '由 AI 把它们变成两样东西：一份给 AI 看的说明书，一份给你自己看的回望。不联网、不收集，你的话是你的。</p>',
-            '<div class="facing-row" style="margin-top:30px;">'
-            '<div class="facing-col"><div class="facing-label">说明书 · 给每个 AI</div>'
-            '<p style="margin-top:12px;">装上之后，你开的每个新会话，AI 都是老熟人：开局就知道你是谁、在忙什么、怎么跟你说话；'
-            '查旧账引原话、带日期，查不到就直说。<br><a href="01_你是谁.html">翻开 01 你是谁 →</a></p></div>'
-            '<div class="facing-col"><div class="facing-label">回望 · 给你自己</div>'
-            '<p style="margin-top:12px;">把你说给 AI 的话重新放回时间和关系里：重新遇见某个阶段的自己、看见两句话之间的联系、'
-            '捡回一件曾经认真想过的事。<br><a href="06_这几个月.html">翻开 06 这几个月 →</a></p></div></div>']
-
-    body.extend(_note_card())
-
-    body.append('<div class="stats">'
-                '<div class="stat"><div class="n">%s</div><div class="note">条原话，都是你说给 AI 的</div></div>'
-                '<div class="stat"><div class="n">%d</div><div class="note">个 AI 工具，跟你聊过天</div></div>'
-                '<div class="stat"><div class="n">%d</div><div class="note">件欠着的事，一直没下文</div></div>'
-                '<div class="stat"><div class="n">%d</div><div class="note">件事，今天想提醒你</div></div>'
-                '</div>' % (format(total, ','), n_agents, n_open, n_ins))
-
-    body.append('<h2>今天想提醒你的几件事</h2>')
-    active = [o for o in ins if o.get('status') in ('active', None, '')][:3]
-    if active:
-        body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in active) + '</div>')
-    else:
-        body.append('<div class="band"><p>现在还没什么要提醒你的。等你说的话多了，这里会挑出你说了没做、前后矛盾的事。</p></div>')
-
-    body.append('<h2>这个月的你</h2>')
-    mm = {}
     months_p = os.path.join(wm.DATA, 'materials_monthly.json')
+    span = ''
+    mm = {}
     if os.path.exists(months_p):
         try:
             mm = load_json(months_p)
         except Exception:
             mm = {}
     if mm:
-        latest = sorted(mm)[-1]
-        m = mm[latest]
-        topics = ''.join('<span class="pill">%s</span>' % H.escape(t) for t, _ in m.get('top_topics', [])[:3])
-        body.append('<div class="band"><p><strong>%s</strong> 你说了 <strong>%s</strong> 条话，主要在忙：%s</p></div>'
-                    % (H.escape(latest), format(m.get('n', 0), ','), topics or '（还没什么主题）'))
-    else:
-        body.append('<div class="band"><p>这个月的数据还没出来，先跑 ingest。</p></div>')
+        span = '%s 起' % sorted(mm)[0]
 
-    body.append('<h2>翻开更多</h2>')
-    cards = [
-        ('01', '你是谁', '你现在在哪、在忙什么、怎么跟你共事', '01_你是谁.html'),
-        ('02', '那几条线', '每条线怎么起的、哪里拐的、现在停在哪', '02_那几条线.html'),
-        ('03', '说话算数', '说过要做的事，后来都怎么样了', '03_说过要做的事.html'),
-        ('04', '你没看见的', '这期读出来的新发现，和挂着的有据反差', '04_你没看见的.html'),
-        ('05', 'AI 眼里的你', '换了工具你换没换说法，AI 看错过你几次', '05_AI眼里的你.html'),
-        ('06', '这几个月', '本期对账，加从开始到现在的回看', '06_这几个月.html'),
+    cells = [
+        (format(total, ','), '段', '有效对话'),
+        (str(n_agents), '个', 'AI 工具聊过天'),
+        ('%d/%d' % (n_done, n_done + n_open) if (n_done + n_open) else '—', '', '承诺已落地'),
+        (str(n_ins), '条', '这期想提醒你'),
     ]
-    body.append('<div class="card-grid">')
-    for num, title, desc, href in cards:
-        body.append('<a class="nav-card" href="%s"><div class="idx">%s</div><h3>%s</h3><p>%s</p></a>'
-                    % (href, H.escape(num), H.escape(title), H.escape(desc)))
-    body.append('</div>')
+    band = ['<div class="stat-band">']
+    for v, unit, k in cells:
+        band.append('<div class="cell"><div class="v tnum">%s<small>%s</small></div><div class="k">%s</div></div>'
+                    % (v, unit, k))
+    band.append('</div>')
+    return ''.join(band), promises, ins, span
 
+
+def build_unified():
+    """v7 统一单页：hero（大标题 + 大数字带）+ 六节 + 右栏（当前状态 + 节索引）。"""
+    stat_band, promises, ins, span = _unified_stats()
+    n_open = sum(1 for o in promises if o.get('status') == 'open')
+    n_ins = sum(1 for o in ins if o.get('status') in ('active', None, ''))
+
+    hero = ['<h1>回到我说过的话。</h1>',
+            '<p class="hero-lede">这是我与 AI 交互的档案。它不是仪表盘，而是一册安静的自我索引：'
+            '我是谁，我在忙哪几条线，哪些话说了却没落地，AI 眼里的我，以及这几个月是怎样走到这里的。</p>',
+            stat_band]
+
+    main_col = []
+    note = _note_card()
+    if note:
+        main_col.extend(note)
+    for builder in (build_portrait, build_lines, build_tracker, build_insights, build_ai_eyes, build_wrapped):
+        main_col.append(builder())
+
+    # 右栏：当前状态（真实数据，无则诚实空态）+ 节索引
+    items = []
+    if n_open:
+        items.append(('<span class="mark" aria-hidden="true">○</span><div><div class="t">还没做完的事</div>'
+                      '<div class="d">%d 件开着，没下文</div></div>' % n_open))
+    if n_ins:
+        items.append(('<span class="mark" aria-hidden="true">✓</span><div><div class="t">这期想提醒你的</div>'
+                      '<div class="d">%d 条，见 04 节</div></div>' % n_ins))
+    if span:
+        items.append(('<span class="mark" aria-hidden="true">◷</span><div><div class="t">记录跨度</div>'
+                      '<div class="d">%s</div></div>' % H.escape(span)))
+    rail = ['<div class="panel"><div class="panel-head">当前状态<span class="live"><i aria-hidden="true"></i>进行中</span></div>']
+    if items:
+        rail.extend('<div class="status-item">%s</div>' % it for it in items)
+    else:
+        rail.append('<div class="status-item"><span class="mark" aria-hidden="true">○</span><div><div class="t">还没有数据</div>'
+                    '<div class="d">先跑一次 ingest，再回来回望</div></div></div>')
+    rail.append('</div>')
+    rail.append('<div class="panel"><div class="panel-head">本节索引</div><nav class="rail-nav" aria-label="档案章节">')
+    for sid, eyebrow, title, _ in SECTIONS:
+        num, _, label = eyebrow.partition(' · ')
+        rail.append('<a href="#%s"><span class="no tnum">%s</span>%s</a>' % (sid, H.escape(num), H.escape(label)))
+    rail.append('</nav></div>')
+    rail.append('<p class="rail-note">言镜 · 私人交互档案<br/>仅存档 · 不外传</p>')
+
+    footnote = '生成于 %s' % datetime.date.today().isoformat()
     return ('html/index.html',
-            page('言镜 · 首页', '你的说明书 <span class="dot">·</span> 你的回望', '\n'.join(body), home='index.html'))
+            render_unified('言镜 WordMirror · 私人 AI 交互档案',
+                           '\n'.join(hero), '\n'.join(main_col), '\n'.join(rail), footnote))
 
 
 def build_insights():
-    """04 你没看见的：上半页是这期 agent 读出来的新发现（noticed.md，硬指标落点），
-    下半页是有证据的反差账（insights.jsonl）。没有发现就诚实写没有，不凑数。"""
+    """04 你没看见的 → 统一页 sec-insights 节：新发现（noticed.md）+ 有据反差账（insights.jsonl）。
+    没有发现就诚实写没有，不凑数。"""
+    sid, eyebrow, title, sub = SECTIONS[3]
     ins = [o for o in load_insights() if o.get('type') != 'recur']
-    body = ['<h1 class="display">这几件，<br>你可能没看见</h1>',
-            '<div class="refract"></div>',
-            '<p class="timeline-intro">上半页是这期从你的话里读出来的新发现；下半页是有证据的反差账，只摆原话和日期，结论你自己下。</p>']
-    body.append('<h2>这期读出来的</h2>')
+    body = ['<h3>这期读出来的</h3>']
     np = os.path.join(wm.DATA, 'profile', 'noticed.md')
     if os.path.exists(np):
         body.append(render_markdown(open(np, encoding='utf-8', errors='replace').read()))
     else:
         body.append('<div class="band"><p>这期还没找到值得写的新发现——不凑数。每期至少要有一条你读完才知道的事，连续两期没有，就该修找的方法了。</p></div>')
     active = [o for o in ins if o.get('status') in ('active', None, '')]
-    body.append('<h2>挂着的事</h2>')
+    body.append('<h3>挂着的事</h3>')
     if not active:
         body.append('<div class="band"><p>现在没有挂着的事。等你说的话多了，这里会摆出你说了没做、前后相反、习惯突变的事。</p></div>')
     else:
         body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in active) + '</div>')
     rest = [o for o in ins if o not in active]
     if rest:
-        body.append('<h2>已经说过的</h2>')
+        body.append('<h3>已经说过的</h3>')
         body.append('<div class="insight-grid">' + ''.join(insight_card(o) for o in rest) + '</div>')
-    return ('html/04_你没看见的.html',
-            page('你没看见的 · 言镜', '你没看见的', '\n'.join(body), frame='insights'))
+    return section(sid, eyebrow, title, sub, '\n'.join(body))
 
 
 AGENT_NAMES = {
@@ -612,38 +604,30 @@ def _agent_quote(date, quote, source=''):
     return '<div class="quote agent-quote"><span class="q-eyebrow">%s%s</span><span class="q-text">「%s」</span></div>' % (H.escape(date), (' · ' + H.escape(source)) if source else '', H.escape(quote))
 
 
-def _md_page(name, md_name, title, eyebrow, filename):
-    """读 data/profile/<md_name>.md 渲染成页。
+def _md_page(name, md_name, sec_index):
+    """读 data/profile/<md_name>.md 渲染成统一页的一节。
     判断类内容由 Agent 蒸馏写成 MD（见 references/distill-report-protocol.md），脚本只渲染，不下结论。
-    MD 没写好时生成一个空态页，告诉用户怎么补，不 404、也不拿脚本凑数。"""
+    MD 没写好时生成诚实空态节，告诉用户怎么补，不 404、也不拿脚本凑数。"""
+    sid, eyebrow, title, sub = SECTIONS[sec_index]
     p = os.path.join(wm.DATA, 'profile', md_name)
     if not os.path.exists(p):
-        print('%s：还没整理出来，先生成空态页（见 references/distill-report-protocol.md）' % name)
-        body = ['<h1 class="display">%s</h1>' % title,
-                '<div class="refract"></div>',
-                '<div class="band"><p>这页的内容还没整理出来——要 AI 读完你的聊天记录后写。'
-                '说一句「更新报告」，AI 就会按 references/distill-report-protocol.md 写好这页。</p></div>']
-        return (filename, page(title + ' · 言镜', eyebrow, '\n'.join(body)))
+        print('%s：还没整理出来，先生成诚实空态（见 references/distill-report-protocol.md）' % name)
+        content = ('<div class="band"><p>这节的内容还没整理出来——要 AI 读完你的聊天记录后写。'
+                   '说一句「更新报告」，AI 就会按 references/distill-report-protocol.md 写好这节。</p></div>')
+        return section(sid, eyebrow, title, sub, content)
     md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">%s</h1>' % title,
-            '<div class="refract"></div>',
-            render_markdown(md)]
-    return (filename, page(title + ' · 言镜', eyebrow, '\n'.join(body)))
+    return section(sid, eyebrow, title, sub, render_markdown(md))
 
 
 def build_lines():
-    """02 那几条线：每条线一节——怎么起的、哪里拐的、现在停在哪。
+    """02 那几条线 → 统一页 sec-lines 节：每条线一节——怎么起的、哪里拐的、现在停在哪。
     状态只有三种（还在走 / 已经收线 / 没了下文），写在小节标题里，不替用户解释。"""
+    sid, eyebrow, title, sub = SECTIONS[1]
     p = os.path.join(wm.DATA, 'profile', 'lines.md')
     if not os.path.exists(p):
-        return _md_page('02 那页', 'lines.md', '那几条线', '按线看', 'html/02_那几条线.html')
+        return _md_page('02 节', 'lines.md', 1)
     md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">那几条线，<br>各自走到了哪</h1>',
-            '<div class="refract"></div>',
-            '<p class="timeline-intro">把你手上的事一条条摆开：怎么起的、哪里拐的、现在停在哪。状态只有三种，写在标题里。</p>',
-            render_lines(md)]
-    return ('html/02_那几条线.html',
-            page('那几条线 · 言镜', '按线看', '\n'.join(body), frame='lines'))
+    return section(sid, eyebrow, title, sub, render_lines(md))
 
 
 def render_lines(md):
@@ -691,14 +675,13 @@ def _tagline_for(taglines, names):
 
 
 def build_ai_eyes():
-    """05 AI 眼里的你：分工具统计 + agent 写的合并观察（工具场景卡 + AI 怎么看你）。"""
+    """05 AI 眼里的你 → 统一页 sec-ai-eyes 节：分工具统计 + agent 写的合并观察（工具场景卡 + AI 怎么看你）。"""
+    sid, eyebrow, title, sub = SECTIONS[4]
     p = os.path.join(wm.DATA, 'profile', 'ai-eyes.md')
     if not os.path.exists(p):
-        return _md_page('05 那页', 'ai-eyes.md', 'AI 眼里的你', 'AI 眼中的你', 'html/05_AI眼里的你.html')
+        return _md_page('05 节', 'ai-eyes.md', 4)
     md = open(p, encoding='utf-8', errors='replace').read()
-    body = ['<h1 class="display">AI 眼里的你</h1>',
-            '<div class="refract"></div>',
-            '<p class="timeline-intro">你在不同工具里的样子，和这些 AI 对你说过的话，都摆在这页。哪里说准了，你自己判断。</p>']
+    body = []
 
     ag_p = os.path.join(wm.DATA, 'stats_agents.json')
     if os.path.exists(ag_p):
@@ -719,7 +702,7 @@ def build_ai_eyes():
                 f'<div class="stat"><div class="n" style="font-size:24px;">{H.escape(top_name)}</div><div class="note">你用得最多的那个</div></div>'
                 f'<div class="stat"><div class="n">{top_share}%</div><div class="note">第一名占了这么多</div></div>'
                 '</div>')
-            body.append('<h2>先从这里看</h2>')
+            body.append('<h3>先从这里看</h3>')
             taglines = _tool_taglines(md)
             for name, v in agents:
                 msgs = v.get('msgs', 0)
@@ -739,8 +722,7 @@ def build_ai_eyes():
                 body.append('</div>')
 
     body.append(render_ai_eyes(md))
-    return ('html/05_AI眼里的你.html',
-            page('AI 眼里的你 · 言镜', 'AI 眼中的你', '\n'.join(body), frame='ai_eyes'))
+    return section(sid, eyebrow, title, sub, '\n'.join(body))
 
 
 def render_ai_eyes(md):
@@ -902,28 +884,28 @@ def _promise_card(o, status_label):
 
 
 def build_tracker():
-    """03 说过要做的事：把清单改成“后来去了哪里”，不再计算说到做到率。"""
+    """03 说过要做的事 → 统一页 sec-promises 节：把清单改成"后来去了哪里"，不再计算说到做到率。"""
+    sid, eyebrow, title, sub = SECTIONS[2]
     rows = _promises_all_layers()
     open_rows = sorted((o for o in rows if o.get('status') == 'open'), key=lambda o: o.get('date', ''))
     done_rows = sorted((o for o in rows if o.get('status') == 'closed'), key=lambda o: o.get('closed_date', '') or o.get('date', ''), reverse=True)
     drop_rows = sorted((o for o in rows if o.get('status') == 'dropped'), key=lambda o: o.get('closed_date', '') or o.get('date', ''), reverse=True)
 
-    body = ['<h1 class="display">说过要做的事，<br>后来都去了哪里</h1>',
-            '<div class="refract"></div>',
-            '<p class="timeline-intro">这里不替你打分，只把你亲口说过要做的事放回来，看它们后来停在哪里。</p>']
+    body = []
     if open_rows:
-        body.append('<h2>还没做完</h2><p class="section-lead">账本里还开着的事。它们是“还没做完”，不是自动判定的失败。</p>')
+        body.append('<h3>还没做完</h3>')
+        body.append('<p class="section-lead">账本里还开着的事。它们是"还没做完"，不是自动判定的失败。</p>')
         body.append('<div class="promise-grid">%s</div>' % ''.join(_promise_card(o, '还没做完') for o in open_rows))
     if done_rows:
-        body.append('<h2>办完了</h2>')
+        body.append('<h3>办完了</h3>')
         body.append('<div class="promise-grid">%s</div>' % ''.join(_promise_card(o, '办完了') for o in done_rows))
     if drop_rows:
-        body.append('<h2>已经收线</h2><p class="section-lead">只有账本明确记为不做了的，才放在这里。</p>')
+        body.append('<h3>已经收线</h3>')
+        body.append('<p class="section-lead">只有账本明确记为不做了的，才放在这里。</p>')
         body.append('<div class="promise-grid">%s</div>' % ''.join(_promise_card(o, '已经收线') for o in drop_rows))
     if not rows:
-        body.append('<div class="band"><p>还没记过要做的事。你明确说“我要做 X”时，AI 才会把它记下来。</p></div>')
-    return ('html/03_说过要做的事.html',
-            page('说话算数 · 言镜', '说话算数', '\n'.join(body), frame='tracker'))
+        body.append('<div class="band"><p>还没记过要做的事。你明确说"我要做 X"时，AI 才会把它记下来。</p></div>')
+    return section(sid, eyebrow, title, sub, '\n'.join(body))
 
 
 # ---------- 入口 ----------
@@ -939,14 +921,11 @@ def write_out(rel, content):
 def main():
     cmd = sys.argv[1] if len(sys.argv) > 1 else 'all'
     month = sys.argv[2] if len(sys.argv) > 2 and re.match(r'\d{4}-\d{2}$', sys.argv[2]) else None
-    jobs = []
-    if cmd in ('read', 'all'):
-        jobs += [build_portrait(), build_lines(), build_insights(), build_ai_eyes(), build_wrapped(), build_index()]
-    if cmd in ('tracker', 'all'):
-        jobs.append(build_tracker())
-    # 月报已并入 06 这几个月（timeline.md 的「本期对账」一节），不再单独脚本生成
-    if cmd == 'monthly':
-        print('月报已并入 06 页（timeline.md），不再单独生成。')
+    if cmd in ('tracker', 'monthly'):
+        # v7：03 并入统一页 sec-promises 节、月报并入 sec-wrapped 节，命令保留只打提示
+        print('已并入统一单页（html/index.html）：%s 内容分别见 03 节 / 06 节。直接跑 python render.py all。' % cmd)
+        return
+    jobs = [build_unified()]
     for j in jobs:
         if j:
             write_out(*j)

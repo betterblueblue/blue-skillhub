@@ -14,7 +14,7 @@
 | 5 | `python scripts/build_session_cards.py` | 拼会话卡 | `data/sessions.jsonl` |
 | 6 | `python scripts/compute_stats.py` | 词频/长度/分 agent 特征 | `data/stats_*.json` |
 | 7 | `python scripts/distill_materials.py` 和 `distill_insights.py` | 挖素材 + 照见候选 | `data/materials_*.json` |
-| 8 | `python scripts/render.py all` | 出全六页 HTML | `products/html/` |
+| 8 | `python scripts/render.py all` | 出统一单页 HTML（六节合一，锚点导航） | `products/html/index.html` |
 
 > 数据根目录经环境变量 `WORD_MIRROR_HOME` 指定；脚本自己会找到 `~/.wordmirror` 或绑定位置（见 `data-locations.md`）。
 

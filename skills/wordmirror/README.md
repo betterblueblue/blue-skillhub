@@ -120,7 +120,7 @@ references/       协议 + 宪法（DESIGN.md）+ SOP + 生成模板（按需加
 assets/layers/    隐私层模板（出厂是空的）：真实的 public.md 和 redact_list.json 在数据目录 data/layers/，整理生成；清单本身含敏感词，绝不外传
 scripts/wm.py     命令行工具（记账/写回/绑定/向量检索；SKILL.md 才是 Agent 入口）
 scripts/render.py 网页生成：read（6 页报告）/ tracker（说过要做的事）/ all
-assets/templates/ 视觉规矩：DESIGN.md + read_shell.html（改样式只改这里）
+assets/templates/ 视觉规矩：VISUAL_DESIGN.md + read_shell.html（改样式只改这里）
 ```
 
 ## 诚实边界
