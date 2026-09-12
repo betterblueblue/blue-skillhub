@@ -23,7 +23,14 @@
 - 每条功能标证据:`【推断: 路由 /api/orders + OrderController → 订单管理,待验证具体子功能】`。
 - 不臆造没有证据的功能。
 
-### 【6】数据模型概览
+### 【4A】核心能力链路（业务形状，不是目录形状）
+
+核心功能不能只从“路由 + 入口 + 模型名”反推。先交叉查看入口、编排 Service、领域对象、输出/持久化和测试，再判断哪条链路是项目的核心能力。对识别出的核心能力，必须输出一条代表性业务主链路；允许在同一张图中展示内部并行通道、融合点、状态分支和部分成功/失败路径，不等于为每个接口逐一 trace。
+
+阶段表每行使用稳定 `stage_id`，至少覆盖：`entrypoints`、`inputs`、`outputs`、`persistence`、`external_contracts`、`tests`、`failure_states`、`evidence`。找不到时写“未发现”，不能用模块名或目录名代替。人类读者先看一句话链路和图，Agent/impact 使用阶段表切片。
+
+核心能力图与【11】的区别：核心能力图描述业务动作和数据流；【11】描述一条技术调用链。两者都必须保留。
+
 
 - 有 DB 只读访问 → 用 `listTables`/`describeTable` 或 SELECT INFORMATION_SCHEMA 发现表、主要列、关系,标【已核实】。
 - 无 DB 访问 → 只从代码(entity/model/migration/schema 文件)推断,标【推断】,**不声称行数/索引/外键**。

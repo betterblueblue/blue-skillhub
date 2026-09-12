@@ -17,7 +17,7 @@ Checks:
   V9: Map header commit hash matches git.json head_short (N-D)
   V10: Credibility tag density (min 5 tags, FAIL) + fix-suggestion keywords (WARN, N-E)
   V11: facts/map recorded HEAD still matches current on-disk HEAD
-
+  V12: Core capability chain section has stage table, stable IDs, and Mermaid graph
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass, 1 = fail (any FAIL item).
 
@@ -633,7 +633,34 @@ def check_commit_crosscheck(text: str, repo_root: str, refresh_mode: bool = Fals
     return errors, warnings
 
 
-# --- V11: Current Git HEAD freshness check ---
+# --- V12: Core capability chain structure ---
+
+RE_SECTION_4A_HEADER = re.compile(r"^##\s.*(?:【4A】|核心能力链路)", re.I)
+
+
+def check_core_capability_chain(text: str) -> list[str]:
+    """V12: Require the human/agent core capability chain contract."""
+    lines = text.splitlines()
+    start = next((i for i, line in enumerate(lines) if RE_SECTION_4A_HEADER.search(line)), None)
+    if start is None:
+        return ["V12: core capability chain section 【4A】 is missing"]
+
+    end = next((i for i in range(start + 1, len(lines)) if re.match(r"^##\s", lines[i])), len(lines))
+    body = "\n".join(lines[start:end])
+    errors = []
+    if "stage_id" not in body:
+        errors.append("V12: 【4A】 must contain a stage table with stable stage_id")
+    if not re.search(r"\|\s*S\d+\s*\|", body):
+        errors.append("V12: 【4A】 stage table must contain at least one stable stage row such as S1")
+    if "```mermaid" not in body:
+        errors.append("V12: 【4A】 must contain a Mermaid core capability graph")
+    required_markers = ("inputs", "outputs", "persistence", "tests", "failure_states", "evidence")
+    missing = [marker for marker in required_markers if marker not in body]
+    if missing:
+        errors.append("V12: 【4A】 stage contract missing fields: " + ", ".join(missing))
+    return errors
+
+
 
 def _run_git_head(repo_root: str) -> str | None:
     """Return current short HEAD, or None when git is unavailable/not a repo."""
@@ -855,6 +882,12 @@ def validate(text: str, repo_root: str, refresh_mode: bool = False) -> tuple[lis
     warnings.extend(v11_warnings)
     if not v11_errors and not v11_warnings:
         passes.append("V11: facts/map match current git HEAD or freshness check not needed")
+
+    # V12
+    v12_errors = check_core_capability_chain(text)
+    fails.extend(v12_errors)
+    if not v12_errors:
+        passes.append("V12: core capability chain structure present")
 
     return passes, fails, warnings
 

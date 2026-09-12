@@ -67,7 +67,17 @@ flowchart TD
 - 角色权限控制 — 证据:`【推断: README.md 提及"Role-based access control" + User 模型含 role 字段,但无权限中间件代码,待验证】`
 - 仪表盘分析 — 证据:`【推断: README.md 提及"Dashboard analytics",但无对应代码文件,待验证】`
 
-## 【5】关键入口
+## 【4A】核心能力链路（给人看懂，也给 Agent 定位）
+
+| stage_id | entrypoints | inputs | outputs | persistence | external_contracts | tests | failure_states | evidence |
+|---|---|---|---|---|---|---|---|---|
+| S1 | src/index.js | HTTP 请求 | JSON 响应 | 未发现 | HTTP API | 未发现 | 认证失败 | 【已核实: src/index.js】 |
+
+```mermaid
+flowchart LR
+    IN["HTTP 请求"] --> S1["S1 路由处理"]
+```
+
 
 | 类型 | 位置 | 可信度 |
 |------|------|------|

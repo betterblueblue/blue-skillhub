@@ -188,6 +188,19 @@ class TestPfValidate(unittest.TestCase):
             with open(os.path.join(facts_dir, "git.json"), "w") as f:
                 json.dump(_git_facts(repo_root), f)
         path = os.path.join(repo_root, "_project-map.md")
+        if "【4A】" not in content:
+            content = """## 【4A】核心能力链路
+
+| stage_id | entrypoints | inputs | outputs | persistence | external_contracts | tests | failure_states | evidence |
+|---|---|---|---|---|---|---|---|---|
+| S1 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 【推断: 待验证】 |
+
+```mermaid
+flowchart LR
+    IN["输入"] --> S1["S1 阶段"]
+```
+
+""" + content
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
         return path
@@ -351,7 +364,18 @@ class TestPfValidate(unittest.TestCase):
 | 引号 | 单引号 | test | 【已核实: test】 |
 """
             code, out, _ = _run_script(PF_VALIDATE, ["--stdin", "--repo-root", td],
-                                       stdin_data=map_content)
+                                       stdin_data="""## 【4A】核心能力链路
+
+| stage_id | entrypoints | inputs | outputs | persistence | external_contracts | tests | failure_states | evidence |
+|---|---|---|---|---|---|---|---|---|
+| S1 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 【推断: 待验证】 |
+
+```mermaid
+flowchart LR
+    IN[\"输入\"] --> S1[\"S1 阶段\"]
+```
+
+""" + map_content)
             self.assertEqual(code, 0, f"Stdin mode failed:\n{out}")
 
     def test_v6_facts_missing_fails(self):
