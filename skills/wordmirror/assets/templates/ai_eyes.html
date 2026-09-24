@@ -216,6 +216,7 @@ footer{position:relative;z-index:1;text-align:center;padding:40px 20px 70px;font
 
 <script>
 const D = /*__DATA__*/null;
+if (!D){ document.body.innerHTML = '<p style="font:14px sans-serif;color:#666;text-align:center;margin-top:40vh">这一页由 render.py 填数据生成，模板本身没有内容。</p>'; throw new Error('no data'); }
 const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;

@@ -105,8 +105,22 @@ else:
           '%d 链接零死链' % len(links) if not dead and not orphan else '死链:%s 孤儿:%s' % (dead, orphan))
 
 # ===== 4. 读页模板存在 =====
-tpl_ok = os.path.exists(os.path.join('assets', 'templates', 'read_shell.html'))
-check('读页模板存在', tpl_ok, 'read_shell.html 在' if tpl_ok else '缺 assets/templates/read_shell.html')
+missing_tpl = [f for f in ('read_shell.html', 'ai_eyes.html')
+               if not os.path.exists(os.path.join('assets', 'templates', f))]
+check('读页模板存在', not missing_tpl, '模板齐全' if not missing_tpl else '缺: ' + ', '.join(missing_tpl))
+
+# ===== 4b. 沉浸页产物：零外联 + 数据已注入 =====
+ae_p = os.path.join(PROD, 'html/ai-eyes.html')
+if not os.path.exists(ae_p):
+    check('沉浸页产物', None, '还没生成（render.py all 会随 index 一起出；语料为空时不出），跳过')
+else:
+    t = open(ae_p, encoding='utf-8').read()
+    ext = re.findall(r'(?:src|href)\s*=\s*"https?://|url\(\s*https?://|fetch\(|XMLHttpRequest|import\(', t)
+    filled = '/*__DATA__*/' not in t and 'const D = {' in t
+    secs = all('id="s-%s"' % s in t for s in ('mirror', 'phone', 'chat', 'wall'))
+    check('沉浸页产物', not ext and filled and secs,
+          '零外联、数据已注入、四区块齐' if not ext and filled and secs
+          else '外联:%s 数据未注入:%s 缺区块:%s' % (ext[:2] or '无', not filled, not secs))
 
 # ===== 5. skill 引用路径 =====
 sk = open('SKILL.md', encoding='utf-8').read()
@@ -291,7 +305,7 @@ check('开工三句话就位', ok17 and ok17b,
 if '--web' in sys.argv:
     try:
         from playwright.sync_api import sync_playwright
-        pages = ['index.html', '01_你是谁.html', '02_那几条线.html',
+        pages = ['index.html', 'ai-eyes.html', '01_你是谁.html', '02_那几条线.html',
                  '03_说过要做的事.html', '04_你没看见的.html',
                  '05_AI眼里的你.html', '06_这几个月.html']
         pages = [p for p in pages if os.path.exists(os.path.join(PROD, 'html/') + p)]

@@ -1,133 +1,16 @@
 # -*- coding: utf-8 -*-
-"""原型：「AI 眼里的你」四种形态（起雾镜 / 手机主屏 / 聊天窗 / 线索墙）。
-读本机数据，产物写到数据目录 products/prototype/，不进 git。
-用法：python _prototype/build_ai_eyes_proto.py
+"""「AI 眼里的你」开发壳：模板和数据组装都已并入生产（assets/templates/ai_eyes.html + render.py）。
+--demo 出假数据版（截图、视觉检查用，不含真实原话）；不带参数 = 走 render.py 出真实数据版。
+用法：python _prototype/build_ai_eyes_proto.py [--demo]
 """
-import os, sys, json, re, random, collections, datetime
+import os, sys, json, random, datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), 'scripts'))
-import _common as common
+import render
 
-DATA, PROD = common.DATA, common.PRODUCTS
-PROFILE = os.path.join(DATA, 'profile')
+TPL = os.path.join(os.path.dirname(HERE), 'assets', 'templates', 'ai_eyes.html')
 TODAY = datetime.date.today()
-AGENT_NAMES = {'claude-code': 'Claude Code', 'codex': 'Codex', 'catpaw': 'CatPaw', 'antigravity': 'Antigravity',
-               'zcode': 'zcode', 'dsh': 'DeepSeek', 'workbuddy': 'WorkBuddy', 'pi': 'Pi', 'qwen': 'Qwen'}
-
-
-def read(name):
-    p = os.path.join(PROFILE, name)
-    return open(p, encoding='utf-8', errors='replace').read() if os.path.exists(p) else ''
-
-
-def corpus():
-    rows = []
-    for l in open(os.path.join(DATA, 'corpus_dedup.jsonl'), encoding='utf-8'):
-        if l.strip():
-            o = json.loads(l)
-            o['msg'] = (o.get('msg') or '').strip()
-            if o['msg'] and valid(o.get('date')):
-                rows.append(o)
-    return rows
-
-
-def valid(d):
-    return bool(re.match(r'\d{4}-\d{2}-\d{2}$', str(d or '')))
-
-
-def catchphrases(rows, n=12):
-    """短句高频 = 口头禅；带首次/最近日期，点开可反查。"""
-    by = collections.defaultdict(list)
-    for o in rows:
-        m = o['msg']
-        if 2 <= len(m) <= 12 and not m.startswith(('/', '<', '[')):
-            by[m].append(o['date'])
-    top = sorted(by.items(), key=lambda kv: -len(kv[1]))[:n]
-    return [{'text': k, 'n': len(v), 'first': min(v), 'last': max(v)} for k, v in top]
-
-
-CODEISH = re.compile(r'[\\/{}<>`=]|https?:')
-ASK = re.compile(r'^(帮我|帮忙|先|跑|提交|推送|改|看看|看下|检查|修|写|加|删|部署|测|生成|整理|查|更新|优化|重构)')
-
-
-def hands(rows, n=14):
-    """镜子两肩：最常让 AI 干的活。原型用动词开头的短指令粗筛；正式版由 Agent 从 portrait.md「你总让 AI 干什么」取。"""
-    c = collections.Counter(o['msg'] for o in rows if 3 <= len(o['msg']) <= 16 and ASK.match(o['msg']) and not CODEISH.search(o['msg']))
-    return [{'text': t, 'n': k} for t, k in c.most_common(n)]
-
-
-def typical(items, median, k=3):
-    """聊天窗：长度最接近这个工具中位数的几句，气泡长短才代表平时的说话方式。"""
-    pool = [o for o in items if len(o['msg']) <= 80 and '\n' not in o['msg'] and not CODEISH.search(o['msg'])]
-    random.seed(11)
-    random.shuffle(pool)
-    pool.sort(key=lambda o: abs(len(o['msg']) - median))
-    out, seen = [], set()
-    for o in pool:
-        if o['msg'] not in seen:
-            seen.add(o['msg']); out.append({'t': o['msg'], 'd': o['date']})
-        if len(out) == k:
-            break
-    return sorted(out, key=lambda m: m['d'])
-
-
-def mirror_quotes(rows, n=900):
-    """镜中人像用的原话：短句、去掉代码和路径，高频的多放几次。"""
-    pool = [o for o in rows if 4 <= len(o['msg']) <= 26 and not CODEISH.search(o['msg'])]
-    random.seed(7)
-    pick = random.sample(pool, min(n, len(pool)))
-    return [{'t': o['msg'].replace('\n', ' '), 'd': o['date'], 'a': AGENT_NAMES.get(o['agent'], o['agent'])} for o in pick]
-
-
-def agent_mirrors(rows, ai_eyes):
-    titles = dict(re.findall(r'\*\*([\w\-]+)：([^*]+)\*\*', ai_eyes))
-    stats = collections.defaultdict(list)
-    for o in rows:
-        stats[o['agent']].append(o)
-    out = []
-    for ag, items in sorted(stats.items(), key=lambda kv: -len(kv[1]))[:6]:
-        lens = sorted(len(o['msg']) for o in items)
-        cp = catchphrases(items, 5)
-        longest = max((o for o in items if len(o['msg']) <= 60), key=lambda o: len(o['msg']))
-        med = lens[len(lens) // 2]
-        out.append({'agent': AGENT_NAMES.get(ag, ag), 'n': len(items), 'median': med,
-                    'title': titles.get(ag, ''), 'phrases': cp, 'typical': typical(items, med),
-                    'sample': {'t': longest['msg'], 'd': longest['date']}})
-    return out
-
-
-def lines(md):
-    """lines.md → 每条线：标题、状态、带日期的事实行、现在的问题。"""
-    out = []
-    for sec in re.split(r'\n(?=### )', md):
-        m = re.match(r'### (.+?)·(.+)', sec)
-        if not m:
-            continue
-        facts = []
-        for d, rest in re.findall(r'(\d{4}-\d{2}(?:-\d{2})?)\s*(.+)', sec):
-            q = re.search(r'「([^」]+)」', rest)
-            facts.append({'d': d, 'q': q.group(1) if q else rest.strip('。 ')[:60]})
-        seen, uniq = set(), []
-        for f in facts:
-            if f['d'] + f['q'] not in seen:
-                seen.add(f['d'] + f['q']); uniq.append(f)
-        qm = re.search(r'现在的问题是：(.+)', sec)
-        st = m.group(2).strip()
-        kind = 'closed' if '收线' in st else ('stalled' if '准备' in st or '下文' in st else 'open')
-        out.append({'name': m.group(1).strip(), 'status': st, 'kind': kind, 'facts': uniq[:6],
-                    'question': qm.group(1).strip() if qm else ''})
-    return out
-
-
-def promises():
-    p = os.path.join(DATA, 'promises.jsonl')
-    rows = [json.loads(l) for l in open(p, encoding='utf-8') if l.strip()] if os.path.exists(p) else []
-    rows = [o for o in rows if o.get('status') == 'open' and valid(o.get('date'))]
-    for o in rows:
-        o['days'] = (TODAY - datetime.date.fromisoformat(o['date'])).days
-    rows.sort(key=lambda o: -o['days'])
-    return [{'text': o['text'], 'd': o['date'], 'days': o['days'], 'ref': o.get('ref', '')} for o in rows]
 
 
 def demo_data():
@@ -176,32 +59,22 @@ def demo_data():
                                                         ('整理一下笔记', 9), ('查一下文档', 8), ('写个脚本', 6)]]}
 
 
+def inject(data):
+    tpl = open(TPL, encoding='utf-8').read()
+    return tpl.replace('/*__DATA__*/null', json.dumps(data, ensure_ascii=False).replace('</', '<\\/'))
+
+
 def main():
     if '--demo' in sys.argv:
-        tpl = open(os.path.join(HERE, 'ai_eyes_proto.html'), encoding='utf-8').read()
         out = os.path.join(HERE, 'ai_eyes_demo.html')
-        open(out, 'w', encoding='utf-8').write(tpl.replace('/*__DATA__*/null', json.dumps(demo_data(), ensure_ascii=False)))
+        open(out, 'w', encoding='utf-8').write(inject(demo_data()))
         print('演示版（假数据）写好了：%s' % out)
         return
-    rows = corpus()
-    data = {
-        'today': TODAY.isoformat(),
-        'total': len(rows),
-        'span': [min(o['date'] for o in rows), max(o['date'] for o in rows)],
-        'phrases': catchphrases(rows),
-        'mirror': mirror_quotes(rows),
-        'agents': agent_mirrors(rows, read('ai-eyes.md')),
-        'lines': lines(read('lines.md')),
-        'promises': promises(),
-        'hands': hands(rows),
-    }
-    tpl = open(os.path.join(HERE, 'ai_eyes_proto.html'), encoding='utf-8').read()
-    html = tpl.replace('/*__DATA__*/null', json.dumps(data, ensure_ascii=False).replace('</', '<\\/'))
-    out_dir = os.path.join(PROD, 'prototype')
-    os.makedirs(out_dir, exist_ok=True)
-    out = os.path.join(out_dir, 'ai_eyes.html')
-    open(out, 'w', encoding='utf-8').write(html)
-    print('写好了：%s（原话 %d 条，线 %d 条，没下文 %d 件）' % (out, len(rows), len(data['lines']), len(data['promises'])))
+    j = render.build_ai_eyes_page()
+    if j:
+        render.write_out(*j)
+    else:
+        print('语料为空或模板缺失，没生成。先跑 ingest，或检查 assets/templates/ai_eyes.html 在不在。')
 
 
 if __name__ == '__main__':

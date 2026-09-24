@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
 """言镜生成网页：把 data 里的内容变成 HTML。样式在 ../assets/templates/，数据在数据目录。
 用法（v7 起为单页统一展示，锚点导航，无跨页跳转）：
-    python render.py read            # 统一单页（hero + 六节：01 你是谁 / 02 那几条线 / 03 说话算数 / 04 你没看见的 / 05 AI 眼里的你 / 06 这几个月）
+    python render.py read            # 统一单页 + AI 眼里的你沉浸页（hero + 六节：01 你是谁 / 02 那几条线 / 03 说话算数 / 04 你没看见的 / 05 AI 眼里的你 / 06 这几个月；沉浸页 html/ai-eyes.html）
     python render.py tracker         # 已并入统一页 03 节，只打印提示
     python render.py monthly         # 已废弃：月报并入统一页 06 节，只打印提示
     python render.py all             # = read
 不依赖提取脚本（scripts/）——单装用户数据就位后同样能出（数据由 ingest 生成）。
 零联网，产物是双击就能打开的单个文件。
 """
-import os, sys, re, json, datetime
+import os, sys, re, json, datetime, random, collections
 import html as H
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import wm  # 复用数据定位：wm.DATA / wm.PRODUCTS
+from _common import valid_date
 
 TPL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'templates')
 OUT = os.path.join(wm.PRODUCTS, 'html')
@@ -682,6 +683,9 @@ def build_ai_eyes():
         return _md_page('05 节', 'ai-eyes.md', 4)
     md = open(p, encoding='utf-8', errors='replace').read()
     body = []
+    if _eyes_rows():
+        body.append('<div class="band"><p>这一节还有个能动起来的版本：起雾镜、AI 群聊、并排聊天窗都在里面。'
+                    '<a href="ai-eyes.html"><strong>打开沉浸版 →</strong></a></p></div>')
 
     ag_p = os.path.join(wm.DATA, 'stats_agents.json')
     if os.path.exists(ag_p):
@@ -828,6 +832,144 @@ def _render_ai_section(section, kind='single'):
     return '\n'.join(out)
 
 
+# ---------- AI 眼里的你 · 沉浸页（products/html/ai-eyes.html） ----------
+# 数据全在这里组装成 D，assets/templates/ai_eyes.html 只负责渲染；语料为空就不出文件。
+
+_EYES_ROWS = None
+
+def _eyes_rows():
+    """去重语料行（msg 非空、日期合法）。全模块只扫一次。"""
+    global _EYES_ROWS
+    if _EYES_ROWS is None:
+        _EYES_ROWS = []
+        for o in load_jsonl('corpus_dedup.jsonl'):
+            o['msg'] = (o.get('msg') or '').strip()
+            if o['msg'] and valid_date(o.get('date')):
+                _EYES_ROWS.append(o)
+    return _EYES_ROWS
+
+
+_CODEISH = re.compile(r'[\\/{}<>`=]|https?:')
+_ASK = re.compile(r'^(帮我|帮忙|先|跑|提交|推送|改|看看|看下|检查|修|写|加|删|部署|测|生成|整理|查|更新|优化|重构)')
+_INTERNAL = re.compile(r'\bC[01]\d\b')  # 内部能力编号（C01-C19）不进产物，和 self_check「产品层无能力编号」对齐
+
+
+def _clean(m):
+    return not _CODEISH.search(m) and not _INTERNAL.search(m)
+
+
+def _eyes_phrases(rows, n=12):
+    """口头禅：2-12 字短句按次数排序，带首次/最近日期。"""
+    by = collections.defaultdict(list)
+    for o in rows:
+        m = o['msg']
+        if 2 <= len(m) <= 12 and not m.startswith(('/', '<', '[')) and not _INTERNAL.search(m):
+            by[m].append(o['date'])
+    top = sorted(by.items(), key=lambda kv: -len(kv[1]))[:n]
+    return [{'text': k, 'n': len(v), 'first': min(v), 'last': max(v)} for k, v in top]
+
+
+def _eyes_hands(rows, n=14):
+    """镜子两肩"手上常干的"：动词开头的短指令，去掉代码和路径。"""
+    c = collections.Counter(o['msg'] for o in rows
+                            if 3 <= len(o['msg']) <= 16 and _ASK.match(o['msg']) and _clean(o['msg']))
+    return [{'text': t, 'n': k} for t, k in c.most_common(n)]
+
+
+def _eyes_typical(items, median, k=3):
+    """聊天窗气泡：挑长度最接近这个工具中位数的原话，气泡长短代表平时说话方式。"""
+    pool = [o for o in items if len(o['msg']) <= 80 and '\n' not in o['msg'] and _clean(o['msg'])]
+    random.seed(11)
+    random.shuffle(pool)
+    pool.sort(key=lambda o: abs(len(o['msg']) - median))
+    out, seen = [], set()
+    for o in pool:
+        if o['msg'] not in seen:
+            seen.add(o['msg']); out.append({'t': o['msg'], 'd': o['date']})
+        if len(out) == k:
+            break
+    return sorted(out, key=lambda m: m['d'])
+
+
+def _eyes_mirror(rows, n=900):
+    """镜面铺底原话：短句、去代码路径，随机抽样。"""
+    pool = [o for o in rows if 4 <= len(o['msg']) <= 26 and _clean(o['msg'])]
+    random.seed(7)
+    pick = random.sample(pool, min(n, len(pool)))
+    return [{'t': o['msg'].replace('\n', ' '), 'd': o['date'], 'a': AGENT_NAMES.get(o['agent'], o['agent'])} for o in pick]
+
+
+def _eyes_agents(rows, ai_eyes_md):
+    """每个 AI 一个聊天窗：句数、中位长度、口头禅、代表短句；title 取 ai-eyes.md 的工具一句话。"""
+    titles = dict(re.findall(r'\*\*([\w\-]+)：([^*]+)\*\*', ai_eyes_md))
+    stats = collections.defaultdict(list)
+    for o in rows:
+        stats[o['agent']].append(o)
+    out = []
+    for ag, items in sorted(stats.items(), key=lambda kv: -len(kv[1]))[:6]:
+        lens = sorted(len(o['msg']) for o in items)
+        med = lens[len(lens) // 2]
+        pool = [o for o in items if len(o['msg']) <= 60 and _clean(o['msg'])]
+        longest = max(pool, key=lambda o: len(o['msg'])) if pool else items[0]
+        out.append({'agent': AGENT_NAMES.get(ag, ag), 'n': len(items), 'median': med,
+                    'title': titles.get(ag, ''), 'phrases': _eyes_phrases(items, 5),
+                    'typical': _eyes_typical(items, med),
+                    'sample': {'t': longest['msg'], 'd': longest['date']}})
+    return out
+
+
+def _eyes_lines():
+    """profile/lines.md → 线索墙：每条线的标题、状态、带日期事实、现在的问题。"""
+    p = os.path.join(wm.DATA, 'profile', 'lines.md')
+    md = open(p, encoding='utf-8', errors='replace').read() if os.path.exists(p) else ''
+    out = []
+    for sec in re.split(r'\n(?=### )', md):
+        m = re.match(r'### (.+?)·(.+)', sec)
+        if not m:
+            continue
+        facts, seen = [], set()
+        for d, rest in re.findall(r'(\d{4}-\d{2}(?:-\d{2})?)\s*(.+)', sec):
+            q = re.search(r'「([^」]+)」', rest)
+            f = {'d': d, 'q': q.group(1) if q else rest.strip('。 ')[:60]}
+            if f['d'] + f['q'] not in seen and not _INTERNAL.search(f['q']):
+                seen.add(f['d'] + f['q']); facts.append(f)
+        qm = re.search(r'现在的问题是：(.+)', sec)
+        st = m.group(2).strip()
+        kind = 'closed' if '收线' in st else ('stalled' if '准备' in st or '下文' in st else 'open')
+        out.append({'name': m.group(1).strip(), 'status': st, 'kind': kind, 'facts': facts[:6],
+                    'question': qm.group(1).strip() if qm else ''})
+    return out
+
+
+def _eyes_promises():
+    """镜子胸口"惦记着的"：两层账本里还开着的事，按说过至今的天数排。"""
+    today = datetime.date.today()
+    rows = [o for o in _promises_all_layers()
+            if o.get('status') == 'open' and valid_date(o.get('date')) and not _INTERNAL.search(o.get('text', ''))]
+    for o in rows:
+        o['days'] = (today - datetime.date.fromisoformat(o['date'])).days
+    rows.sort(key=lambda o: -o['days'])
+    return [{'text': o['text'], 'd': o['date'], 'days': o['days'], 'ref': o.get('ref', '')} for o in rows]
+
+
+def build_ai_eyes_page():
+    """05 节的沉浸版单页：分区起雾镜 + AI 群聊 + 并排聊天窗 + 线索墙。语料为空或模板缺失就不出。"""
+    rows = _eyes_rows()
+    tpl_p = os.path.join(TPL, 'ai_eyes.html')
+    if not rows or not os.path.exists(tpl_p):
+        return None
+    ap = os.path.join(wm.DATA, 'profile', 'ai-eyes.md')
+    ai_eyes_md = open(ap, encoding='utf-8', errors='replace').read() if os.path.exists(ap) else ''
+    data = {'today': datetime.date.today().isoformat(), 'total': len(rows),
+            'span': [min(o['date'] for o in rows), max(o['date'] for o in rows)],
+            'phrases': _eyes_phrases(rows), 'mirror': _eyes_mirror(rows),
+            'agents': _eyes_agents(rows, ai_eyes_md), 'lines': _eyes_lines(),
+            'promises': _eyes_promises(), 'hands': _eyes_hands(rows)}
+    tpl = open(tpl_p, encoding='utf-8').read()
+    html = tpl.replace('/*__DATA__*/null', json.dumps(data, ensure_ascii=False).replace('</', '<\\/'))
+    return ('html/ai-eyes.html', html)
+
+
 # ---------- 月报 ----------
 
 def load_jsonl(name):
@@ -925,7 +1067,7 @@ def main():
         # v7：03 并入统一页 sec-promises 节、月报并入 sec-wrapped 节，命令保留只打提示
         print('已并入统一单页（html/index.html）：%s 内容分别见 03 节 / 06 节。直接跑 python render.py all。' % cmd)
         return
-    jobs = [build_unified()]
+    jobs = [build_unified(), build_ai_eyes_page()]
     for j in jobs:
         if j:
             write_out(*j)
