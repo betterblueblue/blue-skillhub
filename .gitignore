@@ -39,6 +39,13 @@ skills/whydump/评审prompt.txt
 change-impact/
 .dsh-shots/
 
+# === wordmirror 原型：早期渲染稿含真实原话，默认全忽略，只放行可入库文件 ===
+skills/wordmirror/_prototype/*
+!skills/wordmirror/_prototype/ai_eyes_proto.html
+!skills/wordmirror/_prototype/build_ai_eyes_proto.py
+!skills/wordmirror/_prototype/ai_eyes_demo.html
+!skills/wordmirror/_prototype/shots/
+
 # === 内部与个人文件（本地保留，不入库）===
 blue-interview-log/
 HANDOFF.md

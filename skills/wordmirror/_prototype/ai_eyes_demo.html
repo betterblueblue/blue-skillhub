@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>镜中的你</title>
+<style>
+:root{
+  --fog:#E3E8ED; --fog-2:#D3DAE1; --mercury:#8E99A6; --backing:#121820; --ink:#1B2430;
+  --glint:#F8FBFF; --breath:#FF6F4E; --paper:#F4F0E6;
+  --f-display:"Songti SC","STSong","Noto Serif SC","Source Han Serif SC","SimSun",serif;
+  --f-body:"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif;
+  --f-hand:"Kaiti SC","STKaiti","KaiTi",cursive;
+  --f-mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--fog);color:var(--ink);font:15px/1.75 var(--f-body);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background:radial-gradient(60% 50% at 15% 10%,#fff 0,transparent 70%),radial-gradient(50% 40% at 90% 80%,#c9d3dd 0,transparent 70%)}
+:focus-visible{outline:2px solid var(--breath);outline-offset:3px}
+
+nav{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:60;display:flex;gap:2px;padding:4px;border-radius:99px;
+  background:#ffffff8c;backdrop-filter:blur(14px) saturate(1.4);box-shadow:0 1px 0 #fff inset,0 8px 30px #1b243014}
+nav a{font:500 13px var(--f-body);color:#46505c;text-decoration:none;padding:6px 14px;border-radius:99px;transition:.2s}
+nav a:hover,nav a.on{background:var(--ink);color:var(--glint)}
+
+section{position:relative;z-index:1;padding:120px 20px 80px;display:flex;flex-direction:column;align-items:center}
+.kicker{font:600 13px var(--f-body);letter-spacing:.3em;color:#5f6b78;padding-left:.3em}
+.title{font:700 clamp(32px,5.4vw,58px)/1.15 var(--f-display);margin:10px 0 14px;text-align:center;letter-spacing:.01em}
+.title .p{margin-right:-.35em}
+.lede{max-width:540px;text-align:center;color:#56606c}
+.tip{position:fixed;z-index:99;pointer-events:none;max-width:300px;background:#0e131af2;color:var(--glint);padding:12px 14px;border-radius:12px;
+  font:15px/1.5 var(--f-body);box-shadow:0 18px 50px #0007;opacity:0;transform:translateY(6px);transition:opacity .15s,transform .15s;backdrop-filter:blur(6px)}
+.tip.on{opacity:1;transform:none}
+.tip small{display:block;margin-top:6px;font:11px var(--f-mono);color:#9fb0c2;letter-spacing:.04em}
+
+/* ================= 镜子 ================= */
+#s-mirror{min-height:100vh;padding-top:96px}
+.mirror-title{perspective:900px}
+.mirror-title .title{display:inline-block;transform:scaleX(-1);animation:flip 1.6s .5s cubic-bezier(.7,0,.2,1) forwards;transform-origin:50% 50%}
+@keyframes flip{0%{transform:scaleX(-1);filter:blur(0)}45%{transform:scaleX(0);filter:blur(2px)}100%{transform:scaleX(1);filter:blur(0)}}
+.frame{position:relative;width:min(560px,90vw);aspect-ratio:4/5;margin-top:26px;border-radius:50% 50% 22px 22px/38% 38% 22px 22px;padding:16px;
+  background:conic-gradient(from 210deg,#7b8591,#e9eef3,#6c7682,#c9d1d9,#5d6773,#f3f6f9,#7b8591);
+  box-shadow:0 1px 0 #fff inset,0 50px 90px -30px #1b2430a8,0 20px 40px -20px #1b243066}
+.frame::after{content:"";position:absolute;inset:6px;border-radius:inherit;box-shadow:inset 0 0 0 1px #ffffff90,inset 0 -6px 12px #0003;pointer-events:none}
+.glass{position:relative;width:100%;height:100%;border-radius:50% 50% 12px 12px/37% 37% 12px 12px;overflow:hidden;background:var(--backing);
+  box-shadow:inset 0 0 40px #000}
+.glass canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+.zones{position:absolute;inset:0;pointer-events:none}
+.zones svg{position:absolute;inset:0;width:100%;height:100%}
+.zones line{stroke-width:1.2;stroke-dasharray:4 3;vector-effect:non-scaling-stroke;opacity:0;transition:opacity .6s}
+.zl{position:absolute;width:25%;padding:6px 8px;border-radius:10px;background:#0b1016c7;border:1px solid color-mix(in srgb,var(--c) 45%,transparent);
+  opacity:0;transform:translateY(4px);transition:opacity .6s,transform .6s;backdrop-filter:blur(4px)}
+.zl b{display:block;font:700 13px/1.3 var(--f-display);color:var(--c)}
+.zl small{display:block;font:10.5px/1.35 var(--f-body);color:#c5ced8}
+.zl-think{left:5%;top:29%}.zl-heart{left:5%;top:54%}.zl-mouth{right:5%;top:40%;text-align:right}.zl-hands{right:5%;top:57%;text-align:right}
+.zones .on{opacity:1;transform:none}
+.mirror-foot{display:flex;gap:28px;margin-top:26px;flex-wrap:wrap;justify-content:center;font:12px var(--f-mono);color:#6c7784;letter-spacing:.06em}
+.mirror-foot b{display:block;font:400 26px var(--f-display);color:var(--ink);letter-spacing:0}
+.hint{margin-top:18px;font-size:13px;color:#6c7784;display:flex;align-items:center;gap:8px}
+.hint i{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--mercury);position:relative;animation:pulse 2.4s infinite}
+@keyframes pulse{50%{transform:scale(1.25);opacity:.4}}
+.wipe-all{margin-left:6px;border:0;border-radius:99px;padding:6px 16px;font:500 13px var(--f-body);color:var(--glint);background:var(--ink);cursor:pointer;
+  box-shadow:0 6px 16px #1b243033;transition:transform .15s,background .2s}
+.wipe-all:hover{transform:translateY(-1px);background:#2c3846}
+.wipe-all.done{background:#fff;color:var(--ink);box-shadow:0 0 0 1px #c3ccd5 inset}
+
+/* ================= 手机 ================= */
+#s-phone .stage{display:grid;grid-template-columns:auto 300px;gap:70px;align-items:center;margin-top:40px;perspective:1400px}
+.phone{position:relative;width:340px;height:708px;border-radius:56px;padding:11px;transform-style:preserve-3d;transition:transform .25s ease-out;
+  background:linear-gradient(145deg,#d9dde2,#8d949c 30%,#e7eaee 50%,#6f767e 80%,#c2c7cd);
+  box-shadow:0 0 0 1px #0002,0 60px 80px -30px #1b2430b3,0 30px 60px -30px #1b243080}
+.phone::before{content:"";position:absolute;inset:3px;border-radius:53px;background:#07090c}
+.screen{position:relative;width:100%;height:100%;border-radius:46px;overflow:hidden;isolation:isolate;padding:52px 14px 14px;display:flex;flex-direction:column;gap:10px;color:#fff}
+.sheen{position:absolute;inset:0;border-radius:46px;z-index:8;pointer-events:none;
+  background:linear-gradient(var(--sa,115deg),transparent 35%,#ffffff2a 45%,transparent 55%);mix-blend-mode:screen}
+.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:118px;height:34px;background:#000;border-radius:20px;z-index:9}
+.status{position:absolute;top:18px;left:30px;right:26px;display:flex;justify-content:space-between;font:600 14px var(--f-body);z-index:9}
+.screen.wx{background:#ededed;color:#111;padding:48px 0 0;gap:0}
+.wx .status{color:#111}
+.wx-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 10px;border-bottom:1px solid #d9d9d9;font-size:18px;color:#222}
+.wx-bar b{font:600 15px var(--f-body)}
+.wx-body{flex:1;overflow-y:auto;padding:12px 10px 18px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth;scrollbar-width:none}
+.wx-body::-webkit-scrollbar{display:none}
+.wx-sys{align-self:center;max-width:86%;text-align:center;font-size:11px;color:#8f8f8f;line-height:1.5}
+.wx-m{display:flex;gap:8px;align-items:flex-start;cursor:pointer}
+.wx-m.me{flex-direction:row-reverse}
+.wx-av{flex:none;width:34px;height:34px;border-radius:5px;display:grid;place-items:center;font:700 14px var(--f-body);color:#fff;
+  background:linear-gradient(150deg,hsl(var(--h),70%,60%),hsl(calc(var(--h) + 30),65%,44%))}
+.wx-m small{display:block;font-size:10.5px;color:#8f8f8f;margin:0 0 2px 2px}
+.wx-m p{position:relative;max-width:196px;background:#fff;border-radius:5px;padding:7px 10px;font-size:13.5px;line-height:1.5;word-break:break-all}
+.wx-m p::before{content:"";position:absolute;top:11px;left:-5px;border:5px solid transparent;border-left:0;border-right-color:#fff}
+.wx-m.me p{background:#95ec69}
+.wx-m.me p::before{left:auto;right:-5px;border-right:0;border-left:5px solid #95ec69}
+.wx-body>*{transition:opacity .35s,transform .45s cubic-bezier(.2,1.3,.4,1)}
+.wx-body>.pending{display:none}
+.wx-body>.pop{opacity:0;transform:translateY(10px) scale(.96)}
+.wx-body>.off{opacity:.35}
+.wx-body>.off p,.wx-body>.off.wx-sys{text-decoration:line-through}
+.wx-actions{display:flex;gap:10px;padding-left:0 !important;border-left:0 !important}
+.wx-actions .wipe-all{margin:0}
+.legend-list{display:flex;flex-direction:column;gap:22px}
+.legend-list div{padding-left:18px;border-left:2px solid #c3ccd5}
+.legend-list h4{font:400 20px var(--f-display);margin-bottom:2px}
+.legend-list p{font-size:13.5px;color:#5c6672}
+
+/* ================= 聊天窗 ================= */
+.chats{width:min(1120px,100%);margin-top:40px;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:22px;align-items:start}
+.chat{background:#f9fafbee;border-radius:22px;box-shadow:0 1px 0 #fff inset,0 24px 50px -24px #1b243055,0 0 0 1px #1b24300d;overflow:hidden;
+  opacity:0;transform:translateY(18px);transition:opacity .6s,transform .7s cubic-bezier(.2,.9,.2,1)}
+.chats.in .chat{opacity:1;transform:none}
+.chat header{display:flex;align-items:center;gap:10px;padding:14px 16px 10px;border-bottom:1px solid #1b24300f}
+.chat .av{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font:700 15px var(--f-body);color:#fff;
+  background:linear-gradient(150deg,hsl(var(--h),70%,62%),hsl(calc(var(--h) + 30),65%,45%));flex:none}
+.chat header b{display:block;font:700 15px/1.25 var(--f-body)}
+.chat header small{display:block;font-size:12px;color:#6c7784}
+.chat .len{display:flex;align-items:center;gap:8px;padding:8px 16px 0;font:11px var(--f-mono);color:#8a95a1}
+.chat .len i{flex:1;height:4px;border-radius:2px;background:#1b243012;position:relative;overflow:hidden}
+.chat .len i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);border-radius:2px;background:hsl(var(--h),60%,55%)}
+.chat .len em{font-style:normal;color:var(--ink);font-weight:600}
+.msgs{display:flex;flex-direction:column;align-items:flex-end;gap:10px;padding:14px 16px 16px;min-height:150px}
+.msg{max-width:88%;display:flex;flex-direction:column;align-items:flex-end;opacity:0;transform:translateY(8px) scale(.96);transform-origin:right bottom;
+  transition:opacity .4s,transform .5s cubic-bezier(.2,1.3,.4,1)}
+.chats.in .msg{opacity:1;transform:none}
+.msg p{background:hsl(var(--h),70%,55%);color:#fff;padding:8px 12px;border-radius:16px 16px 4px 16px;font-size:14px;line-height:1.5;word-break:break-all;
+  box-shadow:0 4px 10px -4px hsl(var(--h),60%,40%)}
+.msg time{font:10.5px var(--f-mono);color:#9aa4ae;margin-top:3px}
+.chat footer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 16px 14px;border-top:1px solid #1b24300f;font-size:12px;color:#6c7784}
+.chat footer q{quotes:"「" "」";background:#1b24300a;border-radius:99px;padding:1px 9px;color:var(--ink)}
+.chat footer q i{font:10.5px var(--f-mono);font-style:normal;color:#8a95a1;margin-left:3px}
+
+/* ================= 线索墙 ================= */
+#board{position:relative;width:min(1200px,100%);margin-top:40px;padding:36px 26px 40px;border-radius:6px;display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:22px;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .22 0 0 0 0 .1 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)'/%3E%3C/svg%3E"),#b88a58;
+  box-shadow:inset 0 0 0 14px #6a4527,inset 0 0 0 16px #3e2814,inset 0 0 60px #0007,0 40px 80px -30px #1b2430cc}
+#strings{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;overflow:visible}
+#strings path{fill:none;stroke:#b3211a;stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(1px 3px 1.5px #0006)}
+.col{display:flex;flex-direction:column;align-items:center;gap:30px;z-index:2}
+.col h6{font:400 17px/1.3 var(--f-display);color:#231a10;background:var(--paper);padding:10px 14px;box-shadow:2px 4px 8px #0005;transform:rotate(-1.5deg);text-align:center;max-width:220px}
+.col h6 small{display:block;font:11px var(--f-mono);color:#8a6a45;margin-top:4px}
+.note{position:relative;width:190px;padding:16px 14px 12px;font:22px/1.25 var(--f-hand);color:#2b2319;box-shadow:3px 6px 12px #0005;
+  opacity:0;translate:0 16px;transition:opacity .6s,translate .6s}
+.lit .note{opacity:1;translate:0 0}
+.note:nth-of-type(3n){background:#fbe78a;rotate:2.2deg}
+.note:nth-of-type(3n+1){background:#f8f4ea;rotate:-2deg}
+.note:nth-of-type(3n+2){background:#cfe6ee;rotate:1.2deg}
+.note em{display:block;font:600 10.5px var(--f-mono);font-style:normal;color:#8a6e4d;margin-bottom:4px;letter-spacing:.04em}
+.pin{position:absolute;top:-6px;left:5px;width:15px;height:15px;border-radius:50%;z-index:4;
+  background:radial-gradient(circle at 35% 30%,#ffa192,#c42a1f 55%,#6e120c);box-shadow:1px 3px 3px #0008}
+.tag{position:relative;font:700 13px var(--f-body);padding:6px 14px 6px 26px;letter-spacing:.14em;box-shadow:2px 4px 8px #0005}
+.tag.closed{background:#314235;color:#c8ecc9;rotate:-4deg}
+.tag.stalled{background:#fff;color:var(--breath);outline:2px dashed var(--breath);outline-offset:-5px;rotate:3deg}
+.tag.open{background:var(--ink);color:#f5d58a;rotate:-2deg}
+.qcard{width:200px;background:#fff;color:#333;font-size:12.5px;line-height:1.6;padding:12px 14px;border-top:22px solid var(--breath);box-shadow:3px 6px 12px #0005;rotate:-1deg}
+.qcard::before{content:"现在的问题";display:block;margin:-30px 0 10px;color:#fff;font:600 11px var(--f-mono);letter-spacing:.12em}
+footer{position:relative;z-index:1;text-align:center;padding:40px 20px 70px;font:11px var(--f-mono);color:#7b8591;letter-spacing:.06em}
+
+@media (max-width:860px){
+  #s-phone .stage{grid-template-columns:1fr;justify-items:center;gap:40px}
+  #board{grid-template-columns:1fr}
+  .chats{grid-template-columns:1fr}
+}
+@media (max-width:560px){nav{top:10px;max-width:calc(100vw - 16px)}nav a{padding:6px 8px;font-size:12px;white-space:nowrap}}
+@media (max-width:380px){.phone{transform:scale(.92)!important;transform-origin:top center}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.mirror-title .title{transform:none}}
+</style>
+</head>
+<body>
+<nav aria-label="页面目录"><a href="#s-mirror">你长什么样</a><a href="#s-phone">AI 怎么议论你</a><a href="#s-chat">你对谁话多</a><a href="#s-wall">事走到哪了</a></nav>
+<div class="tip" id="tip" role="status"></div>
+
+<section id="s-mirror">
+  <div class="kicker">你长什么样</div>
+  <div class="mirror-title"><h1 class="title">这是你说过的话</h1></div>
+  <p class="lede" id="m-lede"></p>
+  <div class="frame"><div class="glass" id="glass"><canvas id="gl" aria-label="用你说过的话拼成的人像，拖动擦开镜面上的雾"></canvas><div class="zones" id="zones" aria-hidden="true"></div></div></div>
+  <div class="hint"><i></i>按住拖动擦开雾气，停在字上看原话<button class="wipe-all" id="wipe-all" type="button">一键擦开</button></div>
+  <div class="mirror-foot" id="m-foot"></div>
+</section>
+
+<section id="s-phone">
+  <div class="kicker">AI 怎么议论你</div>
+  <h2 class="title">AI 们背着你拉了个群</h2>
+  <p class="lede">群里每一句都是照你的真实数据写的。看完可以存成图片发出去，图里只有口头禅和数字，没有你的隐私。</p>
+  <div class="stage">
+    <div class="phone" id="phone"><div class="screen wx" id="screen">
+      <div class="island"></div><div class="sheen" id="sheen"></div>
+      <div class="status"><span id="st-time"></span><span>5G&nbsp;&nbsp;▮▮▮</span></div>
+      <div class="wx-bar"><span>‹</span><b id="wx-title"></b><span>···</span></div>
+      <div class="wx-body" id="wx-body"></div>
+    </div></div>
+    <div class="legend-list">
+      <div><h4>每句都有数字撑着</h4><p>群里的话按真实统计来写：谁听你说得最多，你对谁说话最短，哪句口头禅说了几次。鼠标停在一句上，能看到它的依据。</p></div>
+      <div><h4>发出去之前你先过目</h4><p>点一句就能划掉，划掉的不会出现在图片里。图里只有 AI 的名字、句数、字数和口头禅，不会出现线名、承诺和项目名。</p></div>
+      <div class="wx-actions"><button class="wipe-all" id="wx-save" type="button">存成图片</button><button class="wipe-all done" id="wx-replay" type="button">再看一遍</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="s-chat">
+  <div class="kicker">你对谁话多</div>
+  <h2 class="title">换一个 AI<span class="p">，</span>你就换一种说法</h2>
+  <p class="lede">每个窗口里是你在那个工具里最平常的几句话，气泡多长，那句话就有多长。</p>
+  <div class="chats" id="chats"></div>
+</section>
+
+<section id="s-wall">
+  <div class="kicker">事走到哪了</div>
+  <h2 class="title">你手上那几条线<span class="p">，</span>是怎么走过来的</h2>
+  <p class="lede">每张便签是带日期的一件事。实线一路走到“现在”的还在走，最后一段断成虚线的停在了“准备做”，贴着绿条的已经收线。</p>
+  <div id="board"><svg id="strings" aria-hidden="true"></svg></div>
+</section>
+
+<footer id="foot"></footer>
+
+<script>
+const D = {"today": "2026-09-25", "total": 12240, "span": ["2026-03-01", "2026-09-20"], "phrases": [{"text": "继续", "n": 92, "first": "2026-03-01", "last": "2026-09-20"}, {"text": "好的", "n": 61, "first": "2026-03-02", "last": "2026-09-19"}, {"text": "可以啊", "n": 40, "first": "2026-03-03", "last": "2026-09-18"}, {"text": "提交推送", "n": 33, "first": "2026-03-04", "last": "2026-09-17"}, {"text": "牛啊", "n": 21, "first": "2026-03-05", "last": "2026-09-16"}, {"text": "先跑一下测试", "n": 18, "first": "2026-03-06", "last": "2026-09-15"}, {"text": "这个不对", "n": 15, "first": "2026-03-07", "last": "2026-09-14"}, {"text": "再简单一点", "n": 12, "first": "2026-03-08", "last": "2026-09-13"}, {"text": "行吧", "n": 9, "first": "2026-03-09", "last": "2026-09-12"}, {"text": "今天先到这", "n": 7, "first": "2026-03-01", "last": "2026-09-11"}], "mirror": [{"t": "先别动代码", "d": "2026-06-25", "a": "Gemini"}, {"t": "先跑一下测试", "d": "2026-03-20", "a": "Kimi"}, {"t": "好的", "d": "2026-06-23", "a": "Kimi"}, {"t": "我想做个小程序", "d": "2026-07-09", "a": "Kimi"}, {"t": "再简单一点", "d": "2026-03-10", "a": "Claude Code"}, {"t": "可以啊", "d": "2026-03-20", "a": "Kimi"}, {"t": "好的", "d": "2026-04-14", "a": "Cursor"}, {"t": "下周一定整理笔记", "d": "2026-05-05", "a": "Qwen"}, {"t": "好的", "d": "2026-09-11", "a": "Cursor"}, {"t": "周末再弄", "d": "2026-04-28", "a": "Gemini"}, {"t": "今天先到这", "d": "2026-06-28", "a": "Kimi"}, {"t": "今天先到这", "d": "2026-08-28", "a": "Kimi"}, {"t": "看看效果", "d": "2026-07-04", "a": "Kimi"}, {"t": "换个思路", "d": "2026-05-14", "a": "Qwen"}, {"t": "行吧", "d": "2026-04-10", "a": "Gemini"}, {"t": "牛啊", "d": "2026-07-10", "a": "Kimi"}, {"t": "我想做个小程序", "d": "2026-03-26", "a": "Gemini"}, {"t": "我准备开始跑步了", "d": "2026-05-01", "a": "Gemini"}, {"t": "下周一定整理笔记", "d": "2026-07-21", "a": "Codex"}, {"t": "好的", "d": "2026-08-21", "a": "Cursor"}, {"t": "明天面试", "d": "2026-05-22", "a": "Cursor"}, {"t": "下周一定整理笔记", "d": "2026-08-09", "a": "Qwen"}, {"t": "帮我改下简历", "d": "2026-03-19", "a": "Claude Code"}, {"t": "看看效果", "d": "2026-03-12", "a": "Cursor"}, {"t": "先记下来", "d": "2026-06-10", "a": "Kimi"}, {"t": "下周一定整理笔记", "d": "2026-05-06", "a": "Cursor"}, {"t": "提交推送", "d": "2026-05-25", "a": "Cursor"}, {"t": "下周一定整理笔记", "d": "2026-05-10", "a": "Gemini"}, {"t": "先跑一下测试", "d": "2026-09-27", "a": "Claude Code"}, {"t": "我准备开始跑步了", "d": "2026-08-24", "a": "Codex"}, {"t": "先别动代码", "d": "2026-07-08", "a": "Qwen"}, {"t": "牛啊", "d": "2026-04-11", "a": "Codex"}, {"t": "看看效果", "d": "2026-06-21", "a": "Qwen"}, {"t": "先跑一下测试", "d": "2026-03-20", "a": "Cursor"}, {"t": "我想做个小程序", "d": "2026-08-27", "a": "Codex"}, {"t": "明天面试", "d": "2026-09-28", "a": "Codex"}, {"t": "可以啊", "d": "2026-05-24", "a": "Qwen"}, {"t": "这个不对", "d": "2026-07-15", "a": "Cursor"}, {"t": "再简单一点", "d": "2026-09-04", "a": "Claude Code"}, {"t": "换个思路", "d": "2026-04-11", "a": "Kimi"}, {"t": "提交推送", "d": "2026-09-09", "a": "Cursor"}, {"t": "先记下来", "d": "2026-03-26", "a": "Kimi"}, {"t": "周末再弄", "d": "2026-07-05", "a": "Gemini"}, {"t": "先别动代码", "d": "2026-07-26", "a": "Cursor"}, {"t": "明天面试", "d": "2026-05-21", "a": "Gemini"}, {"t": "先别动代码", "d": "2026-06-19", "a": "Gemini"}, {"t": "好的", "d": "2026-06-05", "a": "Codex"}, {"t": "继续", "d": "2026-06-27", "a": "Kimi"}, {"t": "换个思路", "d": "2026-06-18", "a": "Qwen"}, {"t": "再简单一点", "d": "2026-03-24", "a": "Gemini"}, {"t": "看看效果", "d": "2026-08-17", "a": "Cursor"}, {"t": "有没有更好的办法", "d": "2026-05-08", "a": "Claude Code"}, {"t": "我准备开始跑步了", "d": "2026-05-04", "a": "Codex"}, {"t": "好的", "d": "2026-03-26", "a": "Qwen"}, {"t": "换个思路", "d": "2026-04-14", "a": "Kimi"}, {"t": "好的", "d": "2026-03-16", "a": "Qwen"}, {"t": "先跑一下测试", "d": "2026-04-17", "a": "Cursor"}, {"t": "再简单一点", "d": "2026-08-01", "a": "Kimi"}, {"t": "有没有更好的办法", "d": "2026-06-02", "a": "Kimi"}, {"t": "先跑一下测试", "d": "2026-05-05", "a": "Cursor"}, {"t": "有没有更好的办法", "d": "2026-06-26", "a": "Claude Code"}, {"t": "周末再弄", "d": "2026-04-07", "a": "Claude Code"}, {"t": "有没有更好的办法", "d": "2026-09-04", "a": "Codex"}, {"t": "再简单一点", "d": "2026-09-09", "a": "Codex"}, {"t": "继续", "d": "2026-06-21", "a": "Kimi"}, {"t": "今天先到这", "d": "2026-03-25", "a": "Cursor"}, {"t": "再简单一点", "d": "2026-05-20", "a": "Kimi"}, {"t": "换个思路", "d": "2026-06-02", "a": "Gemini"}, {"t": "我想做个小程序", "d": "2026-09-27", "a": "Claude Code"}, {"t": "好的", "d": "2026-09-05", "a": "Claude Code"}, {"t": "先跑一下测试", "d": "2026-03-03", "a": "Gemini"}, {"t": "好的", "d": "2026-09-23", "a": "Claude Code"}, {"t": "换个思路", "d": "2026-07-16", "a": "Cursor"}, {"t": "提交推送", "d": "2026-05-03", "a": "Cursor"}, {"t": "今天先到这", "d": "2026-08-13", "a": "Kimi"}, {"t": "先别动代码", "d": "2026-05-09", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-06-04", "a": "Codex"}, {"t": "有没有更好的办法", "d": "2026-03-23", "a": "Qwen"}, {"t": "今天先到这", "d": "2026-09-03", "a": "Kimi"}, {"t": "提交推送", "d": "2026-03-12", "a": "Gemini"}, {"t": "下周一定整理笔记", "d": "2026-08-26", "a": "Kimi"}, {"t": "今天先到这", "d": "2026-08-26", "a": "Claude Code"}, {"t": "下周一定整理笔记", "d": "2026-06-02", "a": "Cursor"}, {"t": "先记下来", "d": "2026-06-25", "a": "Qwen"}, {"t": "我想做个小程序", "d": "2026-06-23", "a": "Gemini"}, {"t": "明天面试", "d": "2026-03-08", "a": "Codex"}, {"t": "有没有更好的办法", "d": "2026-05-23", "a": "Kimi"}, {"t": "可以啊", "d": "2026-09-14", "a": "Codex"}, {"t": "这个方案可以", "d": "2026-04-01", "a": "Cursor"}, {"t": "周末再弄", "d": "2026-07-26", "a": "Cursor"}, {"t": "先跑一下测试", "d": "2026-06-23", "a": "Claude Code"}, {"t": "看看效果", "d": "2026-09-17", "a": "Gemini"}, {"t": "看看效果", "d": "2026-03-24", "a": "Cursor"}, {"t": "我准备开始跑步了", "d": "2026-07-04", "a": "Kimi"}, {"t": "行吧", "d": "2026-03-16", "a": "Codex"}, {"t": "再简单一点", "d": "2026-09-13", "a": "Claude Code"}, {"t": "换个思路", "d": "2026-03-19", "a": "Claude Code"}, {"t": "看看效果", "d": "2026-06-06", "a": "Claude Code"}, {"t": "我想做个小程序", "d": "2026-09-28", "a": "Claude Code"}, {"t": "继续", "d": "2026-09-04", "a": "Qwen"}, {"t": "帮我改下简历", "d": "2026-09-23", "a": "Cursor"}, {"t": "我准备开始跑步了", "d": "2026-05-26", "a": "Claude Code"}, {"t": "好的", "d": "2026-09-19", "a": "Kimi"}, {"t": "换个思路", "d": "2026-08-08", "a": "Claude Code"}, {"t": "有没有更好的办法", "d": "2026-08-04", "a": "Kimi"}, {"t": "好的", "d": "2026-07-11", "a": "Kimi"}, {"t": "提交推送", "d": "2026-09-03", "a": "Codex"}, {"t": "提交推送", "d": "2026-08-08", "a": "Gemini"}, {"t": "下周一定整理笔记", "d": "2026-08-25", "a": "Gemini"}, {"t": "牛啊", "d": "2026-05-20", "a": "Gemini"}, {"t": "周末再弄", "d": "2026-07-14", "a": "Claude Code"}, {"t": "今天先到这", "d": "2026-07-08", "a": "Gemini"}, {"t": "提交推送", "d": "2026-06-23", "a": "Kimi"}, {"t": "我准备开始跑步了", "d": "2026-08-17", "a": "Qwen"}, {"t": "帮我改下简历", "d": "2026-04-21", "a": "Gemini"}, {"t": "帮我看看这个报错", "d": "2026-04-04", "a": "Gemini"}, {"t": "帮我改下简历", "d": "2026-08-17", "a": "Gemini"}, {"t": "我准备开始跑步了", "d": "2026-08-28", "a": "Codex"}, {"t": "帮我看看这个报错", "d": "2026-05-25", "a": "Codex"}, {"t": "帮我看看这个报错", "d": "2026-07-17", "a": "Cursor"}, {"t": "再简单一点", "d": "2026-09-23", "a": "Kimi"}, {"t": "先别动代码", "d": "2026-08-23", "a": "Gemini"}, {"t": "下周一定整理笔记", "d": "2026-09-19", "a": "Kimi"}, {"t": "牛啊", "d": "2026-04-10", "a": "Claude Code"}, {"t": "牛啊", "d": "2026-06-26", "a": "Gemini"}, {"t": "这个不对", "d": "2026-04-19", "a": "Cursor"}, {"t": "再简单一点", "d": "2026-05-16", "a": "Codex"}, {"t": "这个方案可以", "d": "2026-08-16", "a": "Qwen"}, {"t": "下周一定整理笔记", "d": "2026-04-15", "a": "Kimi"}, {"t": "先记下来", "d": "2026-07-01", "a": "Gemini"}, {"t": "可以啊", "d": "2026-09-13", "a": "Qwen"}, {"t": "好的", "d": "2026-06-08", "a": "Codex"}, {"t": "先记下来", "d": "2026-08-25", "a": "Qwen"}, {"t": "可以啊", "d": "2026-04-28", "a": "Cursor"}, {"t": "再简单一点", "d": "2026-04-25", "a": "Cursor"}, {"t": "帮我看看这个报错", "d": "2026-04-20", "a": "Qwen"}, {"t": "看看效果", "d": "2026-09-02", "a": "Cursor"}, {"t": "提交推送", "d": "2026-09-02", "a": "Cursor"}, {"t": "提交推送", "d": "2026-06-03", "a": "Qwen"}, {"t": "可以啊", "d": "2026-03-03", "a": "Cursor"}, {"t": "先别动代码", "d": "2026-03-12", "a": "Gemini"}, {"t": "我准备开始跑步了", "d": "2026-08-22", "a": "Cursor"}, {"t": "继续", "d": "2026-03-11", "a": "Cursor"}, {"t": "这个方案可以", "d": "2026-06-16", "a": "Claude Code"}, {"t": "这个不对", "d": "2026-08-19", "a": "Qwen"}, {"t": "帮我改下简历", "d": "2026-06-05", "a": "Kimi"}, {"t": "我想做个小程序", "d": "2026-03-09", "a": "Claude Code"}, {"t": "看看效果", "d": "2026-06-04", "a": "Gemini"}, {"t": "换个思路", "d": "2026-05-04", "a": "Kimi"}, {"t": "行吧", "d": "2026-05-22", "a": "Cursor"}, {"t": "明天面试", "d": "2026-05-22", "a": "Qwen"}, {"t": "看看效果", "d": "2026-08-26", "a": "Cursor"}, {"t": "先跑一下测试", "d": "2026-09-11", "a": "Qwen"}, {"t": "我准备开始跑步了", "d": "2026-07-17", "a": "Claude Code"}, {"t": "看看效果", "d": "2026-06-17", "a": "Cursor"}, {"t": "好的", "d": "2026-08-10", "a": "Qwen"}, {"t": "我准备开始跑步了", "d": "2026-08-06", "a": "Qwen"}, {"t": "先记下来", "d": "2026-08-21", "a": "Codex"}, {"t": "提交推送", "d": "2026-05-21", "a": "Gemini"}, {"t": "先跑一下测试", "d": "2026-03-18", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-08-24", "a": "Qwen"}, {"t": "下周一定整理笔记", "d": "2026-06-18", "a": "Cursor"}, {"t": "先记下来", "d": "2026-04-15", "a": "Gemini"}, {"t": "先别动代码", "d": "2026-09-06", "a": "Qwen"}, {"t": "可以啊", "d": "2026-03-23", "a": "Codex"}, {"t": "有没有更好的办法", "d": "2026-07-19", "a": "Qwen"}, {"t": "今天先到这", "d": "2026-05-04", "a": "Cursor"}, {"t": "牛啊", "d": "2026-06-02", "a": "Codex"}, {"t": "好的", "d": "2026-06-17", "a": "Cursor"}, {"t": "再简单一点", "d": "2026-08-25", "a": "Kimi"}, {"t": "周末再弄", "d": "2026-05-13", "a": "Gemini"}, {"t": "有没有更好的办法", "d": "2026-09-25", "a": "Claude Code"}, {"t": "周末再弄", "d": "2026-06-28", "a": "Claude Code"}, {"t": "帮我看看这个报错", "d": "2026-05-19", "a": "Claude Code"}, {"t": "看看效果", "d": "2026-03-19", "a": "Qwen"}, {"t": "先跑一下测试", "d": "2026-04-23", "a": "Codex"}, {"t": "我准备开始跑步了", "d": "2026-06-22", "a": "Qwen"}, {"t": "今天先到这", "d": "2026-09-24", "a": "Codex"}, {"t": "我准备开始跑步了", "d": "2026-07-05", "a": "Gemini"}, {"t": "这个不对", "d": "2026-07-17", "a": "Codex"}, {"t": "我准备开始跑步了", "d": "2026-04-07", "a": "Cursor"}, {"t": "周末再弄", "d": "2026-09-10", "a": "Claude Code"}, {"t": "明天面试", "d": "2026-06-27", "a": "Gemini"}, {"t": "我想做个小程序", "d": "2026-07-19", "a": "Cursor"}, {"t": "先记下来", "d": "2026-06-17", "a": "Qwen"}, {"t": "行吧", "d": "2026-05-28", "a": "Qwen"}, {"t": "帮我改下简历", "d": "2026-03-20", "a": "Codex"}, {"t": "先记下来", "d": "2026-03-04", "a": "Qwen"}, {"t": "再简单一点", "d": "2026-06-06", "a": "Kimi"}, {"t": "先记下来", "d": "2026-06-07", "a": "Codex"}, {"t": "换个思路", "d": "2026-04-02", "a": "Kimi"}, {"t": "先记下来", "d": "2026-06-04", "a": "Kimi"}, {"t": "先别动代码", "d": "2026-08-05", "a": "Codex"}, {"t": "明天面试", "d": "2026-09-03", "a": "Kimi"}, {"t": "好的", "d": "2026-03-12", "a": "Kimi"}, {"t": "再简单一点", "d": "2026-07-03", "a": "Gemini"}, {"t": "有没有更好的办法", "d": "2026-03-11", "a": "Cursor"}, {"t": "我想做个小程序", "d": "2026-09-12", "a": "Qwen"}, {"t": "行吧", "d": "2026-04-03", "a": "Kimi"}, {"t": "好的", "d": "2026-08-03", "a": "Qwen"}, {"t": "我想做个小程序", "d": "2026-09-07", "a": "Claude Code"}, {"t": "这个不对", "d": "2026-06-23", "a": "Codex"}, {"t": "帮我改下简历", "d": "2026-05-04", "a": "Claude Code"}, {"t": "这个方案可以", "d": "2026-03-28", "a": "Codex"}, {"t": "行吧", "d": "2026-04-13", "a": "Gemini"}, {"t": "帮我改下简历", "d": "2026-08-03", "a": "Kimi"}, {"t": "这个方案可以", "d": "2026-04-21", "a": "Gemini"}, {"t": "先别动代码", "d": "2026-03-15", "a": "Gemini"}, {"t": "行吧", "d": "2026-06-15", "a": "Codex"}, {"t": "明天面试", "d": "2026-03-24", "a": "Cursor"}, {"t": "周末再弄", "d": "2026-09-12", "a": "Gemini"}, {"t": "换个思路", "d": "2026-05-20", "a": "Gemini"}, {"t": "再简单一点", "d": "2026-03-26", "a": "Codex"}, {"t": "牛啊", "d": "2026-09-12", "a": "Codex"}, {"t": "明天面试", "d": "2026-07-07", "a": "Codex"}, {"t": "这个不对", "d": "2026-03-06", "a": "Kimi"}, {"t": "今天先到这", "d": "2026-07-06", "a": "Qwen"}, {"t": "继续", "d": "2026-04-04", "a": "Kimi"}, {"t": "提交推送", "d": "2026-06-16", "a": "Codex"}, {"t": "好的", "d": "2026-09-01", "a": "Gemini"}, {"t": "明天面试", "d": "2026-05-14", "a": "Claude Code"}, {"t": "行吧", "d": "2026-08-02", "a": "Codex"}, {"t": "今天先到这", "d": "2026-03-13", "a": "Gemini"}, {"t": "继续", "d": "2026-04-08", "a": "Claude Code"}, {"t": "今天先到这", "d": "2026-06-07", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-07-04", "a": "Cursor"}, {"t": "先跑一下测试", "d": "2026-07-02", "a": "Qwen"}, {"t": "先别动代码", "d": "2026-05-26", "a": "Gemini"}, {"t": "先别动代码", "d": "2026-06-08", "a": "Kimi"}, {"t": "牛啊", "d": "2026-03-27", "a": "Cursor"}, {"t": "先记下来", "d": "2026-05-11", "a": "Claude Code"}, {"t": "好的", "d": "2026-08-14", "a": "Claude Code"}, {"t": "我准备开始跑步了", "d": "2026-07-01", "a": "Claude Code"}, {"t": "继续", "d": "2026-08-03", "a": "Claude Code"}, {"t": "提交推送", "d": "2026-07-02", "a": "Gemini"}, {"t": "好的", "d": "2026-04-21", "a": "Kimi"}, {"t": "我想做个小程序", "d": "2026-04-25", "a": "Gemini"}, {"t": "我想做个小程序", "d": "2026-09-16", "a": "Cursor"}, {"t": "看看效果", "d": "2026-03-13", "a": "Cursor"}, {"t": "下周一定整理笔记", "d": "2026-08-13", "a": "Claude Code"}, {"t": "先别动代码", "d": "2026-04-28", "a": "Gemini"}, {"t": "先跑一下测试", "d": "2026-07-13", "a": "Kimi"}, {"t": "我想做个小程序", "d": "2026-07-22", "a": "Gemini"}, {"t": "提交推送", "d": "2026-09-24", "a": "Qwen"}, {"t": "今天先到这", "d": "2026-09-18", "a": "Cursor"}, {"t": "提交推送", "d": "2026-05-26", "a": "Gemini"}, {"t": "明天面试", "d": "2026-04-15", "a": "Qwen"}, {"t": "帮我改下简历", "d": "2026-05-09", "a": "Codex"}, {"t": "换个思路", "d": "2026-08-25", "a": "Kimi"}, {"t": "行吧", "d": "2026-08-13", "a": "Gemini"}, {"t": "好的", "d": "2026-04-06", "a": "Qwen"}, {"t": "继续", "d": "2026-09-15", "a": "Claude Code"}, {"t": "行吧", "d": "2026-08-22", "a": "Claude Code"}, {"t": "我想做个小程序", "d": "2026-04-20", "a": "Qwen"}, {"t": "好的", "d": "2026-07-28", "a": "Claude Code"}, {"t": "明天面试", "d": "2026-06-28", "a": "Qwen"}, {"t": "先记下来", "d": "2026-05-12", "a": "Claude Code"}, {"t": "可以啊", "d": "2026-04-13", "a": "Claude Code"}, {"t": "我想做个小程序", "d": "2026-07-10", "a": "Claude Code"}, {"t": "明天面试", "d": "2026-03-27", "a": "Qwen"}, {"t": "这个不对", "d": "2026-04-23", "a": "Claude Code"}, {"t": "帮我看看这个报错", "d": "2026-08-05", "a": "Kimi"}, {"t": "继续", "d": "2026-03-08", "a": "Cursor"}, {"t": "这个不对", "d": "2026-04-28", "a": "Kimi"}, {"t": "换个思路", "d": "2026-06-17", "a": "Kimi"}, {"t": "我想做个小程序", "d": "2026-09-18", "a": "Codex"}, {"t": "明天面试", "d": "2026-04-20", "a": "Claude Code"}, {"t": "好的", "d": "2026-09-26", "a": "Claude Code"}, {"t": "下周一定整理笔记", "d": "2026-03-28", "a": "Claude Code"}, {"t": "这个不对", "d": "2026-05-03", "a": "Claude Code"}, {"t": "明天面试", "d": "2026-06-08", "a": "Qwen"}, {"t": "下周一定整理笔记", "d": "2026-03-21", "a": "Gemini"}, {"t": "看看效果", "d": "2026-09-23", "a": "Cursor"}, {"t": "今天先到这", "d": "2026-07-22", "a": "Gemini"}, {"t": "先跑一下测试", "d": "2026-05-27", "a": "Kimi"}, {"t": "明天面试", "d": "2026-09-13", "a": "Codex"}, {"t": "先跑一下测试", "d": "2026-07-01", "a": "Gemini"}, {"t": "先别动代码", "d": "2026-08-21", "a": "Claude Code"}, {"t": "我想做个小程序", "d": "2026-05-07", "a": "Gemini"}, {"t": "可以啊", "d": "2026-07-22", "a": "Qwen"}, {"t": "周末再弄", "d": "2026-06-26", "a": "Qwen"}, {"t": "可以啊", "d": "2026-07-17", "a": "Codex"}, {"t": "再简单一点", "d": "2026-05-27", "a": "Claude Code"}, {"t": "我想做个小程序", "d": "2026-04-14", "a": "Gemini"}, {"t": "可以啊", "d": "2026-05-07", "a": "Cursor"}, {"t": "提交推送", "d": "2026-08-07", "a": "Qwen"}, {"t": "这个不对", "d": "2026-09-24", "a": "Kimi"}, {"t": "明天面试", "d": "2026-08-18", "a": "Gemini"}, {"t": "周末再弄", "d": "2026-04-20", "a": "Gemini"}, {"t": "帮我改下简历", "d": "2026-09-14", "a": "Gemini"}, {"t": "我准备开始跑步了", "d": "2026-03-10", "a": "Claude Code"}, {"t": "提交推送", "d": "2026-03-01", "a": "Qwen"}, {"t": "帮我看看这个报错", "d": "2026-05-17", "a": "Kimi"}, {"t": "好的", "d": "2026-08-16", "a": "Claude Code"}, {"t": "这个不对", "d": "2026-08-07", "a": "Cursor"}, {"t": "帮我改下简历", "d": "2026-06-02", "a": "Cursor"}, {"t": "明天面试", "d": "2026-08-07", "a": "Qwen"}, {"t": "先别动代码", "d": "2026-04-04", "a": "Gemini"}, {"t": "先别动代码", "d": "2026-06-15", "a": "Claude Code"}, {"t": "这个不对", "d": "2026-04-16", "a": "Qwen"}, {"t": "先别动代码", "d": "2026-06-26", "a": "Qwen"}, {"t": "周末再弄", "d": "2026-04-14", "a": "Cursor"}, {"t": "明天面试", "d": "2026-06-17", "a": "Kimi"}, {"t": "再简单一点", "d": "2026-05-28", "a": "Cursor"}, {"t": "先别动代码", "d": "2026-03-15", "a": "Cursor"}, {"t": "周末再弄", "d": "2026-09-27", "a": "Cursor"}, {"t": "再简单一点", "d": "2026-09-17", "a": "Claude Code"}, {"t": "继续", "d": "2026-04-21", "a": "Kimi"}, {"t": "帮我看看这个报错", "d": "2026-07-01", "a": "Codex"}, {"t": "好的", "d": "2026-03-07", "a": "Gemini"}, {"t": "周末再弄", "d": "2026-09-12", "a": "Kimi"}, {"t": "好的", "d": "2026-06-06", "a": "Codex"}, {"t": "继续", "d": "2026-05-14", "a": "Cursor"}, {"t": "好的", "d": "2026-07-18", "a": "Claude Code"}, {"t": "明天面试", "d": "2026-05-09", "a": "Codex"}, {"t": "看看效果", "d": "2026-09-16", "a": "Gemini"}, {"t": "牛啊", "d": "2026-05-02", "a": "Claude Code"}, {"t": "这个方案可以", "d": "2026-03-21", "a": "Qwen"}, {"t": "提交推送", "d": "2026-09-26", "a": "Kimi"}, {"t": "再简单一点", "d": "2026-04-24", "a": "Gemini"}, {"t": "换个思路", "d": "2026-09-27", "a": "Cursor"}, {"t": "有没有更好的办法", "d": "2026-04-09", "a": "Claude Code"}, {"t": "提交推送", "d": "2026-03-01", "a": "Gemini"}, {"t": "先记下来", "d": "2026-03-27", "a": "Gemini"}, {"t": "明天面试", "d": "2026-07-22", "a": "Kimi"}, {"t": "换个思路", "d": "2026-06-12", "a": "Kimi"}, {"t": "先记下来", "d": "2026-04-10", "a": "Codex"}, {"t": "可以啊", "d": "2026-08-05", "a": "Kimi"}, {"t": "先跑一下测试", "d": "2026-06-25", "a": "Cursor"}, {"t": "明天面试", "d": "2026-06-09", "a": "Cursor"}, {"t": "明天面试", "d": "2026-05-17", "a": "Codex"}, {"t": "我准备开始跑步了", "d": "2026-05-05", "a": "Kimi"}, {"t": "好的", "d": "2026-06-16", "a": "Codex"}, {"t": "明天面试", "d": "2026-07-20", "a": "Cursor"}, {"t": "继续", "d": "2026-05-19", "a": "Kimi"}, {"t": "有没有更好的办法", "d": "2026-03-16", "a": "Codex"}, {"t": "牛啊", "d": "2026-09-23", "a": "Cursor"}, {"t": "先跑一下测试", "d": "2026-06-22", "a": "Claude Code"}, {"t": "周末再弄", "d": "2026-03-17", "a": "Gemini"}, {"t": "先记下来", "d": "2026-06-07", "a": "Cursor"}, {"t": "周末再弄", "d": "2026-04-21", "a": "Gemini"}, {"t": "今天先到这", "d": "2026-05-02", "a": "Cursor"}, {"t": "这个不对", "d": "2026-03-11", "a": "Cursor"}, {"t": "下周一定整理笔记", "d": "2026-06-18", "a": "Cursor"}, {"t": "好的", "d": "2026-04-14", "a": "Cursor"}, {"t": "这个方案可以", "d": "2026-03-16", "a": "Codex"}, {"t": "这个不对", "d": "2026-08-03", "a": "Qwen"}, {"t": "换个思路", "d": "2026-03-24", "a": "Qwen"}, {"t": "先跑一下测试", "d": "2026-08-27", "a": "Claude Code"}, {"t": "先别动代码", "d": "2026-08-03", "a": "Gemini"}, {"t": "牛啊", "d": "2026-06-15", "a": "Cursor"}, {"t": "先别动代码", "d": "2026-07-18", "a": "Claude Code"}, {"t": "提交推送", "d": "2026-04-16", "a": "Codex"}, {"t": "帮我看看这个报错", "d": "2026-04-23", "a": "Codex"}, {"t": "行吧", "d": "2026-06-22", "a": "Gemini"}, {"t": "先记下来", "d": "2026-03-05", "a": "Gemini"}, {"t": "好的", "d": "2026-04-25", "a": "Qwen"}, {"t": "提交推送", "d": "2026-05-07", "a": "Qwen"}, {"t": "帮我看看这个报错", "d": "2026-09-05", "a": "Claude Code"}, {"t": "换个思路", "d": "2026-04-18", "a": "Codex"}, {"t": "今天先到这", "d": "2026-09-04", "a": "Gemini"}, {"t": "今天先到这", "d": "2026-04-01", "a": "Cursor"}, {"t": "先跑一下测试", "d": "2026-04-04", "a": "Codex"}, {"t": "先别动代码", "d": "2026-04-13", "a": "Cursor"}, {"t": "下周一定整理笔记", "d": "2026-03-07", "a": "Claude Code"}, {"t": "周末再弄", "d": "2026-04-16", "a": "Codex"}, {"t": "可以啊", "d": "2026-05-18", "a": "Gemini"}, {"t": "先跑一下测试", "d": "2026-08-28", "a": "Cursor"}, {"t": "帮我改下简历", "d": "2026-03-24", "a": "Cursor"}, {"t": "换个思路", "d": "2026-08-28", "a": "Gemini"}, {"t": "我准备开始跑步了", "d": "2026-06-15", "a": "Kimi"}, {"t": "有没有更好的办法", "d": "2026-05-15", "a": "Codex"}, {"t": "有没有更好的办法", "d": "2026-06-27", "a": "Gemini"}, {"t": "这个不对", "d": "2026-09-20", "a": "Cursor"}, {"t": "提交推送", "d": "2026-05-28", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-05-27", "a": "Codex"}, {"t": "帮我看看这个报错", "d": "2026-03-20", "a": "Claude Code"}, {"t": "这个方案可以", "d": "2026-07-28", "a": "Codex"}, {"t": "先跑一下测试", "d": "2026-07-01", "a": "Codex"}, {"t": "先跑一下测试", "d": "2026-09-13", "a": "Kimi"}, {"t": "看看效果", "d": "2026-05-17", "a": "Qwen"}, {"t": "牛啊", "d": "2026-03-15", "a": "Kimi"}, {"t": "我准备开始跑步了", "d": "2026-06-11", "a": "Codex"}, {"t": "我准备开始跑步了", "d": "2026-07-07", "a": "Cursor"}, {"t": "明天面试", "d": "2026-07-19", "a": "Cursor"}, {"t": "先记下来", "d": "2026-05-19", "a": "Cursor"}, {"t": "行吧", "d": "2026-07-25", "a": "Qwen"}, {"t": "周末再弄", "d": "2026-09-23", "a": "Cursor"}, {"t": "先别动代码", "d": "2026-05-09", "a": "Codex"}, {"t": "先跑一下测试", "d": "2026-07-17", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-08-21", "a": "Codex"}, {"t": "先别动代码", "d": "2026-06-09", "a": "Gemini"}, {"t": "帮我看看这个报错", "d": "2026-06-11", "a": "Kimi"}, {"t": "提交推送", "d": "2026-07-17", "a": "Kimi"}, {"t": "明天面试", "d": "2026-07-02", "a": "Claude Code"}, {"t": "这个方案可以", "d": "2026-06-18", "a": "Kimi"}, {"t": "先别动代码", "d": "2026-03-08", "a": "Gemini"}, {"t": "今天先到这", "d": "2026-04-03", "a": "Cursor"}, {"t": "换个思路", "d": "2026-04-02", "a": "Kimi"}, {"t": "帮我改下简历", "d": "2026-03-14", "a": "Qwen"}, {"t": "今天先到这", "d": "2026-08-18", "a": "Cursor"}, {"t": "继续", "d": "2026-05-12", "a": "Kimi"}, {"t": "周末再弄", "d": "2026-06-15", "a": "Cursor"}, {"t": "先记下来", "d": "2026-08-04", "a": "Kimi"}, {"t": "帮我改下简历", "d": "2026-04-11", "a": "Codex"}, {"t": "继续", "d": "2026-05-03", "a": "Kimi"}, {"t": "继续", "d": "2026-04-03", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-06-10", "a": "Codex"}, {"t": "继续", "d": "2026-03-18", "a": "Qwen"}, {"t": "我想做个小程序", "d": "2026-07-15", "a": "Qwen"}, {"t": "周末再弄", "d": "2026-09-24", "a": "Codex"}, {"t": "明天面试", "d": "2026-05-22", "a": "Kimi"}, {"t": "先跑一下测试", "d": "2026-07-13", "a": "Codex"}, {"t": "帮我改下简历", "d": "2026-04-10", "a": "Cursor"}, {"t": "有没有更好的办法", "d": "2026-04-04", "a": "Codex"}, {"t": "下周一定整理笔记", "d": "2026-03-14", "a": "Claude Code"}, {"t": "周末再弄", "d": "2026-06-01", "a": "Gemini"}, {"t": "提交推送", "d": "2026-06-09", "a": "Codex"}, {"t": "今天先到这", "d": "2026-04-17", "a": "Qwen"}, {"t": "这个方案可以", "d": "2026-07-21", "a": "Qwen"}, {"t": "先别动代码", "d": "2026-06-10", "a": "Claude Code"}, {"t": "先记下来", "d": "2026-08-23", "a": "Claude Code"}, {"t": "可以啊", "d": "2026-06-25", "a": "Qwen"}, {"t": "我想做个小程序", "d": "2026-03-28", "a": "Claude Code"}, {"t": "我想做个小程序", "d": "2026-06-14", "a": "Qwen"}, {"t": "先跑一下测试", "d": "2026-09-22", "a": "Cursor"}, {"t": "先记下来", "d": "2026-06-19", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-04-21", "a": "Gemini"}, {"t": "可以啊", "d": "2026-03-21", "a": "Kimi"}, {"t": "继续", "d": "2026-07-17", "a": "Codex"}, {"t": "我准备开始跑步了", "d": "2026-09-03", "a": "Codex"}, {"t": "再简单一点", "d": "2026-09-16", "a": "Kimi"}, {"t": "今天先到这", "d": "2026-05-12", "a": "Gemini"}, {"t": "看看效果", "d": "2026-07-08", "a": "Codex"}, {"t": "我准备开始跑步了", "d": "2026-05-11", "a": "Kimi"}, {"t": "帮我看看这个报错", "d": "2026-07-18", "a": "Cursor"}, {"t": "下周一定整理笔记", "d": "2026-07-12", "a": "Cursor"}, {"t": "我准备开始跑步了", "d": "2026-09-24", "a": "Qwen"}, {"t": "换个思路", "d": "2026-04-15", "a": "Claude Code"}, {"t": "这个方案可以", "d": "2026-09-10", "a": "Qwen"}, {"t": "这个不对", "d": "2026-06-28", "a": "Codex"}, {"t": "提交推送", "d": "2026-09-04", "a": "Gemini"}, {"t": "先跑一下测试", "d": "2026-07-13", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-04-25", "a": "Claude Code"}, {"t": "我想做个小程序", "d": "2026-06-08", "a": "Gemini"}, {"t": "看看效果", "d": "2026-09-24", "a": "Claude Code"}, {"t": "再简单一点", "d": "2026-06-12", "a": "Gemini"}, {"t": "再简单一点", "d": "2026-04-10", "a": "Cursor"}, {"t": "周末再弄", "d": "2026-05-02", "a": "Qwen"}, {"t": "我想做个小程序", "d": "2026-08-04", "a": "Codex"}, {"t": "再简单一点", "d": "2026-05-15", "a": "Codex"}, {"t": "我准备开始跑步了", "d": "2026-04-08", "a": "Gemini"}, {"t": "行吧", "d": "2026-04-07", "a": "Qwen"}, {"t": "周末再弄", "d": "2026-07-08", "a": "Codex"}, {"t": "看看效果", "d": "2026-09-17", "a": "Gemini"}, {"t": "下周一定整理笔记", "d": "2026-07-14", "a": "Kimi"}, {"t": "提交推送", "d": "2026-08-10", "a": "Gemini"}, {"t": "周末再弄", "d": "2026-03-03", "a": "Kimi"}, {"t": "明天面试", "d": "2026-06-01", "a": "Kimi"}, {"t": "提交推送", "d": "2026-05-17", "a": "Gemini"}, {"t": "看看效果", "d": "2026-06-08", "a": "Gemini"}, {"t": "换个思路", "d": "2026-06-12", "a": "Gemini"}, {"t": "下周一定整理笔记", "d": "2026-06-25", "a": "Codex"}, {"t": "先跑一下测试", "d": "2026-08-14", "a": "Cursor"}, {"t": "帮我看看这个报错", "d": "2026-07-11", "a": "Claude Code"}, {"t": "周末再弄", "d": "2026-07-05", "a": "Cursor"}, {"t": "帮我改下简历", "d": "2026-08-18", "a": "Codex"}, {"t": "明天面试", "d": "2026-05-16", "a": "Claude Code"}, {"t": "我准备开始跑步了", "d": "2026-05-27", "a": "Qwen"}, {"t": "这个不对", "d": "2026-07-03", "a": "Qwen"}, {"t": "有没有更好的办法", "d": "2026-07-10", "a": "Kimi"}, {"t": "看看效果", "d": "2026-05-18", "a": "Cursor"}, {"t": "这个方案可以", "d": "2026-09-24", "a": "Qwen"}, {"t": "先别动代码", "d": "2026-03-14", "a": "Qwen"}, {"t": "有没有更好的办法", "d": "2026-08-25", "a": "Cursor"}, {"t": "这个方案可以", "d": "2026-06-12", "a": "Kimi"}, {"t": "提交推送", "d": "2026-04-10", "a": "Qwen"}, {"t": "这个不对", "d": "2026-07-27", "a": "Gemini"}, {"t": "行吧", "d": "2026-03-11", "a": "Kimi"}, {"t": "提交推送", "d": "2026-05-24", "a": "Gemini"}, {"t": "提交推送", "d": "2026-07-13", "a": "Gemini"}, {"t": "这个不对", "d": "2026-06-18", "a": "Kimi"}, {"t": "周末再弄", "d": "2026-03-24", "a": "Claude Code"}, {"t": "下周一定整理笔记", "d": "2026-06-23", "a": "Codex"}, {"t": "提交推送", "d": "2026-07-22", "a": "Codex"}, {"t": "先跑一下测试", "d": "2026-03-18", "a": "Kimi"}, {"t": "先跑一下测试", "d": "2026-06-28", "a": "Kimi"}, {"t": "换个思路", "d": "2026-05-13", "a": "Cursor"}, {"t": "可以啊", "d": "2026-06-09", "a": "Qwen"}, {"t": "我想做个小程序", "d": "2026-04-09", "a": "Claude Code"}, {"t": "这个不对", "d": "2026-03-16", "a": "Cursor"}, {"t": "这个方案可以", "d": "2026-04-09", "a": "Cursor"}, {"t": "看看效果", "d": "2026-04-09", "a": "Kimi"}, {"t": "换个思路", "d": "2026-04-22", "a": "Codex"}, {"t": "再简单一点", "d": "2026-05-26", "a": "Cursor"}, {"t": "我想做个小程序", "d": "2026-03-04", "a": "Qwen"}, {"t": "帮我看看这个报错", "d": "2026-09-03", "a": "Codex"}, {"t": "明天面试", "d": "2026-05-04", "a": "Cursor"}, {"t": "帮我看看这个报错", "d": "2026-04-02", "a": "Qwen"}, {"t": "帮我改下简历", "d": "2026-05-17", "a": "Codex"}, {"t": "周末再弄", "d": "2026-09-15", "a": "Qwen"}, {"t": "这个方案可以", "d": "2026-07-19", "a": "Qwen"}, {"t": "我准备开始跑步了", "d": "2026-06-26", "a": "Gemini"}, {"t": "牛啊", "d": "2026-05-18", "a": "Cursor"}, {"t": "我准备开始跑步了", "d": "2026-06-05", "a": "Claude Code"}, {"t": "好的", "d": "2026-04-14", "a": "Qwen"}, {"t": "继续", "d": "2026-04-26", "a": "Codex"}, {"t": "换个思路", "d": "2026-08-07", "a": "Qwen"}, {"t": "先记下来", "d": "2026-05-09", "a": "Claude Code"}, {"t": "先记下来", "d": "2026-07-19", "a": "Qwen"}, {"t": "周末再弄", "d": "2026-04-04", "a": "Codex"}, {"t": "这个不对", "d": "2026-08-03", "a": "Gemini"}, {"t": "这个方案可以", "d": "2026-08-10", "a": "Codex"}, {"t": "先跑一下测试", "d": "2026-07-11", "a": "Qwen"}, {"t": "下周一定整理笔记", "d": "2026-08-06", "a": "Cursor"}, {"t": "帮我看看这个报错", "d": "2026-03-20", "a": "Claude Code"}, {"t": "看看效果", "d": "2026-04-04", "a": "Claude Code"}, {"t": "行吧", "d": "2026-03-21", "a": "Kimi"}, {"t": "今天先到这", "d": "2026-08-15", "a": "Kimi"}, {"t": "看看效果", "d": "2026-07-15", "a": "Cursor"}, {"t": "提交推送", "d": "2026-08-27", "a": "Claude Code"}, {"t": "可以啊", "d": "2026-05-22", "a": "Qwen"}, {"t": "这个方案可以", "d": "2026-04-01", "a": "Claude Code"}, {"t": "我想做个小程序", "d": "2026-07-24", "a": "Cursor"}, {"t": "周末再弄", "d": "2026-03-02", "a": "Codex"}, {"t": "今天先到这", "d": "2026-03-26", "a": "Kimi"}, {"t": "明天面试", "d": "2026-08-24", "a": "Cursor"}, {"t": "先记下来", "d": "2026-04-15", "a": "Gemini"}, {"t": "再简单一点", "d": "2026-09-01", "a": "Cursor"}, {"t": "这个不对", "d": "2026-04-06", "a": "Gemini"}, {"t": "今天先到这", "d": "2026-03-13", "a": "Cursor"}, {"t": "我准备开始跑步了", "d": "2026-03-18", "a": "Qwen"}, {"t": "下周一定整理笔记", "d": "2026-04-10", "a": "Claude Code"}, {"t": "继续", "d": "2026-06-01", "a": "Kimi"}, {"t": "我想做个小程序", "d": "2026-04-07", "a": "Gemini"}, {"t": "我准备开始跑步了", "d": "2026-07-09", "a": "Qwen"}, {"t": "下周一定整理笔记", "d": "2026-06-22", "a": "Qwen"}, {"t": "这个不对", "d": "2026-07-19", "a": "Gemini"}, {"t": "先记下来", "d": "2026-05-26", "a": "Claude Code"}, {"t": "提交推送", "d": "2026-09-15", "a": "Kimi"}, {"t": "换个思路", "d": "2026-03-10", "a": "Kimi"}, {"t": "下周一定整理笔记", "d": "2026-04-15", "a": "Kimi"}, {"t": "帮我看看这个报错", "d": "2026-05-17", "a": "Codex"}, {"t": "再简单一点", "d": "2026-05-17", "a": "Cursor"}, {"t": "先跑一下测试", "d": "2026-03-16", "a": "Claude Code"}, {"t": "帮我改下简历", "d": "2026-09-08", "a": "Qwen"}, {"t": "这个方案可以", "d": "2026-03-01", "a": "Claude Code"}, {"t": "帮我改下简历", "d": "2026-07-01", "a": "Claude Code"}, {"t": "行吧", "d": "2026-07-28", "a": "Gemini"}, {"t": "继续", "d": "2026-03-12", "a": "Qwen"}, {"t": "先别动代码", "d": "2026-05-27", "a": "Gemini"}, {"t": "帮我改下简历", "d": "2026-05-25", "a": "Cursor"}, {"t": "帮我看看这个报错", "d": "2026-05-21", "a": "Kimi"}, {"t": "可以啊", "d": "2026-06-21", "a": "Claude Code"}, {"t": "先跑一下测试", "d": "2026-08-07", "a": "Codex"}, {"t": "可以啊", "d": "2026-04-24", "a": "Gemini"}, {"t": "换个思路", "d": "2026-08-25", "a": "Qwen"}, {"t": "换个思路", "d": "2026-04-21", "a": "Codex"}, {"t": "可以啊", "d": "2026-08-10", "a": "Kimi"}, {"t": "换个思路", "d": "2026-03-16", "a": "Claude Code"}, {"t": "周末再弄", "d": "2026-08-16", "a": "Claude Code"}, {"t": "这个方案可以", "d": "2026-08-23", "a": "Cursor"}, {"t": "有没有更好的办法", "d": "2026-09-13", "a": "Gemini"}, {"t": "明天面试", "d": "2026-05-20", "a": "Claude Code"}, {"t": "我想做个小程序", "d": "2026-05-16", "a": "Qwen"}, {"t": "先记下来", "d": "2026-05-26", "a": "Gemini"}, {"t": "牛啊", "d": "2026-04-12", "a": "Claude Code"}, {"t": "先记下来", "d": "2026-05-24", "a": "Gemini"}, {"t": "这个方案可以", "d": "2026-06-25", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-07-02", "a": "Qwen"}, {"t": "再简单一点", "d": "2026-07-02", "a": "Kimi"}, {"t": "今天先到这", "d": "2026-04-13", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-03-21", "a": "Codex"}, {"t": "换个思路", "d": "2026-06-09", "a": "Gemini"}, {"t": "这个方案可以", "d": "2026-07-19", "a": "Cursor"}, {"t": "今天先到这", "d": "2026-06-27", "a": "Claude Code"}, {"t": "周末再弄", "d": "2026-08-27", "a": "Gemini"}, {"t": "周末再弄", "d": "2026-08-13", "a": "Cursor"}, {"t": "换个思路", "d": "2026-04-05", "a": "Codex"}, {"t": "这个不对", "d": "2026-09-20", "a": "Claude Code"}, {"t": "先记下来", "d": "2026-06-24", "a": "Claude Code"}, {"t": "下周一定整理笔记", "d": "2026-09-13", "a": "Gemini"}, {"t": "帮我改下简历", "d": "2026-06-17", "a": "Kimi"}, {"t": "有没有更好的办法", "d": "2026-06-20", "a": "Codex"}, {"t": "帮我改下简历", "d": "2026-06-02", "a": "Qwen"}, {"t": "有没有更好的办法", "d": "2026-08-06", "a": "Claude Code"}, {"t": "这个不对", "d": "2026-07-22", "a": "Qwen"}, {"t": "先跑一下测试", "d": "2026-09-05", "a": "Gemini"}, {"t": "换个思路", "d": "2026-03-04", "a": "Claude Code"}, {"t": "下周一定整理笔记", "d": "2026-04-10", "a": "Kimi"}, {"t": "帮我看看这个报错", "d": "2026-06-14", "a": "Codex"}, {"t": "提交推送", "d": "2026-04-23", "a": "Qwen"}, {"t": "这个方案可以", "d": "2026-06-11", "a": "Qwen"}, {"t": "明天面试", "d": "2026-07-01", "a": "Cursor"}, {"t": "有没有更好的办法", "d": "2026-03-19", "a": "Cursor"}, {"t": "我想做个小程序", "d": "2026-07-13", "a": "Codex"}, {"t": "先跑一下测试", "d": "2026-05-07", "a": "Claude Code"}, {"t": "这个不对", "d": "2026-06-08", "a": "Codex"}, {"t": "我想做个小程序", "d": "2026-04-24", "a": "Claude Code"}, {"t": "我想做个小程序", "d": "2026-07-10", "a": "Codex"}], "agents": [{"agent": "Claude Code", "n": 5200, "median": 14, "title": "你的主开发台", "phrases": [{"text": "再简单一点", "n": 43}, {"text": "我准备开始跑步了", "n": 35}, {"text": "有没有更好的办法", "n": 45}, {"text": "帮我看看这个报错", "n": 42}, {"text": "周末再弄", "n": 9}], "typical": [{"t": "改完提交推送", "d": "2026-05-18"}, {"t": "先跑一下测试看看", "d": "2026-07-01"}, {"t": "这个报错帮我看下", "d": "2026-09-16"}], "sample": {"t": "再简单一点", "d": "2026-04-23"}}, {"agent": "Codex", "n": 4800, "median": 31, "title": "长任务交给它", "phrases": [{"text": "帮我改下简历", "n": 19}, {"text": "有没有更好的办法", "n": 45}, {"text": "今天先到这", "n": 14}, {"text": "先记下来", "n": 60}, {"text": "帮我看看这个报错", "n": 38}], "typical": [{"t": "这个任务你自己拆，拆完一步步做，别问我", "d": "2026-03-22"}, {"t": "把登录模块重构一下，先写测试再改，改完跑一遍全量", "d": "2026-06-24"}, {"t": "把上周那个接口的边界情况都补上测试", "d": "2026-09-03"}], "sample": {"t": "提交推送", "d": "2026-09-19"}}, {"agent": "Cursor", "n": 900, "median": 9, "title": "顺手改两行", "phrases": [{"text": "好的", "n": 43}, {"text": "先别动代码", "n": 51}, {"text": "继续", "n": 29}, {"text": "牛啊", "n": 50}, {"text": "帮我改下简历", "n": 55}], "typical": [{"t": "改一下", "d": "2026-06-13"}, {"t": "行", "d": "2026-07-15"}, {"t": "这行删了", "d": "2026-08-26"}], "sample": {"t": "帮我看看这个报错", "d": "2026-05-04"}}, {"agent": "Gemini", "n": 620, "median": 22, "title": "查资料的地方", "phrases": [{"text": "好的", "n": 48}, {"text": "帮我看看这个报错", "n": 32}, {"text": "帮我改下简历", "n": 54}, {"text": "这个不对", "n": 45}, {"text": "牛啊", "n": 59}], "typical": [{"t": "这个库最新版本是多少，有啥大改动", "d": "2026-05-14"}, {"t": "对比一下这两个方案", "d": "2026-06-19"}, {"t": "帮我找找这个问题有没有官方说法", "d": "2026-07-27"}], "sample": {"t": "周末再弄", "d": "2026-07-19"}}, {"agent": "Kimi", "n": 410, "median": 40, "title": "整段材料丢过去", "phrases": [{"text": "这个方案可以", "n": 6}, {"text": "我准备开始跑步了", "n": 59}, {"text": "再简单一点", "n": 22}, {"text": "我想做个小程序", "n": 43}, {"text": "看看效果", "n": 47}], "typical": [{"t": "把这篇文章压到三百字，保留数字", "d": "2026-05-18"}, {"t": "这是我整理的一整份面试材料，帮我提炼成三点，每点给一个例子，语气别太正式", "d": "2026-08-06"}, {"t": "这段会议记录太乱了，帮我按时间理一遍，谁说了什么列出来", "d": "2026-08-28"}], "sample": {"t": "我准备开始跑步了", "d": "2026-07-04"}}, {"agent": "Qwen", "n": 260, "median": 12, "title": "偶尔试试", "phrases": [{"text": "行吧", "n": 23}, {"text": "先记下来", "n": 12}, {"text": "这个不对", "n": 9}, {"text": "我准备开始跑步了", "n": 35}, {"text": "牛啊", "n": 59}], "typical": [{"t": "翻译一下这段", "d": "2026-03-12"}, {"t": "试试你", "d": "2026-08-16"}, {"t": "写个周报开头", "d": "2026-09-03"}], "sample": {"t": "这个方案可以", "d": "2026-04-01"}}], "lines": [{"name": "换工作", "status": "还在走", "kind": "open", "question": "先多投几家，还是先把项目经历讲顺", "facts": [{"d": "2026-05-02", "q": "我准备换个方向试试"}, {"d": "2026-06-18", "q": "帮我改下简历"}, {"d": "2026-08-09", "q": "明天面试，帮我过一遍"}]}, {"name": "自己的小程序", "status": "还在走", "kind": "open", "question": "继续加功能，还是先给朋友用起来", "facts": [{"d": "2026-04-11", "q": "我想做个记账小程序"}, {"d": "2026-07-01", "q": "先把登录做完"}, {"d": "2026-09-12", "q": "这个方案可以"}]}, {"name": "跑步", "status": "一直停在“准备做”", "kind": "stalled", "question": "是真想开始，还是先放一放", "facts": [{"d": "2026-03-20", "q": "我准备开始跑步了"}, {"d": "2026-06-05", "q": "下周一定开始跑"}]}, {"name": "整理读书笔记", "status": "没了下文", "kind": "stalled", "question": "", "facts": [{"d": "2026-04-02", "q": "下周一定整理笔记"}, {"d": "2026-05-30", "q": "笔记先记下来再说"}]}, {"name": "考证", "status": "已经收线", "kind": "closed", "question": "", "facts": [{"d": "2026-03-01", "q": "这个月开始刷题"}, {"d": "2026-05-15", "q": "不考了，先找工作"}]}], "promises": [{"text": "开始跑步", "d": "2026-03-20", "days": 189, "ref": ""}, {"text": "整理读书笔记", "d": "2026-04-02", "days": 176, "ref": ""}, {"text": "给小程序写个说明", "d": "2026-07-01", "days": 86, "ref": ""}], "hands": [{"text": "先跑一下测试", "n": 48}, {"text": "提交推送", "n": 33}, {"text": "帮我看看这个报错", "n": 27}, {"text": "改下简历", "n": 14}, {"text": "整理一下笔记", "n": 9}, {"text": "查一下文档", "n": 8}, {"text": "写个脚本", "n": 6}]};
+const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const tip = $('#tip');
+const showTip = (h, x, y) => { tip.innerHTML = h; tip.classList.add('on');
+  tip.style.left = Math.min(x + 18, innerWidth - 320) + 'px'; tip.style.top = Math.min(y + 18, innerHeight - 110) + 'px'; };
+const hideTip = () => tip.classList.remove('on');
+const fmt = n => n.toLocaleString('zh-CN');
+// 日期统一写成人话：和数据最后一年同年的只写月日，跨年才带年份；不是日期的原样返回
+const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (!m) return s;
+  const y = +m[1] === +String(D.span[1]).slice(0, 4) ? '' : `${+m[1]} 年 `;
+  return `${y}${+m[2]} 月${m[3] ? ` ${+m[3]} 日` : ''}`; };
+
+/* ===================== 镜子：WebGL 雾 + 水银涟漪 ===================== */
+(function mirror(){
+  // 日期写成人话：同一年只写月日，跨年或不是今年才带年份；天数含首尾两天
+  const [d0, d1] = D.span.map(s => new Date(s + 'T00:00:00')), days = Math.round((d1 - d0) / 864e5) + 1;
+  const yr = d0.getFullYear() !== d1.getFullYear() || d1.getFullYear() !== new Date().getFullYear();
+  const md = d => `${yr ? d.getFullYear() + ' 年 ' : ''}${d.getMonth() + 1} 月 ${d.getDate()} 日`;
+  $('#m-lede').textContent = `${md(d0)}到 ${md(d1)}这 ${days} 天，你对 AI 说的话拼成了镜子里这个人：头顶是你在想的事，嘴边是口头禅，胸口是惦记着还没下文的，两边肩膀上是你最常让 AI 干的活。`;
+  const top = D.phrases.slice(0, 3);
+  $('#m-foot').innerHTML = [`<div><b>${fmt(D.total)}</b>句话</div>`, `<div><b>${D.agents.length}</b>个 AI 听过</div>`,
+    `<div><b>「${esc(top[0].text)}」</b>说了 ${top[0].n} 次</div>`].join('');
+
+  const cvs = $('#gl'), box = $('#glass');
+  const gl = cvs.getContext('webgl', {premultipliedAlpha: false, antialias: true, preserveDrawingBuffer: true});
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const words = document.createElement('canvas'), mask = document.createElement('canvas');
+  const wx = words.getContext('2d'), mx = mask.getContext('2d', {willReadFrequently: true});
+  let W = 0, H = 0, cells = [], ripples = [], t0 = performance.now(), mouse = [.5, .4], silC = null;
+  // 人像分四块，每块只放一类原话；某一类没有数据时退回随机原话，不留空洞
+  const fill = D.mirror.map(q => ({t: q.t, d: q.d, a: q.a}));
+  const Z = {
+    think: {label: '在想的事', sub: '那几条线里说过的话', hsl: [205, 45, 86], at: [.38, .28],
+            items: D.lines.flatMap(l => l.facts.map(f => ({t: f.q, d: f.d, a: l.name})))},
+    mouth: {label: '挂在嘴边的', sub: '口头禅', hsl: [40, 92, 70], glow: '#ffcf7a', at: [.6, .46],
+            items: D.phrases.map(p => ({t: p.text, d: `说了 ${p.n} 次`, a: `最近一次是 ${fd(p.last)}`}))},
+    heart: {label: '惦记着的', sub: '说过要做、还没下文', hsl: [10, 88, 72], at: [.46, .78],
+            items: D.promises.map(p => ({t: p.text, d: p.d, a: `${p.days} 天前说的`}))
+              .concat(D.lines.filter(l => l.kind === 'stalled').flatMap(l => l.facts.map(f => ({t: f.q, d: f.d, a: l.name}))))},
+    hands: {label: '手上常干的', sub: '最常让 AI 干的活', hsl: [160, 50, 66], at: [.86, .86],
+            items: (D.hands || []).map(h => ({t: h.text, d: `让 AI 做过 ${h.n} 次`, a: ''}))},
+  };
+  Object.values(Z).forEach(z => { if (!z.items.length) z.items = fill; });
+  const zoneAt = (nx, ny) => ny < .61 ? (ny < .4 ? 'think' : 'mouth') : (nx < .27 || nx > .73 ? 'hands' : 'heart');
+  const zl = $('#zones');
+  zl.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${Object.entries(Z).map(([k, z]) =>
+      `<line data-z="${k}" x1="${k === 'think' || k === 'heart' ? 30 : 70}" y1="${{think: 33, mouth: 44, heart: 58, hands: 61}[k]}" x2="${z.at[0] * 100}" y2="${z.at[1] * 100}" stroke="hsl(${z.hsl[0]},${z.hsl[1]}%,${z.hsl[2]}%)"/>`).join('')}</svg>` +
+    Object.entries(Z).map(([k, z]) => `<div class="zl zl-${k}" data-z="${k}" style="--c:hsl(${z.hsl[0]},${z.hsl[1]}%,${z.hsl[2]}%)"><b>${z.label}</b><small>${z.sub}</small></div>`).join('');
+  const showZone = (k, on) => $$(`#zones [data-z="${k}"]`).forEach(e => e.classList.toggle('on', on));
+
+  function silhouette(w, h){
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.fillStyle = '#fff';
+    g.beginPath(); g.ellipse(w*.5, h*.36, w*.19, h*.165, 0, 0, 7); g.fill();
+    g.beginPath(); g.moveTo(w*.42, h*.46); g.lineTo(w*.58, h*.46); g.lineTo(w*.6, h*.6); g.lineTo(w*.4, h*.6); g.fill();
+    g.beginPath(); g.moveTo(w*.02, h); g.bezierCurveTo(w*.04, h*.72, w*.28, h*.62, w*.5, h*.61);
+    g.bezierCurveTo(w*.72, h*.62, w*.96, h*.72, w*.98, h); g.fill();
+    return {d: g.getImageData(0, 0, w, h).data, w, c};
+  }
+  function paintWords(){
+    words.width = W*dpr; words.height = H*dpr; wx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const bgG = wx.createLinearGradient(0, 0, W * .4, H);
+    bgG.addColorStop(0, '#4d5b6b'); bgG.addColorStop(.55, '#222c37'); bgG.addColorStop(1, '#141a21');
+    wx.fillStyle = bgG; wx.fillRect(0, 0, W, H);
+    const band = wx.createLinearGradient(W * .05, 0, W * .75, H * .55);
+    band.addColorStop(.42, 'rgba(220,235,255,0)'); band.addColorStop(.5, 'rgba(220,235,255,.09)'); band.addColorStop(.58, 'rgba(220,235,255,0)');
+    wx.fillStyle = band; wx.fillRect(0, 0, W, H);
+    const m = silhouette(Math.round(W), Math.round(H));
+    silC = document.createElement('canvas'); silC.width = 128; silC.height = Math.max(1, Math.round(128 * H / W));
+    const sg = silC.getContext('2d'); sg.filter = 'blur(5px)'; sg.drawImage(m.c, 0, 0, silC.width, silC.height);
+    const inside = (x, y) => m.d[(Math.round(y) * m.w + Math.round(x)) * 4 + 3] > 10;
+    const fs = Math.max(9, W / 44), lh = fs * 1.28;
+    wx.font = `500 ${fs}px "Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif`; wx.textBaseline = 'top';
+    cells = []; const st = {}; let bg = 0;
+    for (let y = 4; y < H - lh * .6; y += lh){
+      for (let x = 3; x < W - fs * .8;){
+        if (inside(x + fs/2, y + lh/2)){
+          const k = zoneAt((x + fs/2) / W, (y + lh/2) / H), z = Z[k], s0 = st[k] || (st[k] = {qi: 0, ci: 0});
+          const q = z.items[s0.qi % z.items.length], s = q.t + '　', ch = s[s0.ci], cw = wx.measureText(ch).width || fs;
+          wx.fillStyle = `hsl(${z.hsl[0]},${z.hsl[1]}%,${z.hsl[2] - (s0.qi % 3) * 7}%)`;
+          wx.shadowColor = z.glow || 'transparent'; wx.shadowBlur = z.glow ? 8 : 0;
+          wx.fillText(ch, x, y); cells.push({x, y, w: cw, h: lh, q, z: k});
+          if (++s0.ci >= s.length){ s0.ci = 0; s0.qi++; }
+          x += cw;
+        } else {
+          wx.shadowBlur = 0; wx.fillStyle = `rgba(160,176,194,${.05 + ((bg++ * 7) % 10) / 120})`;
+          const b = fill[(bg * 13) % fill.length].t, ch = b[bg % b.length]; wx.fillText(ch, x, y);
+          x += wx.measureText(ch).width || fs;
+        }
+      }
+    }
+    wx.shadowBlur = 0;
+  }
+  function resetMask(){ mask.width = 256; mask.height = Math.round(256 * H / W); mx.fillStyle = '#000'; mx.fillRect(0, 0, mask.width, mask.height); }
+  function wipe(x, y, r = 34){
+    const k = mask.width / W, g = mx.createRadialGradient(x*k, y*k, 0, x*k, y*k, r*k);
+    g.addColorStop(0, 'rgba(255,255,255,.5)'); g.addColorStop(.6, 'rgba(255,255,255,.3)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    mx.fillStyle = g; mx.beginPath(); mx.arc(x*k, y*k, r*k, 0, 7); mx.fill();
+  }
+  // 连成一笔：两次指针位置之间按半径的 0.3 倍补点，擦痕是连续的一道而不是一串圆斑
+  const brush = () => { let L = null; const f = (x, y, r = 34) => {
+      if (L){ const n = Math.ceil(Math.hypot(x - L[0], y - L[1]) / (r * .3)); for (let i = 1; i <= n; i++) wipe(L[0] + (x - L[0]) * i / n, L[1] + (y - L[1]) * i / n, r); }
+      else wipe(x, y, r); L = [x, y]; };
+    f.end = () => L = null; return f; };
+  const finger = brush(), ghost = brush();
+  const cleared = (x, y) => { const k = mask.width / W; return mx.getImageData(x*k|0, y*k|0, 1, 1).data[0]; };
+  const pos = e => { const r = cvs.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  function bindHover(){
+    cvs.addEventListener('pointerleave', hideTip);
+    cvs.addEventListener('pointermove', e => {
+      const [x, y] = pos(e), c = cells.find(c => x >= c.x && x < c.x + c.w && y >= c.y && y < c.y + c.h);
+      if (c && cleared(x, y) > 120) showTip(`「${esc(c.q.t)}」<small>${[Z[c.z].label, fd(c.q.d), c.q.a].filter(Boolean).map(esc).join(' · ')}</small>`, e.clientX, e.clientY); else hideTip();
+    });
+  }
+
+  if (!gl){ // 没有 WebGL：直接显示字，不起雾
+    const ctx = cvs.getContext('2d');
+    const draw = () => { const r = box.getBoundingClientRect(); W = r.width; H = r.height; paintWords(); cvs.width = words.width; cvs.height = words.height; ctx.drawImage(words, 0, 0); resetMask(); mx.fillStyle = '#fff'; mx.fillRect(0, 0, mask.width, mask.height); };
+    draw(); addEventListener('resize', draw); bindHover(); $('#wipe-all').hidden = true; Object.keys(Z).forEach(k => showZone(k, true)); return;
+  }
+  const VS = `attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;uv.y=1.-uv.y;gl_Position=vec4(p,0,1);}`;
+  const FS = `precision highp float;varying vec2 uv;uniform sampler2D tw,tm,ts;uniform float t,asp;uniform vec2 ms;uniform vec4 rp[8];
+  float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+  float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+1.),f.x),f.y);}
+  float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}
+  void main(){
+    vec2 q=uv;vec2 off=vec2(0);
+    for(int i=0;i<8;i++){vec4 r=rp[i];float age=t-r.z;if(r.w<.5||age>2.6)continue;
+      vec2 d=(q-r.xy)*vec2(asp,1.);float L=length(d);float w=sin(L*60.-age*9.)*exp(-L*7.)*exp(-age*1.6);
+      off+=normalize(d+1e-4)*w*.018;}
+    float m=texture2D(tm,uv).r;
+    float sil=texture2D(ts,uv).a;
+    vec2 wob=vec2(fbm(uv*3.+t*.05),fbm(uv*3.-t*.04))-.5;
+    vec2 s=q+off+wob*.003*(1.-m);
+    float ca=length(off)*.35;
+    vec3 col=vec3(texture2D(tw,s+vec2(ca,0)).r,texture2D(tw,s).g,texture2D(tw,s-vec2(ca,0)).b);
+    float f=fbm(uv*vec2(asp,1.)*4.+vec2(t*.03,-t*.02));
+    float gx=uv.x*120.;float lane=floor(gx);float live=step(.93,h(vec2(lane,3.1)));
+    float len=.12+.3*h(vec2(lane,7.7));float top=.05+h(vec2(lane,1.3))*.55;float k=clamp((uv.y-top)/len,0.,1.);
+    float drip=live*smoothstep(.22,.0,abs(fract(gx)-.5))*step(top,uv.y)*step(uv.y,top+len)*(1.-k*.8);
+    float fog=clamp((1.-smoothstep(.1,.85,m))*(.8+.25*f),0.,1.);
+    fog*=1.-drip*.35;
+    vec3 fogc=mix(vec3(.74,.79,.84),vec3(.9,.92,.95),f);
+    fogc*=1.-sil*(.17+.03*sin(t*.8));
+    vec3 c=mix(col,fogc,fog*.93);
+    float rim=smoothstep(.02,.25,m)*smoothstep(.6,.25,m);
+    c+=rim*.09;
+    float sh=smoothstep(.06,0.,abs((uv.x-uv.y*.6)-(ms.x-ms.y*.6)-.05))*.07;c+=sh;
+    float vg=smoothstep(1.3,.4,length((uv-.5)*vec2(1.,1.2)));c*=.78+.22*vg;
+    gl_FragColor=vec4(c,1);}`;
+  const sh = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s)); return s; };
+  const pr = gl.createProgram(); gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(pr); gl.useProgram(pr);
+  const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(pr, 'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  const U = n => gl.getUniformLocation(pr, n);
+  const tex = unit => { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+    for (const [k, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, k, v); return t; };
+  const tw = tex(0), tm = tex(1), ts = tex(2); gl.uniform1i(U('tw'), 0); gl.uniform1i(U('tm'), 1); gl.uniform1i(U('ts'), 2);
+  function upload(){
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tw); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, words);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, ts); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, silC);
+  }
+  function layout(){
+    const r = box.getBoundingClientRect(); W = r.width; H = r.height; cvs.width = W*dpr; cvs.height = H*dpr; gl.viewport(0, 0, cvs.width, cvs.height);
+    paintWords(); resetMask(); if (locked) fillClear(); upload();
+  }
+  let down = false, last = 0, idle = 0, intro = RM ? 1 : 0, locked = false, sweep = -1;
+  const fillClear = () => { mx.fillStyle = '#fff'; mx.fillRect(0, 0, mask.width, mask.height); };
+  const btn = $('#wipe-all');
+  // 一键擦开：雾从中间往外散开，之后不再回来；再点一次重新起雾
+  function toggleClear(){
+    if (locked){ locked = false; sweep = -1; resetMask(); idle = 0; btn.textContent = '一键擦开'; btn.classList.remove('done'); return; }
+    locked = true; sweep = RM ? 1 : 0; btn.textContent = '重新起雾'; btn.classList.add('done');
+    ripples.push([.5, .45, (performance.now() - t0) / 1000]);
+  }
+  btn.onclick = toggleClear;
+  function frame(now){
+    const t = (now - t0) / 1000;
+    if (intro < 1){ intro = Math.min(1, intro + .012); // 开场：自己擦出一道
+      const a = intro * Math.PI * 1.6; ghost(W * (.5 + Math.cos(a + 2) * .22 * intro), H * (.36 + Math.sin(a * 1.3) * .14), 40); }
+    if (sweep >= 0){ sweep = Math.min(1, sweep + .022);
+      const k = mask.width / W, cx = W / 2 * k, cy = H * .45 * k, r = Math.hypot(W, H) * .62 * sweep * k;
+      const g = mx.createRadialGradient(cx, cy, r * .55, cx, cy, r + 1);
+      g.addColorStop(0, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)'); mx.fillStyle = g; mx.fillRect(0, 0, mask.width, mask.height);
+      if (sweep === 1){ fillClear(); sweep = -1; } }
+    if (!locked && !down && ++idle > 200 && !RM){ mx.fillStyle = 'rgba(0,0,0,.006)'; mx.fillRect(0, 0, mask.width, mask.height); }
+    if (++frame.n % 12 === 0) Object.entries(Z).forEach(([k, z]) => showZone(k, cleared(z.at[0] * W, z.at[1] * H) > 110));
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, tm); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, mask);
+    gl.uniform1f(U('t'), t); gl.uniform1f(U('asp'), W / H); gl.uniform2f(U('ms'), mouse[0], mouse[1]);
+    const rp = new Float32Array(32); ripples.slice(-8).forEach((r, i) => rp.set([r[0], r[1], r[2], 1], i * 4));
+    gl.uniform4fv(U('rp'), rp); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(frame);
+  }
+  cvs.addEventListener('pointerdown', e => { down = true; cvs.setPointerCapture(e.pointerId); const [x, y] = pos(e); finger.end(); finger(x, y);
+    ripples.push([x / W, y / H, (performance.now() - t0) / 1000]); });
+  addEventListener('pointerup', () => { down = false; finger.end(); });
+  cvs.addEventListener('pointermove', e => {
+    const [x, y] = pos(e); mouse = [x / W, y / H];
+    if (down){ finger(x, y); idle = 0; const now = performance.now(); if (now - last > 90){ last = now; ripples.push([x / W, y / H, (now - t0) / 1000]); } }
+  });
+  frame.n = 0; layout(); requestAnimationFrame(frame); bindHover();
+  addEventListener('resize', () => { clearTimeout(layout.t); layout.t = setTimeout(layout, 200); });
+  document.fonts && document.fonts.ready.then(() => { paintWords(); upload(); });
+  // 键盘用户：回车一次擦开整面
+  cvs.tabIndex = 0; cvs.addEventListener('keydown', e => { if (e.key === 'Enter' && !locked) toggleClear(); });
+  window.__mirror = {cleared: () => { const d = mx.getImageData(0, 0, mask.width, mask.height).data; let z = 0; for (let i = 0; i < d.length; i += 4) if (d[i] > 120) z++; return z / (d.length / 4); }};
+})();
+
+/* ===================== 群聊：AI 们背着你拉了个群 ===================== */
+(function group(){
+  const s = $('#screen'), body = $('#wx-body'), now = new Date();
+  $('#st-time').textContent = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+  const hues = [18, 215, 160, 265, 40, 330], A = D.agents.map((a, i) => ({...a, h: hues[i % hues.length]}));
+  const total = A.reduce((n, a) => n + a.n, 0) || 1, T = D.phrases[0];
+  $('#wx-title').textContent = `关于那个人（${A.length}）`;
+  const q = t => `「${t}」`, one = t => t.length === 2 ? '这两个字' : '这句';
+  const ini = n => { const w = n.trim().split(/\s+/); return w.length > 1 ? w.map(x => x[0]).join('').slice(0, 2).toUpperCase() : n.slice(0, 2); };
+  // 台词只用：AI 名字、句数、一句话字数、口头禅。每句带 fact 作依据，页面上悬停可见
+  function script(){
+    const L = [], ai = (a, text, fact) => L.push({k: 'ai', a, text, fact});
+    const sys = (text, fact = '') => L.push({k: 'sys', text, fact});
+    if (!A.length) return L;
+    const top = A[0], byMed = [...A].sort((x, y) => x.median - y.median), short = byMed[0], long = byMed[byMed.length - 1], last = A[A.length - 1];
+    sys(`${top.agent} 邀请 ${A.slice(1).map(a => a.agent).join('、') || '自己'} 加入了群聊`);
+    sys(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`);
+    ai(top, `我先说，ta 跟我说了 ${fmt(top.n)} 句话，占 ta 跟咱们所有人说的 ${Math.round(top.n / total * 100)}%`, `你对 ${top.agent} 说了 ${fmt(top.n)} 句，${A.length} 个 AI 加起来是 ${fmt(total)} 句`);
+    if (short !== long){
+      const sp = short.phrases[0];
+      ai(short, `ta 跟我说话一句一般就 ${short.median} 个字${sp ? `，最常说的是${q(sp.text)}` : ''}`, `你对 ${short.agent} 说的话，有一半不超过 ${short.median} 个字${sp ? `；${q(sp.text)}说了 ${sp.n} 次` : ''}`);
+      ai(long, `？？跟我一句一般 ${long.median} 个字`, `你对 ${long.agent} 说的话，有一半在 ${long.median} 个字以上`);
+    }
+    // 最常说的那句：优先让还没开口的 AI 来说，免得同一个 AI 连说好几句
+    const holder = T && A.map(a => ({a, p: a.phrases.find(p => p.text === T.text)})).filter(x => x.p)
+      .sort((x, y) => (x.a === short) - (y.a === short) || y.p.n - x.p.n);
+    if (short !== long && long.median >= short.median * 2 && !(holder && holder[0] && holder[0].a === short))
+      ai(short, '😶', `同样一句话，你在 ${long.agent} 那边说的差不多是 ${short.agent} 的 ${(long.median / short.median).toFixed(1)} 倍长`);
+    const spoke = new Set([top, short, long]);
+    if (holder && holder.length){
+      const {a, p} = holder[0]; spoke.add(a);
+      ai(a, `${q(T.text)}${one(T.text)} ta 跟我说了 ${p.n} 次，我都会背了`, `在 ${a.agent} 那边，你说了 ${p.n} 次${q(T.text)}`);
+      if (holder[1]){ spoke.add(holder[1].a); ai(holder[1].a, `+1，我这儿也有 ${holder[1].p.n} 次`, `在 ${holder[1].a.agent} 那边，你说了 ${holder[1].p.n} 次${q(T.text)}`); }
+    }
+    const said = new Set([T && T.text, short.phrases[0] && short.phrases[0].text]);
+    A.filter(a => !spoke.has(a) && a !== last).slice(0, 2).forEach(a => {
+      const p = a.phrases.find(p => !said.has(p.text)); if (!p) return; said.add(p.text);
+      ai(a, `跟我的话，ta 最爱说${q(p.text)}，${p.n} 次`, `在 ${a.agent} 那边，你说了 ${p.n} 次${q(p.text)}`);
+    });
+    if (last !== top && A.length > 2) ai(last, `……原来你们都这么熟吗，ta 总共就跟我说了 ${fmt(last.n)} 句`, `你对 ${last.agent} 一共只说了 ${fmt(last.n)} 句`);
+    sys(`${(A[1] || top).agent} 撤回了一条消息`);
+    sys('你 加入了群聊');
+    if (T) L.push({k: 'me', text: T.text, fact: `你一共说了 ${T.n} 次${q(T.text)}`});
+    return L;
+  }
+  const L = script();
+  body.innerHTML = L.map((m, i) => m.k === 'sys' ? `<div class="wx-sys pending" data-i="${i}">${esc(m.text)}</div>`
+    : `<div class="wx-m${m.k === 'me' ? ' me' : ''} pending" data-i="${i}" style="--h:${m.k === 'me' ? 120 : m.a.h}">
+        <span class="wx-av">${m.k === 'me' ? '你' : esc(ini(m.a.agent))}</span><div>${m.k === 'me' ? '' : `<small>${esc(m.a.agent)}</small>`}<p>${esc(m.text)}</p></div></div>`).join('');
+  const items = [...body.children];
+  body.addEventListener('click', e => { const t = e.target.closest('[data-i]'); if (t) t.classList.toggle('off'); });
+  body.addEventListener('mousemove', e => { const t = e.target.closest('[data-i]'), m = t && L[t.dataset.i];
+    if (m && m.fact) showTip(`${esc(m.fact)}<small>${t.classList.contains('off') ? '这句不会放进图片，再点一下放回来' : '点一下，这句就不放进图片'}</small>`, e.clientX, e.clientY); else hideTip(); });
+  body.addEventListener('mouseleave', hideTip);
+  let timers = [];
+  function play(){
+    timers.forEach(clearTimeout); timers = [];
+    items.forEach(x => { x.classList.add('pending'); x.classList.remove('pop'); });
+    items.forEach((x, i) => timers.push(setTimeout(() => {
+      x.classList.remove('pending'); x.classList.add('pop');
+      requestAnimationFrame(() => requestAnimationFrame(() => x.classList.remove('pop')));
+      body.scrollTop = body.scrollHeight;
+    }, RM ? 0 : 500 + i * (L[i].k === 'sys' ? 450 : 900))));
+  }
+  $('#wx-replay').onclick = play;
+  let played = false;
+  new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting && !played){ played = true; play(); } }), {threshold: .4}).observe(s);
+
+  // 存成图片：用 canvas 直接画，不联网、不引库；只画没划掉的句子
+  $('#wx-save').onclick = () => {
+    const S = 2, Wd = 750, pad = 24, av = 72, bw = 470, f = 30, lhh = 44, font = '"PingFang SC","Microsoft YaHei","Noto Sans SC",sans-serif';
+    const c = document.createElement('canvas'), g = c.getContext('2d');
+    // 断行：数字和英文连成一块不拆开；逗号、句号、百分号这类不放行首
+    const wrap = (t, max, px) => { g.font = `${px}px ${font}`; const out = []; let cur = '';
+      for (const tk of t.match(/[A-Za-z0-9.,%+×]+|./gu) || []){
+        if (cur && g.measureText(cur + tk).width > max && !/^[，。、！？：；）」%…]/.test(tk)){ out.push(cur); cur = tk.trimStart(); } else cur += tk; }
+      out.push(cur); return out; };
+    const keep = L.filter((m, i) => !items[i].classList.contains('off'));
+    const blocks = keep.map(m => m.k === 'sys' ? (() => { const ls = wrap(m.text, Wd - 120, 22); return {m, ls, h: ls.length * 32 + 24}; })()
+      : (() => { const ls = wrap(m.text, bw - 40, f); return {m, ls, h: Math.max(av, ls.length * lhh + 28) + (m.k === 'me' ? 0 : 34) + 24}; })());
+    const H = 128 + blocks.reduce((n, b) => n + b.h, 0) + 110;
+    c.width = Wd * S; c.height = H * S; g.scale(S, S);
+    g.fillStyle = '#ededed'; g.fillRect(0, 0, Wd, H);
+    g.fillStyle = '#111'; g.font = `600 32px ${font}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText($('#wx-title').textContent, Wd / 2, 56); g.fillStyle = '#d6d6d6'; g.fillRect(0, 104, Wd, 1);
+    const rr = (x, y, w, h, r) => { g.beginPath(); g.roundRect(x, y, w, h, r); g.fill(); };
+    let y = 128;
+    blocks.forEach(({m, ls, h}) => {
+      if (m.k === 'sys'){ g.fillStyle = '#9a9a9a'; g.font = `22px ${font}`; g.textAlign = 'center'; ls.forEach((l, j) => g.fillText(l, Wd / 2, y + 16 + j * 32)); y += h; return; }
+      const me = m.k === 'me', ax = me ? Wd - pad - av : pad, hue = me ? 120 : m.a.h;
+      const grd = g.createLinearGradient(ax, y, ax + av, y + av); grd.addColorStop(0, `hsl(${hue},70%,60%)`); grd.addColorStop(1, `hsl(${hue + 30},65%,44%)`);
+      g.fillStyle = grd; rr(ax, y, av, av, 10);
+      g.fillStyle = '#fff'; g.font = `700 ${me ? 30 : 26}px ${font}`; g.textAlign = 'center'; g.fillText(me ? '你' : ini(m.a.agent), ax + av / 2, y + av / 2);
+      let by = y;
+      if (!me){ g.fillStyle = '#8f8f8f'; g.font = `22px ${font}`; g.textAlign = 'left'; g.fillText(m.a.agent, ax + av + 20, y + 14); by += 34; }
+      g.font = `${f}px ${font}`;
+      const tw = Math.max(...ls.map(l => g.measureText(l).width)) + 40, th = ls.length * lhh + 28;
+      const bx = me ? ax - 20 - tw : ax + av + 20;
+      g.fillStyle = me ? '#95ec69' : '#fff'; rr(bx, by, tw, th, 10);
+      g.beginPath(); if (me){ g.moveTo(bx + tw, by + 26); g.lineTo(bx + tw + 10, by + 34); g.lineTo(bx + tw, by + 42); } else { g.moveTo(bx, by + 26); g.lineTo(bx - 10, by + 34); g.lineTo(bx, by + 42); } g.fill();
+      g.fillStyle = '#111'; g.textAlign = 'left'; ls.forEach((l, j) => g.fillText(l, bx + 20, by + 14 + lhh / 2 + j * lhh));
+      y += h;
+    });
+    g.fillStyle = '#a3a3a3'; g.font = `20px ${font}`; g.textAlign = 'center';
+    g.fillText(`言镜 wordmirror · 群里每句都照真实统计写 · ${fd(D.today)}`, Wd / 2, H - 50);
+    c.toBlob(b => { const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'AI们背着你拉了个群.png'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); });
+  };
+  const ph = $('#phone'), sheen = $('#sheen');
+  if (!RM) $('#s-phone').addEventListener('pointermove', e => {
+    const r = ph.getBoundingClientRect(), dx = (e.clientX - r.left - r.width / 2) / r.width, dy = (e.clientY - r.top - r.height / 2) / r.height;
+    ph.style.transform = `rotateY(${dx * 6}deg) rotateX(${-dy * 4}deg)`; sheen.style.setProperty('--sa', (115 + dx * 50) + 'deg');
+  });
+  $('#s-phone').addEventListener('pointerleave', () => ph.style.transform = '');
+})();
+
+/* ===================== 聊天窗：同一个你，对不同 AI 怎么说话 ===================== */
+(function chats(){
+  const el = $('#chats'), maxMed = Math.max(...D.agents.map(a => a.median), 1);
+  const hues = [18, 215, 160, 265, 40, 330];
+  el.innerHTML = D.agents.map((a, i) => {
+    const msgs = (a.typical && a.typical.length ? a.typical : [a.sample]).slice(0, 3);
+    return `<article class="chat" style="--h:${hues[i % hues.length]};transition-delay:${i * .08}s">
+      <header><span class="av">${esc(a.agent.slice(0, 1))}</span><div><b>${esc(a.agent)}</b><small>${esc(a.title || '')}${a.title ? ' · ' : ''}${fmt(a.n)} 句</small></div></header>
+      <div class="len">一句话<i style="--w:${Math.round(a.median / maxMed * 100)}%"></i><em>中位 ${a.median} 字</em></div>
+      <div class="msgs">${msgs.map((m, j) => `<div class="msg" style="transition-delay:${.35 + i * .08 + j * .22}s"><p>${esc(m.t)}</p><time>${fd(m.d)}</time></div>`).join('')}</div>
+      <footer>常说${a.phrases.slice(0, 3).map(p => `<q>${esc(p.text)}<i>×${p.n}</i></q>`).join('')}</footer>
+    </article>`; }).join('');
+  new IntersectionObserver(es => es.forEach(x => x.isIntersecting && el.classList.add('in')), {threshold: .15}).observe(el);
+})();
+
+/* ===================== 线索墙 ===================== */
+(function wall(){
+  const board = $('#board'); board.style.setProperty('--cols', D.lines.length);
+  const tagText = {closed: '已经收线', stalled: '停在准备做', open: '走到现在'};
+  D.lines.forEach(l => {
+    const c = document.createElement('div'); c.className = 'col'; c.dataset.kind = l.kind;
+    c.innerHTML = `<h6>${esc(l.name)}<small>${esc(l.status)}</small></h6>` +
+      l.facts.map((f, j) => `<div class="note" style="transition-delay:${j * .12}s"><span class="pin"></span><em>${fd(f.d)}</em>${esc(f.q.length > 46 ? f.q.slice(0, 46) + '…' : f.q)}</div>`).join('') +
+      `<div class="tag ${l.kind}"><span class="pin"></span>${tagText[l.kind]}</div>` + (l.question ? `<div class="qcard">${esc(l.question)}</div>` : '');
+    board.appendChild(c);
+  });
+  const svg = $('#strings');
+  function draw(animate){
+    const br = board.getBoundingClientRect(); svg.innerHTML = '';
+    $$('#board .col').forEach((col, ci) => {
+      const pins = [...col.querySelectorAll('.pin')].map(p => { const r = p.getBoundingClientRect(); return [r.left - br.left + r.width / 2, r.top - br.top + r.height / 2]; });
+      for (let i = 1; i < pins.length; i++){
+        const [x1, y1] = pins[i - 1], [x2, y2] = pins[i], stalled = i === pins.length - 1 && col.dataset.kind === 'stalled';
+        // 钉子在便签左上角，线向左外侧垂下绕过便签，不压住原话
+        const mx = Math.min(x1, x2) - 46 - (y2 - y1) * .04;
+        const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        p.setAttribute('d', `M${x1},${y1} Q${mx},${(y1 + y2) / 2 + 10} ${x2},${y2}`);
+        if (stalled){ p.setAttribute('stroke-dasharray', '5 9'); p.style.opacity = .8; }
+        svg.appendChild(p);
+        if (animate && !RM && !stalled){ const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+          p.style.transition = `stroke-dashoffset .7s ${(ci * .15 + i * .22).toFixed(2)}s ease-out`; requestAnimationFrame(() => requestAnimationFrame(() => p.style.strokeDashoffset = 0)); }
+      }
+    });
+  }
+  let lit = false;
+  new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting && !lit){ lit = true; board.classList.add('lit'); setTimeout(() => draw(true), 650); } }), {threshold: .15}).observe(board);
+  addEventListener('resize', () => lit && draw(false));
+  document.fonts && document.fonts.ready.then(() => lit && draw(false));
+})();
+
+/* 目录高亮 */
+$$('section').forEach(s => new IntersectionObserver(es => es.forEach(e => e.isIntersecting &&
+  $$('nav a').forEach(a => a.classList.toggle('on', a.hash === '#' + s.id))), {threshold: .45}).observe(s));
+$('#foot').textContent = `${fd(D.today)} 生成 · 所有原话来自你本机的对话记录 · 这个文件只在你的电脑上`;
+</script>
+</body>
+</html>
