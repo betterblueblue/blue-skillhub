@@ -3,6 +3,14 @@
 > 触发场景：用户要求数据更新、你的情况过期了、换机器要初始化。
 > 原则：**你（Agent）按下面 8 步逐步执行**，每步一个脚本，顺序不能乱（去重必须排在统计/素材之前，否则数字会虚高）。重复跑不会重复入库（按内容去重）。
 
+## 断点（先看这个）
+
+开始前先跑 `python scripts/wm.py progress`：
+- 有没做完的一轮 → 告诉用户“上次做到 X，接着来吗”，同意就从“下一步”接着做，不重跑已完成的步骤。
+- 没有 → `python scripts/wm.py progress start` 开一轮。
+
+每步做完立刻 `python scripts/wm.py progress done <步骤> --note "产物条数"`。步骤名依次是：`detect / extract_user / extract_ai / dedup / sessions / stats / materials / distill / promises / insights / render / self_check`（后五步对应读原话写六页、补录承诺、定稿照见、渲染、自检）。对话中断、上下文被压缩、换了模型，都靠这个文件接上。
+
 ## 8 步（每步跑完、看到产物再往下）
 
 | 步 | 命令 | 干什么 | 产物 |

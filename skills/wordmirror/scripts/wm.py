@@ -15,6 +15,9 @@
 按意思搜（向量，AI 现场算不了）：
     python wm.py vec build [--update] / vec query "问题" / vec status
 
+断点（初始化/更新做到哪一步，中断后接着做）：
+    python wm.py progress start / progress done <步骤> [--note 说明] / progress
+
 数据绑定（数据在别处时接上）：
     python wm.py bind <仓库根> / bind --clear
 
@@ -373,6 +376,49 @@ def cmd_promise(args):
     else:
         print('用法：python wm.py promise / promise add 文本 / promise done 关键词')
 
+PROGRESS_STEPS = ['detect', 'extract_user', 'extract_ai', 'dedup', 'sessions', 'stats', 'materials',
+                  'distill', 'promises', 'insights', 'render', 'self_check']
+
+def _progress_file():
+    return os.path.join(DATA, 'progress.json')
+
+def cmd_progress(args):
+    """初始化/更新的断点：每做完一步记一笔，中断后从下一步接着做。"""
+    pf = _progress_file()
+    state = {}
+    if os.path.exists(pf):
+        try:
+            state = json.load(open(pf, encoding='utf-8'))
+        except Exception:
+            print('progress.json 坏了，先 `python wm.py progress start` 重开一轮')
+            sys.exit(1)
+    sub = args[0] if args else ''
+    if sub == 'start':
+        state = {'started': datetime.datetime.now().isoformat(timespec='seconds'), 'steps': {}}
+    elif sub == 'done':
+        if len(args) < 2 or args[1] not in PROGRESS_STEPS:
+            print('用法：python wm.py progress done <步骤> [--note 说明]；步骤只能是：%s' % ' / '.join(PROGRESS_STEPS))
+            sys.exit(1)
+        if 'started' not in state:
+            print('还没开始一轮，先 `python wm.py progress start`')
+            sys.exit(1)
+        note = args[args.index('--note') + 1] if '--note' in args and args.index('--note') + 1 < len(args) else ''
+        state['steps'][args[1]] = {'at': datetime.datetime.now().isoformat(timespec='seconds'), 'note': note}
+    elif sub:
+        print('用法：python wm.py progress / progress start / progress done <步骤> [--note 说明]')
+        sys.exit(1)
+    if sub:
+        os.makedirs(os.path.dirname(pf), exist_ok=True)
+        with open(pf, 'w', encoding='utf-8') as f:
+            json.dump(state, f, ensure_ascii=False, indent=2)
+    if 'started' not in state:
+        print('没有进行中的一轮。')
+        return
+    done = state.get('steps', {})
+    todo = [s for s in PROGRESS_STEPS if s not in done]
+    print('这一轮 %s 开始，已完成 %d/%d 步' % (state['started'], len(PROGRESS_STEPS) - len(todo), len(PROGRESS_STEPS)))
+    print('下一步：%s' % todo[0] if todo else '全部完成')
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
@@ -388,6 +434,8 @@ def main():
         cmd_wb(sys.argv[2:])
     elif cmd == 'corr':
         cmd_corr(sys.argv[2:])
+    elif cmd == 'progress':
+        cmd_progress(sys.argv[2:])
     else:
         print('不认识的命令：%s' % cmd)
         print(__doc__)

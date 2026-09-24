@@ -10,3 +10,7 @@ products/
 
 # 项目层账本：存用户原话、可能含隐私，默认不进 git（想进 git 的用户自己挑出来）
 .wordmirror/
+
+# 本地调试/测试缓存
+.playwright-mcp/
+.pytest_cache/

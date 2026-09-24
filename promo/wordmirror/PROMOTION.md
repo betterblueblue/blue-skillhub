@@ -8,12 +8,12 @@
 
 ## 渠道一：小红书（纯净排版 · 直接复制即发）
 
-### 1. 配图组合建议（直接在 assets/promo/ 取图）
-* 第 1 图（封面）：`assets/promo/01_xhs_cover.jpg`（大字报：被自己和 AI 聊过的 10,000 句话破防了）
-* 第 2 图（你是谁）：`assets/promo/real_screens/01_我是谁.jpg`（你现在在哪里，怎么跟你共事）
-* 第 3 图（那几条线）：`assets/promo/real_screens/02_那几条线.jpg`（手上的事怎么起、怎么拐、现在停在哪）
-* 第 4 图（AI 眼里的你）：`assets/promo/real_screens/05_AI眼里的你.jpg`（换了工具，你换没换说法）
-* 第 5 图（本地隐私）：`assets/promo/03_local_privacy_shield.jpg`（零第三方云端·本地优先架构图）
+### 1. 配图组合建议（直接在 images/ 取图）
+* 第 1 图（封面）：`images/01_xhs_cover.jpg`（大字报：被自己和 AI 聊过的 10,000 句话破防了）
+* 第 2 图（你是谁）：`images/real_screens/01_我是谁.jpg`（你现在在哪里，怎么跟你共事）
+* 第 3 图（那几条线）：`images/real_screens/02_那几条线.jpg`（手上的事怎么起、怎么拐、现在停在哪）
+* 第 4 图（AI 眼里的你）：`images/real_screens/05_AI眼里的你.jpg`（换了工具，你换没换说法）
+* 第 5 图（本地隐私）：`images/03_local_privacy_shield.jpg`（零第三方云端·本地优先架构图）
 
 > `real_screens/` 已更新为六页新版截图；截图基于本地报告生成，发布前仍应由你最终确认公开范围。
 

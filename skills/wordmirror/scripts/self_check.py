@@ -330,6 +330,41 @@ try:
 except Exception as e:
     check('skill layers 零真实数据', False, str(e)[:80])
 
+# ===== 21. 04 每条发现至少两条带日期原话（没证据的发现不许上页）=====
+np_ = os.path.join(DATA, 'profile', 'noticed.md')
+if not os.path.exists(np_):
+    check('04 发现有证据', None, '还没有 noticed.md，跳过')
+else:
+    weak, n_find = [], 0
+    block = None
+    def _close(b):
+        if b and len(re.findall(r'\d{4}-\d{2}(?:-\d{2})?[^\n]*「[^」]+」', b[1])) < 2:
+            weak.append(b[0][:30])
+    for ln in open(np_, encoding='utf-8', errors='replace').read().splitlines():
+        if re.match(r'\*\*[^*]', ln.strip()):  # 加粗点题行 = 一条发现的开头
+            _close(block); n_find += 1
+            block = [ln.strip('* '), '']
+        elif ln.startswith('#'):
+            _close(block); block = None
+        elif block:
+            block[1] += ln + '\n'
+    _close(block)
+    check('04 发现有证据', not weak,
+          '%d 条发现都有 ≥2 条带日期原话' % n_find if not weak else '证据不足两条: %s' % weak)
+
+# ===== 22. 断点：初始化/更新是否走完 =====
+pg_ = os.path.join(DATA, 'progress.json')
+if os.path.exists(pg_):
+    try:
+        steps = json.load(open(pg_, encoding='utf-8')).get('steps', {})
+        todo = [s for s in ['detect', 'extract_user', 'extract_ai', 'dedup', 'sessions', 'stats', 'materials',
+                            'distill', 'promises', 'insights', 'render'] if s not in steps]
+        check('这一轮走完', None if todo else True, '全部走完' if not todo else '还没做: ' + ','.join(todo))
+    except Exception as e:
+        check('这一轮走完', False, 'progress.json 坏了: %s' % str(e)[:60])
+else:
+    check('这一轮走完', None, '没有 progress.json（旧数据或还没开始），跳过')
+
 # ===== 汇总 =====
 fails = [r for r in results if r[0] == FAIL]
 warns = [r for r in results if r[0] == WARN]

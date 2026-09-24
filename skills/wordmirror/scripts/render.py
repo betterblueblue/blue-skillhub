@@ -510,7 +510,7 @@ def build_insights():
     if os.path.exists(np):
         body.append(render_markdown(open(np, encoding='utf-8', errors='replace').read()))
     else:
-        body.append('<div class="band"><p>这期还没找到值得写的新发现——不凑数。每期至少要有一条你读完才知道的事，连续两期没有，就该修找的方法了。</p></div>')
+        body.append('<div class="band"><p>这期没有找到有原话撑得住的发现，就先空着，不凑数。</p></div>')
     active = [o for o in ins if o.get('status') in ('active', None, '')]
     body.append('<h3>挂着的事</h3>')
     if not active:
