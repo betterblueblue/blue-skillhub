@@ -88,6 +88,8 @@ section{position:relative;z-index:1;padding:120px 20px 80px;display:flex;flex-di
 .wx-m.me{flex-direction:row-reverse}
 .wx-av{flex:none;width:34px;height:34px;border-radius:5px;display:grid;place-items:center;font:700 14px var(--f-body);color:#fff;
   background:linear-gradient(150deg,hsl(var(--h),70%,60%),hsl(calc(var(--h) + 30),65%,44%))}
+.wx-av.has-logo,.chat .av.has-logo{background:#fff;box-shadow:0 0 0 1px #1b243014}
+.wx-av img,.chat .av img{width:24px;height:24px;object-fit:contain;display:block;border-radius:4px}
 .wx-m small{display:block;font-size:10.5px;color:#8f8f8f;margin:0 0 2px 2px}
 .wx-m p{position:relative;max-width:196px;background:#fff;border-radius:5px;padding:7px 10px;font-size:13.5px;line-height:1.5;word-break:break-all}
 .wx-m p::before{content:"";position:absolute;top:11px;left:-5px;border:5px solid transparent;border-left:0;border-right-color:#fff}
@@ -137,9 +139,9 @@ section{position:relative;z-index:1;padding:120px 20px 80px;display:flex;flex-di
 #strings{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;overflow:visible}
 #strings path{fill:none;stroke:#b3211a;stroke-width:2.2;stroke-linecap:round;filter:drop-shadow(1px 3px 1.5px #0006)}
 .col{display:flex;flex-direction:column;align-items:center;gap:30px;z-index:2}
-.col h6{font:400 17px/1.3 var(--f-display);color:#231a10;background:var(--paper);padding:10px 14px;box-shadow:2px 4px 8px #0005;transform:rotate(-1.5deg);text-align:center;max-width:220px}
+.col h6{font:400 17px/1.3 var(--f-display);color:#231a10;background:var(--paper);padding:10px 14px;box-shadow:2px 4px 8px #0005;transform:rotate(-1.5deg);text-align:center;max-width:min(220px,100%)}
 .col h6 small{display:block;font:11px var(--f-mono);color:#8a6a45;margin-top:4px}
-.note{position:relative;width:190px;padding:16px 14px 12px;font:22px/1.25 var(--f-hand);color:#2b2319;box-shadow:3px 6px 12px #0005;
+.note{position:relative;width:min(190px,100%);padding:16px 14px 12px;font:22px/1.25 var(--f-hand);color:#2b2319;box-shadow:3px 6px 12px #0005;
   opacity:0;translate:0 16px;transition:opacity .6s,translate .6s}
 .lit .note{opacity:1;translate:0 0}
 .note:nth-of-type(3n){background:#fbe78a;rotate:2.2deg}
@@ -152,7 +154,7 @@ section{position:relative;z-index:1;padding:120px 20px 80px;display:flex;flex-di
 .tag.closed{background:#314235;color:#c8ecc9;rotate:-4deg}
 .tag.stalled{background:#fff;color:var(--breath);outline:2px dashed var(--breath);outline-offset:-5px;rotate:3deg}
 .tag.open{background:var(--ink);color:#f5d58a;rotate:-2deg}
-.qcard{width:200px;background:#fff;color:#333;font-size:12.5px;line-height:1.6;padding:12px 14px;border-top:22px solid var(--breath);box-shadow:3px 6px 12px #0005;rotate:-1deg}
+.qcard{width:min(200px,100%);background:#fff;color:#333;font-size:12.5px;line-height:1.6;padding:12px 14px;border-top:22px solid var(--breath);box-shadow:3px 6px 12px #0005;rotate:-1deg}
 .qcard::before{content:"现在的问题";display:block;margin:-30px 0 10px;color:#fff;font:600 11px var(--f-mono);letter-spacing:.12em}
 footer{position:relative;z-index:1;text-align:center;padding:40px 20px 70px;font:11px var(--f-mono);color:#7b8591;letter-spacing:.06em}
 
@@ -431,6 +433,8 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
   const s = $('#screen'), body = $('#wx-body'), now = new Date();
   $('#st-time').textContent = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
   const hues = [18, 215, 160, 265, 40, 330], A = D.agents.map((a, i) => ({...a, h: hues[i % hues.length]}));
+  const LOGO_IMGS = {}; A.forEach(a => { if (a.logo) { const im = new Image(); im.src = a.logo; LOGO_IMGS[a.agent] = im; } });
+  const avOf = a => a.logo ? `<img src="${a.logo}" alt="">` : esc(ini(a.agent));
   const total = A.reduce((n, a) => n + a.n, 0) || 1, T = D.phrases[0];
   $('#wx-title').textContent = `关于那个人（${A.length}）`;
   const q = t => `「${t}」`, one = t => t.length === 2 ? '这两个字' : '这句';
@@ -474,7 +478,7 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
   const L = script();
   body.innerHTML = L.map((m, i) => m.k === 'sys' ? `<div class="wx-sys pending" data-i="${i}">${esc(m.text)}</div>`
     : `<div class="wx-m${m.k === 'me' ? ' me' : ''} pending" data-i="${i}" style="--h:${m.k === 'me' ? 120 : m.a.h}">
-        <span class="wx-av">${m.k === 'me' ? '你' : esc(ini(m.a.agent))}</span><div>${m.k === 'me' ? '' : `<small>${esc(m.a.agent)}</small>`}<p>${esc(m.text)}</p></div></div>`).join('');
+        <span class="wx-av${m.k !== 'me' && m.a.logo ? ' has-logo' : ''}">${m.k === 'me' ? '你' : avOf(m.a)}</span><div>${m.k === 'me' ? '' : `<small>${esc(m.a.agent)}</small>`}<p>${esc(m.text)}</p></div></div>`).join('');
   const items = [...body.children];
   body.addEventListener('click', e => { const t = e.target.closest('[data-i]'); if (t) t.classList.toggle('off'); });
   body.addEventListener('mousemove', e => { const t = e.target.closest('[data-i]'), m = t && L[t.dataset.i];
@@ -516,9 +520,15 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
     blocks.forEach(({m, ls, h}) => {
       if (m.k === 'sys'){ g.fillStyle = '#9a9a9a'; g.font = `22px ${font}`; g.textAlign = 'center'; ls.forEach((l, j) => g.fillText(l, Wd / 2, y + 16 + j * 32)); y += h; return; }
       const me = m.k === 'me', ax = me ? Wd - pad - av : pad, hue = me ? 120 : m.a.h;
-      const grd = g.createLinearGradient(ax, y, ax + av, y + av); grd.addColorStop(0, `hsl(${hue},70%,60%)`); grd.addColorStop(1, `hsl(${hue + 30},65%,44%)`);
-      g.fillStyle = grd; rr(ax, y, av, av, 10);
-      g.fillStyle = '#fff'; g.font = `700 ${me ? 30 : 26}px ${font}`; g.textAlign = 'center'; g.fillText(me ? '你' : ini(m.a.agent), ax + av / 2, y + av / 2);
+      const li = !me && m.a.logo ? LOGO_IMGS[m.a.agent] : null;
+      if (li && li.complete && li.naturalWidth){
+        g.fillStyle = '#fff'; rr(ax, y, av, av, 10);
+        const ip = 9; g.drawImage(li, ax + ip, y + ip, av - ip * 2, av - ip * 2);
+      } else {
+        const grd = g.createLinearGradient(ax, y, ax + av, y + av); grd.addColorStop(0, `hsl(${hue},70%,60%)`); grd.addColorStop(1, `hsl(${hue + 30},65%,44%)`);
+        g.fillStyle = grd; rr(ax, y, av, av, 10);
+        g.fillStyle = '#fff'; g.font = `700 ${me ? 30 : 26}px ${font}`; g.textAlign = 'center'; g.fillText(me ? '你' : ini(m.a.agent), ax + av / 2, y + av / 2);
+      }
       let by = y;
       if (!me){ g.fillStyle = '#8f8f8f'; g.font = `22px ${font}`; g.textAlign = 'left'; g.fillText(m.a.agent, ax + av + 20, y + 14); by += 34; }
       g.font = `${f}px ${font}`;
@@ -548,7 +558,7 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
   el.innerHTML = D.agents.map((a, i) => {
     const msgs = (a.typical && a.typical.length ? a.typical : [a.sample]).slice(0, 3);
     return `<article class="chat" style="--h:${hues[i % hues.length]};transition-delay:${i * .08}s">
-      <header><span class="av">${esc(a.agent.slice(0, 1))}</span><div><b>${esc(a.agent)}</b><small>${esc(a.title || '')}${a.title ? ' · ' : ''}${fmt(a.n)} 句</small></div></header>
+      <header><span class="av${a.logo ? ' has-logo' : ''}">${a.logo ? `<img src="${a.logo}" alt="">` : esc(a.agent.slice(0, 1))}</span><div><b>${esc(a.agent)}</b><small>${esc(a.title || '')}${a.title ? ' · ' : ''}${fmt(a.n)} 句</small></div></header>
       <div class="len">一句话<i style="--w:${Math.round(a.median / maxMed * 100)}%"></i><em>中位 ${a.median} 字</em></div>
       <div class="msgs">${msgs.map((m, j) => `<div class="msg" style="transition-delay:${.35 + i * .08 + j * .22}s"><p>${esc(m.t)}</p><time>${fd(m.d)}</time></div>`).join('')}</div>
       <footer>常说${a.phrases.slice(0, 3).map(p => `<q>${esc(p.text)}<i>×${p.n}</i></q>`).join('')}</footer>

@@ -387,11 +387,11 @@ else:
     sys.path.insert(0, os.path.join(BASE, 'scripts'))
     import render as _r  # 复用同一份解析器，不在自检里另造正则
     md = open(lp, encoding='utf-8', errors='replace').read()
-    n_head = len(re.findall(r'^### ', md, re.M))
+    n_head = len(re.findall(r'^##+ ', md, re.M))
     parsed = _r._eyes_lines()
     probs = []
     if n_head != len(parsed):
-        probs.append('lines.md 有 %d 个 ### 节但只解析出 %d 条——格式漂了，沉浸页会静默丢线' % (n_head, len(parsed)))
+        probs.append('lines.md 有 %d 个标题节但只解析出 %d 条——格式漂了，沉浸页会静默丢线' % (n_head, len(parsed)))
     lj = os.path.join(DATA, 'profile', 'lines.jsonl')
     if os.path.exists(lj):
         n_idx = sum(1 for l in open(lj, encoding='utf-8') if l.strip())

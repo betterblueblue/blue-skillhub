@@ -8,7 +8,7 @@
 不依赖提取脚本（scripts/）——单装用户数据就位后同样能出（数据由 ingest 生成）。
 零联网，产物是双击就能打开的单个文件。
 """
-import os, sys, re, json, datetime, random, collections
+import os, sys, re, json, datetime, random, collections, base64, urllib.parse
 import html as H
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -16,6 +16,7 @@ import wm  # 复用数据定位：wm.DATA / wm.PRODUCTS
 from _common import valid_date
 
 TPL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'templates')
+ASSETS = os.path.dirname(TPL)
 OUT = os.path.join(wm.PRODUCTS, 'html')
 MON = os.path.join(wm.PRODUCTS, 'monthly')
 SHELL = open(os.path.join(TPL, 'read_shell.html'), encoding='utf-8').read()
@@ -542,6 +543,47 @@ AGENT_NAMES = {
     'devin-gui': 'Devin GUI',
 }
 
+# 官方 logo 资源：assets/logos/<文件>，渲染时内联成 data URI——页面零外联。
+AGENT_LOGO_FILES = {
+    'claude-code': 'claude-code.svg',
+    'codex': 'codex.svg',
+    'dsh': 'dsh.svg',
+    'qwen': 'qwen.svg',
+    'cursor': 'cursor.svg',
+    'devin-cli': 'devin.svg',
+    'devin-gui': 'devin.svg',
+    'catpaw': 'catpaw.png',
+    'antigravity': 'antigravity.png',
+    'zcode': 'zcode.png',
+    'atomcode': 'atomcode.png',
+    'grok': 'grok.svg',
+    'workbuddy': 'workbuddy.svg',
+    'pi': 'pi.svg',
+}
+_LOGO_CACHE = {}
+
+
+def _agent_logo(ag):
+    """agent id → logo data URI；没配/没文件就空串，模板回落首字母。"""
+    if ag in _LOGO_CACHE:
+        return _LOGO_CACHE[ag]
+    uri = ''
+    fn = AGENT_LOGO_FILES.get(ag)
+    p = os.path.join(ASSETS, 'logos', fn) if fn else ''
+    if p and os.path.exists(p):
+        raw = open(p, 'rb').read()
+        if fn.endswith('.svg'):
+            svg = raw.decode('utf-8', 'replace')
+            # canvas drawImage 要求 svg 带显式宽高，缺的补上
+            head = svg.split('>', 1)[0]
+            if 'width=' not in head:
+                svg = svg.replace('<svg', '<svg width="96" height="96"', 1)
+            uri = 'data:image/svg+xml;utf8,' + urllib.parse.quote(svg)
+        else:
+            uri = 'data:image/png;base64,' + base64.b64encode(raw).decode()
+    _LOGO_CACHE[ag] = uri
+    return uri
+
 
 def _agent_fields(prose):
     """把工具卡说明拆成字段；空字段不占页面。"""
@@ -951,7 +993,7 @@ def _eyes_agents(rows, ai_eyes_md):
         pool = [o for o in items if len(o['msg']) <= 60 and _clean(o['msg'])]
         longest = max(pool, key=lambda o: len(o['msg'])) if pool else items[0]
         out.append({'agent': AGENT_NAMES.get(ag, ag), 'n': len(items), 'median': med,
-                    'title': titles.get(ag, ''), 'phrases': _eyes_phrases(items, 5),
+                    'title': titles.get(ag, ''), 'logo': _agent_logo(ag), 'phrases': _eyes_phrases(items, 5),
                     'typical': _eyes_typical(items, med),
                     'sample': {'t': longest['msg'], 'd': longest['date']}})
     return out
@@ -962,12 +1004,20 @@ def _eyes_lines():
     p = os.path.join(wm.DATA, 'profile', 'lines.md')
     md = open(p, encoding='utf-8', errors='replace').read() if os.path.exists(p) else ''
     out = []
-    for sec in re.split(r'\n(?=### )', md):
-        m = re.match(r'### (.+?)·(.+)', sec)
+    for sec in re.split(r'\n(?=##+ )', md):
+        m = re.match(r'##+\s*(.+?)·\s*(.+)', sec)
         if not m:
             continue
         facts, seen = [], set()
-        for d, rest in re.findall(r'(\d{4}-\d{2}(?:-\d{2})?)\s*(.+)', sec):
+        for line in sec.splitlines():
+            fm = re.match(r'\s*-?\s*(\d{4}-\d{2}(?:-\d{2})?)\s+(.+)', line)
+            sm = re.search(r'「([^」]+)」（(\d{4}-\d{2}-\d{2})）', line)
+            if fm:
+                d, rest = fm.group(1), fm.group(2)
+            elif sm:
+                d, rest = sm.group(2), '「%s」' % sm.group(1)
+            else:
+                continue
             q = re.search(r'「([^」]+)」', rest)
             f = {'d': d, 'q': q.group(1) if q else rest.strip('。 ')[:60]}
             if f['d'] + f['q'] not in seen and not _INTERNAL.search(f['q']):
