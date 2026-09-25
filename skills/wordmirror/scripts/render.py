@@ -538,6 +538,8 @@ AGENT_NAMES = {
     'cursor': 'Cursor',
     'catpaw': 'CatPaw',
     'dsh': 'DeepSeek Harness',
+    'devin-cli': 'Devin CLI',
+    'devin-gui': 'Devin GUI',
 }
 
 
@@ -900,13 +902,24 @@ def _eyes_mirror(rows, n=900):
 
 
 def _eyes_agents(rows, ai_eyes_md):
-    """每个 AI 一个聊天窗：句数、中位长度、口头禅、代表短句；title 取 ai-eyes.md 的工具一句话。"""
-    titles = dict(re.findall(r'\*\*([\w\-]+)：([^*]+)\*\*', ai_eyes_md))
+    """每个 AI 一个聊天窗：句数、中位长度、口头禅、代表短句；title 取 ai-eyes.md 的工具一句话。
+    前 6 名按句数；md 里写过卡片的工具（### / ** 头都认，devin 这种前缀覆盖 devin-cli/gui）必须露脸。"""
+    titles = {}
+    for key, t in re.findall(r'^(?:### |\*\*)([\w\- /]+)：(.+?)(?:\*\*)?\s*$', ai_eyes_md, re.M):
+        for ag in re.split(r'[/\s]+', key.strip()):
+            if ag:
+                titles.setdefault(ag, t.strip())
     stats = collections.defaultdict(list)
     for o in rows:
         stats[o['agent']].append(o)
+    for t in list(titles):
+        for ag in stats:
+            if ag.startswith(t + '-') and ag not in titles:
+                titles[ag] = titles[t]
+    ranked = sorted(stats.items(), key=lambda kv: -len(kv[1]))
+    top = ranked[:6] + [(ag, items) for ag, items in ranked[6:] if ag in titles]
     out = []
-    for ag, items in sorted(stats.items(), key=lambda kv: -len(kv[1]))[:6]:
+    for ag, items in top:
         lens = sorted(len(o['msg']) for o in items)
         med = lens[len(lens) // 2]
         pool = [o for o in items if len(o['msg']) <= 60 and _clean(o['msg'])]

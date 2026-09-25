@@ -18,6 +18,9 @@
 断点（初始化/更新做到哪一步，中断后接着做）：
     python wm.py progress start / progress done <步骤> [--note 说明] / progress
 
+归属核对（写报告时确认一句话说的是谁/哪件事）：
+    python wm.py ctx <sid> <YYYY-MM-DD> [--n 前后各几条]   打印同会话该日前后的原话
+
 数据绑定（数据在别处时接上）：
     python wm.py bind <仓库根> / bind --clear
 
@@ -439,12 +442,42 @@ def cmd_progress(args):
     print('这一轮 %s 开始，已完成 %d/%d 步' % (state['started'], len(PROGRESS_STEPS) - len(todo), len(PROGRESS_STEPS)))
     print('下一步：%s' % todo[0] if todo else '全部完成')
 
+def cmd_ctx(args):
+    """归属核对：打印同一会话在某日前后的原话。引文涉及具体公司/项目/人名时，
+    写报告前用它回看上下文，确认这句话说的是谁——真引文挂错实体比没有引文更糟。"""
+    if len(args) < 2:
+        print('用法：python wm.py ctx <sid> <YYYY-MM-DD> [--n 前后各几条]')
+        return
+    sid, date = args[0], args[1]
+    n = 8
+    if '--n' in args:
+        i = args.index('--n')
+        n = int(args[i + 1])
+    all_rows, _ = read_jsonl(os.path.join(DATA, 'corpus_dedup.jsonl'))
+    rows = [o for o in all_rows if str(o.get('sid', '')).startswith(sid)]
+    if not rows:
+        print('没找到 sid 以 %s 开头的会话' % sid)
+        return
+    idx = next((i for i, o in enumerate(rows) if str(o.get('date', '')).startswith(date)), None)
+    if idx is None:
+        print('这个会话里没有 %s 的消息；共 %d 条，范围 %s ~ %s'
+              % (date, len(rows), rows[0].get('date'), rows[-1].get('date')))
+        return
+    for i in range(max(0, idx - n), min(len(rows), idx + n + 1)):
+        o = rows[i]
+        mark = '→' if str(o.get('date', '')).startswith(date) else ' '
+        print('%s %s %s | %s' % (mark, o.get('date', ''), o.get('agent', ''),
+                                 (o.get('msg') or '').replace('\n', ' ')[:100]))
+
+
 def main():
     if len(sys.argv) < 2:
         print(__doc__)
         return
     cmd = sys.argv[1]
-    if cmd == 'promise':
+    if cmd == 'ctx':
+        cmd_ctx(sys.argv[2:])
+    elif cmd == 'promise':
         cmd_promise(sys.argv[2:])
     elif cmd == 'bind':
         cmd_bind(sys.argv[2:])
