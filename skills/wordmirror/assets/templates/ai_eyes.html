@@ -15,21 +15,42 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{background:var(--fog);color:var(--ink);font:15px/1.75 var(--f-body);overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body{background:var(--fog);color:var(--ink);font:15px/1.75 var(--f-body);overflow-x:hidden;overflow-x:clip;-webkit-font-smoothing:antialiased}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
   background:radial-gradient(60% 50% at 15% 10%,#fff 0,transparent 70%),radial-gradient(50% 40% at 90% 80%,#c9d3dd 0,transparent 70%)}
 :focus-visible{outline:2px solid var(--breath);outline-offset:3px}
 
-nav{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:60;display:flex;gap:2px;padding:4px;border-radius:99px;
-  background:#ffffff8c;backdrop-filter:blur(14px) saturate(1.4);box-shadow:0 1px 0 #fff inset,0 8px 30px #1b243014}
-nav a{font:500 13px var(--f-body);color:#46505c;text-decoration:none;padding:6px 14px;border-radius:99px;transition:.2s}
-nav a:hover,nav a.on{background:var(--ink);color:var(--glint)}
+nav{position:fixed;left:26px;top:50%;transform:translateY(-50%);z-index:60;display:flex;flex-direction:column;gap:22px}
+nav::before{content:"";position:absolute;left:3px;top:4px;bottom:4px;width:1px;background:#1b24301a}
+nav a{position:relative;display:flex;align-items:center;gap:12px;text-decoration:none;color:#8a96a3;transition:color .25s}
+nav a i{width:8px;height:8px;flex:none;border-radius:50%;background:#1b243022;box-shadow:0 0 0 1px #1b243012;transition:.3s}
+nav a b{font:400 12px var(--f-mono);letter-spacing:.1em}
+nav a span{font:14px var(--f-mono);letter-spacing:.06em}
+nav a:hover{color:#46505c}
+nav a.on{color:var(--ink)}
+nav a.on i{background:var(--ink);transform:scale(1.5)}
+@media (max-width:1100px){nav{display:none}}
 
 section{position:relative;z-index:1;padding:120px 20px 80px;display:flex;flex-direction:column;align-items:center}
 .kicker{font:600 13px var(--f-body);letter-spacing:.3em;color:#5f6b78;padding-left:.3em}
 .title{font:700 clamp(32px,5.4vw,58px)/1.15 var(--f-display);margin:10px 0 14px;text-align:center;letter-spacing:.01em}
 .title .p{margin-right:-.35em}
+.title::after{content:"";display:block;height:2px;width:56px;margin:16px auto 0;border-radius:1px;background:var(--ink);
+  transform:scaleX(0);transform-origin:left center;transition:transform .9s cubic-bezier(.2,.8,.2,1) .25s}
+section.lit .title::after{transform:none}
 .lede{max-width:540px;text-align:center;color:#56606c}
+
+/* ===== 滚动叙事：钉住的场景、章节导轨、滚动提示 ===== */
+.is-pinned{padding:0;overflow:clip}
+.pinstage{position:sticky;top:0;width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 16px 30px;transform-origin:50% 45%}
+#s-mirror .pinstage .frame{width:min(470px,88vw);margin-top:18px}
+#s-mirror .pinstage .mirror-foot{margin-top:18px}
+#s-phone .pinstage .stage{margin-top:24px;transform:scale(.9)}
+.cue{display:none;margin-top:20px;font:11px var(--f-mono);letter-spacing:.22em;color:#7b8591;transition:opacity .4s}
+.is-pinned .cue{display:block}
+.cue.off{opacity:0}
+.cue i{display:inline-block;font-style:normal;margin-right:4px;animation:drop 1.7s infinite}
+@keyframes drop{50%{transform:translateY(5px);opacity:.5}}
 .tip{position:fixed;z-index:99;pointer-events:none;max-width:300px;background:#0e131af2;color:var(--glint);padding:12px 14px;border-radius:12px;
   font:15px/1.5 var(--f-body);box-shadow:0 18px 50px #0007;opacity:0;transform:translateY(6px);transition:opacity .15s,transform .15s;backdrop-filter:blur(6px)}
 .tip.on{opacity:1;transform:none}
@@ -168,7 +189,7 @@ footer{position:relative;z-index:1;text-align:center;padding:40px 20px 70px;font
   #board{grid-template-columns:1fr}
   .chats{grid-template-columns:1fr}
 }
-@media (max-width:560px){nav{top:10px;max-width:calc(100vw - 16px)}nav a{padding:6px 8px;font-size:12px;white-space:nowrap}
+@media (max-width:560px){
   .zl{width:auto;padding:4px 8px}.zl b{font-size:12px;white-space:nowrap}.zl small{display:none}
   .zl-think,.zl-heart{left:9%}.zl-mouth,.zl-hands{right:9%}}
 @media (max-width:380px){.phone{transform:scale(.92)!important;transform-origin:top center}}
@@ -176,7 +197,12 @@ footer{position:relative;z-index:1;text-align:center;padding:40px 20px 70px;font
 </style>
 </head>
 <body>
-<nav aria-label="页面目录"><a href="#s-mirror">你长什么样</a><a href="#s-phone">AI 怎么议论你</a><a href="#s-chat">你对谁话多</a><a href="#s-wall">事走到哪了</a></nav>
+<nav aria-label="页面目录">
+  <a href="#s-mirror"><i></i><b>01</b><span>你长什么样</span></a>
+  <a href="#s-phone"><i></i><b>02</b><span>AI 怎么议论你</span></a>
+  <a href="#s-chat"><i></i><b>03</b><span>你对谁话多</span></a>
+  <a href="#s-wall"><i></i><b>04</b><span>事走到哪了</span></a>
+</nav>
 <div class="tip" id="tip" role="status"></div>
 
 <section id="s-mirror">
@@ -184,8 +210,9 @@ footer{position:relative;z-index:1;text-align:center;padding:40px 20px 70px;font
   <div class="mirror-title"><h1 class="title">这是你说过的话</h1></div>
   <p class="lede" id="m-lede"></p>
   <div class="frame"><div class="glass" id="glass"><canvas id="gl" aria-label="用你说过的话拼成的人像，拖动擦开镜面上的雾"></canvas><div class="zones" id="zones" aria-hidden="true"></div></div></div>
-  <div class="hint"><i></i>按住拖动擦开雾气，停在字上看原话<button class="wipe-all" id="wipe-all" type="button">一键擦开</button></div>
+  <div class="hint"><i></i>按住拖动或向下滚动擦开雾气，停在字上看原话<button class="wipe-all" id="wipe-all" type="button">一键擦开</button></div>
   <div class="mirror-foot" id="m-foot"></div>
+  <div class="cue" id="cue"><i>↓</i>向下滚动，擦开雾气</div>
 </section>
 
 <section id="s-phone">
@@ -239,6 +266,29 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
   const y = +m[1] === +String(D.span[1]).slice(0, 4) ? '' : `${+m[1]} 年 `;
   return `${y}${+m[2]} 月${m[3] ? ` ${+m[3]} 日` : ''}`; };
 
+/* ===================== 滚动叙事引擎：钉住章节 + 滚动驱动 ===================== */
+/* storyPin(章节, 额外滚动vh) 把章节内容收进 sticky 舞台，返回读取进度的函数；
+   storyScrub(fn) 注册每次滚动要跑的回放逻辑。reduced-motion 下整个引擎不启用。 */
+const story = (() => {
+  if (RM) return null;
+  const scrubs = [];
+  const pin = (sec, extraVh) => {
+    const st = document.createElement('div'); st.className = 'pinstage';
+    while (sec.firstChild) st.appendChild(sec.firstChild);
+    sec.appendChild(st); sec.classList.add('is-pinned');
+    const fit = () => { sec.style.height = (100 + extraVh) + 'vh';
+      const k = Math.min(1, (innerHeight - 16) / st.scrollHeight); st.style.transform = k < .999 ? `scale(${k.toFixed(3)})` : ''; };
+    fit(); addEventListener('resize', fit);
+    sec._st = st;
+    return () => { const r = sec.getBoundingClientRect(), t = r.height - innerHeight; return t > 0 ? Math.min(1, Math.max(0, -r.top / t)) : 1; };
+  };
+  let ticking = false;
+  addEventListener('scroll', () => { if (!ticking){ ticking = true; requestAnimationFrame(() => { ticking = false; scrubs.forEach(f => f()); }); } }, {passive: true});
+  return {pin, scrubs, apply: () => scrubs.forEach(f => f())};
+})();
+const storyPin = (sec, vh) => story ? story.pin(sec, vh) : null;
+const storyScrub = fn => story && story.scrubs.push(fn);
+
 /* ===================== 镜子：WebGL 雾 + 水银涟漪 ===================== */
 (function mirror(){
   // 日期写成人话：同一年只写月日，跨年或不是今年才带年份；天数含首尾两天
@@ -253,9 +303,9 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
   const cvs = $('#gl'), box = $('#glass');
   const gl = cvs.getContext('webgl', {premultipliedAlpha: false, antialias: true, preserveDrawingBuffer: true});
   const dpr = Math.min(devicePixelRatio || 1, 2);
-  const words = document.createElement('canvas'), mask = document.createElement('canvas');
-  const wx = words.getContext('2d'), mx = mask.getContext('2d', {willReadFrequently: true});
-  let W = 0, H = 0, cells = [], ripples = [], t0 = performance.now(), mouse = [.5, .4], silC = null;
+  const words = document.createElement('canvas'), mask = document.createElement('canvas'), maskU = document.createElement('canvas');
+  const wx = words.getContext('2d'), mx = mask.getContext('2d', {willReadFrequently: true}), mux = maskU.getContext('2d');
+  let W = 0, H = 0, cells = [], ripples = [], t0 = performance.now(), mouse = [.5, .4], silC = null, scrollP = 0, clearedAll = false, sweep = -1, fogHold = false, fogHoldP = 0;
   // 人像分四块，每块只放一类原话；某一类没有数据时退回随机原话，不留空洞
   const fill = D.mirror.map(q => ({t: q.t, d: q.d, a: q.a}));
   const Z = {
@@ -319,11 +369,24 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
     }
     wx.shadowBlur = 0;
   }
-  function resetMask(){ mask.width = 256; mask.height = Math.round(256 * H / W); mx.fillStyle = '#000'; mx.fillRect(0, 0, mask.width, mask.height); }
+  function resetMask(){ mask.width = maskU.width = 256; mask.height = maskU.height = Math.round(256 * H / W); mx.fillStyle = '#000'; mx.fillRect(0, 0, mask.width, mask.height); mux.clearRect(0, 0, maskU.width, maskU.height); }
+  // 手擦写进 maskU；滚动/一键擦开走合成层——回滚时雾会回来，手擦的痕迹留下
   function wipe(x, y, r = 34){
-    const k = mask.width / W, g = mx.createRadialGradient(x*k, y*k, 0, x*k, y*k, r*k);
+    const k = mask.width / W, g = mux.createRadialGradient(x*k, y*k, 0, x*k, y*k, r*k);
     g.addColorStop(0, 'rgba(255,255,255,.5)'); g.addColorStop(.6, 'rgba(255,255,255,.3)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-    mx.fillStyle = g; mx.beginPath(); mx.arc(x*k, y*k, r*k, 0, 7); mx.fill();
+    mux.fillStyle = g; mux.beginPath(); mux.arc(x*k, y*k, r*k, 0, 7); mux.fill();
+  }
+  function compositeMask(){
+    mx.globalCompositeOperation = 'source-over';
+    mx.fillStyle = '#000'; mx.fillRect(0, 0, mask.width, mask.height);
+    const f = clearedAll ? 1 : Math.max(sweep >= 0 ? sweep : 0, fogHold ? 0 : scrollP);
+    if (f > 0){
+      const k = mask.width / W, cx = W * .5 * k, cy = H * .45 * k, r = Math.hypot(W, H) * .62 * f * k;
+      const g = mx.createRadialGradient(cx, cy, r * .55, cx, cy, r + 1);
+      g.addColorStop(0, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      mx.fillStyle = g; mx.fillRect(0, 0, mask.width, mask.height);
+    }
+    mx.drawImage(maskU, 0, 0);
   }
   // 连成一笔：两次指针位置之间按半径的 0.3 倍补点，擦痕是连续的一道而不是一串圆斑
   const brush = () => { let L = null; const f = (x, y, r = 34) => {
@@ -343,7 +406,7 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
 
   if (!gl){ // 没有 WebGL：直接显示字，不起雾
     const ctx = cvs.getContext('2d');
-    const draw = () => { const r = box.getBoundingClientRect(); W = r.width; H = r.height; paintWords(); cvs.width = words.width; cvs.height = words.height; ctx.drawImage(words, 0, 0); resetMask(); mx.fillStyle = '#fff'; mx.fillRect(0, 0, mask.width, mask.height); };
+    const draw = () => { const r = box.getBoundingClientRect(); W = r.width; H = r.height; paintWords(); cvs.width = words.width; cvs.height = words.height; ctx.drawImage(words, 0, 0); resetMask(); clearedAll = true; compositeMask(); };
     draw(); addEventListener('resize', draw); bindHover(); $('#wipe-all').hidden = true; Object.keys(Z).forEach(k => showZone(k, true)); return;
   }
   const VS = `attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;uv.y=1.-uv.y;gl_Position=vec4(p,0,1);}`;
@@ -393,13 +456,13 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
     const r = box.getBoundingClientRect(); W = r.width; H = r.height; cvs.width = W*dpr; cvs.height = H*dpr; gl.viewport(0, 0, cvs.width, cvs.height);
     paintWords(); resetMask(); if (locked) fillClear(); upload();
   }
-  let down = false, last = 0, idle = 0, intro = RM ? 1 : 0, locked = false, sweep = -1;
-  const fillClear = () => { mx.fillStyle = '#fff'; mx.fillRect(0, 0, mask.width, mask.height); };
+  let down = false, last = 0, idle = 0, intro = RM ? 1 : 0, locked = false;
+  const fillClear = () => { clearedAll = true; };
   const btn = $('#wipe-all');
   // 一键擦开：雾从中间往外散开，之后不再回来；再点一次重新起雾
   function toggleClear(){
-    if (locked){ locked = false; sweep = -1; resetMask(); idle = 0; btn.textContent = '一键擦开'; btn.classList.remove('done'); return; }
-    locked = true; sweep = RM ? 1 : 0; btn.textContent = '重新起雾'; btn.classList.add('done');
+    if (locked){ locked = false; clearedAll = false; sweep = -1; fogHold = true; fogHoldP = scrollP; resetMask(); idle = 0; btn.textContent = '一键擦开'; btn.classList.remove('done'); return; }
+    locked = true; fogHold = false; sweep = RM ? 1 : 0; btn.textContent = '重新起雾'; btn.classList.add('done');
     ripples.push([.5, .45, (performance.now() - t0) / 1000]);
   }
   btn.onclick = toggleClear;
@@ -407,12 +470,9 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
     const t = (now - t0) / 1000;
     if (intro < 1){ intro = Math.min(1, intro + .012); // 开场：自己擦出一道
       const a = intro * Math.PI * 1.6; ghost(W * (.5 + Math.cos(a + 2) * .22 * intro), H * (.36 + Math.sin(a * 1.3) * .14), 40); }
-    if (sweep >= 0){ sweep = Math.min(1, sweep + .022);
-      const k = mask.width / W, cx = W / 2 * k, cy = H * .45 * k, r = Math.hypot(W, H) * .62 * sweep * k;
-      const g = mx.createRadialGradient(cx, cy, r * .55, cx, cy, r + 1);
-      g.addColorStop(0, '#fff'); g.addColorStop(1, 'rgba(255,255,255,0)'); mx.fillStyle = g; mx.fillRect(0, 0, mask.width, mask.height);
-      if (sweep === 1){ fillClear(); sweep = -1; } }
-    if (!locked && !down && ++idle > 200 && !RM){ mx.fillStyle = 'rgba(0,0,0,.006)'; mx.fillRect(0, 0, mask.width, mask.height); }
+    if (sweep >= 0){ sweep = Math.min(1, sweep + .022); if (sweep === 1){ fillClear(); sweep = -1; } }
+    if (!locked && !down && ++idle > 200 && !RM){ mux.globalCompositeOperation = 'destination-out'; mux.fillStyle = 'rgba(0,0,0,.003)'; mux.fillRect(0, 0, maskU.width, maskU.height); mux.globalCompositeOperation = 'source-over'; }
+    compositeMask();
     if (++frame.n % 12 === 0) Object.entries(Z).forEach(([k, z]) => showZone(k, cleared(z.at[0] * W, z.at[1] * H) > 110));
     gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, tm); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, mask);
     gl.uniform1f(U('t'), t); gl.uniform1f(U('asp'), W / H); gl.uniform2f(U('ms'), mouse[0], mouse[1]);
@@ -427,6 +487,12 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
     const [x, y] = pos(e); mouse = [x / W, y / H];
     if (down){ finger(x, y); idle = 0; const now = performance.now(); if (now - last > 90){ last = now; ripples.push([x / W, y / H, (now - t0) / 1000]); } }
   });
+  // 滚动叙事：钉住镜子这一幕，滚动进度就是擦雾进度；镜子随进度轻微推近
+  const mprog = storyPin($('#s-mirror'), 110);
+  if (mprog) storyScrub(() => { scrollP = mprog();
+    if (fogHold && Math.abs(scrollP - fogHoldP) > .02) fogHold = false;
+    $('#cue').classList.toggle('off', scrollP > .03);
+    $('.frame').style.transform = `scale(${(1.1 - scrollP * .1).toFixed(3)})`; });
   frame.n = 0; layout(); requestAnimationFrame(frame); bindHover();
   addEventListener('resize', () => { clearTimeout(layout.t); layout.t = setTimeout(layout, 200); });
   document.fonts && document.fonts.ready.then(() => { paintWords(); upload(); });
@@ -492,19 +558,36 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
   body.addEventListener('mousemove', e => { const t = e.target.closest('[data-i]'), m = t && L[t.dataset.i];
     if (m && m.fact) showTip(`${esc(m.fact)}<small>${t.classList.contains('off') ? '这句不会放进图片，再点一下放回来' : '点一下，这句就不放进图片'}</small>`, e.clientX, e.clientY); else hideTip(); });
   body.addEventListener('mouseleave', hideTip);
-  let timers = [];
-  function play(){
-    timers.forEach(clearTimeout); timers = [];
-    items.forEach(x => { x.classList.add('pending'); x.classList.remove('pop'); });
-    items.forEach((x, i) => timers.push(setTimeout(() => {
-      x.classList.remove('pending'); x.classList.add('pop');
-      requestAnimationFrame(() => requestAnimationFrame(() => x.classList.remove('pop')));
-      body.scrollTop = body.scrollHeight;
-    }, RM ? 0 : 500 + i * (L[i].k === 'sys' ? 450 : 900))));
+  // 滚动叙事：钉住这一幕，滚动进度逐条放出消息；往回滚消息会一条条收回。
+  // 不钉住（reduced-motion）时退回原来的定时连播。
+  let shown = 0;
+  const reveal = n => {
+    n = Math.max(0, Math.min(items.length, Math.round(n)));
+    while (shown < n){ const x = items[shown++]; x.classList.remove('pending'); x.classList.add('pop');
+      requestAnimationFrame(() => requestAnimationFrame(() => x.classList.remove('pop'))); }
+    while (shown > n){ const x = items[--shown]; x.classList.add('pending'); x.classList.remove('pop'); }
+    body.scrollTop = body.scrollHeight;
+  };
+  const sec = $('#s-phone');
+  const pprog = storyPin(sec, Math.min(170, Math.max(80, items.length * 10)));
+  if (pprog){
+    storyScrub(() => reveal(pprog() * (items.length + 3)));
+    $('#wx-replay').onclick = () => scrollTo({top: sec.offsetTop + 4, behavior: 'smooth'});
+  } else {
+    let timers = [];
+    function play(){
+      timers.forEach(clearTimeout); timers = [];
+      items.forEach(x => { x.classList.add('pending'); x.classList.remove('pop'); });
+      items.forEach((x, i) => timers.push(setTimeout(() => {
+        x.classList.remove('pending'); x.classList.add('pop');
+        requestAnimationFrame(() => requestAnimationFrame(() => x.classList.remove('pop')));
+        body.scrollTop = body.scrollHeight;
+      }, RM ? 0 : 500 + i * (L[i].k === 'sys' ? 450 : 900))));
+    }
+    $('#wx-replay').onclick = play;
+    let played = false;
+    new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting && !played){ played = true; play(); } }), {threshold: .4}).observe(s);
   }
-  $('#wx-replay').onclick = play;
-  let played = false;
-  new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting && !played){ played = true; play(); } }), {threshold: .4}).observe(s);
 
   // 存成图片：用 canvas 直接画，不联网、不引库；只画没划掉的句子
   $('#wx-save').onclick = () => {
@@ -576,7 +659,7 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
 
 /* ===================== 线索墙 ===================== */
 (function wall(){
-  const board = $('#board'); board.style.setProperty('--cols', D.lines.length);
+  const board = $('#board'); board.style.setProperty('--cols', Math.max(1, D.lines.length));
   const tagText = {closed: '已经收线', stalled: '停在准备做', open: '走到现在'};
   D.lines.forEach(l => {
     const c = document.createElement('div'); c.className = 'col'; c.dataset.kind = l.kind;
@@ -609,9 +692,17 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
   document.fonts && document.fonts.ready.then(() => lit && draw(false));
 })();
 
-/* 目录高亮 */
-$$('section').forEach(s => new IntersectionObserver(es => es.forEach(e => e.isIntersecting &&
-  $$('nav a').forEach(a => a.classList.toggle('on', a.hash === '#' + s.id))), {threshold: .45}).observe(s));
+/* 目录高亮 + 章节入场：钉住的章节会超过一屏，按"穿过视口中线"判定当前章节 */
+$$('section').forEach(s => new IntersectionObserver(es => es.forEach(e => { if (!e.isIntersecting) return;
+  s.classList.add('lit');
+  $$('nav a').forEach(a => a.classList.toggle('on', a.hash === '#' + s.id));
+}), {rootMargin: '-38% 0px -55%', threshold: 0}).observe(s));
+// 翻幕：钉住的一幕滚到尾声时，舞台淡出上飘，把位置让给下一章
+storyScrub(() => $$('.is-pinned').forEach(s => { const st = s._st; if (!st) return;
+  const r = s.getBoundingClientRect(), t = r.height - innerHeight, p = t > 0 ? Math.min(1, Math.max(0, -r.top / t)) : 1;
+  const o = Math.max(0, (p - .88) / .12);
+  st.style.opacity = 1 - o * .55; st.style.marginTop = (-o * 40) + 'px'; }));
+story && story.apply();
 $('#foot').textContent = `${fd(D.today)} 生成 · 所有原话来自你本机的对话记录 · 这个文件只在你的电脑上`;
 </script>
 </body>
