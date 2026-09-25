@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""AI 消息提取器：8 个 agent 的 assistant 侧 -> ai_messages.jsonl
+"""AI 消息提取器：12 个 agent 的 assistant 侧 -> ai_messages.jsonl
 输出: {agent, date, proj, sid, msg}  msg 取 AI 回复正文（截断到前 1200 字符，蒸馏够用）"""
 import json, os, glob, re, sqlite3, datetime
 
@@ -416,7 +416,77 @@ def ex_cursor(out):
                 n += write(out, 'cursor', (o.get('createdAt') or '')[:10], proj, cid, t)
     rec('cursor', n, f)
 
-ALL = [ex_codex, ex_claude, ex_qwen, ex_workbuddy, ex_zcode, ex_pi, ex_atomcode, ex_antigravity, ex_catpaw, ex_dsh, ex_cursor]
+def ex_devin(out):
+    # 与 extract_all 同源两个客户端：CLI 的 message_nodes.chat_message（role=assistant，
+    # 同一 message_id 会出现在多个节点上，按 id 去重）；GUI 的 acp-messages/*.db 里
+    # kind=agent_message 的 payload（每行即一条完整消息，取 content[].content.text）。
+    n = f = 0
+    appdata = os.environ.get('APPDATA') or os.path.join(H, 'AppData', 'Roaming')
+    db = os.path.join(appdata, 'devin', 'cli', 'sessions.db')
+    if os.path.isfile(db):
+        try:
+            con = sqlite3.connect(db)
+            sess_proj = {}
+            for sid, wd in con.execute('select id, working_directory from sessions'):
+                sess_proj[sid] = os.path.basename((wd or '').rstrip('\\/')) or (sid or '')[:8]
+            seen = set()
+            for sid, cm, tc in con.execute('select session_id, chat_message, created_at from message_nodes order by row_id'):
+                try:
+                    o = json.loads(cm)
+                except Exception:
+                    continue
+                if o.get('role') != 'assistant':
+                    continue
+                mid = o.get('message_id') or ''
+                if mid in seen:
+                    continue
+                seen.add(mid)
+                t = o.get('content')
+                if isinstance(t, str) and len(t) > 30:
+                    n += write(out, 'devin-cli', d2s(tc), sess_proj.get(sid, ''), sid, clean_ai(t))
+            con.close()
+            f += 1
+        except Exception as e:
+            print('devin-cli err', e)
+    for db in glob.glob(os.path.join(appdata, 'devin', 'User', 'acp-messages', '*.db')):
+        f += 1
+        sid = os.path.splitext(os.path.basename(db))[0]
+        last_ts = ''
+        fb_date = datetime.date.fromtimestamp(os.path.getmtime(db)).strftime('%Y-%m-%d')
+        proj = ''
+        try:
+            con = sqlite3.connect(db)
+            for kind, payload in con.execute('select kind, payload from messages order by position'):
+                if kind == 'tool_call' and not proj:
+                    m = re.search(r'"(?:cwd|workdir|directory)"\s*:\s*"([^"]+)"', payload)
+                    if m:
+                        proj = os.path.basename(m.group(1).rstrip('\\/'))
+                if kind != 'agent_message':
+                    continue
+                try:
+                    o = json.loads(payload)
+                except Exception:
+                    continue
+                texts = []
+                for c in o.get('content', []):
+                    if not isinstance(c, dict):
+                        continue
+                    inner = c.get('content') or {}
+                    if isinstance(inner, dict) and inner.get('type') == 'text':
+                        texts.append(inner.get('text', ''))
+                    t0 = (c.get('_meta') or {}).get('cognition.ai/timestamp')
+                    if t0:
+                        last_ts = t0
+                m = clean_ai('\n'.join(texts))
+                if m and len(m) > 30:
+                    n += write(out, 'devin-gui', d2s(last_ts) or fb_date, proj or sid[:8], sid, m)
+            con.close()
+        except Exception as e:
+            print('devin-gui err', os.path.basename(db), e)
+    rec('devin', n, f)
+
+
+ALL = [ex_codex, ex_claude, ex_qwen, ex_workbuddy, ex_zcode, ex_pi, ex_atomcode, ex_antigravity, ex_catpaw, ex_dsh, ex_cursor, ex_devin]
 
 if __name__ == '__main__':
     with open(OUT, 'w', encoding='utf-8') as out:

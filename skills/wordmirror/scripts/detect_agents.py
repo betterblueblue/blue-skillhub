@@ -62,6 +62,11 @@ AGENT_PATTERNS = {
         'patterns': ['.dsh/sessions/*/*/session.jsonl.zstd'],
         'kind': 'zstd', 'how': 'DeepSeek Harness 会话（zstd jsonl，user/message 事件，需 zstandard）',
     },
+    'devin': {
+        'patterns': ['AppData/Roaming/devin/cli/sessions.db',
+                     'AppData/Roaming/devin/User/acp-messages/*.db'],
+        'kind': 'sqlite', 'how': 'CLI 的 sessions.db（prompt_history 表）+ GUI 的 acp-messages/*.db（每库一会话）',
+    },
 }
 
 def detect():

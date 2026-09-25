@@ -522,7 +522,66 @@ def ex_cursor(out):
                 n += write(out, 'cursor', (o.get('createdAt') or '')[:10], proj, cid, m)
     rec('cursor', n, f)
 
-ALL = [ex_codex, ex_claude, ex_qwen, ex_workbuddy, ex_zcode, ex_grok, ex_pi, ex_atomcode, ex_antigravity, ex_catpaw, ex_dsh, ex_cursor]
+def ex_devin(out):
+    # Devin 两个客户端：
+    #   CLI → %APPDATA%\devin\cli\sessions.db 的 prompt_history（timestamp 是 epoch 秒；
+    #         sessions.working_directory 给项目名，is_shell=1 是 shell 输入不算原话）
+    #   GUI → %APPDATA%\devin\User\acp-messages\*.db，每库一会话；messages 表
+    #         kind=user_message 的 payload.content[].content.text 是原话，
+    #         _meta['cognition.ai/timestamp'] 是 ISO 时间；项目目录从工具调用 payload 的 cwd 反推
+    n = f = 0
+    appdata = os.environ.get('APPDATA') or os.path.join(H, 'AppData', 'Roaming')
+    db = os.path.join(appdata, 'devin', 'cli', 'sessions.db')
+    if os.path.isfile(db):
+        try:
+            con = sqlite3.connect(db)
+            sess_proj = {}
+            for sid, wd in con.execute('select id, working_directory from sessions'):
+                sess_proj[sid] = os.path.basename((wd or '').rstrip('\\/')) or (sid or '')[:8]
+            for content, ts, sid in con.execute('select content, timestamp, session_id from prompt_history where is_shell = 0'):
+                n += write(out, 'devin-cli', d2s(ts), sess_proj.get(sid, ''), sid or '', clean(str(content)))
+            con.close()
+            f += 1
+        except Exception as e:
+            print('devin-cli err', e)
+    for db in glob.glob(os.path.join(appdata, 'devin', 'User', 'acp-messages', '*.db')):
+        f += 1
+        sid = os.path.splitext(os.path.basename(db))[0]
+        # 部分 user_message_chunk 没有 _meta 时间戳——沿用会话内上一条消息的时间，兜底取文件 mtime
+        last_ts = ''
+        fb_date = datetime.date.fromtimestamp(os.path.getmtime(db)).strftime('%Y-%m-%d')
+        proj = ''
+        try:
+            con = sqlite3.connect(db)
+            for kind, payload in con.execute('select kind, payload from messages order by position'):
+                if kind == 'tool_call' and not proj:
+                    m = re.search(r'"(?:cwd|workdir|directory)"\s*:\s*"([^"]+)"', payload)
+                    if m:
+                        proj = os.path.basename(m.group(1).rstrip('\\/'))
+                if kind != 'user_message':
+                    continue
+                try:
+                    o = json.loads(payload)
+                except Exception:
+                    continue
+                texts = []
+                for c in o.get('content', []):
+                    if not isinstance(c, dict):
+                        continue
+                    inner = c.get('content') or {}
+                    if isinstance(inner, dict) and inner.get('type') == 'text':
+                        texts.append(inner.get('text', ''))
+                    t0 = (c.get('_meta') or {}).get('cognition.ai/timestamp')
+                    if t0:
+                        last_ts = t0
+                n += write(out, 'devin-gui', d2s(last_ts) or fb_date, proj or sid[:8], sid, clean('\n'.join(texts)))
+            con.close()
+        except Exception as e:
+            print('devin-gui err', os.path.basename(db), e)
+    rec('devin', n, f)
+
+
+ALL = [ex_codex, ex_claude, ex_qwen, ex_workbuddy, ex_zcode, ex_grok, ex_pi, ex_atomcode, ex_antigravity, ex_catpaw, ex_dsh, ex_cursor, ex_devin]
 
 
 def freshness_check():
