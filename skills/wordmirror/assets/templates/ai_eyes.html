@@ -393,7 +393,7 @@ const storyScrub = fn => story && story.scrubs.push(fn);
       if (L){ const n = Math.ceil(Math.hypot(x - L[0], y - L[1]) / (r * .3)); for (let i = 1; i <= n; i++) wipe(L[0] + (x - L[0]) * i / n, L[1] + (y - L[1]) * i / n, r); }
       else wipe(x, y, r); L = [x, y]; };
     f.end = () => L = null; return f; };
-  const finger = brush(), ghost = brush();
+  const finger = brush();
   const cleared = (x, y) => { const k = mask.width / W; return mx.getImageData(x*k|0, y*k|0, 1, 1).data[0]; };
   const pos = e => { const r = cvs.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   function bindHover(){
@@ -456,7 +456,7 @@ const storyScrub = fn => story && story.scrubs.push(fn);
     const r = box.getBoundingClientRect(); W = r.width; H = r.height; cvs.width = W*dpr; cvs.height = H*dpr; gl.viewport(0, 0, cvs.width, cvs.height);
     paintWords(); resetMask(); if (locked) fillClear(); upload();
   }
-  let down = false, last = 0, idle = 0, intro = RM ? 1 : 0, locked = false;
+  let down = false, last = 0, idle = 0, locked = false;
   const fillClear = () => { clearedAll = true; };
   const btn = $('#wipe-all');
   // 一键擦开：雾从中间往外散开，之后不再回来；再点一次重新起雾
@@ -468,8 +468,6 @@ const storyScrub = fn => story && story.scrubs.push(fn);
   btn.onclick = toggleClear;
   function frame(now){
     const t = (now - t0) / 1000;
-    if (intro < 1){ intro = Math.min(1, intro + .012); // 开场：自己擦出一道
-      const a = intro * Math.PI * 1.6; ghost(W * (.5 + Math.cos(a + 2) * .22 * intro), H * (.36 + Math.sin(a * 1.3) * .14), 40); }
     if (sweep >= 0){ sweep = Math.min(1, sweep + .022); if (sweep === 1){ fillClear(); sweep = -1; } }
     if (!locked && !down && ++idle > 200 && !RM){ mux.globalCompositeOperation = 'destination-out'; mux.fillStyle = 'rgba(0,0,0,.003)'; mux.fillRect(0, 0, maskU.width, maskU.height); mux.globalCompositeOperation = 'source-over'; }
     compositeMask();
