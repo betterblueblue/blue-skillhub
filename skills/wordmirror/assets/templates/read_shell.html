@@ -32,7 +32,7 @@ body {
   background: var(--bg); color: var(--fg-soft);
   font-family: var(--font-body); font-size: 15.5px; line-height: 1.7;
   -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  overflow-x: hidden; overflow-x: clip;
 }
 ::selection { background: var(--fg); color: #fff; }
 a { color: inherit; text-decoration: none; }
@@ -99,6 +99,52 @@ main { max-width: 1200px; margin-inline: auto; padding: 0 var(--edge); }
 .stat-band .v { font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; letter-spacing: -.02em; line-height: 1.1; color: var(--fg); }
 .stat-band .v small { font-size: .55em; color: var(--faint); font-weight: 500; margin-left: .15rem; }
 .stat-band .k { margin-top: .3rem; font-size: .85rem; color: var(--muted); }
+
+/* ============ 回放：钉住的 hero，滚动一格走一天 ============
+   屏上只有三样东西在变：阶段名、这天说的一句、走过的柱子。颜色守 v7：墨色 + 灰阶，绿只做播放头的点。 */
+.hero:has(.story) { padding-top: 0; }
+.story { position: relative; height: calc(100vh + var(--travel, 400vh)); text-align: left; }
+.story-stage {
+  position: sticky; top: var(--nav-h); height: calc(100vh - var(--nav-h)); height: calc(100svh - var(--nav-h));
+  display: flex; flex-direction: column; justify-content: center; overflow: hidden;
+}
+.story-open { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; will-change: opacity, transform; }
+.story-open h1 { font-size: clamp(2.4rem, 6.2vw, 5.2rem); letter-spacing: -.045em; line-height: 1.02; }
+.story-open .hero-lede { margin-top: 1.4rem; }
+.story-play { position: relative; opacity: 0; will-change: opacity; }
+.story-meta { display: flex; justify-content: space-between; font: .8rem/1 var(--font-mono); letter-spacing: .08em; color: var(--muted); padding-bottom: .9rem; border-bottom: 1px solid var(--border); }
+.story-ch { margin-top: clamp(1rem, 3vh, 2rem); overflow: hidden; }
+.story-ch span {
+  display: block; font-family: var(--font-display); font-weight: 600; color: var(--fg);
+  font-size: 64px; line-height: 1.16; letter-spacing: -.025em; white-space: nowrap;
+}
+.story-ch span.swap { animation: ch-in .55s cubic-bezier(.2,.8,.2,1); }
+@keyframes ch-in { from { transform: translateY(70%); opacity: 0; filter: blur(6px); } }
+.story-q {
+  min-height: 3.3em; max-width: 30em; margin: clamp(1rem, 3vh, 1.8rem) 0 0;
+  font-family: var(--font-display); font-weight: 500; font-size: clamp(1.1rem, 2vw, 1.55rem); line-height: 1.55; letter-spacing: -.015em; color: var(--fg-soft);
+}
+.story-q.quiet { color: var(--faint); font-weight: 400; }
+.story-q em { display: block; font: .74rem/1 var(--font-mono); font-style: normal; letter-spacing: .08em; color: var(--faint); margin-bottom: .55rem; }
+.story-strip { position: relative; height: clamp(90px, 20vh, 190px); margin-top: clamp(1.2rem, 4vh, 2.6rem); }
+.story-strip canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.story-head { position: absolute; top: -10px; bottom: -6px; left: 0; width: 1px; background: var(--fg); will-change: transform; }
+.story-head::before { content: ''; position: absolute; top: -4px; left: -3.5px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px var(--bg); }
+.story-bands { position: relative; height: 2.4rem; margin-top: .7rem; }
+.story-bands div { position: absolute; top: 0; height: 100%; border-top: 2px solid var(--border); padding: .45rem .5rem 0 0; font: .7rem/1.3 var(--font-mono); letter-spacing: .04em; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: color .3s, border-color .3s; }
+.story-bands div.on { border-top-color: var(--fg); color: var(--fg); }
+.story-bands div.past { border-top-color: #BDBDC2; }
+.story-count { display: flex; justify-content: space-between; align-items: baseline; margin-top: .4rem; font-size: .88rem; color: var(--muted); }
+.story-count b { font-family: var(--font-display); font-weight: 600; font-size: 1.5rem; letter-spacing: -.02em; color: var(--fg); margin-right: .15rem; }
+.story-cue { position: absolute; left: 50%; bottom: clamp(1rem, 4vh, 2.2rem); transform: translateX(-50%); display: flex; gap: .5rem; align-items: center; font: .74rem/1 var(--font-mono); letter-spacing: .14em; color: var(--muted); white-space: nowrap; transition: opacity .4s; }
+.story-cue i { font-style: normal; animation: cue 1.8s ease-in-out infinite; }
+@keyframes cue { 50% { transform: translateY(4px); opacity: .45; } }
+/* 不钉住（减弱动效 / 脚本没跑）：开场和整条柱子上下排开，一眼看完 */
+.story.static { height: auto; }
+.story.static .story-stage { position: static; height: auto; overflow: visible; padding: clamp(3rem, 7vh, 4.5rem) 0 1rem; }
+.story.static .story-open { position: static; margin-bottom: 3rem; }
+.story.static .story-play { opacity: 1; }
+.story.static .story-cue { display: none; }
 
 /* ============ 双栏骨架 ============ */
 .layout {
@@ -259,6 +305,18 @@ td.mono, .mono { font-family: var(--font-mono); font-size: .8rem; color: var(--f
 .timeline-echo { display: flex; gap: 16px; align-items: baseline; margin-top: 12px; padding: 12px 0 0; border-top: 1px solid var(--border); color: var(--fg-soft); font-size: .92rem; }
 .timeline-echo .mono { flex: 0 0 auto; }
 .line-hook { margin-top: 14px; padding: 12px 16px; background: var(--surface); border-radius: var(--r-md); font-size: .93rem; line-height: 1.7; color: var(--fg); max-width: 640px; }
+/* 时间线随阅读描墨：竖线从灰变墨，走到哪亮到哪；节点被墨线经过才点亮 */
+.inked .timeline-chapter::after, .inked .ai-view-section::after { content: ''; position: absolute; left: -1px; top: 0; width: 1px; height: var(--fill, 0%); background: var(--fg); pointer-events: none; }
+.ai-view-section { position: relative; }
+.inked .follow-node::before { background: #D4D4D8; transform: scale(.8); transition: background .35s, transform .35s; }
+.inked .follow-node.lit::before { background: var(--accent); transform: none; }
+.timeline-part { margin: .5rem 0 1.6rem; font-size: 1.15rem; color: var(--fg); }
+.recap { background: var(--surface); border-radius: var(--r-lg); padding: 1.3rem 1.5rem .6rem; margin: 0 0 2.6rem; max-width: 780px; }
+.recap-head { font-family: var(--font-mono); font-size: .75rem; letter-spacing: .1em; color: var(--muted); margin-bottom: .5rem; }
+.recap ul { margin: 8px 0; }
+.recap li { font-size: .94rem; }
+.tone-gray .recap { background: var(--bg); }
+.badge small { margin-left: .35rem; font-size: .92em; font-weight: 450; color: var(--faint); }
 
 /* 双栏对照 / 后续节点 */
 .facing-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 12px 0 16px; }
@@ -384,6 +442,7 @@ td.mono, .mono { font-family: var(--font-mono); font-size: .8rem; color: var(--f
   .rank-count { display: none; }
   .rank-note { margin-right: 0; }
   .where-row, .agent-field { grid-template-columns: 1fr; gap: 2px; }
+  table { display: block; overflow-x: auto; }
 }
 
 /* ============ 打印 ============ */
@@ -464,6 +523,129 @@ __RAIL__
   }, { passive: true });
   window.addEventListener('resize', current);
   current();
+})();
+
+/* ===== 回放：滚动一格走一天。阶段名、这天的一句、走过的柱子跟着滚动换；往回滚时间倒着走 ===== */
+(function(){
+  var el = document.getElementById('story'), src = document.getElementById('story-data');
+  if (!el || !src) return;
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var S = JSON.parse(src.textContent), N = S.days.length;
+  if (!N) return;
+  var byId = function(id){ return document.getElementById(id); };
+  var esc = function(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+  var clamp = function(x){ return x < 0 ? 0 : x > 1 ? 1 : x; };
+  var stage = el.querySelector('.story-stage'), open = el.querySelector('.story-open'), play = el.querySelector('.story-play');
+  var strip = byId('sp-strip'), cvs = strip.querySelector('canvas'), g = cvs.getContext('2d'), head = byId('sp-head');
+  var chEl = byId('sp-ch'), qEl = byId('sp-q'), nEl = byId('sp-n'), cue = byId('sp-cue'), cueText = cue.querySelector('span');
+  var t0 = new Date(S.start + 'T00:00:00').getTime();
+  var dateOf = function(i){ return new Date(t0 + i * 864e5); };
+  var ym = function(d){ return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); };
+  var cum = [], act = [], s = 0, a = 0, max = 1;
+  S.days.forEach(function(d){ s += d[0]; a += d[0] ? 1 : 0; cum.push(s); act.push(a); if (d[0] > max) max = d[0]; });
+  // 阶段：timeline.md 写了就用阶段名，没写或没覆盖到的日子按月份
+  var segs = [], seg = null;
+  for (var i = 0; i < N; i++){
+    var k = ym(dateOf(i)), c = null;
+    S.chapters.forEach(function(x){ if (!c && k >= x.from && k <= x.to) c = x; });
+    var name = c ? c.name : (+k.slice(5)) + ' 月';
+    if (!seg || seg.name !== name){ seg = {name: name, a: i, b: i}; segs.push(seg); } else seg.b = i;
+  }
+  var segAt = [];
+  segs.forEach(function(x, j){ for (var i = x.a; i <= x.b; i++) segAt[i] = j; });
+  var bandsEl = byId('sp-bands');
+  bandsEl.innerHTML = segs.map(function(x){
+    return '<div style="left:' + (x.a / N * 100) + '%;width:' + ((x.b - x.a + 1) / N * 100) + '%">' + esc(x.name) + '</div>';
+  }).join('');
+  var bands = bandsEl.children;
+
+  var W = 0, Hh = 0, cur = -1, curSeg = -1;
+  function size(){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = strip.clientWidth; Hh = strip.clientHeight;
+    cvs.width = W * dpr; cvs.height = Hh * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var i = cur; cur = -1; set(i < 0 ? 0 : i);
+  }
+  function paint(idx){
+    g.clearRect(0, 0, W, Hh);
+    var bw = W / N, gap = bw > 3 ? Math.min(1.5, bw * .28) : 0;
+    for (var i = 0; i < N; i++){
+      var n = S.days[i][0];
+      if (!n){ g.fillStyle = i <= idx ? '#BDBDC2' : '#EBEBED'; g.fillRect(i * bw, Hh - 1, Math.max(1, bw - gap), 1); continue; }
+      var h = Math.max(2, Math.sqrt(n / max) * Hh);
+      g.fillStyle = i < idx ? '#0D0D0D' : i === idx ? '#10A37F' : '#E3E3E6';
+      g.fillRect(i * bw, Hh - h, Math.max(1, bw - gap), h);
+    }
+  }
+  function fitCh(name){
+    var w = stage.clientWidth || W;
+    chEl.style.fontSize = Math.max(26, Math.min(104, w * .16, w / (name.length * 1.02))) + 'px';
+  }
+  function set(i){
+    if (i === cur) return;
+    cur = i; paint(i);
+    head.style.transform = 'translateX(' + ((i + .5) * W / N).toFixed(1) + 'px)';
+    var d = dateOf(i), day = S.days[i];
+    byId('sp-date').textContent = d.getFullYear() + ' 年 ' + (d.getMonth() + 1) + ' 月 ' + d.getDate() + ' 日 · 周' + '日一二三四五六'[d.getDay()];
+    byId('sp-day').textContent = '第 ' + (i + 1) + ' / ' + N + ' 天';
+    if (segAt[i] !== curSeg){
+      if (bands[curSeg]) bands[curSeg].classList.remove('on');
+      curSeg = segAt[i];
+      for (var j = 0; j < bands.length; j++){ bands[j].classList.toggle('past', j < curSeg); bands[j].classList.toggle('on', j === curSeg); }
+      chEl.textContent = segs[curSeg].name; fitCh(segs[curSeg].name);
+      chEl.classList.remove('swap'); void chEl.offsetWidth; if (!reduce) chEl.classList.add('swap');
+    }
+    if (day[1]){ qEl.className = 'story-q'; qEl.innerHTML = '<em>这天说了 ' + day[0] + ' 句，其中一句</em>「' + esc(day[1]) + '」'; }
+    else if (day[0]){ qEl.className = 'story-q quiet'; qEl.innerHTML = '<em>这天说了 ' + day[0] + ' 句</em>都是很短的指令，挑不出一句能单独读的。'; }
+    else { qEl.className = 'story-q quiet'; qEl.innerHTML = '<em>这天 0 句</em>这天没跟 AI 说话。'; }
+    nEl.textContent = cum[i].toLocaleString('en-US');
+    byId('sp-today').textContent = '说过话的日子 ' + act[i] + ' 天';
+  }
+  var INTRO = .07, OUTRO = .05, last = -1;
+  function render(){
+    var r = el.getBoundingClientRect(), top = parseFloat(getComputedStyle(stage).top) || 0;
+    var travel = el.offsetHeight - stage.offsetHeight, p = travel > 0 ? clamp((top - r.top) / travel) : 1;
+    if (p === last) return; last = p;
+    var o = clamp(p / INTRO);
+    open.style.opacity = 1 - o;
+    open.style.transform = 'translateY(' + (-o * 48).toFixed(1) + 'px) scale(' + (1 - o * .05).toFixed(3) + ')';
+    open.style.visibility = o >= 1 ? 'hidden' : '';
+    play.style.opacity = clamp((p - INTRO * .55) / (INTRO * .6));
+    set(Math.round(clamp((p - INTRO) / (1 - INTRO - OUTRO)) * (N - 1)));
+    var end = p > 1 - OUTRO * .6;
+    cue.style.opacity = p < .015 || end ? 1 : 0;
+    cueText.textContent = end ? '往下是这些话拼出来的你' : '往下滚，从第一天开始回放';
+  }
+  if (reduce){ size(); set(N - 1); return; }
+  el.classList.remove('static');
+  el.style.setProperty('--travel', Math.min(560, Math.max(260, Math.round(N * 1.3))) + 'vh');
+  size(); render();
+  var ticking = false;
+  window.addEventListener('scroll', function(){ if (!ticking){ ticking = true; requestAnimationFrame(function(){ ticking = false; render(); }); } }, {passive: true});
+  window.addEventListener('resize', function(){ size(); last = -1; render(); });
+})();
+
+/* ===== 时间线描墨：竖线跟着阅读位置从灰变墨，后续节点被墨线经过才点亮；往回滚会退回去 ===== */
+(function(){
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var chs = [].slice.call(document.querySelectorAll('.timeline-chapter, .ai-view-section'));
+  var nodes = [].slice.call(document.querySelectorAll('.follow-node'));
+  if (!chs.length) return;
+  document.body.classList.add('inked');
+  function ink(){
+    var y = window.innerHeight * .62;
+    chs.forEach(function(c){
+      var r = c.getBoundingClientRect();
+      if (r.bottom < -50 && c._f === 100 || r.top > y && c._f === 0) return;
+      var f = Math.round(Math.max(0, Math.min(1, (y - r.top) / r.height)) * 1000) / 10;
+      if (f !== c._f){ c._f = f; c.style.setProperty('--fill', f + '%'); }
+    });
+    nodes.forEach(function(n){ n.classList.toggle('lit', n.getBoundingClientRect().top < y); });
+  }
+  var ticking = false;
+  window.addEventListener('scroll', function(){ if (!ticking){ ticking = true; requestAnimationFrame(function(){ ticking = false; ink(); }); } }, {passive: true});
+  window.addEventListener('resize', ink);
+  ink();
 })();
 </script>
 </body>

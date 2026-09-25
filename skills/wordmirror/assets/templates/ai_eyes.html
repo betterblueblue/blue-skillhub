@@ -29,6 +29,14 @@ nav a span{font:14px var(--f-mono);letter-spacing:.06em}
 nav a:hover{color:#46505c}
 nav a.on{color:var(--ink)}
 nav a.on i{background:var(--ink);transform:scale(1.5)}
+/* 屏不够宽时章节名会压到宽内容（陈列廊、线索墙）上：只留圆点和编号，鼠标移过去再展开 */
+@media (max-width:1560px){
+  nav{padding:14px 16px 14px 0;margin:-14px 0 0}
+  nav a span{opacity:0;transform:translateX(-6px);transition:opacity .25s,transform .25s;pointer-events:none}
+  nav:hover a span,nav:focus-within a span{opacity:1;transform:none;pointer-events:auto}
+  nav::after{content:"";position:absolute;inset:-6px -14px -6px -14px;z-index:-1;border-radius:14px;background:#f1f4f7e6;box-shadow:0 10px 30px #1b24301f;backdrop-filter:blur(8px);opacity:0;transition:opacity .25s}
+  nav:hover::after,nav:focus-within::after{opacity:1}
+}
 @media (max-width:1100px){nav{display:none}}
 
 section{position:relative;z-index:1;padding:120px 20px 80px;display:flex;flex-direction:column;align-items:center}
@@ -43,7 +51,9 @@ section.lit .title::after{transform:none}
 /* ===== 滚动叙事：钉住的场景、章节导轨、滚动提示 ===== */
 .is-pinned{padding:0;overflow:clip}
 .pinstage{position:sticky;top:0;width:100%;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:44px 16px 30px;transform-origin:50% 45%}
-#s-mirror .pinstage .frame{width:min(470px,88vw);margin-top:18px}
+#s-mirror .pinstage .frame{width:min(470px,88vw);margin-top:18px;will-change:transform}
+#s-mirror .cue{position:absolute;left:50%;bottom:7vh;z-index:3;transform:translateX(-50%);margin:0;padding:9px 18px;border-radius:99px;white-space:nowrap;
+  color:var(--ink);background:#f8fbffc4;box-shadow:0 8px 24px #1b243026;backdrop-filter:blur(8px)}
 #s-mirror .pinstage .mirror-foot{margin-top:18px}
 #s-phone .pinstage .stage{margin-top:24px;transform:scale(.9)}
 .cue{display:none;margin-top:20px;font:11px var(--f-mono);letter-spacing:.22em;color:#7b8591;transition:opacity .4s}
@@ -58,8 +68,10 @@ section.lit .title::after{transform:none}
 
 /* ================= 镜子 ================= */
 #s-mirror{min-height:100vh;padding-top:96px}
+#s-mirror.is-pinned{padding:0}
 .mirror-title{perspective:900px}
-.mirror-title .title{display:inline-block;transform:scaleX(-1);animation:flip 1.6s .5s cubic-bezier(.7,0,.2,1) forwards;transform-origin:50% 50%}
+.mirror-title .title{display:inline-block;transform:scaleX(-1);transform-origin:50% 50%}
+.mirror-title.go .title{animation:flip 1.4s .1s cubic-bezier(.7,0,.2,1) forwards}
 @keyframes flip{0%{transform:scaleX(-1);filter:blur(0)}45%{transform:scaleX(0);filter:blur(2px)}100%{transform:scaleX(1);filter:blur(0)}}
 .frame{position:relative;width:min(540px,90vw);aspect-ratio:1/1;margin-top:26px;border-radius:50%;padding:16px;
   background:conic-gradient(from 210deg,#7b8591,#e9eef3,#6c7682,#c9d1d9,#5d6773,#f3f6f9,#7b8591);
@@ -121,6 +133,12 @@ section.lit .title::after{transform:none}
 .wx-body>.pop{opacity:0;transform:translateY(10px) scale(.96)}
 .wx-body>.off{opacity:.35}
 .wx-body>.off p,.wx-body>.off.wx-sys{text-decoration:line-through}
+.rig{transform-style:preserve-3d;transform-origin:50% 100%;will-change:transform,opacity}
+.wx-typing p{display:flex;gap:4px;align-items:center;height:33px;padding:0 12px}
+.wx-typing p i{width:6px;height:6px;border-radius:50%;background:#b0b0b0;animation:typing 1.1s infinite}
+.wx-typing p i:nth-child(2){animation-delay:.15s}.wx-typing p i:nth-child(3){animation-delay:.3s}
+@keyframes typing{30%{transform:translateY(-3px);background:#7d7d7d}60%{transform:none}}
+.wx-body>.wx-typing.hide{display:none}
 .wx-actions{display:flex;gap:10px;padding-left:0 !important;border-left:0 !important}
 .wx-actions .wipe-all{margin:0}
 .legend-list{display:flex;flex-direction:column;gap:22px}
@@ -138,8 +156,11 @@ section.lit .title::after{transform:none}
 .chat .av{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;font:700 15px var(--f-body);color:#eef1f4;
   background:linear-gradient(150deg,hsl(var(--h),36%,30%),hsl(var(--h),40%,21%));flex:none;
   box-shadow:inset 0 1px 0 #ffffff14,0 0 0 1px hsl(var(--h),40%,14%,.45)}
-.chat header b{display:block;font:700 15px/1.25 var(--f-body)}
-.chat header small{display:block;margin-top:1px;font:10.5px var(--f-mono);letter-spacing:.03em;color:#8a95a1}
+/* 名牌：上面一行小字是工具名和句数，下面楷体大字是你怎么叫它——一眼看出它在你这儿是谁 */
+.chat header>div{min-width:0}
+.chat header small{display:flex;align-items:baseline;gap:8px;font:10.5px var(--f-mono);letter-spacing:.03em;color:#8a95a1;white-space:nowrap}
+.chat header small b{font:600 12.5px/1.3 var(--f-body);letter-spacing:0;color:#46505c}
+.chat header strong{display:block;margin-top:2px;font:400 20px/1.3 var(--f-hand);color:var(--ink);letter-spacing:.02em}
 .chat .len{display:flex;align-items:center;gap:8px;padding:10px 18px 0;font:10px var(--f-mono);letter-spacing:.05em;color:#8a95a1}
 .chat .len i{flex:1;height:3px;border-radius:2px;background:#1b243010;position:relative;overflow:hidden}
 .chat .len i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);border-radius:2px;background:hsl(var(--h),48%,54%)}
@@ -157,6 +178,22 @@ section.lit .title::after{transform:none}
 .chat footer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:11px 18px 15px;border-top:1px solid #1b24300a;font-size:12px;color:#6c7784}
 .chat footer q{quotes:"「" "」";border-radius:99px;padding:1px 9px;color:#3d4652;box-shadow:inset 0 0 0 1px #1b243018}
 .chat footer q i{font:10.5px var(--f-mono);font-style:normal;color:#8a95a1;margin-left:3px}
+/* 陈列廊：钉住后纵向滚动变成横向走过，走到中间的窗口亮起、气泡浮出 */
+/* 橱窗不动、卡片在里面走；左右两边渐隐，卡片走到边上就淡出，不会滑进左侧导航那一栏 */
+.gal-view{align-self:stretch;margin:-30px -16px -50px;padding:30px 0 50px;
+  --edge:transparent 0,transparent min(90px,3vw),#000 min(260px,20vw),#000 calc(100% - min(260px,20vw)),transparent calc(100% - min(90px,3vw));
+  -webkit-mask-image:linear-gradient(90deg,var(--edge));mask-image:linear-gradient(90deg,var(--edge))}
+.chats.gallery{display:flex;width:max-content;gap:26px;margin-top:10px;padding:0 calc(50% - min(170px,39vw));will-change:transform}
+.chats.gallery .chat{flex:none;width:min(340px,78vw);transition:none;transform-origin:50% 60%}
+.chats.gallery .msg{opacity:.22;transform:translateY(8px);transition-delay:0s!important;transition-duration:.45s,.55s}
+.chats.gallery .chat.in .msg{opacity:1;transform:none}
+.chats.gallery .chat.in .msg:nth-child(2){transition-delay:.12s!important}.chats.gallery .chat.in .msg:nth-child(3){transition-delay:.24s!important}
+.gal-meta{display:none}
+.is-pinned .gal-meta{display:flex;align-items:center;gap:14px;width:min(520px,86vw);margin-top:30px;font:12px var(--f-mono);letter-spacing:.08em;color:#6c7784}
+.gal-meta b{font-weight:400;color:var(--ink);min-width:4.5em}
+.gal-meta i{flex:1;height:1px;background:#1b24301f;position:relative}
+.gal-meta s{position:absolute;left:0;top:-.5px;height:2px;width:0;background:var(--ink)}
+.gal-meta span{min-width:8em;text-align:right;color:var(--ink)}
 
 /* ================= 线索墙 ================= */
 #board{position:relative;width:min(1200px,100%);margin-top:40px;padding:36px 26px 40px;border-radius:6px;display:grid;grid-template-columns:repeat(var(--cols),1fr);gap:22px;
@@ -167,9 +204,11 @@ section.lit .title::after{transform:none}
 .col{display:flex;flex-direction:column;align-items:center;gap:30px;z-index:2}
 .col h6{font:400 17px/1.3 var(--f-display);color:#231a10;background:var(--paper);padding:10px 14px;box-shadow:2px 4px 8px #0005;transform:rotate(-1.5deg);text-align:center;max-width:min(220px,100%)}
 .col h6 small{display:block;font:11px var(--f-mono);color:#8a6a45;margin-top:4px}
-.note{position:relative;width:min(190px,100%);padding:16px 14px 12px;font:22px/1.25 var(--f-hand);color:#2b2319;box-shadow:3px 6px 12px #0005;
-  opacity:0;translate:0 16px;transition:opacity .6s,translate .6s}
-.lit .note{opacity:1;translate:0 0}
+.note{position:relative;width:min(190px,100%);padding:16px 14px 12px;font:22px/1.25 var(--f-hand);color:#2b2319;box-shadow:3px 6px 12px #0005}
+/* 便签、收线条、问题卡被红线牵到才钉上墙；量钉子位置时临时去掉位移，免得线连歪 */
+#board .note,#board .tag,#board .qcard{opacity:0;translate:0 -18px;transition:opacity .45s,translate .55s cubic-bezier(.2,1.4,.4,1)}
+#board .on{opacity:1;translate:0 0}
+#board.measure .note,#board.measure .tag,#board.measure .qcard{translate:none;transition:none}
 .note:nth-of-type(3n){background:#fbe78a;rotate:2.2deg}
 .note:nth-of-type(3n+1){background:#f8f4ea;rotate:-2deg}
 .note:nth-of-type(3n+2){background:#cfe6ee;rotate:1.2deg}
@@ -212,7 +251,7 @@ footer{position:relative;z-index:1;text-align:center;padding:40px 20px 70px;font
   <div class="frame"><div class="glass" id="glass"><canvas id="gl" aria-label="用你说过的话拼成的人像，拖动擦开镜面上的雾"></canvas><div class="zones" id="zones" aria-hidden="true"></div></div></div>
   <div class="hint"><i></i>按住拖动或向下滚动擦开雾气，停在字上看原话<button class="wipe-all" id="wipe-all" type="button">一键擦开</button></div>
   <div class="mirror-foot" id="m-foot"></div>
-  <div class="cue" id="cue"><i>↓</i>向下滚动，擦开雾气</div>
+  <div class="cue" id="cue"><i>↓</i>往下滚，镜子上的雾会散开，露出你说过的话</div>
 </section>
 
 <section id="s-phone">
@@ -220,12 +259,12 @@ footer{position:relative;z-index:1;text-align:center;padding:40px 20px 70px;font
   <h2 class="title">AI 们背着你拉了个群</h2>
   <p class="lede">群里每一句都是照你的真实数据写的。看完可以存成图片发出去，图里只有口头禅和数字，没有你的隐私。</p>
   <div class="stage">
-    <div class="phone" id="phone"><div class="screen wx" id="screen">
+    <div class="rig" id="rig"><div class="phone" id="phone"><div class="screen wx" id="screen">
       <div class="island"></div><div class="sheen" id="sheen"></div>
       <div class="status"><span id="st-time"></span><span>5G&nbsp;&nbsp;▮▮▮</span></div>
       <div class="wx-bar"><span>‹</span><b id="wx-title"></b><span>···</span></div>
       <div class="wx-body" id="wx-body"></div>
-    </div></div>
+    </div></div></div>
     <div class="legend-list">
       <div><h4>每句都有数字撑着</h4><p>群里的话按真实统计来写：谁听你说得最多，你对谁说话最短，哪句口头禅说了几次。鼠标停在一句上，能看到它的依据。</p></div>
       <div><h4>发出去之前你先过目</h4><p>点一句就能划掉，划掉的不会出现在图片里。图里只有 AI 的名字、句数、字数和口头禅，不会出现线名、承诺和项目名。</p></div>
@@ -239,6 +278,7 @@ footer{position:relative;z-index:1;text-align:center;padding:40px 20px 70px;font
   <h2 class="title">换一个 AI<span class="p">，</span>你就换一种说法</h2>
   <p class="lede">每个窗口里是你在那个工具里最平常的几句话，气泡多长，那句话就有多长。</p>
   <div class="chats" id="chats"></div>
+  <div class="gal-meta" id="gal-meta" aria-hidden="true"><b id="gal-i"></b><i><s id="gal-bar"></s></i><span id="gal-name"></span></div>
 </section>
 
 <section id="s-wall">
@@ -267,8 +307,10 @@ const fd = s => { const m = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(s || ''); if (
   return `${y}${+m[2]} 月${m[3] ? ` ${+m[3]} 日` : ''}`; };
 
 /* ===================== 滚动叙事引擎：钉住章节 + 滚动驱动 ===================== */
-/* storyPin(章节, 额外滚动vh) 把章节内容收进 sticky 舞台，返回读取进度的函数；
+/* storyPin(章节, 额外滚动vh 或返回 vh 的函数) 把章节内容收进 sticky 舞台，返回读取进度的函数；
    storyScrub(fn) 注册每次滚动要跑的回放逻辑。reduced-motion 下整个引擎不启用。 */
+const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 const story = (() => {
   if (RM) return null;
   const scrubs = [];
@@ -276,7 +318,7 @@ const story = (() => {
     const st = document.createElement('div'); st.className = 'pinstage';
     while (sec.firstChild) st.appendChild(sec.firstChild);
     sec.appendChild(st); sec.classList.add('is-pinned');
-    const fit = () => { sec.style.height = (100 + extraVh) + 'vh';
+    const fit = () => { sec.style.height = (100 + (typeof extraVh === 'function' ? extraVh() : extraVh)) + 'vh';
       const k = Math.min(1, (innerHeight - 16) / st.scrollHeight); st.style.transform = k < .999 ? `scale(${k.toFixed(3)})` : ''; };
     fit(); addEventListener('resize', fit);
     sec._st = st;
@@ -302,7 +344,8 @@ const storyScrub = fn => story && story.scrubs.push(fn);
 
   const cvs = $('#gl'), box = $('#glass');
   const gl = cvs.getContext('webgl', {premultipliedAlpha: false, antialias: true, preserveDrawingBuffer: true});
-  const dpr = Math.min(devicePixelRatio || 1, 2);
+  // 开场镜头会把镜子放大到 ZOOM 倍，画布按放大后的尺寸渲染，放大时字才不糊（高分屏封顶 3 倍，免得太吃显卡）
+  const ZOOM = story ? 1.9 : 1, dpr = Math.min(Math.min(devicePixelRatio || 1, 2) * ZOOM, 3);
   const words = document.createElement('canvas'), mask = document.createElement('canvas'), maskU = document.createElement('canvas');
   const wx = words.getContext('2d'), mx = mask.getContext('2d', {willReadFrequently: true}), mux = maskU.getContext('2d');
   let W = 0, H = 0, cells = [], ripples = [], t0 = performance.now(), mouse = [.5, .4], silC = null, scrollP = 0, clearedAll = false, sweep = -1, fogHold = false, fogHoldP = 0;
@@ -395,7 +438,8 @@ const storyScrub = fn => story && story.scrubs.push(fn);
     f.end = () => L = null; return f; };
   const finger = brush();
   const cleared = (x, y) => { const k = mask.width / W; return mx.getImageData(x*k|0, y*k|0, 1, 1).data[0]; };
-  const pos = e => { const r = cvs.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  // 镜子会被舞台缩放、被镜头推拉，屏幕坐标要换算回镜面自己的坐标
+  const pos = e => { const r = cvs.getBoundingClientRect(); return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height]; };
   function bindHover(){
     cvs.addEventListener('pointerleave', hideTip);
     cvs.addEventListener('pointermove', e => {
@@ -406,7 +450,7 @@ const storyScrub = fn => story && story.scrubs.push(fn);
 
   if (!gl){ // 没有 WebGL：直接显示字，不起雾
     const ctx = cvs.getContext('2d');
-    const draw = () => { const r = box.getBoundingClientRect(); W = r.width; H = r.height; paintWords(); cvs.width = words.width; cvs.height = words.height; ctx.drawImage(words, 0, 0); resetMask(); clearedAll = true; compositeMask(); };
+    const draw = () => { W = box.clientWidth; H = box.clientHeight; paintWords(); cvs.width = words.width; cvs.height = words.height; ctx.drawImage(words, 0, 0); resetMask(); clearedAll = true; compositeMask(); };
     draw(); addEventListener('resize', draw); bindHover(); $('#wipe-all').hidden = true; Object.keys(Z).forEach(k => showZone(k, true)); return;
   }
   const VS = `attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;uv.y=1.-uv.y;gl_Position=vec4(p,0,1);}`;
@@ -453,7 +497,7 @@ const storyScrub = fn => story && story.scrubs.push(fn);
     gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D, ts); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, silC);
   }
   function layout(){
-    const r = box.getBoundingClientRect(); W = r.width; H = r.height; cvs.width = W*dpr; cvs.height = H*dpr; gl.viewport(0, 0, cvs.width, cvs.height);
+    W = box.clientWidth; H = box.clientHeight; cvs.width = W*dpr; cvs.height = H*dpr; gl.viewport(0, 0, cvs.width, cvs.height);
     paintWords(); resetMask(); if (locked) fillClear(); upload();
   }
   let down = false, last = 0, idle = 0, locked = false;
@@ -485,12 +529,28 @@ const storyScrub = fn => story && story.scrubs.push(fn);
     const [x, y] = pos(e); mouse = [x / W, y / H];
     if (down){ finger(x, y); idle = 0; const now = performance.now(); if (now - last > 90){ last = now; ripples.push([x / W, y / H, (now - t0) / 1000]); } }
   });
-  // 滚动叙事：钉住镜子这一幕，滚动进度就是擦雾进度；镜子随进度轻微推近
-  const mprog = storyPin($('#s-mirror'), 110);
-  if (mprog) storyScrub(() => { scrollP = mprog();
-    if (fogHold && Math.abs(scrollP - fogHoldP) > .02) fogHold = false;
-    $('#cue').classList.toggle('off', scrollP > .03);
-    $('.frame').style.transform = `scale(${(1.1 - scrollP * .1).toFixed(3)})`; });
+  // 滚动叙事·镜头后退：开场脸贴着镜面，只看得见雾；往下滚一步步退开，雾从中间散掉，
+  // 镜框、标题和说明这时才进画面。往回滚镜头重新贴上去、雾回来（手擦的痕迹留着）。
+  const msec = $('#s-mirror'), mprog = storyPin(msec, 190);
+  if (mprog){
+    const fr = $('.frame'), mt = msec.querySelector('.mirror-title');
+    const chrome = ['.kicker', '.mirror-title', '#m-lede', '.hint', '#m-foot'].map(s => msec.querySelector(s));
+    // 镜子在舞台里的中心（舞台自身可能被缩放，原点在 50% 45%），算出开场放大多少、往哪挪能让整面镜子居中装满屏幕。
+    // 每次都现量：字体晚到会让标题换行、把镜子往下推，缓存的位置会过期
+    const measure = () => { const st = msec._st, k = st.getBoundingClientRect().height / st.offsetHeight || 1;
+      const oy = st.offsetHeight * .45, vy = oy + (fr.offsetTop + fr.offsetHeight / 2 - oy) * k;
+      return {ty: (innerHeight / 2 - vy) / k, s0: Math.max(1, Math.min(ZOOM, Math.min(innerWidth, innerHeight) * .92 / (fr.offsetWidth * k)))}; };
+    document.fonts && document.fonts.ready.then(() => story.apply());
+    storyScrub(() => { const p = mprog(), cam = measure();
+      const e = ease(clamp01(p / .45)), s = cam.s0 + (1 - cam.s0) * e;
+      fr.style.transform = `translateY(${(cam.ty * (1 - e)).toFixed(1)}px) scale(${s.toFixed(3)})`;
+      const c = clamp01((p - .3) / .15);
+      chrome.forEach(x => { x.style.opacity = c; x.style.transform = `translateY(${((1 - c) * 14).toFixed(1)}px)`; });
+      if (c > 0) mt.classList.add('go');
+      scrollP = clamp01((p - .08) / .72);
+      if (fogHold && Math.abs(scrollP - fogHoldP) > .02) fogHold = false;
+      $('#cue').classList.toggle('off', p > .03); });
+  } else msec.querySelector('.mirror-title').classList.add('go');
   frame.n = 0; layout(); requestAnimationFrame(frame); bindHover();
   addEventListener('resize', () => { clearTimeout(layout.t); layout.t = setTimeout(layout, 200); });
   document.fonts && document.fonts.ready.then(() => { paintWords(); upload(); });
@@ -508,7 +568,7 @@ const storyScrub = fn => story && story.scrubs.push(fn);
   const LOGO_IMGS = {}; A.forEach(a => { if (a.logo) { const im = new Image(); im.src = a.logo; LOGO_IMGS[a.agent] = im; } });
   const avOf = a => a.logo ? `<img src="${a.logo}" alt="">` : esc(ini(a.agent));
   const total = A.reduce((n, a) => n + a.n, 0) || 1, T = (D.phrases_raw || D.phrases)[0];
-  $('#wx-title').textContent = `关于那个人（${A.length}）`;
+  $('#wx-title').textContent = `被 ta 使唤的 AI 们（${A.length}）`;
   const q = t => `「${t}」`, one = t => t.length === 2 ? '这两个字' : '这句';
   const ini = n => { const w = n.trim().split(/\s+/); return w.length > 1 ? w.map(x => x[0]).join('').slice(0, 2).toUpperCase() : n.slice(0, 2); };
   // 台词只用：AI 名字、句数、一句话字数、口头禅。每句带 fact 作依据，页面上悬停可见
@@ -556,20 +616,30 @@ const storyScrub = fn => story && story.scrubs.push(fn);
   body.addEventListener('mousemove', e => { const t = e.target.closest('[data-i]'), m = t && L[t.dataset.i];
     if (m && m.fact) showTip(`${esc(m.fact)}<small>${t.classList.contains('off') ? '这句不会放进图片，再点一下放回来' : '点一下，这句就不放进图片'}</small>`, e.clientX, e.clientY); else hideTip(); });
   body.addEventListener('mouseleave', hideTip);
-  // 滚动叙事：钉住这一幕，滚动进度逐条放出消息；往回滚消息会一条条收回。
-  // 不钉住（reduced-motion）时退回原来的定时连播。
-  let shown = 0;
-  const reveal = n => {
-    n = Math.max(0, Math.min(items.length, Math.round(n)));
+  // 滚动叙事：钉住这一幕，手机先从下方立起来，然后滚动进度逐条放出消息；
+  // AI 的话冒出来之前先显示"正在输入"。往回滚消息会一条条收回。不钉住（reduced-motion）时退回原来的定时连播。
+  const typing = document.createElement('div'); typing.className = 'wx-m wx-typing hide';
+  body.appendChild(typing);
+  let shown = 0, typer = null;
+  const reveal = v => {
+    const n = Math.max(0, Math.min(items.length, Math.floor(v)));
     while (shown < n){ const x = items[shown++]; x.classList.remove('pending'); x.classList.add('pop');
       requestAnimationFrame(() => requestAnimationFrame(() => x.classList.remove('pop'))); }
     while (shown > n){ const x = items[--shown]; x.classList.add('pending'); x.classList.remove('pop'); }
+    const next = L[n], who = next && next.k === 'ai' && v - n > .35 ? next.a : null;
+    if (who !== typer){ typer = who;
+      if (who) typing.innerHTML = `<span class="wx-av${who.logo ? ' has-logo' : ''}" style="--h:${who.h}">${avOf(who)}</span><div><small>${esc(who.agent)}</small><p><i></i><i></i><i></i></p></div>`;
+      typing.classList.toggle('hide', !who); }
     body.scrollTop = body.scrollHeight;
   };
-  const sec = $('#s-phone');
-  const pprog = storyPin(sec, Math.min(170, Math.max(80, items.length * 10)));
+  const sec = $('#s-phone'), rig = $('#rig'), legend = $('.legend-list');
+  const pprog = storyPin(sec, Math.min(190, Math.max(100, items.length * 11)));
   if (pprog){
-    storyScrub(() => reveal(pprog() * (items.length + 3)));
+    storyScrub(() => { const p = pprog(), e = ease(clamp01(p / .14));
+      rig.style.transform = `translateY(${((1 - e) * 160).toFixed(1)}px) rotateX(${((1 - e) * 28).toFixed(2)}deg) scale(${(.9 + e * .1).toFixed(3)})`;
+      rig.style.opacity = .15 + e * .85;
+      legend.style.opacity = clamp01((p - .08) / .12);
+      reveal(clamp01((p - .12) / .8) * (items.length + .6)); });
     $('#wx-replay').onclick = () => scrollTo({top: sec.offsetTop + 4, behavior: 'smooth'});
   } else {
     let timers = [];
@@ -647,12 +717,31 @@ const storyScrub = fn => story && story.scrubs.push(fn);
   el.innerHTML = D.agents.map((a, i) => {
     const msgs = (a.typical && a.typical.length ? a.typical : [a.sample]).slice(0, 3);
     return `<article class="chat" style="--h:${hues[i % hues.length]};transition-delay:${i * .08}s">
-      <header><span class="av${a.logo ? ' has-logo' : ''}">${a.logo ? `<img src="${a.logo}" alt="">` : esc(a.agent.slice(0, 1))}</span><div><b>${esc(a.agent)}</b><small>${esc(a.title || '')}${a.title ? ' · ' : ''}${fmt(a.n)} 句</small></div></header>
+      <header><span class="av${a.logo ? ' has-logo' : ''}">${a.logo ? `<img src="${a.logo}" alt="">` : esc(a.agent.slice(0, 1))}</span><div><small><b>${esc(a.agent)}</b>${fmt(a.n)} 句</small>${a.title ? `<strong>${esc(a.title)}</strong>` : ''}</div></header>
       <div class="len">一句话<i style="--w:${Math.round(a.median / maxMed * 100)}%"></i><em>中位 ${a.median} 字</em></div>
       <div class="msgs">${msgs.map((m, j) => `<div class="msg" style="transition-delay:${.35 + i * .08 + j * .22}s"><p>${esc(m.t)}</p><time>${fd(m.d)}</time></div>`).join('')}</div>
       <footer>常说${a.phrases.slice(0, 3).map(p => `<q>${esc(p.text)}<i>×${p.n}</i></q>`).join('')}</footer>
     </article>`; }).join('');
-  new IntersectionObserver(es => es.forEach(x => x.isIntersecting && el.classList.add('in')), {threshold: .15}).observe(el);
+  if (!story){ new IntersectionObserver(es => es.forEach(x => x.isIntersecting && el.classList.add('in')), {threshold: .15}).observe(el); return; }
+  el.classList.add('gallery');
+  const view = document.createElement('div'); view.className = 'gal-view'; el.before(view); view.appendChild(el);
+  const sec = $('#s-chat'), cards = [...el.children], n = cards.length;
+  // 首尾两扇窗都停在正中：左右留白各半个橱窗减半张卡，走完的距离就是 (n-1) 个卡位
+  const dist = () => Math.max(0, el.offsetWidth - view.clientWidth);
+  const cprog = storyPin(sec, () => 50 + dist() / innerHeight * 100);
+  let cur = -1;
+  storyScrub(() => { const p = cprog(), q = clamp01((p - .1) / .82), mid = innerWidth / 2;
+    el.style.transform = `translateX(${(-q * dist()).toFixed(1)}px)`;
+    let best = 0, bf = -1;
+    cards.forEach((c, i) => { const r = c.getBoundingClientRect(), f = 1 - clamp01(Math.abs(r.left + r.width / 2 - mid) / (innerWidth * .55));
+      c.style.opacity = (.32 + .68 * f).toFixed(3);
+      c.style.transform = `translateY(${((1 - f) * 28).toFixed(1)}px) scale(${(.92 + .08 * f).toFixed(3)})`;
+      c.classList.toggle('in', f > .72);
+      if (f > bf){ bf = f; best = i; } });
+    if (best !== cur){ cur = best;
+      $('#gal-i').textContent = `${String(cur + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`;
+      $('#gal-name').textContent = D.agents[cur].agent; }
+    $('#gal-bar').style.width = (q * 100).toFixed(1) + '%'; });
 })();
 
 /* ===================== 线索墙 ===================== */
@@ -662,14 +751,16 @@ const storyScrub = fn => story && story.scrubs.push(fn);
   D.lines.forEach(l => {
     const c = document.createElement('div'); c.className = 'col'; c.dataset.kind = l.kind;
     c.innerHTML = `<h6>${esc(l.name)}<small>${esc(l.status)}</small></h6>` +
-      l.facts.map((f, j) => `<div class="note" style="transition-delay:${j * .12}s"><span class="pin"></span><em>${fd(f.d)}</em>${esc(f.q.length > 46 ? f.q.slice(0, 46) + '…' : f.q)}</div>`).join('') +
+      l.facts.map(f => `<div class="note"><span class="pin"></span><em>${fd(f.d)}</em>${esc(f.q.length > 46 ? f.q.slice(0, 46) + '…' : f.q)}</div>`).join('') +
       `<div class="tag ${l.kind}"><span class="pin"></span>${tagText[l.kind]}</div>` + (l.question ? `<div class="qcard">${esc(l.question)}</div>` : '');
     board.appendChild(c);
   });
   const svg = $('#strings');
-  function draw(animate){
-    const br = board.getBoundingClientRect(); svg.innerHTML = '';
-    $$('#board .col').forEach((col, ci) => {
+  let segs = [], cards = [];
+  function draw(){
+    board.classList.add('measure');
+    const br = board.getBoundingClientRect(); svg.innerHTML = ''; segs = [];
+    $$('#board .col').forEach(col => {
       const pins = [...col.querySelectorAll('.pin')].map(p => { const r = p.getBoundingClientRect(); return [r.left - br.left + r.width / 2, r.top - br.top + r.height / 2]; });
       for (let i = 1; i < pins.length; i++){
         const [x1, y1] = pins[i - 1], [x2, y2] = pins[i], stalled = i === pins.length - 1 && col.dataset.kind === 'stalled';
@@ -677,17 +768,32 @@ const storyScrub = fn => story && story.scrubs.push(fn);
         const mx = Math.min(x1, x2) - 46 - (y2 - y1) * .04;
         const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         p.setAttribute('d', `M${x1},${y1} Q${mx},${(y1 + y2) / 2 + 10} ${x2},${y2}`);
-        if (stalled){ p.setAttribute('stroke-dasharray', '5 9'); p.style.opacity = .8; }
+        if (stalled) p.setAttribute('stroke-dasharray', '5 9');
         svg.appendChild(p);
-        if (animate && !RM && !stalled){ const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
-          p.style.transition = `stroke-dashoffset .7s ${(ci * .15 + i * .22).toFixed(2)}s ease-out`; requestAnimationFrame(() => requestAnimationFrame(() => p.style.strokeDashoffset = 0)); }
+        const L = p.getTotalLength();
+        if (!stalled) p.style.strokeDasharray = L;
+        segs.push({p, L, y1, y2, stalled});
       }
     });
+    cards = $$('#board .note, #board .tag, #board .qcard').map(n => ({n, y: n.getBoundingClientRect().top - br.top + 8}));
+    board.classList.remove('measure');
+    last = null; scan();
   }
-  let lit = false;
-  new IntersectionObserver(es => es.forEach(x => { if (x.isIntersecting && !lit){ lit = true; board.classList.add('lit'); setTimeout(() => draw(true), 650); } }), {threshold: .15}).observe(board);
-  addEventListener('resize', () => lit && draw(false));
-  document.fonts && document.fonts.ready.then(() => lit && draw(false));
+  // 扫描线：视口 78% 高度处对应到墙上的位置。线从上一颗钉子描到下一颗，描到哪便签钉到哪；往回滚一起收回
+  let last = null;
+  function scan(){
+    const y = story ? innerHeight * .78 - board.getBoundingClientRect().top : 1e9;
+    if (last !== null && Math.abs(y - last) < 1) return; last = y;
+    segs.forEach(s => { const f = clamp01((y - s.y1) / (s.y2 - s.y1 || 1));
+      if (s.stalled) s.p.style.opacity = f >= 1 ? .8 : 0; else s.p.style.strokeDashoffset = (s.L * (1 - f)).toFixed(1); });
+    cards.forEach(o => o.n.classList.toggle('on', o.y < y));
+  }
+  let ready = false;
+  const init = () => { if (!ready){ ready = true; draw(); } };
+  new IntersectionObserver(es => es.forEach(x => x.isIntersecting && init()), {rootMargin: '60% 0px'}).observe(board);
+  storyScrub(() => ready && scan());
+  addEventListener('resize', () => ready && draw());
+  document.fonts && document.fonts.ready.then(() => ready && draw());
 })();
 
 /* 目录高亮 + 章节入场：钉住的章节会超过一屏，按"穿过视口中线"判定当前章节 */

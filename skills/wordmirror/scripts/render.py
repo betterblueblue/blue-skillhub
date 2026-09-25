@@ -262,11 +262,17 @@ def build_portrait():
 
 def _status_badge(title):
     """从线标题里抽状态（·还在走 / ·已经收线 / ·没了下文），拆成小徽章。"""
-    m = re.search(r'^(.*?)[·\s]*(还在走|已经收线|没了下文)$', title)
+    m = re.search(r'^(.*?)[·\s]*(还在走|已经收线|没了下文)\s*(?:[（(]([^）)]*)[）)])?$', title)
     if not m:
         return title, ''
     cls = {'还在走': 'badge-live', '已经收线': 'badge-done', '没了下文': 'badge-drop'}[m.group(2)]
-    return m.group(1).strip(), '<span class="badge %s">%s</span>' % (cls, m.group(2))
+    note = '<small>%s</small>' % H.escape(m.group(3)) if m.group(3) else ''
+    return m.group(1).strip(), '<span class="badge %s">%s%s</span>' % (cls, m.group(2), note)
+
+
+def _residue(got, line):
+    """引文被抽成卡片后，原句常剩「起点：；后来是。」这种只有引子和标点的壳，不再单独成段。"""
+    return bool(got) and len(re.sub(r'[：:；;，,。、．.！!？?\s\-—（）()]', '', line)) <= 10
 
 
 def _timeline_section(section):
@@ -287,7 +293,7 @@ def _timeline_section(section):
             hook = line.strip(' -—')
             continue
         line = line.strip(' -—')
-        if line:
+        if line and not _residue(got, line):
             text.append(line[2:] if line.startswith('- ') else line)
     out = ['<article class="timeline-chapter">', '<div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s %s</h2></div>' % (inline(title), badge)]
     if quotes:
@@ -319,7 +325,7 @@ def _timeline_special(section, title, kind):
         if em:
             events.append(em.groups()); continue
         line = line.strip(' -—')
-        if line: prose.append(line[2:] if line.startswith('- ') else line)
+        if line and not _residue(got, line): prose.append(line[2:] if line.startswith('- ') else line)
     title, badge = _status_badge(title)
     out = ['<article class="timeline-chapter timeline-%s">' % kind, '<div class="timeline-chapter-head"><span class="timeline-kicker"></span><h2>%s %s</h2></div>' % (inline(title), badge)]
     if kind == 'facing' and len(quotes) >= 2:
@@ -350,17 +356,24 @@ def _quote_markup(date, quote):
     return '<div class="quote timeline-quote"><span class="q-eyebrow">%s · 你当时这样说</span><span class="q-text">「%s」</span></div>' % (H.escape(date), H.escape(quote))
 
 
-def render_timeline(md):
-    """按阶段和白话栏目分派不同的回望版式。"""
-    sections = re.split(r'(?=^### )', md, flags=re.MULTILINE)
+_HEAD = re.compile(r'^(#{2,3}) (.+)$')
+
+
+def _split_heads(md):
+    """按 ## / ### 切节，返回 [(级数, 标题, 整节文本)]；标题前的散文级数记 0。"""
     out = []
-    for section in sections:
-        if not section.strip():
+    for sec in re.split(r'(?=^#{2,3} )', md, flags=re.MULTILINE):
+        if not sec.strip():
             continue
-        if section.startswith('### '):
-            title = section.splitlines()[0][4:].strip()
-        else:
-            title = ''
+        m = _HEAD.match(sec.splitlines()[0])
+        out.append((len(m.group(1)), m.group(2).strip(), sec) if m else (0, '', sec))
+    return out
+
+
+def render_timeline(md):
+    """按阶段和白话栏目分派不同的回望版式。## 与 ### 都认：白话栏目常写成 ##，阶段写成 ###。"""
+    out = []
+    for level, title, section in _split_heads(md):
         kind = None
         if '以前的我' in title or '以前的你' in title or '原来这两句话有关' in title:
             kind = 'facing'
@@ -370,16 +383,19 @@ def render_timeline(md):
             kind = 'persistent'
         elif '这件事后来怎么样了' in title:
             kind = 'setaside'
-        elif '现在的我' in title or '现在的你' in title:
+        elif re.search(r'现在的?[我你]', title):
             kind = 'now'
+        body = '\n'.join(l for l in section.splitlines()[1 if level else 0:] if l.strip())
         if kind:
             out.append(_timeline_special(section, title, kind))
-        elif title:
+        elif level == 3:
             out.append(_timeline_section(section))
-        else:
-            body = '\n'.join(l for l in section.splitlines() if l.strip() and not l.startswith('## '))
-            if body.strip():
-                out.append('<p class="timeline-note">%s</p>' % inline(body))
+        elif level == 2 and not body:
+            out.append('<h3 class="timeline-part">%s</h3>' % inline(title))
+        elif level == 2:
+            out.append('<div class="recap"><div class="recap-head">%s</div>%s</div>' % (inline(title), render_markdown(body)))
+        elif body:
+            out.append('<p class="timeline-note">%s</p>' % inline(body))
     return '\n'.join(out)
 
 
@@ -453,16 +469,80 @@ def _unified_stats():
     return ''.join(band), promises, ins, span
 
 
+def _day_quote(msgs):
+    """回放里"这天说的一句"：能读的短句里，优先带"我"的（最像在说自己），再挑长度适中的。脚本只筛能读的，不判断哪句重要。"""
+    pool = []
+    for m in msgs:
+        m = re.sub(r'[​‎‏﻿]', '', m).strip()
+        if (6 <= len(m) <= 42 and '\n' not in m and not m.startswith(('/', '<', '['))
+                and _clean(m) and not _is_filler(m)):
+            pool.append(m)
+    pool.sort(key=lambda m: ('我' not in m, abs(len(m) - 20), m))
+    return pool[0] if pool else ''
+
+
+def _story_chapters():
+    """timeline.md 里「### 阶段名（YYYY-MM ~ YYYY-MM）」写的阶段，回放时当大标题用；没写就只按月份走。"""
+    p = os.path.join(wm.DATA, 'profile', 'timeline.md')
+    if not os.path.exists(p):
+        return []
+    out = []
+    for name, a, b in re.findall(r'^#{2,3} (.+?)[（(](\d{4}-\d{2})(?:\s*[~～至-]\s*(\d{4}-\d{2}))?[）)]\s*$',
+                                 open(p, encoding='utf-8', errors='replace').read(), re.M):
+        if not name.startswith('本期对账'):
+            out.append({'name': name.strip(), 'from': a, 'to': b or a})
+    return out
+
+
+def _story_data():
+    """首页回放：从第一天到最后一天逐日排开 [句数, 这天的一句]，没说话的日子句数 0、原话留空，不凑数。"""
+    rows = _eyes_rows()
+    if not rows:
+        return None
+    by = collections.defaultdict(list)
+    for o in rows:
+        by[o['date']].append(o['msg'])
+    d, end, days = datetime.date.fromisoformat(min(by)), datetime.date.fromisoformat(max(by)), []
+    while d <= end:
+        ms = by.get(d.isoformat(), [])
+        days.append([len(ms), _day_quote(ms)])
+        d += datetime.timedelta(days=1)
+    return {'start': min(by), 'days': days, 'chapters': _story_chapters()}
+
+
+def _story_hero(stat_band):
+    """hero 改成钉住的回放：滚动一格走一天。数据缺失时退回原来的静态 hero。"""
+    title = '<h1>回到我说过的话。</h1>'
+    lede = ('<p class="hero-lede">这是我与 AI 交互的档案。它不是仪表盘，而是一册安静的自我索引：'
+            '我是谁，我在忙哪几条线，哪些话说了却没落地，AI 眼里的我，以及这几个月是怎样走到这里的。</p>')
+    data = _story_data()
+    if not data:
+        return [title, lede, stat_band]
+    js = json.dumps(data, ensure_ascii=False, separators=(',', ':')).replace('</', '<\\/')
+    return ['<div class="story static" id="story">',
+            '<div class="story-stage">',
+            '<div class="story-open">%s%s</div>' % (title, lede),
+            '<div class="story-play" aria-hidden="true">',
+            '<div class="story-meta"><span id="sp-date"></span><span id="sp-day"></span></div>',
+            '<div class="story-ch"><span id="sp-ch"></span></div>',
+            '<p class="story-q" id="sp-q"></p>',
+            '<div class="story-strip" id="sp-strip"><canvas></canvas><i class="story-head" id="sp-head"></i></div>',
+            '<div class="story-bands" id="sp-bands"></div>',
+            '<div class="story-count"><span><b class="tnum" id="sp-n">0</b> 句</span><span id="sp-today"></span></div>',
+            '</div>',
+            '<div class="story-cue" id="sp-cue"><i aria-hidden="true">↓</i><span>往下滚，从第一天开始回放</span></div>',
+            '</div></div>',
+            '<script type="application/json" id="story-data">%s</script>' % js,
+            stat_band]
+
+
 def build_unified():
-    """v7 统一单页：hero（大标题 + 大数字带）+ 六节 + 右栏（当前状态 + 节索引）。"""
+    """v7 统一单页：hero（钉住的逐日回放 + 大数字带）+ 六节 + 右栏（当前状态 + 节索引）。"""
     stat_band, promises, ins, span = _unified_stats()
     n_open = sum(1 for o in promises if o.get('status') == 'open')
     n_ins = sum(1 for o in ins if o.get('status') in ('active', None, ''))
 
-    hero = ['<h1>回到我说过的话。</h1>',
-            '<p class="hero-lede">这是我与 AI 交互的档案。它不是仪表盘，而是一册安静的自我索引：'
-            '我是谁，我在忙哪几条线，哪些话说了却没落地，AI 眼里的我，以及这几个月是怎样走到这里的。</p>',
-            stat_band]
+    hero = _story_hero(stat_band)
 
     main_col = []
     note = _note_card()
@@ -677,17 +757,13 @@ def build_lines():
 
 def render_lines(md):
     """按线分节渲染；带「- 日期 事件」后续的小节走时间线版式，其余走阶段卡。"""
-    sections = re.split(r'(?=^### )', md, flags=re.MULTILINE)
     out = []
-    for section in sections:
-        if not section.strip():
-            continue
-        if section.startswith('### '):
-            title = section.splitlines()[0][4:].strip()
+    for level, title, section in _split_heads(md):
+        if level:
             has_events = re.search(r'^-\s+\d{4}-\d{2}-\d{2}\s+', section, flags=re.MULTILINE)
             out.append(_timeline_special(section, title, 'turning') if has_events else _timeline_section(section))
         else:
-            body = '\n'.join(l for l in section.splitlines() if l.strip() and not l.startswith('## '))
+            body = '\n'.join(l for l in section.splitlines() if l.strip())
             if body.strip():
                 out.append('<p class="timeline-note">%s</p>' % inline(body))
     return '\n'.join(out)

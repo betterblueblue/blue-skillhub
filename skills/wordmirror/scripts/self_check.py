@@ -411,6 +411,28 @@ else:
             probs.append('current-context.md 没有账本快照块——跑一次 render.py all 会自动补')
     check('交接缝对账', not probs, '散文/索引/快照三处对得上' if not probs else '；'.join(probs))
 
+# ===== 23b. 沉浸页/首页回放的供料格式：工具卡称呼上名牌，阶段区间切回放大字 =====
+def _w(s):  # 名牌/大字按显示宽度算：汉字 1 格，英文数字半格
+    return sum(1 if ord(c) > 0x2E7F else .5 for c in s)
+feed = []
+ap = os.path.join(DATA, 'profile', 'ai-eyes.md')
+if os.path.exists(ap):
+    for key, t in re.findall(r'^### ([\w\- /]+)：(.+?)\s*$', open(ap, encoding='utf-8', errors='replace').read(), re.M):
+        if '/' in key:
+            feed.append('ai-eyes.md「%s」几个工具合一张卡，聊天窗会共用一个称呼——拆开各写一张' % key.strip())
+        if _w(t) > 12:
+            feed.append('ai-eyes.md「%s」的称呼超过 12 字，名牌放不下一行' % key.strip())
+tp = os.path.join(DATA, 'profile', 'timeline.md')
+if os.path.exists(tp):
+    stages = re.findall(r'^### (.+)$', open(tp, encoding='utf-8', errors='replace').read(), re.M)
+    sys.path.insert(0, os.path.join(BASE, 'scripts'))
+    import render as _r
+    chs = _r._story_chapters()
+    if stages and len(chs) < len(stages):
+        feed.append('timeline.md 有 %d 个阶段只有 %d 个写了（YYYY-MM ~ YYYY-MM）区间，首页回放缺区间的日子只能显示月份' % (len(stages), len(chs)))
+    feed += ['timeline.md 阶段「%s」超过 12 字，回放大字会被压得很小' % c['name'] for c in chs if _w(c['name']) > 12]
+check('回放与名牌供料', True if not feed else None, '工具卡一卡一称呼、阶段都带区间' if not feed else '；'.join(feed))
+
 # ===== 24. 写回/纠正/照见账本合法 + supersedes 有靶 =====
 bad_wb = []
 wb_ids, wb_sups = set(), []
