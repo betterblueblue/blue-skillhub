@@ -860,21 +860,35 @@ def _clean(m):
     return not _CODEISH.search(m) and not _INTERNAL.search(m)
 
 
+# 纯口水：整句剔掉这些应答/客套/连接词后什么都不剩，就是没信息的话（继续、好的、要啊、hi、谢谢……）。
+_FILLER_TOKENS = re.compile(
+    r'(继续|接着来?|然后呢?|好的|好嘞|好|行|可以|嗯|收到|同意|认可|确认|要的?|需要|是的?|对|'
+    r'hi|hello|你好|bro|兄弟|谢谢|感谢|辛苦|ok|再见|拜拜|你|那|就|吧|啊|呀|呢|嘛|哦|哈|了|'
+    r'[！!？?~…。，,、\s])', re.I)
+
+
+def _is_filler(m):
+    """整句话剔完口水词后什么都不剩 → 没有信息量，不进口头禅/铺底/常干。"""
+    return not _FILLER_TOKENS.sub('', m or '')
+
+
 def _eyes_phrases(rows, n=12):
-    """口头禅：2-12 字短句按次数排序，带首次/最近日期。"""
+    """口头禅：2-12 字短句按次数排序，带首次/最近日期；纯口水（继续/好的/要啊）不算口头禅。"""
     by = collections.defaultdict(list)
     for o in rows:
         m = o['msg']
-        if 2 <= len(m) <= 12 and not m.startswith(('/', '<', '[')) and not _INTERNAL.search(m):
+        if (2 <= len(m) <= 12 and not m.startswith(('/', '<', '['))
+                and not _INTERNAL.search(m) and not _is_filler(m)):
             by[m].append(o['date'])
     top = sorted(by.items(), key=lambda kv: -len(kv[1]))[:n]
     return [{'text': k, 'n': len(v), 'first': min(v), 'last': max(v)} for k, v in top]
 
 
 def _eyes_hands(rows, n=14):
-    """镜子两肩"手上常干的"：动词开头的短指令，去掉代码和路径。"""
+    """镜子两肩"手上常干的"：动词开头的短指令，去掉代码、路径和纯口水。"""
     c = collections.Counter(o['msg'] for o in rows
-                            if 3 <= len(o['msg']) <= 16 and _ASK.match(o['msg']) and _clean(o['msg']))
+                            if 3 <= len(o['msg']) <= 16 and _ASK.match(o['msg'])
+                            and _clean(o['msg']) and not _is_filler(o['msg']))
     return [{'text': t, 'n': k} for t, k in c.most_common(n)]
 
 
@@ -894,11 +908,23 @@ def _eyes_typical(items, median, k=3):
 
 
 def _eyes_mirror(rows, n=900):
-    """镜面铺底原话：短句、去代码路径，随机抽样。"""
-    pool = [o for o in rows if 4 <= len(o['msg']) <= 26 and _clean(o['msg'])]
+    """镜面铺底原话：短句、去代码路径和纯口水，随机抽样。只作兜底——
+    profile/mirror.md 里有人挑过的话（_eyes_curated_mirror）时优先用挑的。"""
+    pool = [o for o in rows if 4 <= len(o['msg']) <= 26 and _clean(o['msg']) and not _is_filler(o['msg'])]
     random.seed(7)
     pick = random.sample(pool, min(n, len(pool)))
     return [{'t': o['msg'].replace('\n', ' '), 'd': o['date'], 'a': AGENT_NAMES.get(o['agent'], o['agent'])} for o in pick]
+
+
+def _eyes_curated_mirror():
+    """profile/mirror.md：你读原话后亲手挑的「镜面上的话」，每行 `- 日期 「原话」 工具`。
+    有就优先铺镜面——判断归人，机械抽样只兜底。"""
+    p = os.path.join(wm.DATA, 'profile', 'mirror.md')
+    if not os.path.exists(p):
+        return []
+    md = open(p, encoding='utf-8', errors='replace').read()
+    return [{'t': q, 'd': d, 'a': AGENT_NAMES.get(a, a)}
+            for d, q, a in re.findall(r'-\s*(\d{4}-\d{2}-\d{2})\s*「([^」]+)」\s*([\w\-]*)', md)]
 
 
 def _eyes_agents(rows, ai_eyes_md):
@@ -975,7 +1001,7 @@ def build_ai_eyes_page():
     ai_eyes_md = open(ap, encoding='utf-8', errors='replace').read() if os.path.exists(ap) else ''
     data = {'today': datetime.date.today().isoformat(), 'total': len(rows),
             'span': [min(o['date'] for o in rows), max(o['date'] for o in rows)],
-            'phrases': _eyes_phrases(rows), 'mirror': _eyes_mirror(rows),
+            'phrases': _eyes_phrases(rows), 'mirror': _eyes_curated_mirror() or _eyes_mirror(rows),
             'agents': _eyes_agents(rows, ai_eyes_md), 'lines': _eyes_lines(),
             'promises': _eyes_promises(), 'hands': _eyes_hands(rows)}
     tpl = open(tpl_p, encoding='utf-8').read()
