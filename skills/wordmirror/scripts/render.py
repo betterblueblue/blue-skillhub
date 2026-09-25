@@ -914,13 +914,14 @@ def _is_filler(m):
     return not _FILLER_TOKENS.sub('', m or '')
 
 
-def _eyes_phrases(rows, n=12):
-    """口头禅：2-12 字短句按次数排序，带首次/最近日期；纯口水（继续/好的/要啊）不算口头禅。"""
+def _eyes_phrases(rows, n=12, keep_filler=False):
+    """口头禅：2-12 字短句按次数排序，带首次/最近日期；纯口水（继续/好的/要啊）不算口头禅。
+    keep_filler=True 给群聊用：AI 听得最多的就是口水话，保留原样更真实。"""
     by = collections.defaultdict(list)
     for o in rows:
-        m = o['msg']
+        m = re.sub(r'[​‎‏﻿]', '', o['msg']).strip()
         if (2 <= len(m) <= 12 and not m.startswith(('/', '<', '['))
-                and not _INTERNAL.search(m) and not _is_filler(m)):
+                and not _INTERNAL.search(m) and (keep_filler or not _is_filler(m))):
             by[m].append(o['date'])
     top = sorted(by.items(), key=lambda kv: -len(kv[1]))[:n]
     return [{'text': k, 'n': len(v), 'first': min(v), 'last': max(v)} for k, v in top]
@@ -994,6 +995,7 @@ def _eyes_agents(rows, ai_eyes_md):
         longest = max(pool, key=lambda o: len(o['msg'])) if pool else items[0]
         out.append({'agent': AGENT_NAMES.get(ag, ag), 'n': len(items), 'median': med,
                     'title': titles.get(ag, ''), 'logo': _agent_logo(ag), 'phrases': _eyes_phrases(items, 5),
+                    'phrases_raw': _eyes_phrases(items, 5, keep_filler=True),
                     'typical': _eyes_typical(items, med),
                     'sample': {'t': longest['msg'], 'd': longest['date']}})
     return out
@@ -1051,7 +1053,7 @@ def build_ai_eyes_page():
     ai_eyes_md = open(ap, encoding='utf-8', errors='replace').read() if os.path.exists(ap) else ''
     data = {'today': datetime.date.today().isoformat(), 'total': len(rows),
             'span': [min(o['date'] for o in rows), max(o['date'] for o in rows)],
-            'phrases': _eyes_phrases(rows), 'mirror': _eyes_curated_mirror() or _eyes_mirror(rows),
+            'phrases': _eyes_phrases(rows), 'phrases_raw': _eyes_phrases(rows, keep_filler=True), 'mirror': _eyes_curated_mirror() or _eyes_mirror(rows),
             'agents': _eyes_agents(rows, ai_eyes_md), 'lines': _eyes_lines(),
             'promises': _eyes_promises(), 'hands': _eyes_hands(rows)}
     tpl = open(tpl_p, encoding='utf-8').read()
