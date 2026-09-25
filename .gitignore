@@ -45,6 +45,8 @@ skills/wordmirror/_prototype/*
 !skills/wordmirror/_prototype/build_ai_eyes_proto.py
 !skills/wordmirror/_prototype/ai_eyes_demo.html
 !skills/wordmirror/_prototype/shots/
+# 截图批次子目录（如 shots/story/）是拿真实数据页截的，不入库；上面放行的只有早期假数据截图
+skills/wordmirror/_prototype/shots/*/
 
 # === 内部与个人文件（本地保留，不入库）===
 blue-interview-log/
