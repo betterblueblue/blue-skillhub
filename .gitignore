@@ -22,6 +22,7 @@ skills/*/tests/
 !skills/impact/tests/
 skills/impact/tests/e2e/workdirs/
 !skills/whydump/tests/
+!skills/wordmirror/tests/
 test-projects/
 
 # === 控制变量实验临时产物(skill 提取 / 跑出的 map)===

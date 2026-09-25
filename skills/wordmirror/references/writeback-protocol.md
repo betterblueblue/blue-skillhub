@@ -22,19 +22,24 @@
 **硬门槛：写回和欠账记账一律跑命令，禁止直接编辑 jsonl 文件。** 命令保证格式永远正确、坏账本永远进不了写入路径（手写没有这个保证——模型换个宿主就可能写出坏行）。命令不可用（找不到脚本/Python）才允许按下面格式手写，且写完跑 `wm.py promise` 验证能读出来。
 
 ```bash
-python <skill目录>/scripts/wm.py wb add "事实内容" --topic 主题 --ref "用户原话" [--agent 工具名] [--kind decision --reason 理由 --revisit 重开条件 --status active]
+python <skill目录>/scripts/wm.py wb add "事实内容" --topic 主题 --ref "用户原话" [--agent 工具名] [--kind decision --reason 理由 --revisit 重开条件 --status active] [--date 原始日期] [--supersedes 旧id]
 # 欠账本见下节：promise add / promise done
 ```
+
+两个参数别漏：
+
+- **`--date` 写原始日期**：`wb add` 默认写今天（登记日）。补录历史决定时必须回查原话、带上当初说这句话的日期。
+- **`--supersedes <旧id>` 顶替旧条目**：用户改主意（"不考了→还是考吧"）时，写新条目指向旧条目的 id。旧行保留可查但不再生效，`wb list` 只列生效条目。supersedes 是"后来的决定取代了先前的决定"，不是"旧说法是错的"——错了用 corr。每条新记录自带 `id`，用 `wb list` 查。
 
 手写兜底格式（定位数据目录见 `references/data-locations.md`，往 `user_writebacks.jsonl` **末尾追加一行**）：
 
 ```json
-{"date": "YYYY-MM-DD", "source": "当前agent名", "topic": "主题（如 jobsearch/项目名）", "msg": "事实内容，用用户的说法", "ref": "依据或用户原话"}
+{"id": "wb-YYYYmmddHHMMSS", "date": "YYYY-MM-DD", "source": "当前agent名", "topic": "主题（如 jobsearch/项目名）", "msg": "事实内容，用用户的说法", "ref": "依据或用户原话"}
 ```
 
-示例（日期换成当天，`YYYY-MM-DD`）：
+示例（`date` 换成原始日期）：
 ```json
-{"date": "2026-08-30", "source": "zcode", "topic": "project/demo", "msg": "demo 项目 7/19 提交，无回复，确认关闭等待", "ref": "用户原话「没有消息」"}
+{"id": "wb-20260830143000", "date": "2026-08-30", "source": "zcode", "topic": "project/demo", "msg": "demo 项目 7/19 提交，无回复，确认关闭等待", "ref": "用户原话「没有消息」"}
 ```
 
 ## 写完之后

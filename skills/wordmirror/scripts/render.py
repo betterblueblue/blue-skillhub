@@ -970,6 +970,50 @@ def build_ai_eyes_page():
     return ('html/ai-eyes.html', html)
 
 
+# ---------- 派生数据：脚本生成的机读产物（和"只排版"的职责边界见 DESIGN.md） ----------
+
+_SNAP_MARK, _SNAP_END = '<!-- ledger-snapshot -->', '<!-- /ledger-snapshot -->'
+
+
+def write_lines_index():
+    """把 lines.md 解析结果顺手落成 data/profile/lines.jsonl——Agent 查线不用解析散文，
+    也给快照块和 self_check 的交接缝对账提供机读口径。"""
+    p = os.path.join(wm.DATA, 'profile', 'lines.jsonl')
+    lines = _eyes_lines()
+    if not lines:
+        if os.path.exists(p):
+            os.remove(p)
+        return
+    with open(p, 'w', encoding='utf-8') as f:
+        for l in lines:
+            f.write(json.dumps({'name': l['name'], 'kind': l['kind'], 'status': l['status'],
+                                'last_date': max((x['d'] for x in l['facts']), default=''),
+                                'question': l['question']}, ensure_ascii=False) + '\n')
+
+
+def refresh_context_snapshot():
+    """current-context.md 尾部的账本快照由脚本重写——数字不许手写（手写就可能编）。
+    文件不存在不动；没有标记就在尾部追加。"""
+    p = os.path.join(wm.DATA, 'profile', 'current-context.md')
+    if not os.path.exists(p):
+        return
+    today = datetime.date.today()
+    open_rows = [o for o in _promises_all_layers() if o.get('status') == 'open' and valid_date(o.get('date'))]
+    oldest = min(o['date'] for o in open_rows) if open_rows else ''
+    kinds = collections.Counter(l['kind'] for l in _eyes_lines())
+    rows = _eyes_rows()
+    block = [_SNAP_MARK, '## 账本快照（render.py 每次生成时重写，勿手改）', '',
+             '- 还开着：%d 件承诺%s' % (len(open_rows), ' · 最久一件 %d 天' % (today - datetime.date.fromisoformat(oldest)).days if oldest else ''),
+             '- 在走的线：%d 条 · 停在准备做：%d 条 · 已收线：%d 条' % (kinds.get('open', 0), kinds.get('stalled', 0), kinds.get('closed', 0)),
+             '- 语料截止：%s · 快照生成：%s' % (max((o['date'] for o in rows), default='无'), today.isoformat()),
+             _SNAP_END]
+    md = open(p, encoding='utf-8', errors='replace').read()
+    pat = re.compile(re.escape(_SNAP_MARK) + r'.*?' + re.escape(_SNAP_END), re.S)
+    md = (pat.sub('\n'.join(block), md) if pat.search(md)
+          else md.rstrip() + '\n\n' + '\n'.join(block) + '\n')
+    open(p, 'w', encoding='utf-8').write(md)
+
+
 # ---------- 月报 ----------
 
 def load_jsonl(name):
@@ -1071,6 +1115,8 @@ def main():
     for j in jobs:
         if j:
             write_out(*j)
+    write_lines_index()
+    refresh_context_snapshot()
 
 
 if __name__ == '__main__':

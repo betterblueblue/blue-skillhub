@@ -79,33 +79,47 @@ def cmd_bind(args):
 
 # ===== 写回（"记住这个"——走命令保证格式，见 writeback-protocol.md 硬门槛）=====
 
-def cmd_wb(args):
-    if not args or args[0] not in ('add', 'list'):
-        print('用法：python wm.py wb add "事实内容" --topic 主题 [--ref 依据] [--agent 工具名] [--kind decision --reason 理由 --revisit 重开条件]')
-        print('      python wm.py wb list           # 看已写回的事实')
-        return
-    wb_p = os.path.join(DATA, 'user_writebacks.jsonl')
-    if args[0] == 'list':
-        if not os.path.exists(wb_p):
-            print('还没有写回记录。')
-            return
-        rows = []
-        for i, line in enumerate(open(wb_p, encoding='utf-8'), 1):
+def _wb_rows(path, strict=False):
+    """读全部写回行；strict 时坏行直接拦下（写操作不许碰坏文件）。"""
+    rows = []
+    if os.path.exists(path):
+        for i, line in enumerate(open(path, encoding='utf-8'), 1):
             line = line.strip()
             if not line:
                 continue
             try:
                 rows.append(json.loads(line))
             except Exception:
+                if strict:
+                    print('写回文件 %s 第 %d 行不是合法 JSON。先手工修复或删掉那行，我不替你静默改账。' % (path, i))
+                    sys.exit(1)
                 print('警告：第 %d 行不是合法 JSON，跳过' % i)
-        for o in rows[-20:]:
-            print('  %s | %-8s | %s' % (o.get('date', '?'), o.get('source', o.get('topic', '?')), o.get('msg', '')[:70]))
-        if len(rows) > 20:
-            print('  …（共 %d 条，显示最近 20 条）' % len(rows))
+    return rows
+
+
+def cmd_wb(args):
+    if not args or args[0] not in ('add', 'list'):
+        print('用法：python wm.py wb add "事实内容" --topic 主题 [--ref 依据] [--date 原始日期] [--agent 工具名]')
+        print('                          [--kind decision --reason 理由 --revisit 重开条件] [--supersedes 旧id]')
+        print('      python wm.py wb list           # 看已写回的事实（被 supersedes 顶替的旧条不显示）')
         return
-    # add：解析 --topic/--ref/--agent 选项，其余为内容
+    wb_p = os.path.join(DATA, 'user_writebacks.jsonl')
+    if args[0] == 'list':
+        rows = _wb_rows(wb_p)
+        if not rows:
+            print('还没有写回记录。')
+            return
+        dead = {o.get('supersedes') for o in rows if o.get('supersedes')}
+        alive = [o for o in rows if o.get('id') not in dead]
+        for o in alive[-20:]:
+            print('  %s | %-18s | %s | %s' % (o.get('id', '(无id·不可supersedes)'), o.get('date', '?'),
+                                            o.get('source', o.get('topic', '?')), o.get('msg', '')[:60]))
+        if len(alive) > 20:
+            print('  …（共 %d 条在生效，另有 %d 条已被新条目顶替，显示最近 20 条）' % (len(alive), len(rows) - len(alive)))
+        return
+    # add：解析 --topic/--ref/--agent/--date/--supersedes 等选项，其余为内容
     text, topic, ref, agent = [], 'general', '', 'cli'
-    kind, reason, revisit, status = '', '', '', ''
+    kind, reason, revisit, status, src_date, supersedes = '', '', '', '', '', ''
     i = 1
     while i < len(args):
         if args[i] == '--topic' and i + 1 < len(args):
@@ -122,24 +136,26 @@ def cmd_wb(args):
             revisit = args[i + 1]; i += 2
         elif args[i] == '--status' and i + 1 < len(args):
             status = args[i + 1]; i += 2
+        elif args[i] == '--date' and i + 1 < len(args):
+            src_date = args[i + 1]; i += 2
+        elif args[i] == '--supersedes' and i + 1 < len(args):
+            supersedes = args[i + 1]; i += 2
         else:
             text.append(args[i]); i += 1
     msg = ' '.join(text).strip()
     if not msg:
         print('内容不能为空。用法：python wm.py wb add "事实内容" --topic 主题')
         sys.exit(1)
+    if src_date and not valid_date(src_date):
+        print('原始日期必须是有效的 YYYY-MM-DD。')
+        sys.exit(1)
     os.makedirs(DATA, exist_ok=True)
-    # 坏行拦截：写操作前确认现有文件每行都合法（写入不修复也不吞坏行）
-    if os.path.exists(wb_p):
-        for i, line in enumerate(open(wb_p, encoding='utf-8'), 1):
-            line = line.strip()
-            if line:
-                try:
-                    json.loads(line)
-                except Exception:
-                    print('写回文件 %s 第 %d 行不是合法 JSON。先手工修复或删掉那行，我不替你静默改账。' % (wb_p, i))
-                    sys.exit(1)
-    row = {'date': datetime.date.today().isoformat(), 'source': agent,
+    rows = _wb_rows(wb_p, strict=True)  # 写操作前查损：不修复也不吞坏行
+    if supersedes and not any(o.get('id') == supersedes for o in rows):
+        print('--supersedes 指向的 id「%s」不存在，未写入。先用 wb list 查现存条目的 id。' % supersedes)
+        sys.exit(1)
+    row = {'id': 'wb-' + datetime.datetime.now().strftime('%Y%m%d%H%M%S%f'),
+           'date': src_date or datetime.date.today().isoformat(), 'source': agent,
            'topic': topic, 'msg': msg, 'ref': ref or '用户当次确认'}
     if kind:
         row['kind'] = kind
@@ -149,9 +165,13 @@ def cmd_wb(args):
         row['revisit_when'] = revisit
     if status:
         row['status'] = status
+    if supersedes:
+        row['supersedes'] = supersedes
     with open(wb_p, 'a', encoding='utf-8') as f:
         f.write(json.dumps(row, ensure_ascii=False) + '\n')
     print('记下了：%s（%s）' % (msg, wb_p))
+    if supersedes:
+        print('  旧条目 %s 已被它顶替——旧行保留可查，不再生效。' % supersedes)
 
 
 

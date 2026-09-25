@@ -32,12 +32,14 @@
 
 整理方法：读 `data/stats_*.json` 和 `data/materials_*.json` 只当线索，再抽读 `corpus_dedup.jsonl` / `ai_messages.jsonl` 核实。**说人话规则**：用户的词优先，禁用发明术语；每条判断要有原话+日期支撑；没有料就留白，不能把统计或候选直接上页。**每个产物的具体写法见 `references/distill-prompts.md` 第二部分的对应提示词。**
 
-### 第 4 步：补录说过要做的事
+### 第 4 步：补录说过要做的事和做过的决定
 
-从历史原话中筛选明确承诺（“我要做 / 我准备做 / 我打算做”），排除技术执行指令、普通执行指令、示例文本、讨论中的假设、AI 生成模板句和“我在想要不要”。逐条调用 `python scripts/wm.py promise add "事项" --date 原始日期 --proj 项目 --ref 原话 --agent initialization` 写入承诺账本；不要手写 JSONL。**补录历史承诺必须带 `--date` 原始日期（不是登记当天），判断标准和写回字段见 `references/distill-prompts.md` 的 promises 提示词。**
+**承诺**：从历史原话中筛选明确承诺（“我要做 / 我准备做 / 我打算做”），排除技术执行指令、普通执行指令、示例文本、讨论中的假设、AI 生成模板句和“我在想要不要”。逐条调用 `python scripts/wm.py promise add "事项" --date 原始日期 --proj 项目 --ref 原话 --agent initialization` 写入承诺账本；不要手写 JSONL。**补录历史承诺必须带 `--date` 原始日期（不是登记当天），判断标准和写回字段见 `references/distill-prompts.md` 的 promises 提示词。**
 
-- `promises.jsonl` 可以为空，但必须完成判断，并明确告诉用户“目前没有足够明确的承诺被登记”。
-- 有承诺时，登记后运行 `python scripts/wm.py promise` 验证账本可读。
+**决定**：同样回扫语料，把用户明确拍过板的决定和确认过的事实补进写回层：`python scripts/wm.py wb add "决定" --topic 主题 --ref "原话" --date 原始日期 --kind decision --agent initialization`。判断标准（什么算决定、supersedes 怎么挂）见 `references/distill-prompts.md` 的 user_writebacks 提示词。**补录承诺和决定都是 Agent 判断、脚本只管写。**
+
+- `promises.jsonl` / `user_writebacks.jsonl` 可以为空，但必须完成判断，并明确告诉用户“目前没有足够明确的承诺/决定被登记”。
+- 有承诺时，登记后运行 `python scripts/wm.py promise` 验证账本可读；有决定时 `python scripts/wm.py wb list` 同理。
 
 ### 第 5 步：筛选并定稿照见
 

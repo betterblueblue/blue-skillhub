@@ -379,6 +379,63 @@ if os.path.exists(pg_):
 else:
     check('这一轮走完', None, '没有 progress.json（旧数据或还没开始），跳过')
 
+# ===== 23. 交接缝对账：Agent 写的散文 ↔ 脚本解析的索引，对不上就是格式漂了 =====
+lp = os.path.join(DATA, 'profile', 'lines.md')
+if not os.path.exists(lp):
+    check('交接缝对账', None, '还没有 lines.md，跳过')
+else:
+    sys.path.insert(0, os.path.join(BASE, 'scripts'))
+    import render as _r  # 复用同一份解析器，不在自检里另造正则
+    md = open(lp, encoding='utf-8', errors='replace').read()
+    n_head = len(re.findall(r'^### ', md, re.M))
+    parsed = _r._eyes_lines()
+    probs = []
+    if n_head != len(parsed):
+        probs.append('lines.md 有 %d 个 ### 节但只解析出 %d 条——格式漂了，沉浸页会静默丢线' % (n_head, len(parsed)))
+    lj = os.path.join(DATA, 'profile', 'lines.jsonl')
+    if os.path.exists(lj):
+        n_idx = sum(1 for l in open(lj, encoding='utf-8') if l.strip())
+        if n_idx != len(parsed):
+            probs.append('lines.jsonl %d 条 ≠ 解析 %d 条——重跑 render.py all' % (n_idx, len(parsed)))
+    elif parsed:
+        probs.append('缺 lines.jsonl 索引——跑一次 render.py all 会生成')
+    cp = os.path.join(DATA, 'profile', 'current-context.md')
+    if os.path.exists(cp):
+        t = open(cp, encoding='utf-8', errors='replace').read()
+        m = re.search(r'还开着：(\d+) 件承诺', t)
+        if m:
+            real = sum(1 for o in _r._promises_all_layers() if o.get('status') == 'open')
+            if int(m.group(1)) != real:
+                probs.append('快照写 %d 件欠账 ≠ 账本实际 %d 件——重跑 render.py all' % (int(m.group(1)), real))
+        elif os.path.exists(os.path.join(PROD, 'html/index.html')):
+            probs.append('current-context.md 没有账本快照块——跑一次 render.py all 会自动补')
+    check('交接缝对账', not probs, '散文/索引/快照三处对得上' if not probs else '；'.join(probs))
+
+# ===== 24. 写回/纠正/照见账本合法 + supersedes 有靶 =====
+bad_wb = []
+wb_ids, wb_sups = set(), []
+for name in ('user_writebacks.jsonl', os.path.join('profile', 'corrections.jsonl'), os.path.join('profile', 'insights.jsonl')):
+    p = os.path.join(DATA, name)
+    if not os.path.exists(p):
+        continue
+    for i, l in enumerate(open(p, encoding='utf-8'), 1):
+        l = l.strip()
+        if not l:
+            continue
+        try:
+            o = json.loads(l)
+            if name == 'user_writebacks.jsonl':
+                if o.get('id'):
+                    wb_ids.add(o['id'])
+                if o.get('supersedes'):
+                    wb_sups.append(o['supersedes'])
+        except Exception:
+            bad_wb.append('%s 第%d行不是合法JSON' % (name, i))
+dangling = [s for s in wb_sups if s not in wb_ids]
+if dangling:
+    bad_wb.append('supersedes 指向不存在的 id: %s' % dangling)
+check('写回账本完整', not bad_wb, '账本行合法、supersedes 都有靶' if not bad_wb else '；'.join(bad_wb[:3]))
+
 # ===== 汇总 =====
 fails = [r for r in results if r[0] == FAIL]
 warns = [r for r in results if r[0] == WARN]
