@@ -13,8 +13,8 @@ DEMO = os.path.join(HERE, 'ai_eyes_demo.html')
 OUT = os.path.join(HERE, 'shots', 'scroll_story.gif')
 
 VIEW_W, VIEW_H = 1280, 800      # 录制视口
-GIF_W = 820                     # 输出宽度，按比例缩放
-FPS = 10                        # 输出帧率
+GIF_W = VIEW_W                  # 原始帧不缩，体积交给 ffmpeg 调色板控制
+FPS = 12                        # 输出帧率
 
 # 每幕（section id, 分配秒数）：钉住的戏全靠滚动进度驱动，秒数就是那一幕的播放时长
 SCENES = [('#s-mirror', 5.0), ('#s-phone', 4.5), ('#s-chat', 5.5), ('#s-wall', 4.0)]
