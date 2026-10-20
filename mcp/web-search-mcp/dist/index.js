@@ -273,6 +273,126 @@ class WebSearchMCPServer {
                 throw error;
             }
         });
+        // Engine self-test. Exposed as a tool (not just the health-check.mjs CLI)
+        // so the agent can decide to run it on its own.
+        this.server.tool('check-search-health', [
+            'Diagnose the web search engines themselves. Each engine (Google, DuckDuckGo, Bing, Brave) is probed separately with a fixed test query, and every engine is reported as working, throttled/blocked (external, transient), or parser-broken (the site changed its HTML and the parser needs a code fix).',
+            '',
+            'Call this tool when:',
+            '- a search returned 0 results, or results that look unrelated to the query;',
+            '- a previous search response included a "[引擎状态]" / engine-status section with a warning, or showed a fallback engine like "Axios DuckDuckGo" / "Browser Bing" instead of Google;',
+            '- the user reports that search is broken, slow, or returning junk;',
+            '- you are about to rely on many searches and want to know whether the tool is healthy first.',
+            '',
+            'This is diagnostic only: it does not search for anything the user asked about, so do not call it to answer a question. It takes ~5-15 seconds because it launches a real browser per engine.',
+        ].join('\n'), {
+            // No required arguments: the point is that the agent can call it on its own.
+            engine: z.string().optional().describe('Optional: only test one engine. One of "google", "ddg", "bing", "brave". Omit to test all.'),
+        }, async (args) => {
+            console.error(`[MCP] Tool call received: check-search-health`);
+            try {
+                const report = await this.runEngineHealthCheck(args?.engine);
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: report,
+                        },
+                    ],
+                };
+            }
+            catch (error) {
+                console.error(`[MCP] Error in check-search-health tool handler:`, error);
+                throw error;
+            }
+        });
+    }
+    // Runs the same per-engine probe that health-check.mjs does, but returns text
+    // the agent can read. Never throws for a broken engine: a broken engine is a
+    // successful diagnosis, not a tool failure.
+    async runEngineHealthCheck(engineFilter) {
+        const PROBE_QUERY = process.env.HEALTH_CHECK_QUERY || 'bimetallic thermometer calibration';
+        const ENGINES = [
+            { key: 'google', name: 'Browser Google', method: 'tryBrowserGoogleSearch' },
+            { key: 'ddg', name: 'Axios DuckDuckGo', method: 'tryDuckDuckGoSearch' },
+            { key: 'bing', name: 'Browser Bing', method: 'tryBrowserBingSearch' },
+            { key: 'brave', name: 'Browser Brave', method: 'tryBrowserBraveSearch' },
+        ];
+        const filter = typeof engineFilter === 'string' ? engineFilter.toLowerCase() : null;
+        const targets = filter ? ENGINES.filter(e => e.key === filter) : ENGINES;
+        if (targets.length === 0) {
+            return `Unknown engine "${engineFilter}". Valid values: google, ddg, bing, brave.`;
+        }
+        const rows = [];
+        for (const spec of targets) {
+            const startedAt = Date.now();
+            let status = 'ok';
+            let detail = '';
+            let count = 0;
+            // Probe twice before declaring a parser broken: one miss can just be
+            // throttling, and telling the agent to fix code over a hiccup is worse
+            // than saying nothing.
+            for (let attempt = 0; attempt < 2; attempt++) {
+                this.searchEngine.lastEngineBlocked = false;
+                try {
+                    const found = await this.searchEngine[spec.method](PROBE_QUERY, 3, 15000);
+                    count = found.length;
+                    if (count > 0) {
+                        status = 'ok';
+                        detail = `${count} results`;
+                        break;
+                    }
+                    if (this.searchEngine.lastEngineBlocked) {
+                        status = 'blocked';
+                        detail = 'throttled or bot-checked';
+                        break;
+                    }
+                    status = 'broken';
+                    detail = 'served a page but 0 results were parsed';
+                }
+                catch (error) {
+                    const message = error instanceof Error ? error.message : String(error);
+                    status = this.searchEngine.lastEngineBlocked || /bot-check|captcha|rate limit/i.test(message)
+                        ? 'blocked'
+                        : 'error';
+                    detail = message.slice(0, 160);
+                    if (status === 'blocked')
+                        break;
+                }
+            }
+            rows.push({ name: spec.name, status, detail, count, ms: Date.now() - startedAt });
+            this.searchEngine.lastEngineBlocked = false;
+        }
+        const broken = rows.filter(r => r.status === 'broken' || r.status === 'error');
+        const blocked = rows.filter(r => r.status === 'blocked');
+        const healthy = rows.filter(r => r.status === 'ok');
+        const lines = [];
+        lines.push(`Web search engine health check (probe query: "${PROBE_QUERY}")`);
+        lines.push('');
+        const label = { ok: 'OK', blocked: 'BLOCKED (external)', broken: 'PARSER BROKEN', error: 'ERROR' };
+        for (const r of rows) {
+            lines.push(`- ${r.name}: ${label[r.status] || r.status} - ${r.detail} (${r.ms}ms)`);
+        }
+        lines.push('');
+        if (broken.length > 0) {
+            lines.push(`VERDICT: ${broken.map(r => r.name).join(', ')} is/are broken.`);
+            lines.push('This is a code problem, not a transient one: the search engine changed its HTML and the parser in dist/search-engine.js no longer matches it. The parse*Results functions need updating.');
+            lines.push('Search still works through the remaining engines, but results may be slower or lower quality. Tell the user what broke.');
+        }
+        else if (blocked.length === rows.length) {
+            lines.push('VERDICT: every engine is throttled or blocked.');
+            lines.push('This is external (rate limiting or bot detection from the provider or the proxy exit IP), not a code bug. Waiting usually fixes it. If it persists, the proxy exit IP may be burned.');
+        }
+        else {
+            lines.push(`VERDICT: healthy. Working engines: ${healthy.map(r => r.name).join(', ') || 'none'}.`);
+            if (blocked.length > 0) {
+                lines.push(`Blocked but not a code problem (fallback engines): ${blocked.map(r => r.name).join(', ')}.`);
+            }
+            if (healthy.length === 0) {
+                lines.push('No engine produced results; search is currently unusable.');
+            }
+        }
+        return lines.join('\n');
     }
     validateAndConvertArgs(args) {
         if (typeof args !== 'object' || args === null) {
@@ -383,6 +503,15 @@ class WebSearchMCPServer {
             lines.push('⚠️ 需要关注：');
             for (const w of warnings)
                 lines.push(`- ${w}`);
+        }
+        // Point at the self-test when anything looks off, otherwise the agent has no
+        // reason to discover that the tool exists.
+        const problematic = diagnostics.filter(d =>
+            d.outcome === 'no-results' || d.outcome === 'error' || d.outcome === 'off-topic');
+        const degradedOnly = diagnostics.length > 0 && diagnostics[0].outcome !== 'ok';
+        if (problematic.length > 0 || degradedOnly || warnings.length > 0) {
+            lines.push('');
+            lines.push('排查建议：可以调用 check-search-health 工具逐台检查搜索引擎，它会区分"解析器失效（需要改代码）"和"临时限流（等一会儿就好）"。');
         }
         return lines.join('\n') + '\n';
     }
