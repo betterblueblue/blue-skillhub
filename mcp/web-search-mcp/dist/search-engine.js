@@ -6,9 +6,71 @@ import { BrowserPool } from './browser-pool.js';
 export class SearchEngine {
     rateLimiter;
     browserPool;
+    // Set by whichever engine method ran last, so search() can tell an external
+    // bot check apart from our own parser failing to understand a page.
+    lastEngineBlocked = false;
+    // Consecutive runs in which an engine returned a page but no parseable
+    // results. A single occurrence is not worth warning about; a streak is.
+    parserFailureStreak = new Map();
+    // Google allows roughly 15-19 queries per browser session before it starts
+    // answering with a stripped page (measured). Pacing queries keeps a single
+    // session alive far longer than the old "fire as fast as possible" behaviour.
+    lastGoogleQueryAt = 0;
+    googleSessionQueryCount = 0;
     constructor() {
         this.rateLimiter = new RateLimiter(10); // 10 requests per minute
         this.browserPool = new BrowserPool();
+    }
+    // Enforces a minimum gap between Google queries. Measured: no gap died at
+    // request 15; a 5s gap was still healthy after 12+ requests.
+    async paceGoogleQuery() {
+        const minGapMs = parseInt(process.env.GOOGLE_MIN_GAP_MS || '1500', 10) || 1500;
+        const elapsed = Date.now() - this.lastGoogleQueryAt;
+        if (this.lastGoogleQueryAt > 0 && elapsed < minGapMs) {
+            const waitMs = minGapMs - elapsed;
+            console.error(`[SearchEngine] GOOGLE: pacing, waiting ${waitMs}ms`);
+            await new Promise(resolve => setTimeout(resolve, waitMs));
+        }
+        this.lastGoogleQueryAt = Date.now();
+    }
+    // Turns this run's engine outcomes into a human-readable warning list. This is
+    // the mechanism that makes a silently broken parser visible: the text ends up
+    // in the tool response, which the agent actually reads.
+    buildHealthWarnings(diagnostics) {
+        const warnings = [];
+        for (const d of diagnostics) {
+            const streakKey = d.engine;
+            if (d.outcome === 'no-results') {
+                // The engine served a page and we understood none of it: this is the
+                // signature of a parser that fell out of sync with the site.
+                const next = (this.parserFailureStreak.get(streakKey) || 0) + 1;
+                this.parserFailureStreak.set(streakKey, next);
+                if (next >= 2) {
+                    warnings.push(`${d.engine} 已连续 ${next} 次拿到页面但解析不出结果（${d.detail}）——页面结构很可能变了，解析器需要更新，不是网络问题`);
+                }
+            }
+            else if (d.outcome === 'error') {
+                const next = (this.parserFailureStreak.get(streakKey) || 0) + 1;
+                this.parserFailureStreak.set(streakKey, next);
+                if (next >= 2) {
+                    warnings.push(`${d.engine} 已连续 ${next} 次报错（${d.detail}）——该引擎当前不可用`);
+                }
+            }
+            else if (d.outcome === 'ok') {
+                this.parserFailureStreak.set(streakKey, 0);
+            }
+            else if (d.outcome === 'off-topic') {
+                this.parserFailureStreak.set(streakKey, 0);
+                warnings.push(`${d.engine} 返回了结果但与查询无关（${d.detail}），已丢弃`);
+            }
+            else if (d.outcome === 'blocked') {
+                // Throttling says nothing about whether the parser works, so it must
+                // not clear the streak - otherwise alternating throttle hits would
+                // keep resetting the counter and hide a genuinely broken parser.
+                warnings.push(`${d.engine} 被限流或反爬拦截（${d.detail}），该引擎暂时不可用`);
+            }
+        }
+        return warnings;
     }
     async search(options) {
         // SEARCH_TIMEOUT was documented in the config but never read; the budget was
@@ -41,6 +103,17 @@ export class SearchEngine {
                 let bestResults = [];
                 let bestEngine = 'None';
                 let bestQuality = 0;
+                // Everything here is surfaced in the tool response, because console.error
+                // output never reaches the agent and that is exactly how a dead parser
+                // stayed invisible for months.
+                const diagnostics = [];
+                // Single exit point so no return path can forget the health warnings.
+                const finish = (results, engine) => ({
+                    results,
+                    engine,
+                    diagnostics,
+                    warnings: this.buildHealthWarnings(diagnostics),
+                });
                 // Give each engine a real budget instead of the old timeout/3 (which
                 // turned a 30s setting into 1.7s) and keep the overall search inside
                 // a sane ceiling so a dead engine cannot eat the whole call.
@@ -51,20 +124,29 @@ export class SearchEngine {
                 const overallDeadline = Date.now() + searchTimeout;
                 for (let i = 0; i < approaches.length; i++) {
                     const approach = approaches[i];
+                    const startedAt = Date.now();
                     try {
                         const remaining = overallDeadline - Date.now();
                         if (remaining < 2000) {
                             console.error(`[SearchEngine] Search deadline reached, stopping engine attempts`);
+                            diagnostics.push({ engine: approach.name, outcome: 'skipped', detail: 'search deadline reached', ms: 0 });
                             break;
                         }
                         console.error(`[SearchEngine] Attempting ${approach.name} (${i + 1}/${approaches.length})...`);
                         const approachTimeout = Math.min(perApproachTimeout, remaining);
+                        this.lastEngineBlocked = false;
                         const results = await approach.method(sanitizedQuery, numResults, approachTimeout);
                         if (results.length > 0) {
                             console.error(`[SearchEngine] Found ${results.length} results with ${approach.name}`);
                             // Validate result quality to detect irrelevant results
                             const qualityScore = enableQualityCheck ? this.assessResultQuality(results, sanitizedQuery) : 1.0;
                             console.error(`[SearchEngine] ${approach.name} quality score: ${qualityScore.toFixed(2)}/1.0`);
+                            diagnostics.push({
+                                engine: approach.name,
+                                outcome: qualityScore > 0 ? 'ok' : 'off-topic',
+                                detail: `quality ${qualityScore.toFixed(2)}`,
+                                ms: Date.now() - startedAt,
+                            });
                             // Track the best results so far
                             if (qualityScore > bestQuality) {
                                 bestResults = results;
@@ -74,23 +156,23 @@ export class SearchEngine {
                             // If quality is excellent, return immediately (unless forcing multi-engine)
                             if (qualityScore >= 0.8 && !forceMultiEngine) {
                                 console.error(`[SearchEngine] Excellent quality results from ${approach.name}, returning immediately`);
-                                return { results, engine: approach.name };
+                                return finish(results, approach.name);
                             }
                             // If quality is acceptable, return (Bing is no longer the
                             // first engine, so it no longer needs a special case here)
                             if (qualityScore >= qualityThreshold && !forceMultiEngine) {
                                 console.error(`[SearchEngine] Good quality results from ${approach.name}, using as primary`);
-                                return { results, engine: approach.name };
+                                return finish(results, approach.name);
                             }
                             // If this is the last engine or quality is acceptable, prepare to return
                             if (i === approaches.length - 1) {
                                 if (bestQuality >= qualityThreshold || !enableQualityCheck) {
                                     console.error(`[SearchEngine] Using best results from ${bestEngine} (quality: ${bestQuality.toFixed(2)})`);
-                                    return { results: bestResults, engine: bestEngine };
+                                    return finish(bestResults, bestEngine);
                                 }
                                 else if (bestResults.length > 0 && bestQuality > 0) {
                                     console.error(`[SearchEngine] Warning: Low quality results from all engines, using best available from ${bestEngine}`);
-                                    return { results: bestResults, engine: bestEngine };
+                                    return finish(bestResults, bestEngine);
                                 }
                                 else {
                                     // Bing occasionally serves a SERP that has nothing to do
@@ -103,9 +185,35 @@ export class SearchEngine {
                                 console.error(`[SearchEngine] ${approach.name} results quality: ${qualityScore.toFixed(2)}, continuing to try other engines...`);
                             }
                         }
+                        else {
+                            // Zero results. Three very different situations, and the
+                            // distinction decides whether anyone needs to change code:
+                            //   blocked  = external anti-bot / throttling, wait it out
+                            //   no-results = page understood but empty, normal
+                            //   parsed-nothing = page served, nothing understood = OUR BUG
+                            const blocked = this.lastEngineBlocked === true;
+                            const outcome = blocked ? 'blocked' : 'no-results';
+                            console.error(`[SearchEngine] ${approach.name} returned 0 results (${blocked ? 'throttled or bot-checked' : 'parser found nothing'})`);
+                            diagnostics.push({
+                                engine: approach.name,
+                                outcome,
+                                detail: blocked ? '被限流或反爬拦截' : '拿到页面但解析出 0 条结果',
+                                ms: Date.now() - startedAt,
+                            });
+                        }
                     }
                     catch (error) {
+                        const message = error instanceof Error ? error.message : String(error);
                         console.error(`[SearchEngine] ${approach.name} approach failed:`, error);
+                        // lastEngineBlocked is the reliable signal; the message check
+                        // only covers engines that do not set it.
+                        const blocked = this.lastEngineBlocked === true || /bot-check|captcha|rate limit/i.test(message);
+                        diagnostics.push({
+                            engine: approach.name,
+                            outcome: blocked ? 'blocked' : 'error',
+                            detail: message.slice(0, 160),
+                            ms: Date.now() - startedAt,
+                        });
                         // Handle browser-specific errors (no cleanup needed since each engine uses dedicated browsers)
                         await this.handleBrowserError(error, approach.name);
                     }
@@ -113,10 +221,10 @@ export class SearchEngine {
                 // If we have best results from earlier engines, return them
                 if (bestResults.length > 0 && (bestQuality > 0 || !enableQualityCheck)) {
                     console.error(`[SearchEngine] Using best results from ${bestEngine} (quality: ${bestQuality.toFixed(2)})`);
-                    return { results: bestResults, engine: bestEngine };
+                    return finish(bestResults, bestEngine);
                 }
                 console.error(`[SearchEngine] All approaches failed, returning empty results`);
-                return { results: [], engine: 'None' };
+                return finish([], 'None');
             });
         }
         catch (error) {
@@ -213,6 +321,7 @@ export class SearchEngine {
                 // Brave answers headless clients with an unsolvable captcha page. Parsing
                 // yields 0 results forever, so signal the caller not to spend a retry.
                 if (results.length === 0 && this.isBlockedPage(html)) {
+                    this.lastEngineBlocked = true;
                     throw new Error('Brave returned a bot-check page, skipping further attempts');
                 }
                 return results;
@@ -230,10 +339,16 @@ export class SearchEngine {
     }
     async tryBrowserGoogleSearch(query, numResults, timeout) {
         console.error(`[SearchEngine] GOOGLE: Starting browser-based search for query: "${query}"`);
-        for (let attempt = 1; attempt <= 2; attempt++) {
+        await this.paceGoogleQuery();
+        // Google throttles per browser session, not per IP: a measured burst died at
+        // request 15, yet a fresh browser immediately worked again. So when a session
+        // gets throttled, the cheapest fix is to throw the session away and retry
+        // rather than wait out a cooldown.
+        for (let attempt = 1; attempt <= 3; attempt++) {
             let browser;
+            this.lastEngineBlocked = false;
             try {
-                console.error(`[SearchEngine] GOOGLE: Attempt ${attempt}/2 - Launching Chromium browser...`);
+                console.error(`[SearchEngine] GOOGLE: Attempt ${attempt}/3 - Launching Chromium browser...`);
                 const { chromium } = await import('playwright');
                 const _proxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || process.env.https_proxy || process.env.http_proxy;
                 browser = await chromium.launch({
@@ -253,8 +368,8 @@ export class SearchEngine {
             }
             catch (error) {
                 const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-                console.error(`[SearchEngine] GOOGLE: Attempt ${attempt}/2 FAILED: ${errorMessage}`);
-                if (attempt === 2) {
+                console.error(`[SearchEngine] GOOGLE: Attempt ${attempt}/3 FAILED: ${errorMessage}`);
+                if (attempt === 3) {
                     console.error(`[SearchEngine] GOOGLE: All attempts exhausted`);
                     throw error;
                 }
@@ -304,11 +419,19 @@ export class SearchEngine {
                 console.error(`[SearchEngine] GOOGLE: Parsed ${parsed.length} results`);
                 const results = await this.resolveGoogleRedirects(context, parsed);
                 console.error(`[SearchEngine] GOOGLE: Resolved ${results.length} results`);
+                // A slimmed-down results page means Google is throttling this session.
+                // Throwing makes the caller retire the browser and retry with a fresh
+                // session, which measurably clears the block immediately.
+                if (results.length === 0 && this.isThrottledPage(html)) {
+                    console.error(`[SearchEngine] GOOGLE: Session throttled (few organic links), discarding it`);
+                    this.lastEngineBlocked = true;
+                    throw new Error('Google throttled this session');
+                }
                 await context.close();
                 return results.slice(0, numResults);
             }
             catch (error) {
-                await context.close();
+                await context.close().catch(() => { /* already closed */ });
                 throw error;
             }
         }
@@ -554,6 +677,7 @@ export class SearchEngine {
         const results = this.parseBingResults(html, numResults);
         console.error(`[SearchEngine] BING: Direct search parsed ${results.length} results`);
         if (results.length === 0 && this.isBlockedPage(html)) {
+            this.lastEngineBlocked = true;
             throw new Error('Bing returned a bot-check page');
         }
         if (results.length === 0) {
@@ -596,18 +720,26 @@ export class SearchEngine {
             // that as success silently returned an empty list and hid the throttle.
             if (response.status === 202) {
                 console.error(`[SearchEngine] DuckDuckGo is rate limiting (HTTP 202)`);
-                throw new Error('DuckDuckGo rate limited');
+                this.lastEngineBlocked = true;
+                throw new Error('DuckDuckGo rate limited (HTTP 202)');
             }
             const results = this.parseDuckDuckGoResults(response.data, numResults);
             console.error(`[SearchEngine] DuckDuckGo parsed ${results.length} results`);
             if (results.length === 0 && this.isBlockedPage(response.data)) {
+                this.lastEngineBlocked = true;
                 throw new Error('DuckDuckGo returned a captcha page');
             }
             return results;
         }
         catch (error) {
-            console.error(`[SearchEngine] DuckDuckGo search failed: ${error instanceof Error ? error.message : error}`);
-            throw new Error('DuckDuckGo search failed');
+            const message = error instanceof Error ? error.message : String(error);
+            console.error(`[SearchEngine] DuckDuckGo search failed: ${message}`);
+            // Preserve the reason: collapsing everything into one string made a
+            // throttle look identical to a parser failure in the diagnostics.
+            if (/rate limit|captcha|bot-check/i.test(message)) {
+                this.lastEngineBlocked = true;
+            }
+            throw new Error(message);
         }
     }
     parseSearchResults(html, maxResults) {
@@ -1066,18 +1198,39 @@ export class SearchEngine {
             /^https?:\/\/policies\.google\.com\//i.test(url);
     }
     // Detects interstitial bot-check pages so callers can stop retrying an engine
-    // that is refusing to serve results at all. The markers can appear well past
-    // the head of the document (Brave renders its captcha wrapper deep in the
-    // body), so the whole page is scanned.
+    // that is refusing to serve results at all.
+    //
+    // Must only match real interstitial pages. Google ships strings like
+    // `var hasCaptchaSupport=true` and "/sorry/index" inside its own anti-bot
+    // JavaScript on EVERY normal results page, so a naive /captcha/ match here
+    // classifies healthy results as blocked and throws them away.
     isBlockedPage(html) {
         const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-        const title = titleMatch ? titleMatch[1] : '';
-        return /captcha-wrapper|g-recaptcha|h-captcha/i.test(html) ||
-            /\bcaptcha\b/i.test(html) ||
-            /challenge/i.test(title) ||
-            /access denied/i.test(title) ||
-            /are you a robot/i.test(html) ||
-            /unusual traffic/i.test(html);
+        const title = (titleMatch ? titleMatch[1] : '').trim();
+        // A genuinely blocked page has no organic results at all. Checking this
+        // first is what makes the detection safe: search engines embed anti-bot
+        // JavaScript (and the word "captcha") in their normal results pages too.
+        const organicLinks =
+            (html.match(/href="\/goto\?url=/g) || []).length +
+            (html.match(/href="\/url\?q=/g) || []).length +
+            (html.match(/class="b_algo"/g) || []).length +
+            (html.match(/class="result__a"/g) || []).length;
+        if (organicLinks > 0)
+            return false;
+        return /id="captcha-form"|class="g-recaptcha"|class="h-captcha"|captcha-wrapper/i.test(html) ||
+            /page:"\/captcha"|flagged as being suspicious|needs JavaScript to function/i.test(html) ||
+            /^Sorry|unusual traffic|are you a robot|access denied|just a moment|attention required/i.test(title) ||
+            /<form[^>]+action="[^"]*\/sorry\//i.test(html);
+    }
+    // Google throttles heavy use by serving a slimmed-down results page with fewer
+    // organic links instead of an error. Distinguishing that from a real parser
+    // break matters: one resolves by waiting, the other needs a code fix.
+    isThrottledPage(html) {
+        const hasResultsContainer = /MjjYud|id="rso"|id="search"/.test(html);
+        const organicLinks = (html.match(/href="\/goto\?url=/g) || []).length +
+            (html.match(/href="\/url\?q=/g) || []).length +
+            (html.match(/href="https?:\/\/(?!www\.google)/g) || []).length;
+        return hasResultsContainer && organicLinks < 3;
     }
     // Google wraps organic links as /goto?url=<opaque-token>. The token is a
     // protobuf blob that cannot be decoded locally, so the only way to learn the

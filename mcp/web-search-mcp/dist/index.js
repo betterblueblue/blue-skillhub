@@ -6,13 +6,13 @@ process.env.HTTP_PROXY = process.env.HTTP_PROXY || 'http://localhost:7890';
 process.env.HTTPS_PROXY = process.env.HTTPS_PROXY || 'http://localhost:7890';
 process.env.http_proxy = process.env.http_proxy || 'http://localhost:7890';
 process.env.https_proxy = process.env.https_proxy || 'http://localhost:7890';
-console.log('Web Search MCP Server starting...');
+console.error('Web Search MCP Server starting...');
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { SearchEngine } from './search-engine.js';
 import { EnhancedContentExtractor } from './enhanced-content-extractor.js';
-import { isPdfUrl, smartTruncate } from './utils.js';
+import { isPdfUrl } from './utils.js';
 class WebSearchMCPServer {
     server;
     searchEngine;
@@ -24,8 +24,6 @@ class WebSearchMCPServer {
         });
         this.searchEngine = new SearchEngine();
         this.contentExtractor = new EnhancedContentExtractor();
-        // Track recent search queries to prevent duplicate calls
-        this.recentSearches = new Map(); // query -> timestamp
         this.setupTools();
         this.setupGracefulShutdown();
     }
@@ -38,44 +36,25 @@ class WebSearchMCPServer {
                 if (isNaN(num) || num < 1 || num > 10) {
                     throw new Error('Invalid limit: must be a number between 1 and 10');
                 }
-                return Math.min(num, 5); // Hard cap at 5 results to prevent context explosion
-            }).default(3).describe('Number of results to return with full content (1-5, capped for safety)'),
+                return num;
+            }).default(5).describe('Number of results to return with full content (1-10)'),
             includeContent: z.union([z.boolean(), z.string()]).transform((val) => {
                 if (typeof val === 'string') {
                     return val.toLowerCase() === 'true';
                 }
                 return Boolean(val);
-            }).default(true).describe('Whether to fetch full page content (default: true). Content is auto-truncated to prevent context overflow.'),
+            }).default(true).describe('Whether to fetch full page content (default: true)'),
             maxContentLength: z.union([z.number(), z.string()]).transform((val) => {
                 const num = typeof val === 'string' ? parseInt(val, 10) : val;
                 if (isNaN(num) || num < 0) {
                     throw new Error('Invalid maxContentLength: must be a non-negative number');
                 }
-                // Hard cap at 8000 characters per result to prevent context explosion
-                return Math.min(num || 6000, 8000);
-            }).optional().describe('Maximum characters per result content (capped at 8000). Default: 6000.'),
+                return num;
+            }).optional().describe('Maximum characters per result content (0 = no limit). Usually not needed - content length is automatically optimized.'),
         }, async (args) => {
-            console.log(`[MCP] Tool call received: full-web-search`);
-            console.log(`[MCP] Raw arguments:`, JSON.stringify(args, null, 2));
+            console.error(`[MCP] Tool call received: full-web-search`);
+            console.error(`[MCP] Raw arguments:`, JSON.stringify(args, null, 2));
             try {
-                // Prevent duplicate searches within 60 seconds
-                const normalizedQuery = args.query.toLowerCase().trim().replace(/\s+/g, ' ');
-                const now = Date.now();
-                const lastSearchTime = this.recentSearches.get(normalizedQuery);
-                if (lastSearchTime && (now - lastSearchTime) < 60000) {
-                    console.log(`[MCP] Duplicate search blocked for: "${normalizedQuery}" (last searched ${Math.round((now - lastSearchTime) / 1000)}s ago)`);
-                    return {
-                        content: [{
-                            type: 'text',
-                            text: `Search for "${args.query}" was already performed recently. Please use the existing results or modify your query. Repeated identical searches within 60 seconds are blocked to prevent context waste.`,
-                        }],
-                    };
-                }
-                this.recentSearches.set(normalizedQuery, now);
-                // Clean old entries from cache (older than 120 seconds)
-                for (const [key, time] of this.recentSearches) {
-                    if (now - time > 120000) this.recentSearches.delete(key);
-                }
                 // Convert and validate arguments
                 const validatedArgs = this.validateAndConvertArgs(args);
                 // Auto-detect model types based on parameter formats
@@ -88,50 +67,40 @@ class WebSearchMCPServer {
                 // Only apply auto-limit if maxContentLength is not explicitly set (including 0)
                 const hasExplicitMaxLength = typeof args === 'object' && args !== null && 'maxContentLength' in args;
                 if (!hasExplicitMaxLength && isLikelyLlama) {
-                    console.log(`[MCP] Detected potential Llama model (string parameters), applying content length limit`);
+                    console.error(`[MCP] Detected potential Llama model (string parameters), applying content length limit`);
                     validatedArgs.maxContentLength = 2000; // Reasonable limit for Llama
                 }
                 // For robust models (Qwen, Gemma, recent Deepseek), remove maxContentLength if it's set to a low value
                 if (isLikelyRobustModel && validatedArgs.maxContentLength && validatedArgs.maxContentLength < 5000) {
-                    console.log(`[MCP] Detected robust model (numeric parameters), removing unnecessary content length limit`);
+                    console.error(`[MCP] Detected robust model (numeric parameters), removing unnecessary content length limit`);
                     validatedArgs.maxContentLength = undefined;
                 }
-                console.log(`[MCP] Validated args:`, JSON.stringify(validatedArgs, null, 2));
-                console.log(`[MCP] Starting web search...`);
+                console.error(`[MCP] Validated args:`, JSON.stringify(validatedArgs, null, 2));
+                console.error(`[MCP] Starting web search...`);
                 const result = await this.handleWebSearch(validatedArgs);
-                console.log(`[MCP] Search completed, found ${result.results.length} results`);
+                console.error(`[MCP] Search completed, found ${result.results.length} results`);
                 // Format the results as a comprehensive text response
                 let responseText = `Search completed for "${result.query}" with ${result.total_results} results:\n\n`;
                 // Add status line if available
                 if (result.status) {
                     responseText += `**Status:** ${result.status}\n\n`;
                 }
-                const MAX_TOTAL_OUTPUT = 40000; // Hard limit on total output to prevent context explosion
-                const maxLength = validatedArgs.maxContentLength || 6000;
-                let outputTruncated = false;
-                for (let idx = 0; idx < result.results.length; idx++) {
-                    const searchResult = result.results[idx];
-                    // Stop adding results if we've exceeded the total output limit
-                    if (responseText.length >= MAX_TOTAL_OUTPUT) {
-                        const omitted = result.results.length - idx;
-                        responseText += `\n\n[Output truncated: total response exceeded ${MAX_TOTAL_OUTPUT} characters. ${omitted} additional result(s) omitted.]`;
-                        outputTruncated = true;
-                        break; // Actually break the loop
-                    }
+                const maxLength = validatedArgs.maxContentLength;
+                result.results.forEach((searchResult, idx) => {
                     responseText += `**${idx + 1}. ${searchResult.title}**\n`;
                     responseText += `URL: ${searchResult.url}\n`;
                     responseText += `Description: ${searchResult.description}\n`;
                     if (searchResult.fullContent && searchResult.fullContent.trim()) {
                         let content = searchResult.fullContent;
                         if (maxLength && maxLength > 0 && content.length > maxLength) {
-                            content = smartTruncate(content, maxLength) + `\n\n[Content truncated at ~${maxLength} characters. Original: ${searchResult.fullContent.length} characters]`;
+                            content = content.substring(0, maxLength) + `\n\n[Content truncated at ${maxLength} characters]`;
                         }
                         responseText += `\n**Full Content:**\n${content}\n`;
                     }
                     else if (searchResult.contentPreview && searchResult.contentPreview.trim()) {
                         let content = searchResult.contentPreview;
                         if (maxLength && maxLength > 0 && content.length > maxLength) {
-                            content = smartTruncate(content, maxLength) + `\n\n[Content truncated at ~${maxLength} characters]`;
+                            content = content.substring(0, maxLength) + `\n\n[Content truncated at ${maxLength} characters]`;
                         }
                         responseText += `\n**Content Preview:**\n${content}\n`;
                     }
@@ -139,7 +108,8 @@ class WebSearchMCPServer {
                         responseText += `\n**Content Extraction Failed:** ${searchResult.error}\n`;
                     }
                     responseText += `\n---\n\n`;
-                }
+                });
+                responseText += this.formatEngineHealth(result);
                 return {
                     content: [
                         {
@@ -153,19 +123,6 @@ class WebSearchMCPServer {
                 console.error(`[MCP] Error in tool handler:`, error);
                 throw error;
             }
-            finally {
-                // Clean up browser processes to prevent memory leaks
-                // BrowserPool caches headless Chromium processes that each consume 200-500MB RAM
-                try {
-                    await Promise.all([
-                        this.contentExtractor.closeAll(),
-                        this.searchEngine.closeAll()
-                    ]);
-                }
-                catch (cleanupError) {
-                    console.error(`[MCP] Error during browser cleanup:`, cleanupError);
-                }
-            }
         });
         // Register the lightweight web search summaries tool (secondary choice for quick results)
         this.server.tool('get-web-search-summaries', 'Search the web and return only the search result snippets/descriptions without following links to extract full page content. This is a lightweight alternative to full-web-search for when you only need brief search results. For comprehensive information, use full-web-search instead.', {
@@ -175,11 +132,11 @@ class WebSearchMCPServer {
                 if (isNaN(num) || num < 1 || num > 10) {
                     throw new Error('Invalid limit: must be a number between 1 and 10');
                 }
-                return Math.min(num, 5); // Hard cap at 5 results to prevent context explosion
-            }).default(3).describe('Number of search results to return (1-5, capped for safety)'),
+                return num;
+            }).default(5).describe('Number of search results to return (1-10)'),
         }, async (args) => {
-            console.log(`[MCP] Tool call received: get-web-search-summaries`);
-            console.log(`[MCP] Raw arguments:`, JSON.stringify(args, null, 2));
+            console.error(`[MCP] Tool call received: get-web-search-summaries`);
+            console.error(`[MCP] Raw arguments:`, JSON.stringify(args, null, 2));
             try {
                 // Validate arguments
                 if (typeof args !== 'object' || args === null) {
@@ -189,7 +146,7 @@ class WebSearchMCPServer {
                 if (!obj.query || typeof obj.query !== 'string') {
                     throw new Error('Invalid arguments: query is required and must be a string');
                 }
-                let limit = 3; // default (matches schema default)
+                let limit = 5; // default
                 if (obj.limit !== undefined) {
                     const limitValue = typeof obj.limit === 'string' ? parseInt(obj.limit, 10) : obj.limit;
                     if (typeof limitValue !== 'number' || isNaN(limitValue) || limitValue < 1 || limitValue > 10) {
@@ -197,7 +154,7 @@ class WebSearchMCPServer {
                     }
                     limit = limitValue;
                 }
-                console.log(`[MCP] Starting web search summaries...`);
+                console.error(`[MCP] Starting web search summaries...`);
                 try {
                     // Use existing search engine to get results with snippets
                     const searchResponse = await this.searchEngine.search({
@@ -212,7 +169,7 @@ class WebSearchMCPServer {
                         description: item.description,
                         timestamp: item.timestamp,
                     }));
-                    console.log(`[MCP] Search summaries completed, found ${summaryResults.length} results`);
+                    console.error(`[MCP] Search summaries completed, found ${summaryResults.length} results`);
                     // Format the results as text
                     let responseText = `Search summaries for "${obj.query}" with ${summaryResults.length} results:\n\n`;
                     summaryResults.forEach((summary, i) => {
@@ -221,6 +178,7 @@ class WebSearchMCPServer {
                         responseText += `Description: ${summary.description}\n`;
                         responseText += `\n---\n\n`;
                     });
+                    responseText += this.formatEngineHealth(searchResponse);
                     return {
                         content: [
                             {
@@ -257,8 +215,8 @@ class WebSearchMCPServer {
                 return num;
             }).optional().describe('Maximum characters for the extracted content (0 = no limit, undefined = use default limit). Usually not needed - content length is automatically optimized.'),
         }, async (args) => {
-            console.log(`[MCP] Tool call received: get-single-web-page-content`);
-            console.log(`[MCP] Raw arguments:`, JSON.stringify(args, null, 2));
+            console.error(`[MCP] Tool call received: get-single-web-page-content`);
+            console.error(`[MCP] Raw arguments:`, JSON.stringify(args, null, 2));
             try {
                 // Validate arguments
                 if (typeof args !== 'object' || args === null) {
@@ -274,12 +232,10 @@ class WebSearchMCPServer {
                     if (typeof maxLengthValue !== 'number' || isNaN(maxLengthValue) || maxLengthValue < 0) {
                         throw new Error('Invalid maxContentLength: must be a non-negative number');
                     }
-                    // Hard cap at 10000 characters for single page to prevent context explosion
-                    maxContentLength = Math.min(maxLengthValue === 0 ? 10000 : maxLengthValue, 10000);
-                } else {
-                    maxContentLength = 6000; // Default cap
+                    // If maxContentLength is 0, treat it as "no limit" (undefined)
+                    maxContentLength = maxLengthValue === 0 ? undefined : maxLengthValue;
                 }
-                console.log(`[MCP] Starting single page content extraction for: ${obj.url}`);
+                console.error(`[MCP] Starting single page content extraction for: ${obj.url}`);
                 // Use existing content extractor to get page content
                 const content = await this.contentExtractor.extractContent({
                     url: obj.url,
@@ -291,14 +247,14 @@ class WebSearchMCPServer {
                 // Create content preview and word count
                 // const contentPreview = content.length > 200 ? content.substring(0, 200) + '...' : content; // Unused for now
                 const wordCount = content.split(/\s+/).filter(word => word.length > 0).length;
-                console.log(`[MCP] Single page content extraction completed, extracted ${content.length} characters`);
+                console.error(`[MCP] Single page content extraction completed, extracted ${content.length} characters`);
                 // Format the result as text
                 let responseText = `**Page Content from: ${obj.url}**\n\n`;
                 responseText += `**Title:** ${title}\n`;
                 responseText += `**Word Count:** ${wordCount}\n`;
                 responseText += `**Content Length:** ${content.length} characters\n\n`;
                 if (maxContentLength && maxContentLength > 0 && content.length > maxContentLength) {
-                    responseText += `**Content (truncated at ~${maxContentLength} characters):**\n${smartTruncate(content, maxContentLength)}\n\n[Content truncated. Original: ${content.length} characters]`;
+                    responseText += `**Content (truncated at ${maxContentLength} characters):**\n${content.substring(0, maxContentLength)}\n\n[Content truncated at ${maxContentLength} characters]`;
                 }
                 else {
                     responseText += `**Content:**\n${content}`;
@@ -316,15 +272,6 @@ class WebSearchMCPServer {
                 console.error(`[MCP] Error in get-single-web-page-content tool handler:`, error);
                 throw error;
             }
-            finally {
-                // Clean up browser processes to prevent memory leaks
-                try {
-                    await this.contentExtractor.closeAll();
-                }
-                catch (cleanupError) {
-                    console.error(`[MCP] Error during browser cleanup:`, cleanupError);
-                }
-            }
         });
     }
     validateAndConvertArgs(args) {
@@ -337,16 +284,16 @@ class WebSearchMCPServer {
             throw new Error('Invalid arguments: query is required and must be a string');
         }
         // Convert limit to number if it's a string
-        let limit = 3; // default reduced from 5 to 3
+        let limit = 5; // default
         if (obj.limit !== undefined) {
             const limitValue = typeof obj.limit === 'string' ? parseInt(obj.limit, 10) : obj.limit;
             if (typeof limitValue !== 'number' || isNaN(limitValue) || limitValue < 1 || limitValue > 10) {
                 throw new Error('Invalid limit: must be a number between 1 and 10');
             }
-            limit = Math.min(limitValue, 5); // Hard cap at 5
+            limit = limitValue;
         }
         // Convert includeContent to boolean if it's a string
-        let includeContent = true; // default kept true - content is the core value of search
+        let includeContent = true; // default
         if (obj.includeContent !== undefined) {
             if (typeof obj.includeContent === 'string') {
                 includeContent = obj.includeContent.toLowerCase() === 'true';
@@ -363,13 +310,13 @@ class WebSearchMCPServer {
     }
     async handleWebSearch(input) {
         const startTime = Date.now();
-        const { query, limit = 3, includeContent = true } = input;
+        const { query, limit = 5, includeContent = true } = input;
         console.error(`[web-search-mcp] DEBUG: handleWebSearch called with limit=${limit}, includeContent=${includeContent}`);
         try {
             // Request extra search results to account for potential PDF files that will be skipped
             // Request up to 2x the limit or at least 5 extra results, capped at 10 (Google's max)
             const searchLimit = includeContent ? Math.min(limit * 2 + 2, 10) : limit;
-            console.log(`[web-search-mcp] DEBUG: Requesting ${searchLimit} search results to get ${limit} non-PDF content results`);
+            console.error(`[web-search-mcp] DEBUG: Requesting ${searchLimit} search results to get ${limit} non-PDF content results`);
             // Perform the search
             const searchResponse = await this.searchEngine.search({
                 query,
@@ -403,12 +350,41 @@ class WebSearchMCPServer {
                 search_time_ms: searchTime,
                 query,
                 status: combinedStatus,
+                diagnostics: searchResponse?.diagnostics || [],
+                warnings: searchResponse?.warnings || [],
             };
         }
         catch (error) {
             console.error('Web search error:', error);
             throw new Error(`Web search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
+    }
+    // Appends engine health to the tool response text. Anything that goes only to
+    // stderr is invisible to the agent, so degradation has to be written here.
+    formatEngineHealth(searchResponse) {
+        const diagnostics = searchResponse?.diagnostics || [];
+        const warnings = searchResponse?.warnings || [];
+        if (diagnostics.length === 0)
+            return '';
+        const lines = ['', '---', '[引擎状态]'];
+        for (const d of diagnostics) {
+            const label = {
+                ok: '正常',
+                'off-topic': '结果无关',
+                blocked: '被反爬拦截',
+                'no-results': '页面解析不出结果',
+                error: '报错',
+                skipped: '未尝试',
+            }[d.outcome] || d.outcome;
+            lines.push(`- ${d.engine}: ${label}（${d.detail}，${d.ms}ms）`);
+        }
+        if (warnings.length > 0) {
+            lines.push('');
+            lines.push('⚠️ 需要关注：');
+            for (const w of warnings)
+                lines.push(`- ${w}`);
+        }
+        return lines.join('\n') + '\n';
     }
     categorizeFailureReasons(failedResults) {
         const reasonCounts = new Map();
@@ -461,7 +437,7 @@ class WebSearchMCPServer {
         });
         // Graceful shutdown - close browsers when process exits
         process.on('SIGINT', async () => {
-            console.log('Shutting down gracefully...');
+            console.error('Shutting down gracefully...');
             try {
                 await Promise.all([
                     this.contentExtractor.closeAll(),
@@ -474,7 +450,7 @@ class WebSearchMCPServer {
             process.exit(0);
         });
         process.on('SIGTERM', async () => {
-            console.log('Shutting down gracefully...');
+            console.error('Shutting down gracefully...');
             try {
                 await Promise.all([
                     this.contentExtractor.closeAll(),
@@ -488,13 +464,13 @@ class WebSearchMCPServer {
         });
     }
     async run() {
-        console.log('Setting up MCP server...');
+        console.error('Setting up MCP server...');
         const transport = new StdioServerTransport();
-        console.log('Connecting to transport...');
+        console.error('Connecting to transport...');
         await this.server.connect(transport);
-        console.log('Web Search MCP Server started');
-        console.log('Server timestamp:', new Date().toISOString());
-        console.log('Waiting for MCP messages...');
+        console.error('Web Search MCP Server started');
+        console.error('Server timestamp:', new Date().toISOString());
+        console.error('Waiting for MCP messages...');
     }
 }
 // Start the server
