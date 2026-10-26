@@ -287,7 +287,7 @@ ImpactRadar 会生成分析文档、要求逐步确认并运行自动检查。�
 
 [skills/ruleblade/](skills/ruleblade/)
 
-写给 AI 编码助手的常驻行为规则：8 条编码规则、1 条评审与迭代纪律、1 条中文表达要求，放进项目的 `CLAUDE.md`（Codex 用 `AGENTS.md`）。律刃最初参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后经多轮跨模型稳定性复测演进到 v3.4，记录见 [律刃 README](skills/ruleblade/README.md)。安装插件后在对话里运行 `/ruleblade` 也能装进目标项目。
+写给 AI 编码助手的常驻行为规则，放进项目的 `CLAUDE.md`（Codex、DeepSeek Harness 用 `AGENTS.md`）。当前 v5.0 按模型能力分两份：完整版给 DeepSeek V4.1 Flash 这一档的模型，精简版给 Opus 5.5、GPT-6 Astra 这一档的旗舰模型。律刃最初参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后经多轮跨模型复测演进到 v5.0，记录见 [律刃 README](skills/ruleblade/README.md)。安装插件后在对话里运行 `/ruleblade`，它会按你用的模型选一份装进目标项目。
 
 ### 网搜 MCP
 
