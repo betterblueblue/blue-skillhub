@@ -118,7 +118,7 @@ Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。
 
 ### 工具型 Utility（可选，不在核心评测体系内）
 
-`whydump`（Java OOM 排查）与 `vl-vision`（识图）是 utility，不作为核心 Skill 参与评测，按需安装：
+`whydump`（Java OOM 排查）是 utility，不作为核心 Skill 参与评测，按需安装：
 
 - **从仓库直接跑**（推荐）：在仓库根目录执行 `python skills/whydump/scripts/analyze.py <histo.txt>`，不装进 skills 目录。前提是已经有直方图文本（`jmap -histo` 的输出）；正常排查从 `/whydump` 进，由它先引导取证。
 - **装进 `.claude\skills` 以便 `/whydump` 触发**（与核心 skill 同方式）：
@@ -237,28 +237,7 @@ wrapper 内容见 `.cursor/codegraph-mcp.cmd`，核心是 `codegraph serve --mcp
 
 仍无工具时，按 [README FAQ 排查表](../README.md#codegraph-mcp-显示已连接但没有工具no-tools) 逐项检查。
 
-## 5. 安装 VL Vision
-
-安装依赖：
-
-```powershell
-pip install requests
-```
-
-查看模板：
-
-```powershell
-python skills\vl-vision\vl_vision.py --list-templates
-```
-
-配置 key 后测试：
-
-```powershell
-$env:STEP_API_KEY="sk-your-key"
-python skills\vl-vision\vl_vision.py path\to\image.png
-```
-
-## 6. 常见踩坑
+## 5. 常见踩坑
 
 | 问题 | 处理 |
 |------|------|
@@ -363,7 +342,7 @@ codegraph serve --mcp --path "%ROOT%"
 
 Pathfinder / Impact 在 MCP 不可用时会退回到 Read/Grep，不影响基本流程；修好 MCP 后主要是结构发现和 blast radius 更快、更准。
 
-## 7. 最小验收
+## 6. 最小验收
 
 安装完成后，至少确认：
 

@@ -94,20 +94,19 @@ claude plugin marketplace add betterblueblue/blue-skillhub
 claude plugin install blue-skillhub@blue-skillhub
 ```
 
-装好后就有：ask-blue（路由，不知道用哪个就问它）、律刃（ruleblade）、Pathfinder、ImpactRadar、intent-chain 八件套和 vl-vision。
+装好后就有：ask-blue（路由，不知道用哪个就问它）、律刃（ruleblade）、Pathfinder、ImpactRadar、intent-chain 八件套。
 
 **方式二：手动复制**。想直接改技能文件时用。克隆本仓库后在根目录执行：
 
 ```powershell
 # 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
-"_common","ruleblade","pathfinder","impact","vl-vision","intent-anchor","intent-prd","intent-design","intent-visual","intent-issues","intent-dev","intent-adversarial","intent-verify" |
+"_common","ruleblade","pathfinder","impact","intent-anchor","intent-prd","intent-design","intent-visual","intent-issues","intent-dev","intent-adversarial","intent-verify" |
   ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
 
 Copy-Item "skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
 Copy-Item "skills\ruleblade" "$env:USERPROFILE\.claude\skills\ruleblade" -Recurse -Force
 Copy-Item "skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
 Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
-Copy-Item "skills\vl-vision" "$env:USERPROFILE\.claude\skills\vl-vision" -Recurse -Force
 Copy-Item "skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
 Copy-Item "skills\intent-prd" "$env:USERPROFILE\.claude\skills\intent-prd" -Recurse -Force
 Copy-Item "skills\intent-design" "$env:USERPROFILE\.claude\skills\intent-design" -Recurse -Force
@@ -124,7 +123,7 @@ Copy-Item "skills\intent-verify" "$env:USERPROFILE\.claude\skills\intent-verify"
 Copy-Item "skills\whydump" "$env:USERPROFILE\.claude\skills\whydump" -Recurse -Force
 ```
 
-> 说明：`whydump`（Java OOM 排查）和 `vl-vision`（识图）是工具型 utility，不属于核心 Skill、不参与评测体系；也可以不装，直接在仓库根目录用 `python skills/whydump/scripts/analyze.py <histo.txt>` 调用。注意：这种直接调用只适合手里已经有直方图文本（`jmap -histo` 的输出）的情况；正常排查从 `/whydump` 进，由它先引导取证、再调脚本。
+> 说明：`whydump`（Java OOM 排查）是工具型 utility，不属于核心 Skill、不参与评测体系；也可以不装，直接在仓库根目录用 `python skills/whydump/scripts/analyze.py <histo.txt>` 调用。注意：这种直接调用只适合手里已经有直方图文本（`jmap -histo` 的输出）的情况；正常排查从 `/whydump` 进，由它先引导取证、再调脚本。
 
 Codex 用户把 `.claude\skills` 换成 `.codex\skills` 即可。其他安装方式见 [安装与验证清单](docs/install-and-verify-checklist.md)。
 
@@ -264,7 +263,6 @@ intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 页�
 | IntentVerify | 端到端验收 + 漂移核对 | [docs/skills/intent-verify.md](docs/skills/intent-verify.md) |
 | ImpactRadar | 已有系统变更影响分析 + 受监督实施 | [docs/skills/impact.md](docs/skills/impact.md) |
 | Pathfinder | 陌生项目只读摸底出项目地图 | [docs/skills/pathfinder.md](docs/skills/pathfinder.md) |
-| VL 识图 | 让看不了图的模型能读截图和设计稿 | [docs/skills/vl-vision.md](docs/skills/vl-vision.md) |
 | 律刃 | 常驻行为规则装进项目 | [docs/skills/ruleblade.md](docs/skills/ruleblade.md) |
 
 ### 谁更需要 ImpactRadar 的严格门禁
@@ -294,12 +292,6 @@ ImpactRadar 会生成分析文档、要求逐步确认并运行自动检查。�
 [mcp/web-search-mcp/](mcp/web-search-mcp/)
 
 为支持 MCP 的 AI 客户端提供网页搜索。它支持 Google、Bing、Brave 和 DuckDuckGo，既可以只返回搜索摘要，也可以继续打开网页提取正文。Cursor、CodeBuddy 和 Claude Desktop 等客户端都能接入。
-
-### VL 识图
-
-[skills/vl-vision/](skills/vl-vision/)
-
-一个通用的图片理解工具。提供图片和分析模板后，它会调用视觉模型返回结构化结果，适合为只支持文本的 AI 补充图片分析能力。
 
 ## 维护与评测（面向改进这套技能的人）
 
@@ -342,7 +334,7 @@ ImpactRadar 的长期任务、暂停后恢复、接口返回检查、验证等�
 
 ## 安装后自检
 
-装完想确认一切正常？按 [安装与验证清单](docs/install-and-verify-checklist.md) 逐节走一遍：律刃、Pathfinder/Impact、intent-chain、网搜 MCP、VL 识图的安装验证和常见踩坑都在里面，含中断恢复的正确交互示例。使用中的几条硬边界：`intent-anchor` 只产出 `INTENT.md` 不写代码；`pathfinder` 只读，只写自己的地图和 facts 文件；`impact` 的所有写操作必须等用户明确回复 `确认 Step N`（`yes`、`继续`、`全部确认`都不算）；会话中断后 `_active-state.md` 只帮助恢复进度，不能当作新的写入授权。
+装完想确认一切正常？按 [安装与验证清单](docs/install-and-verify-checklist.md) 逐节走一遍：律刃、Pathfinder/Impact、intent-chain、网搜 MCP 的安装验证和常见踩坑都在里面，含中断恢复的正确交互示例。使用中的几条硬边界：`intent-anchor` 只产出 `INTENT.md` 不写代码；`pathfinder` 只读，只写自己的地图和 facts 文件；`impact` 的所有写操作必须等用户明确回复 `确认 Step N`（`yes`、`继续`、`全部确认`都不算）；会话中断后 `_active-state.md` 只帮助恢复进度，不能当作新的写入授权。
 
 ## 常见问题（FAQ）
 
@@ -381,7 +373,6 @@ blue-skillhub/
     ├── intent-anchor/        # intent-chain 八件套（含 intent-prd / design /
     ├── intent-prd/           #   visual / issues / dev / adversarial / verify）
     ├── ruleblade/            # 律刃行为规则
-    ├── vl-vision/
     ├── whydump/              # Java OOM 排查（utility，不进插件）
     └── wordmirror/           # 用户画像（utility，不进插件）
 ```

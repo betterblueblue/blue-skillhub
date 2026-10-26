@@ -38,7 +38,6 @@ allowed-tools: Read
 | UI 项目没有设计稿但要求界面风格 | `/intent-visual` | 登记后由下游门禁验收 |
 | 工单开发完，交付前 | `/intent-adversarial` → `/intent-verify` | 缺陷回 `/intent-dev` 修 |
 | 把行为规则装进项目 | `/ruleblade` | 装一次长期生效 |
-| 看不了图但输入是图片/设计稿 | `/vl-vision` | 结果回主流程核实 |
 
 ## 不随插件分发的部分
 
