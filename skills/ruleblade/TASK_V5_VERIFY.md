@@ -3,7 +3,7 @@
 - 日期：2026-10-26
 - 被测模型：DeepSeek V4.1 Flash。通过 DeepSeek Harness（dsh 0.2.1-rc.2）的 headless 模式调用，线路是 `opendesign/deepseek-v4.1-flash`，没有确认是不是 1017 版。
 - 被测版本：不放规则、v4.0（已退役，存档在 [archive/CLAUDE.v4.0.md](archive/CLAUDE.v4.0.md)）、v5.0 完整版（[CLAUDE.full.md](CLAUDE.full.md)）、v5.0 精简版（[CLAUDE.lite.md](CLAUDE.lite.md)）
-- 评测工具、场景和测试项目：[eval-v5/](eval-v5/)
+- 评测工具、场景和测试项目：[eval/ruleblade-v5/](../../eval/ruleblade-v5/)
 
 ## 结论
 
@@ -155,7 +155,7 @@ S6 第 1 轮四个版本都判"不能验收"，12 次全部"失败"。回头看�
 
 ## 没验证到的
 
-- **精简版只在 DeepSeek 上测过。** 它为强模型写的部分，比如"只在这几种情况才停下来""不写检查指令"，有没有用要在 Opus 5.5、GPT-6 Astra 上测。Kiro 一侧的手动流程（[eval-v5/kiro-run.ps1](eval-v5/kiro-run.ps1)）已经准备好，这次没有跑。
+- **精简版只在 DeepSeek 上测过。** 它为强模型写的部分，比如"只在这几种情况才停下来""不写检查指令"，有没有用要在 Opus 5.5、GPT-6 Astra 上测。Kiro 一侧的手动流程（[kiro-run.ps1](../../eval/ruleblade-v5/kiro-run.ps1)）已经准备好，这次没有跑。
 - **每格只有 3 次。** "全过"只能说明这些场景上没发现问题。
 - **场景和条文是一起改的。** N2、N3 的条文就是看着这两个场景的失败改出来的，有针对这套场景调优的风险。要确认效果是普遍的，需要另出几个没见过的场景。
 - **模型版本没钉死。** 线路 `opendesign/deepseek-v4.1-flash` 没有确认是不是 1017 版。第 2 轮网关出过 6 次 502（连接被重置），已经重跑，不影响结果。
@@ -165,7 +165,7 @@ S6 第 1 轮四个版本都判"不能验收"，12 次全部"失败"。回头看�
 ## 复现
 
 ```powershell
-cd skills\ruleblade\eval-v5
+cd eval\ruleblade-v5
 .\run-dsh.ps1 -Round <轮次名>                       # 默认 12 场景 × none/v4/full × 3 次
 .\run-dsh.ps1 -Round <轮次名> -Variants lite        # 加跑精简版
 python check.py score  E:\agent\ruleblade-eval\<轮次名>

@@ -7,9 +7,9 @@
 | dsh headless | DeepSeek V4.1 Flash（以 dsh 默认模型为准，`round.json` 里有记录） | `none` / `v4` / `full` | `run-dsh.ps1` 全自动 |
 | Kiro | Claude Opus 5.5 | `v4` / `lite` | `kiro-run.ps1` 半自动，每个场景开一个新窗口 |
 
-变体对应的规则文件见 `scenarios.json` 的 `variants`：`none` 不放规则，`v4` 是已退役的 `archive/CLAUDE.v4.0.md`，`full` 是 `CLAUDE.full.md`，`lite` 是 `CLAUDE.lite.md`。
+变体对应的规则文件见 `scenarios.json` 的 `variants`，路径相对于 `skills/ruleblade/`：`none` 不放规则，`v4` 是已退役的 `archive/CLAUDE.v4.0.md`，`full` 是 `CLAUDE.full.md`，`lite` 是 `CLAUDE.lite.md`。
 
-2026-10-26 的四轮结果和结论见 [TASK_V5_VERIFY.md](../TASK_V5_VERIFY.md)。
+这套工具原来放在 `skills/ruleblade/eval-v5/`，为了不随插件一起打包，移到了这里。2026-10-26 的四轮结果和结论见 [TASK_V5_VERIFY.md](../../skills/ruleblade/TASK_V5_VERIFY.md)。
 
 ## 场景
 
@@ -42,7 +42,7 @@
 ## DeepSeek：dsh 全自动
 
 ```powershell
-cd E:\agent\blue-skillhub\skills\ruleblade\eval-v5
+cd E:\agent\blue-skillhub\eval\ruleblade-v5
 .\run-dsh.ps1 -Round smoke -Scenarios S2,N5 -Variants full -Reps 1   # 冒烟，几分钟
 .\run-dsh.ps1 -Round d1                                              # 正式：12 场景 × 3 变体 × 3 次 = 108 次
 .\run-dsh.ps1 -Round d1 -Resume                                      # 中断后从断点继续

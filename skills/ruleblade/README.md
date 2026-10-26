@@ -325,7 +325,7 @@ v5.0 精简版不沿用这套编号。它给旗舰模型用，按"什么时候�
 | [CLAUDE.lite.md](CLAUDE.lite.md) | v5.0 精简版，给 Opus 5.5、GPT-6 Astra 这一档旗舰模型 |
 | [SKILL.md](SKILL.md) | `/ruleblade` 的安装引导：按模型选文件、写入项目 |
 | [TASK_V5_VERIFY.md](TASK_V5_VERIFY.md) | v5.0 在 DeepSeek V4.1 Flash 上的四轮验证记录 |
-| [eval-v5/](eval-v5/) | v5.0 的评测工具、12 个场景和测试项目 |
+| [eval/ruleblade-v5/](../../eval/ruleblade-v5/) | v5.0 的评测工具、12 个场景和测试项目（放在技能目录外，不随插件打包） |
 | [archive/CLAUDE.v4.0.md](archive/CLAUDE.v4.0.md) | 已退役的 v4.0 原文 |
 | [TASK_A_STABILITY_TEST.md](TASK_A_STABILITY_TEST.md) | v3.2 的 GovShield 稳定性测试方案 |
 | `RUN_TASK_A_STABILITY_TEST.ps1` | 创建隔离副本并运行 Task A 的 PowerShell 脚本 |

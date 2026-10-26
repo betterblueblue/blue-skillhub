@@ -2,7 +2,7 @@
 $ErrorActionPreference = 'Stop'
 
 $Script:EvalDir = $PSScriptRoot
-$Script:RuleDir = Split-Path -Parent $PSScriptRoot
+$Script:RuleDir = (Resolve-Path (Join-Path $PSScriptRoot '..\..\skills\ruleblade')).Path
 $Script:Utf8NoBom = [System.Text.UTF8Encoding]::new($false)
 
 function Read-Scenarios {
