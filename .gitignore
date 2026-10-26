@@ -30,6 +30,10 @@ test-projects/
 
 # === 会话日志(本地保留,不入库)+ IDE 临时 ===
 sessions/
+# Claude Code 导出的对话记录，形如 2026-09-25-003733-xxx.txt
+/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]-*.txt
+# 本机自装的第三方 Claude Code 技能（如 crit），不随仓库分发
+.claude/skills/
 skills/whydump/评审prompt.txt
 .mimocode/
 .claude/worktrees/
@@ -47,8 +51,9 @@ skills/wordmirror/_prototype/*
 !skills/wordmirror/_prototype/build_index_demo.py
 !skills/wordmirror/_prototype/ai_eyes_demo.html
 !skills/wordmirror/_prototype/shots/
-# 截图批次子目录（如 shots/story/）是拿真实数据页截的，不入库；上面放行的只有早期假数据截图
-skills/wordmirror/_prototype/shots/*/
+# shots/ 下新生成的截图、逐帧图和录屏成片都不入库（录屏一次就是几十 MB）；
+# 已入库的 8 张早期假数据截图不受影响，以后确实要加图用 git add -f
+skills/wordmirror/_prototype/shots/*
 
 # === 内部与个人文件（本地保留，不入库）===
 blue-interview-log/
