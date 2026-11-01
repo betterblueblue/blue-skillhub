@@ -44,6 +44,19 @@ repo_root_from_scenario() {
   echo "."
 }
 
+# 辅助：定位 scenario 的 fixture 目录
+# url 为 local-only 的 fixture 随仓库提交在本技能 tests/fixtures/ 下；其余是克隆到 test-projects/ 的开源项目
+fixture_path_for() {
+  local file="$1" repo_root="$2" fixture_url="$3" fixture_slug="$4"
+  local committed
+  committed="$(dirname "$file")/../fixtures/$fixture_slug"
+  if [[ "$fixture_url" == "local-only" && -d "$committed" ]]; then
+    echo "$committed"
+  else
+    echo "$repo_root/test-projects/$fixture_slug"
+  fi
+}
+
 # 校验 JSON 是否含必需字段
 validate_json_schema() {
   local file="$1"
@@ -72,7 +85,8 @@ validate_fixture() {
 
   local fixture_name_slug
   fixture_name_slug=$(echo "$fixture_name" | tr 'A-Z' 'a-z')
-  local fixture_path="$repo_root/test-projects/$fixture_name_slug"
+  local fixture_path
+  fixture_path=$(fixture_path_for "$file" "$repo_root" "$fixture_url" "$fixture_name_slug")
 
   if [[ ! -d "$fixture_path" ]]; then
     fail "fixture 不存在: $fixture_path"
@@ -196,11 +210,13 @@ validate_fixture_files() {
   local repo_root
   repo_root=$(repo_root_from_scenario "$file")
 
-  local fixture_name
+  local fixture_name fixture_url
   fixture_name=$(grep -oE '"project"[[:space:]]*:[[:space:]]*"[^"]+"' "$file" | head -1 | sed 's/.*"project"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+  fixture_url=$(grep -oE '"url"[[:space:]]*:[[:space:]]*"[^"]+"' "$file" | head -1 | sed 's/.*"url"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
   local fixture_name_slug
   fixture_name_slug=$(echo "$fixture_name" | tr 'A-Z' 'a-z')
-  local fixture_path="$repo_root/test-projects/$fixture_name_slug"
+  local fixture_path
+  fixture_path=$(fixture_path_for "$file" "$repo_root" "$fixture_url" "$fixture_name_slug")
 
   if [[ ! -d "$fixture_path" ]]; then
     return 1

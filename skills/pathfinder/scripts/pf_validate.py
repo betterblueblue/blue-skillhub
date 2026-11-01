@@ -17,7 +17,12 @@ Checks:
   V9: Map header commit hash matches git.json head_short (N-D)
   V10: Credibility tag density (min 5 tags, FAIL) + fix-suggestion keywords (WARN, N-E)
   V11: facts/map recorded HEAD still matches current on-disk HEAD
-  V12: Core capability chain section has stage table, stable IDs, and Mermaid graph
+  V12: Core capability chain section 【4A】 has a stage table with stable IDs and machine fields
+       (the human-facing flow diagram now lives in the reader guide, see V13)
+  V13: Reader guide「## 导读」exists with all 7 question subsections, a Mermaid diagram in
+       「它怎么运转」and at least one row in「要改 X 去哪」(FAIL); over 150 lines, 【已核实】
+       tags or file:line refs inside the guide (WARN). Refresh mode: a missing guide is WARN.
+  V14: The same file:line evidence appears more than once in the reference sections (WARN)
 Output: PASS/FAIL/WARN lines + SUMMARY line.
 Exit code: 0 = pass, 1 = fail (any FAIL item).
 
@@ -32,6 +37,7 @@ import os
 import re
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 
 # SKIP_DIRS: imported from pf_scan.py to avoid duplicate maintenance.
@@ -644,7 +650,7 @@ RE_SECTION_4A_HEADER = re.compile(r"^##\s.*(?:【4A】|核心能力链路)", re.
 
 
 def check_core_capability_chain(text: str) -> list[str]:
-    """V12: Require the human/agent core capability chain contract."""
+    """V12: Require the agent-facing core capability chain contract (stage table)."""
     lines = text.splitlines()
     start = next((i for i, line in enumerate(lines) if RE_SECTION_4A_HEADER.search(line)), None)
     if start is None:
@@ -657,13 +663,139 @@ def check_core_capability_chain(text: str) -> list[str]:
         errors.append("V12: 【4A】 must contain a stage table with stable stage_id")
     if not re.search(r"\|\s*S\d+\s*\|", body):
         errors.append("V12: 【4A】 stage table must contain at least one stable stage row such as S1")
-    if "```mermaid" not in body:
-        errors.append("V12: 【4A】 must contain a Mermaid core capability graph")
     required_markers = ("inputs", "outputs", "persistence", "tests", "failure_states", "evidence")
     missing = [marker for marker in required_markers if marker not in body]
     if missing:
         errors.append("V12: 【4A】 stage contract missing fields: " + ", ".join(missing))
     return errors
+
+
+# --- V13: Reader guide (导读) ---
+
+RE_GUIDE_HEADER = re.compile(r"^##\s+导读")
+# (小节名, 识别标题的正则) —— 和 templates/project-map.md 的七个问题一一对应
+GUIDE_QUESTIONS = (
+    ("这是什么", re.compile(r"^###\s.*这是什么")),
+    ("它怎么运转", re.compile(r"^###\s.*怎么运转")),
+    ("代码怎么分", re.compile(r"^###\s.*代码怎么分")),
+    ("要改 X 去哪", re.compile(r"^###\s.*要改.*去哪")),
+    ("怎么跑起来", re.compile(r"^###\s.*怎么跑")),
+    ("动手前要知道的", re.compile(r"^###\s.*动手前")),
+    ("这份地图没看的", re.compile(r"^###\s.*没看")),
+)
+GUIDE_MAX_LINES = 150
+# file:line 形式的证据引用，如 src/routes/users.js:11 或 a/b.py:3-9（localhost:6379 这类不算）
+RE_FILE_LINE_REF = re.compile(r"(?<![\w/.-])([\w./-]*\.[A-Za-z]\w*:\d+(?:-\d+)?)")
+RE_TABLE_SEPARATOR = re.compile(r"^\s*\|[\s:|-]+\|\s*$")
+
+
+def _guide_bounds(lines: list[str]) -> tuple[int | None, int]:
+    """Return (start, end) line indexes of the「## 导读」section; start is None if absent."""
+    start = next((i for i, line in enumerate(lines) if RE_GUIDE_HEADER.match(line)), None)
+    if start is None:
+        return None, 0
+    end = next((i for i in range(start + 1, len(lines)) if re.match(r"^##\s", lines[i])), len(lines))
+    return start, end
+
+
+def _lines_outside_code(lines: list[str]) -> list[str]:
+    kept, in_code = [], False
+    for line in lines:
+        if line.strip().startswith("```"):
+            in_code = not in_code
+            continue
+        if not in_code:
+            kept.append(line)
+    return kept
+
+
+def check_reader_guide(text: str, refresh_mode: bool = False) -> tuple[list[str], list[str]]:
+    """V13: The map opens with a 7-question reader guide written for humans."""
+    errors: list[str] = []
+    warnings: list[str] = []
+    lines = text.splitlines()
+    start, end = _guide_bounds(lines)
+    if start is None:
+        message = (
+            "V13: reader guide「## 导读」is missing — the map must open with the 7-question guide "
+            "(see templates/project-map.md)"
+        )
+        if refresh_mode:
+            warnings.append(message + "; this looks like an old-format map, rerun /pathfinder fully to convert it")
+        else:
+            errors.append(message)
+        return errors, warnings
+
+    guide = lines[start + 1:end]
+    headings = [(i, line) for i, line in enumerate(guide) if line.startswith("### ")]
+
+    def body_of(pattern: re.Pattern) -> list[str] | None:
+        for idx, (i, line) in enumerate(headings):
+            if pattern.match(line):
+                stop = headings[idx + 1][0] if idx + 1 < len(headings) else len(guide)
+                return guide[i + 1:stop]
+        return None
+
+    missing = [name for name, pattern in GUIDE_QUESTIONS if body_of(pattern) is None]
+    if missing:
+        errors.append("V13: 导读 is missing subsections: " + "、".join(missing))
+
+    flow = body_of(GUIDE_QUESTIONS[1][1])
+    if flow is not None and not any("```mermaid" in line for line in flow):
+        errors.append("V13: 导读「它怎么运转」must contain a Mermaid diagram (input → key steps → output)")
+
+    change_nav = body_of(GUIDE_QUESTIONS[3][1])
+    if change_nav is not None:
+        table_rows = [
+            line for line in change_nav
+            if line.strip().startswith("|") and not RE_TABLE_SEPARATOR.match(line)
+        ]
+        if len(table_rows) < 2:  # 表头 + 至少一行
+            errors.append("V13: 导读「要改 X 去哪」needs a table with at least one row (想改什么 / 先看 / 会连带)")
+
+    if len(guide) > GUIDE_MAX_LINES:
+        warnings.append(
+            f"V13: 导读 has {len(guide)} lines (> {GUIDE_MAX_LINES}) — keep conclusions only, "
+            "move evidence and full lists to the reference sections"
+        )
+    prose = _lines_outside_code(guide)
+    verified = sum(line.count("【已核实") for line in prose)
+    if verified:
+        warnings.append(
+            f"V13: 导读 has {verified} 【已核实】 tag(s) — the guide only marks 【推断】; "
+            "evidence belongs in the reference sections"
+        )
+    refs = sorted({m.group(1) for line in prose for m in RE_FILE_LINE_REF.finditer(line)})
+    if refs:
+        warnings.append(
+            "V13: 导读 cites file:line (" + ", ".join(refs[:5]) + ") — the guide states conclusions; "
+            "put line-level evidence in the reference sections and point to 【N】"
+        )
+    return errors, warnings
+
+
+# --- V14: Same evidence repeated across reference sections ---
+
+def check_duplicate_evidence(text: str) -> list[str]:
+    """V14: Each fact lives in one section; the same file:line evidence should not repeat."""
+    lines = text.splitlines()
+    start, end = _guide_bounds(lines)
+    reference = lines[end:] if start is not None else lines
+    # 同一行里重复写（如【14】的「证据」列和「可信度」列）只算一次，查的是跨行、跨节的重复
+    counts = Counter(
+        ref
+        for line in _lines_outside_code(reference)
+        for ref in {m.group(1) for m in RE_FILE_LINE_REF.finditer(line)}
+    )
+    repeated = sorted((ref, n) for ref, n in counts.items() if n > 1)
+    if not repeated:
+        return []
+    listed = ", ".join(f"{ref} ×{n}" for ref, n in repeated[:8])
+    more = f" (+{len(repeated) - 8} more)" if len(repeated) > 8 else ""
+    return [
+        f"V14: the same evidence appears in several places ({listed}{more}) — keep each fact in one "
+        "section and write 见【N】 elsewhere"
+    ]
 
 
 
@@ -894,6 +1026,19 @@ def validate(text: str, repo_root: str, refresh_mode: bool = False) -> tuple[lis
     if not v12_errors:
         passes.append("V12: core capability chain structure present")
 
+    # V13
+    v13_errors, v13_warnings = check_reader_guide(text, refresh_mode)
+    fails.extend(v13_errors)
+    warnings.extend(v13_warnings)
+    if not v13_errors and not v13_warnings:
+        passes.append("V13: reader guide has all 7 questions and stays within length")
+
+    # V14
+    v14_warnings = check_duplicate_evidence(text)
+    warnings.extend(v14_warnings)
+    if not v14_warnings:
+        passes.append("V14: no evidence repeated across reference sections")
+
     return passes, fails, warnings
 
 
@@ -902,7 +1047,8 @@ def main():
     parser.add_argument("map_file", nargs="?", help="Path to _project-map.md")
     parser.add_argument("--stdin", action="store_true", help="Read map from stdin")
     parser.add_argument("--repo-root", default=".", help="Project root directory (for V1 file checks)")
-    parser.add_argument("--refresh", action="store_true", help="Refresh mode: V9/V11 downgrade to WARN")
+    parser.add_argument("--refresh", action="store_true",
+                        help="Refresh mode: V9/V11, and a missing reader guide (V13), downgrade to WARN")
     args = parser.parse_args()
 
     if args.stdin:

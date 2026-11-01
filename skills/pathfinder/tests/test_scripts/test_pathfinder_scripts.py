@@ -70,6 +70,49 @@ def _git_facts(
     }
 
 
+# 满足 V13 的最小导读（七个小节、运转图、改动导航表各一行）
+MINIMAL_GUIDE = """## 导读
+
+### 1. 这是什么
+
+测试用项目。
+
+### 2. 它怎么运转
+
+```mermaid
+flowchart LR
+    IN["输入"] --> S1["S1 阶段"]
+```
+
+输入进来，经过 S1。
+
+### 3. 代码怎么分
+
+| 目录 | 干什么 | 什么时候需要看 |
+|---|---|---|
+| `src/` | 源码 | 改代码时 |
+
+### 4. 要改 X 去哪
+
+| 想改什么 | 先看 | 会连带 |
+|---|---|---|
+| 主流程 | `src/` | 无 |
+
+### 5. 怎么跑起来
+
+未发现。
+
+### 6. 动手前要知道的
+
+1. 没有发现需要特别注意的地方。
+
+### 7. 这份地图没看的
+
+- 见【13】。
+
+"""
+
+
 # ─── pf_scan.py tests ─────────────────────────────────────────────
 
 class TestPfScan(unittest.TestCase):
@@ -88,7 +131,8 @@ class TestPfScan(unittest.TestCase):
 
     def test_scan_this_repo(self):
         """Scan the project root — should be at least small."""
-        root = str(Path(__file__).resolve().parents[5])
+        # parents: [0]=test_scripts [1]=tests [2]=pathfinder [3]=skills [4]=仓库根
+        root = str(Path(__file__).resolve().parents[4])
         code, out, _ = _run_script(PF_SCAN, [root])
         self.assertEqual(code, 0)
         data = json.loads(out)
@@ -195,12 +239,10 @@ class TestPfValidate(unittest.TestCase):
 |---|---|---|---|---|---|---|---|---|
 | S1 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 【推断: 待验证】 |
 
-```mermaid
-flowchart LR
-    IN["输入"] --> S1["S1 阶段"]
-```
-
 """ + content
+        # 各用例只关心自己那项检查；没写导读的补一份最小导读，免得 V13 干扰
+        if "## 导读" not in content:
+            content = MINIMAL_GUIDE + content
         with open(path, "w", encoding="utf-8") as f:
             f.write(content)
         return path
@@ -364,7 +406,7 @@ flowchart LR
 | 引号 | 单引号 | test | 【已核实: test】 |
 """
             code, out, _ = _run_script(PF_VALIDATE, ["--stdin", "--repo-root", td],
-                                       stdin_data="""## 【4A】核心能力链路
+                                       stdin_data=MINIMAL_GUIDE + """## 【4A】核心能力链路
 
 | stage_id | entrypoints | inputs | outputs | persistence | external_contracts | tests | failure_states | evidence |
 |---|---|---|---|---|---|---|---|---|
@@ -977,21 +1019,141 @@ class TestV6FileCountConsistency(unittest.TestCase):
 
 
 class TestTemplateChapters(unittest.TestCase):
-    """模板必须给出 SKILL.md 章节表里的每个核心节标题。
+    """模板必须给出导读七问和参考数据的每个编号节标题。
 
     8ef242b 加【4A】时误删了「## 【5】关键入口」标题，入口表被并进【4A】，
     照模板写的地图从此没有【5】，而校验器不查这一节，一直没被发现。
+    两段式改造后，旧【1】【4】【7】【11】【12】并入导读或相邻节，模板里不应再出现。
     """
 
-    CORE_CHAPTERS = ["0", "1", "2", "3", "4", "4A", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"]
+    REFERENCE_CHAPTERS = ["0", "2", "3", "4A", "5", "6", "8", "9", "10", "13", "14"]
+    MERGED_CHAPTERS = ["1", "4", "7", "11", "12"]
 
-    def test_template_has_every_core_chapter_heading(self):
-        template = (SCRIPTS_DIR.parent / "templates" / "project-map.md").read_text(encoding="utf-8")
-        missing = [
-            n for n in self.CORE_CHAPTERS
-            if not any(line.startswith(f"## 【{n}】") for line in template.splitlines())
-        ]
-        self.assertFalse(missing, f"templates/project-map.md 缺少核心节标题: {missing}")
+    def _template(self) -> str:
+        return (SCRIPTS_DIR.parent / "templates" / "project-map.md").read_text(encoding="utf-8")
+
+    def test_template_has_every_reference_chapter_heading(self):
+        lines = self._template().splitlines()
+        missing = [n for n in self.REFERENCE_CHAPTERS if not any(l.startswith(f"## 【{n}】") for l in lines)]
+        self.assertFalse(missing, f"templates/project-map.md 缺少参考数据节标题: {missing}")
+
+    def test_template_has_no_merged_chapter_headings(self):
+        lines = self._template().splitlines()
+        found = [n for n in self.MERGED_CHAPTERS if any(l.startswith(f"## 【{n}】") for l in lines)]
+        self.assertFalse(found, f"这些节已并入导读或相邻节，模板里不该再有: {found}")
+
+    def test_template_guide_satisfies_v13(self):
+        sys.path.insert(0, str(SCRIPTS_DIR))
+        try:
+            from pf_validate import check_reader_guide
+        finally:
+            sys.path.pop(0)
+        errors, _warnings = check_reader_guide(self._template())
+        self.assertFalse(errors, errors)
+
+
+def _validator():
+    sys.path.insert(0, str(SCRIPTS_DIR))
+    try:
+        import pf_validate
+    finally:
+        sys.path.pop(0)
+    return pf_validate
+
+
+class TestReaderGuide(unittest.TestCase):
+    """V13：地图开头是给人看的导读，七个问题都要有。"""
+
+    REFERENCE = "\n## 参考数据\n\n## 【3】架构分层\n\n| 模块 | 职责 |\n|---|---|\n| `src/` | 源码 【已核实: src/a.py:1】 |\n"
+
+    def _check(self, guide: str, refresh: bool = False):
+        return _validator().check_reader_guide(guide + self.REFERENCE, refresh)
+
+    def test_minimal_guide_passes(self):
+        errors, warnings = self._check(MINIMAL_GUIDE)
+        self.assertEqual(([], []), (errors, warnings))
+
+    def test_missing_guide_fails(self):
+        errors, _ = self._check("# 旧格式地图\n\n## 概览摘要\n\n一句话。\n")
+        self.assertTrue(any("导读" in e for e in errors), errors)
+
+    def test_missing_guide_in_refresh_mode_only_warns(self):
+        errors, warnings = self._check("# 旧格式地图\n\n## 概览摘要\n", refresh=True)
+        self.assertEqual([], errors)
+        self.assertTrue(any("old-format" in w for w in warnings), warnings)
+
+    def test_missing_subsection_fails(self):
+        guide = MINIMAL_GUIDE.replace("### 4. 要改 X 去哪", "### 4. 其他")
+        errors, _ = self._check(guide)
+        self.assertTrue(any("要改 X 去哪" in e for e in errors), errors)
+
+    def test_flow_without_diagram_fails(self):
+        guide = MINIMAL_GUIDE.replace("```mermaid\nflowchart LR\n    IN[\"输入\"] --> S1[\"S1 阶段\"]\n```\n", "")
+        errors, _ = self._check(guide)
+        self.assertTrue(any("Mermaid" in e for e in errors), errors)
+
+    def test_change_navigation_without_rows_fails(self):
+        guide = MINIMAL_GUIDE.replace("| 主流程 | `src/` | 无 |\n", "")
+        errors, _ = self._check(guide)
+        self.assertTrue(any("要改 X 去哪" in e for e in errors), errors)
+
+    def test_long_guide_warns(self):
+        guide = MINIMAL_GUIDE.replace("测试用项目。", "测试用项目。\n" + "补充说明。\n" * 160)
+        errors, warnings = self._check(guide)
+        self.assertEqual([], errors)
+        self.assertTrue(any("lines" in w for w in warnings), warnings)
+
+    def test_verified_tags_in_guide_warn(self):
+        guide = MINIMAL_GUIDE.replace("测试用项目。", "测试用项目。【已核实: README.md】")
+        _, warnings = self._check(guide)
+        self.assertTrue(any("【已核实】" in w for w in warnings), warnings)
+
+    def test_file_line_in_guide_warns_but_ports_do_not(self):
+        guide = MINIMAL_GUIDE.replace("测试用项目。", "入口在 src/main.py:12，Redis 在 localhost:6379。")
+        _, warnings = self._check(guide)
+        self.assertTrue(any("src/main.py:12" in w for w in warnings), warnings)
+        self.assertFalse(any("localhost" in w for w in warnings), warnings)
+
+
+class TestDuplicateEvidence(unittest.TestCase):
+    """V14：同一条 文件:行号 证据在参考数据里出现多次时 WARN。"""
+
+    def test_repeated_evidence_across_sections_warns(self):
+        text = MINIMAL_GUIDE + (
+            "## 【7】外部依赖\n- `API_KEY` 【已核实: .env:2】\n\n"
+            "## 【9】风险区域\n- `API_KEY` 硬编码凭证 【已核实: .env:2】\n"
+        )
+        warnings = _validator().check_duplicate_evidence(text)
+        self.assertTrue(warnings and ".env:2 ×2" in warnings[0], warnings)
+
+    def test_same_row_repeat_counts_once(self):
+        text = MINIMAL_GUIDE + (
+            "## 【14】代码风格观察\n| 观察项 | 现状 | 证据 | 可信度 |\n|---|---|---|---|\n"
+            "| 响应 | res.json | `src/a.js:4` | 【已核实: src/a.js:4】 |\n"
+        )
+        self.assertEqual([], _validator().check_duplicate_evidence(text))
+
+    def test_guide_is_not_counted(self):
+        text = MINIMAL_GUIDE.replace("测试用项目。", "见 src/a.js:4。") + "## 【14】\n- 【已核实: src/a.js:4】\n"
+        self.assertEqual([], _validator().check_duplicate_evidence(text))
+
+
+class TestCoreCapabilityChain(unittest.TestCase):
+    """V12：【4A】只要求阶段表；给人看的图移到了导读。"""
+
+    def test_stage_table_without_diagram_passes(self):
+        text = (
+            "## 【4A】核心能力链路\n\n"
+            "| stage_id | entrypoints | inputs | outputs | persistence | external_contracts | tests | failure_states | evidence |\n"
+            "|---|---|---|---|---|---|---|---|---|\n"
+            "| S1 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 未发现 | 【推断: 待验证】 |\n"
+        )
+        self.assertEqual([], _validator().check_core_capability_chain(text))
+
+    def test_missing_stage_rows_fails(self):
+        text = "## 【4A】核心能力链路\n\n| stage_id | inputs | outputs |\n|---|---|---|\n"
+        errors = _validator().check_core_capability_chain(text)
+        self.assertTrue(any("S1" in e for e in errors), errors)
 
 
 if __name__ == "__main__":

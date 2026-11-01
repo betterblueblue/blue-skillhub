@@ -86,5 +86,5 @@ Use graph evidence to improve these sections first:
 - 【5】关键入口
 - 【8】构建·运行·测试
 - 【9】风险区域 / 风险区
-- 【11】典型主流程
+- 【4A】核心能力链路（evidence 列的调用链）
 - 【13】没挖深的部分
