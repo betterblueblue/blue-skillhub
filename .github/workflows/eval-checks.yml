@@ -46,6 +46,23 @@ jobs:
       - name: Run IntentAnchor validator tests
         run: python skills/intent-anchor/tests/test_intent_validate.py
 
+      - name: Run intent-chain validator tests (prd / design / visual / issues / dev / adversarial / verify)
+        run: >-
+          python -m pytest -q
+          skills/intent-prd/tests
+          skills/intent-design/tests
+          skills/intent-visual/tests
+          skills/intent-issues/tests
+          skills/intent-dev/tests
+          skills/intent-adversarial/tests
+          skills/intent-verify/tests
+
+      - name: Run impact V25 regression tests
+        run: python -m pytest -q skills/impact/tests/test_scripts/test_v25_regression.py
+
+      - name: Check every validator skill has tests visible to git
+        run: python tests/test_skill_tests_tracked.py
+
       - name: Run shared chain validator tests (_common)
         run: python -m unittest discover -s skills/_common/tests -p "test_*.py"
 

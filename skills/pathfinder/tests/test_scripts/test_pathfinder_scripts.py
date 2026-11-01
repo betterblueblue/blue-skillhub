@@ -914,6 +914,31 @@ class TestV7SkipBudgetValidation(unittest.TestCase):
             self.assertIn("WARN", out)
             self.assertIn("acceptable", out)
 
+    def test_documented_skip_sentence_is_accepted(self):
+        """phase-3-depth-fill.md 原句「【14】代码风格观察因预算耗尽未产出」必须被认作合法跳过。"""
+        with tempfile.TemporaryDirectory() as td:
+            path = self._make_map_with_skip(td, "【14】代码风格观察因预算耗尽未产出", budget_tier="大仓")
+            _, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            v7_lines = [line for line in out.splitlines() if "V7:" in line]
+            self.assertTrue(any(line.startswith("WARN:") and "acceptable" in line for line in v7_lines), v7_lines)
+            self.assertFalse(any(line.startswith("FAIL:") for line in v7_lines), v7_lines)
+
+    def test_template_reason_word_is_accepted(self):
+        """模板【13】列头给的理由词是「超预算」，写「跳过【14】：超预算」也要算预算耗尽。"""
+        with tempfile.TemporaryDirectory() as td:
+            path = self._make_map_with_skip(td, "跳过【14】：超预算", budget_tier="中仓")
+            _, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            v7_lines = [line for line in out.splitlines() if "V7:" in line]
+            self.assertFalse(any(line.startswith("FAIL:") for line in v7_lines), v7_lines)
+
+    def test_skip_without_budget_reason_still_fails(self):
+        """认得出跳过声明，不等于放宽理由：只写「无证据」仍然 FAIL。"""
+        with tempfile.TemporaryDirectory() as td:
+            path = self._make_map_with_skip(td, "【14】未产出：无证据", budget_tier="中仓")
+            code, out, _ = _run_script(PF_VALIDATE, [path, "--repo-root", td])
+            self.assertEqual(code, 1, out)
+            self.assertIn("not justified", out)
+
     def test_skip_text_outside_section_13_does_not_authorize_skip(self):
         """A skip phrase outside section 13 must not justify omitting section 14."""
         with tempfile.TemporaryDirectory() as td:
@@ -949,6 +974,24 @@ class TestV6FileCountConsistency(unittest.TestCase):
             self.assertGreater(count, 100, f"Expected non-trivial file count > 100, got {count}")
         finally:
             sys.path.pop(0)
+
+
+class TestTemplateChapters(unittest.TestCase):
+    """模板必须给出 SKILL.md 章节表里的每个核心节标题。
+
+    8ef242b 加【4A】时误删了「## 【5】关键入口」标题，入口表被并进【4A】，
+    照模板写的地图从此没有【5】，而校验器不查这一节，一直没被发现。
+    """
+
+    CORE_CHAPTERS = ["0", "1", "2", "3", "4", "4A", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"]
+
+    def test_template_has_every_core_chapter_heading(self):
+        template = (SCRIPTS_DIR.parent / "templates" / "project-map.md").read_text(encoding="utf-8")
+        missing = [
+            n for n in self.CORE_CHAPTERS
+            if not any(line.startswith(f"## 【{n}】") for line in template.splitlines())
+        ]
+        self.assertFalse(missing, f"templates/project-map.md 缺少核心节标题: {missing}")
 
 
 if __name__ == "__main__":

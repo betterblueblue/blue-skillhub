@@ -857,6 +857,45 @@ class TestV15Phase5RecordState(unittest.TestCase):
             f"Expected V15 unrecorded path FAIL, got: {v15}"
         )
 
+    def test_fix_hints_never_suggest_reverting_user_files(self):
+        """未记录的改动可能是用户自己没提交的工作：修复提示不得引导 git checkout / 还原。"""
+        td, rd = _make_repo()
+        source_path = _init_git_with_source(td)
+        with open(source_path, "w", encoding="utf-8") as f:
+            f.write("export const label = 'user WIP';\n")
+        # 情况 1：还没有 090（Phase 4 刚写完文档）
+        _, out_no_record = _run_validator(td, rd)
+        # 情况 2：090 记录了 Impact 自己的 Step，但没记用户改的文件
+        _write_preflight(rd)
+        _write_execution_record(
+            rd,
+            """# Execution Record
+
+## [2026-07-03 18:43:45] Step 1: 源码修改
+
+- 确认类型：改代码
+- 操作对象：`src/other.ts`; `090-execution-record.md`; `_active-state.md`
+- 用户确认：确认 Step 1
+""",
+        )
+        _, out_unrecorded = _run_validator(td, rd)
+        for out in (out_no_record, out_unrecorded):
+            self.assertIn("V15:", out)
+            self.assertNotIn("git checkout", out)
+            self.assertIn("不要还原", out)
+
+
+class TestExecutionRecordTemplate(unittest.TestCase):
+    """090 模板的 Step 块必须含 V15 要核对的两个文件名——照模板写的源码 Step 不能必挂 V15。"""
+
+    def test_step_block_mentions_both_record_files(self):
+        template = (SCRIPT.parent.parent / "templates" / "090-execution-record.md").read_text(encoding="utf-8")
+        start = template.index("## [YYYY-MM-DD HH:MM:SS] Step N")
+        end = template.index("\n## ", start + 1)
+        step_block = template[start:end]
+        self.assertIn("090-execution-record.md", step_block)
+        self.assertIn("_active-state.md", step_block)
+
 
 def _v17_lines(stdout: str) -> list[str]:
     """Extract V17-related lines from stdout."""

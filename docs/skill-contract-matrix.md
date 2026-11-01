@@ -42,14 +42,14 @@ intent-anchor → intent-prd → intent-design → intent-visual（仅 UI 项目
 
 | Skill | 触发 | 输入 | 输出 | 写入边界 | refs | 校验器 | 备注 / 冲突 |
 |---|---|---|---|---|---|---|---|
-| intent-anchor | 意图模糊 / 要求锚定 | 用户想法 | `INTENT.md` | `INTENT.md` | 3 | `intent_validate` | 允许联网（WebSearch/WebFetch）；写入确认未显式统一 |
+| intent-anchor | 意图模糊 / 要求锚定 | 用户想法 | `intent-chain/{链路目录}/intent.md` | 同左（校验器只认这个路径） | 3 | `intent_validate` | 允许联网（WebSearch/WebFetch）；写入确认未显式统一 |
 | intent-prd | anchor 后 | `INTENT.md` | PRD | PRD 文档 | 0 | `prd_validate` | 描述写「PRD」，链路用 `prd.md`，命名需统一 |
 | intent-design | prd 后 | `INTENT.md` + PRD | `architecture.md` / `design.md` | 两文档 | 0 | `design_validate` | 正文与 README 细节可能不一致 |
 | intent-visual | design 后、UI 且无素材 | INTENT/PRD/arch/design + 参考 | `visual-design.md` + `visual-baseline.html`；回写 INTENT 第 12 节 | 上述文件（含回写 INTENT，已声明） | 5（含 refs/README） | `visual_validate` | 链中唯一用 Edit 回写 INTENT；写入范围已声明 |
-| intent-issues | design 后、dev 前 | INTENT/PRD/arch/design | `issues.md` / 工单 | 工单文档 | 0 | `issues_validate` | 轻量档例外只在 README 体现 |
-| intent-dev | issues 后 | INTENT/PRD/issues/arch/design | 源码 + 测试 + `dev-record` | 业务代码 / 测试 / 记录 | 0 | `dev_validate` | 授权确认不如 impact 明确；adversarial 插在 dev 与 verify 之间 |
-| intent-adversarial | dev 后、verify 前 | INTENT/issues/dev-record/arch | 攻击/压测/并发证据 + `FIX-*` 工单 | `FIX-*` 工单 / 报告（已声明，仅限被测系统） | 0 | `adversarial_validate` | 写 FIX-* 工单已声明；allowed 无 Edit、靠 Write |
-| intent-verify | 全部工单完成后 | INTENT/PRD/issues/dev-record/arch/design | 验收记录 / 证据 / 缺陷结论 | 验收文档 | 0 | `verify_validate` | 未列 Edit（Write 够用，需说明） |
+| intent-issues | design 后、dev 前 | INTENT/PRD/arch/design | `issues.md` / 工单 | 工单文档；决策工单拍板后回写设计文档受影响的那一行 | 0 | `issues_validate` | 轻量档例外只在 README 体现；回写用 Edit |
+| intent-dev | issues 后 | INTENT/PRD/issues/arch/design | 源码 + 测试 + `dev-record` | 业务代码 / 测试 / 记录；开发中拍板的决策工单按 intent-issues 规则回写 | 0 | `dev_validate` | 授权确认不如 impact 明确；完成后先交 adversarial 再交 verify；决策工单不进 dev-record |
+| intent-adversarial | dev 后、verify 前 | INTENT/issues/dev-record/arch | 攻击/压测/并发证据 + `FIX-*` 工单 | `FIX-*` 工单 / 报告；只打用户确认过的非生产目标 | 0 | `adversarial_validate` | 写 FIX-* 工单已声明；allowed 无 Edit、靠 Write |
+| intent-verify | 全部工单完成、adversarial 通过后 | INTENT/PRD/issues/dev-record/arch/design/adversarial-record | 验收记录 / 证据 / 缺陷结论 | 验收文档；改进回流需用户同意并确认路径 | 0 | `verify_validate` | 未列 Edit（Write 够用，需说明）；性能/安全/并发引用 adversarial-record |
 
 ### 既有（2）
 

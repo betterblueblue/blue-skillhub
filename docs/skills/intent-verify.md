@@ -9,14 +9,14 @@
 - 全量测试回归：确认开发过程没有改坏既有功能。
 - 逐条走验收路径：INTENT.md 第 14 节的每条路径都要端到端走通，证据用 V3 等级（真实截图、真实运行产物）。
 - 漂移核对：每个保留能力检查有没有实现或验证证据；有没有未经确认的新增、替换、遗漏。
-- 性能与安全要求复核：INTENT.md 有要求时逐条验证；页级还原项目（INTENT 第 17 节有页面清单）逐页核对。
+- 性能、安全与并发一致性复核：引用 intent-adversarial 的实测结果逐条核对，之后又改过的部分才定向重跑，不把压测和攻击再做一遍；页级还原项目（INTENT 第 17 节有页面清单）逐页核对。
 - 产出验收记录和缺陷清单；链路末尾运行 `chain_validate.py` 做链级校验，任一 FAIL 不得宣告链路走完。
 
 ## 什么时候用
 
-- intent-dev 全部工单标 done 之后、交付之前。
-- 前置条件：INTENT.md、PRD、工单、dev-record、architecture.md、design.md 六者齐且通过校验。
-- 恶意输入和高并发场景不在本环节（那是 intent-adversarial 的事）。
+- intent-dev 全部工单标 done、intent-adversarial 通过之后，交付之前。
+- 前置条件：INTENT.md、PRD、工单、dev-record、architecture.md、design.md、adversarial-record.md 七者齐且通过校验。
+- 恶意输入和高并发场景的实测不在本环节（那是 intent-adversarial 的事），本环节只复核它的结论。
 
 ## 常见问题
 

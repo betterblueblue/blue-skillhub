@@ -9,8 +9,9 @@
   A2: 六个必需章节齐全（数据准备 / 安全攻击结果 / 并发一致性结果 / 性能基准 / 缺陷清单 / 结论）
   A3: INTENT 第 16 节每条 SF 编号在安全攻击结果中有至少一条关联用例
   A4: INTENT 第 15 节每条 CC 编号在并发一致性结果中有对应记录且通过
-  A5: 缺陷清单中高危缺陷未全部修复 → FAIL（阻止交付）
-  A6: 结论与缺陷状态一致——存在未修复缺陷时结论不得为「通过」
+  A5: 缺陷清单中高危缺陷未全部修复 → FAIL（阻止交付）。状态判定见 _common/defect_status.py：
+      只有最后状态以 fixed / 已修复 开头才算关闭，unfixed、not fixed 等一律算未修复
+  A6: 结论与缺陷状态一致——存在未修复的高危缺陷时结论不得为「通过」
 
 本脚本验证结构契约与交叉引用；攻击用例本身的质量由执行过程保证。
 """
@@ -24,6 +25,7 @@ from pathlib import Path
 _COMMON_DIR = Path(__file__).resolve().parent.parent.parent / "_common"
 if str(_COMMON_DIR) not in sys.path:
     sys.path.insert(0, str(_COMMON_DIR))
+from defect_status import defect_is_closed
 from markdown_parser import section as _section, table_rows as _table_rows
 
 
@@ -109,7 +111,7 @@ def validate(content: str, intent_content: str) -> list[tuple[str, str, str]]:
         if len(row) < 5:
             continue
         defect_id, severity, _desc, _evidence, status = row[0], row[1], row[2], row[3], row[4]
-        if "高" in severity and "fixed" not in status.lower():
+        if "高" in severity and not defect_is_closed(status):
             high_open.append(defect_id)
     if high_open:
         results.append(("A5", "FAIL", f"高危缺陷未修复，阻止交付: {', '.join(high_open)}"))

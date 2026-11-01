@@ -42,6 +42,8 @@ from markdown_parser import (
     table_rows as _table_rows,
     has_placeholder as _has_placeholder,
 )
+# 决策工单的识别规则与 dev_validate / chain_validate 共用一份
+from issue_types import DECISION_TYPE_MARKERS, ISSUE_TYPE_RE
 
 
 REQUIRED_ISSUE_SUBSECTIONS = [
@@ -62,14 +64,12 @@ PATH_ID_RE = re.compile(r"P\d{2,}")
 PERF_ID_RE = re.compile(r"PF\d{2,}")
 SECURITY_ID_RE = re.compile(r"SF\d{2,}")
 ISSUE_HEADING_RE = re.compile(r"^##\s+Issue\s+\d+", re.MULTILINE)
-ISSUE_TYPE_RE = re.compile(r"^-\s*\*\*类型\*\*[：:]\s*(.+)$", re.MULTILINE)
 REQUIRED_DECISION_SUBSECTIONS = [
     "### 决策问题",
     "### 选项",
     "### 状态",
     "### 决议去向",
 ]
-DECISION_TYPE_MARKERS = ("需拍板", "决策")
 DECISION_STATUS_RE = re.compile(r"###\s*状态\s*\n+([^#\n][^\n]*)")
 MANAGE_HINT_RE = re.compile(r"档案|配置|模板|账号|角色|商品|规则")
 CREATE_RE = re.compile(r"新增")

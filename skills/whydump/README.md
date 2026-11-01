@@ -28,7 +28,7 @@ whydump 把老手的排查顺序写死成流程，让 agent 带着用户走完�
 
 | 对用户怎么说 | 怎么来 | 谁来拿 |
 |---|---|---|
-| 堆里各类对象各占多少 | 对还活着的进程跑 `jcmd <pid> GC.class_histogram -all`（零停顿）或本地低峰 `jmap -histo:live <pid>` | 碰得到进程 → agent 跑；碰不到 → 把命令给用户 |
+| 堆里各类对象各占多少 | 对还活着的进程跑 `jcmd <pid> GC.class_histogram -all`（不触发 Full GC，但遍历堆时会短暂停顿，生产先说明）或本地低峰 `jmap -histo:live <pid>` | 碰得到进程 → agent 跑；碰不到 → 把命令给用户 |
 | 哪个类在涨 | 同一进程间隔 ≥10 分钟抓两份直方图，`--compare` 对比 | 同上，这是区分泄漏和合法大缓存的关键证据 |
 | 这个进程堆上限 | `jcmd <pid> VM.flags` | 同上，建议有 |
 | OOM 那一瞬间的堆快照（`.hprof`） | 必须启动前打开 `-XX:+HeapDumpOnOutOfMemoryError`，崩完再加没用 | 已有文件就问路径；没有就由 agent 改启动脚本（先确认） |

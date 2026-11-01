@@ -16,6 +16,7 @@
       模块名与两者交叉比对；状态标"新增/缺失"的行免于存在性比对，但必须在说明列写明原因——
       如实报告漂移不应被判 FAIL）
   V9: INTENT 第 17 节有页面清单时，最终复核必须逐页核对（页面 ID 覆盖 + 实现位置/证据非空）
+  V10: 缺陷清单节必须存在；有未修复的高危缺陷时 FAIL（状态判定见 _common/defect_status.py）
 
 本脚本不能验证 V3 证据是否真实，也不能证明验收结果符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -31,6 +32,7 @@ from pathlib import Path
 _COMMON_DIR = Path(__file__).resolve().parent.parent.parent / "_common"
 if str(_COMMON_DIR) not in sys.path:
     sys.path.insert(0, str(_COMMON_DIR))
+from defect_status import defect_is_closed
 from markdown_parser import (
     DESIGN_HEADING_ALIASES,
     normalize_legacy_headings,
@@ -551,10 +553,9 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
         results.append(("V10", "FAIL", "缺少缺陷清单节（验收发现的缺陷必须逐条登记）"))
     else:
         defect_rows = _table_rows(defect_section, "缺陷 ID")
-        print("[dbg] defect_rows:", defect_rows)
         high_open = [
             row[0] for row in defect_rows
-            if len(row) >= 5 and "高" in row[1] and "fixed" not in row[4].lower()
+            if len(row) >= 5 and "高" in row[1] and not defect_is_closed(row[4])
         ]
         if high_open:
             results.append(("V10", "FAIL", f"高危缺陷未修复，阻止交付: {', '.join(high_open)}"))

@@ -36,7 +36,7 @@ allowed-tools: Bash, pwsh, Read, Write, Grep, Glob
 3. **只在你够不着的时候向用户要文件。** 例如：崩在另一台机器、没有登录权限、文件在运维手里。
 4. **没有可分析材料时停在引导。** 不要编「已经定位到泄漏」。
 5. **结论是疑似。** 单类大头也可能是缓存或业务大表。
-6. **对还在跑的进程，先确认再抓堆。** `jmap -histo:live` 和堆转储都会让进程停顿一会儿。生产必须先问。
+6. **对还在跑的进程，先确认再抓堆。** 抓类直方图（任何口径）和堆转储都要遍历整个堆，期间应用线程暂停，堆越大停得越久；带 `:live` 还会先做一次 Full GC，停得更久。生产必须先问。
 
 ## 材料用人话怎么说
 
@@ -44,7 +44,7 @@ allowed-tools: Bash, pwsh, Read, Write, Grep, Glob
 
 | 对用户怎么说 | 实际是什么 | 谁来拿 |
 |---|---|---|
-| 「堆里现在各类对象各占多少」 | `jcmd <pid> GC.class_histogram -all`（零停顿）或本地低峰 `jmap -histo:live <pid>` 的文本输出，习惯存成 histo 文件 | 进程活着且你能执行命令 → **你跑**；否则把命令交给用户 |
+| 「堆里现在各类对象各占多少」 | `jcmd <pid> GC.class_histogram -all`（不触发 Full GC，但遍历堆时会短暂停顿）或本地低峰 `jmap -histo:live <pid>` 的文本输出，习惯存成 histo 文件 | 进程活着且你能执行命令 → **你跑**；否则把命令交给用户 |
 | 「隔一段时间再抓一次，看哪个类在涨」 | 同一进程间隔 ≥10 分钟的两份直方图文本，用 `analyze.py --compare` 对比 | 同上，见 Phase 2——这是确认「泄漏」和「合法大缓存」的关键证据 |
 | 「这个进程实际堆上限是多少」 | `jcmd <pid> VM.flags` 的文本，里面有 MaxHeapSize | 同上，建议有，没有也能分析直方图 |
 | 「OOM 那一瞬间的堆快照」 | JVM 写出的 `.hprof` 文件。必须在**启动前**打开开关，崩完再补加不上 | 已经有文件 → 向用户要路径；还没有 → **你去改启动参数**，等下次复现 |
@@ -83,22 +83,23 @@ allowed-tools: Bash, pwsh, Read, Write, Grep, Glob
 
 1. `jps -l` 列出进程，让用户确认是哪一个，**不要猜 pid**。
 2. 说明接下来要做的会不会停顿，问可不可以：
-   - `jcmd <pid> VM.flags`、`jcmd <pid> GC.class_histogram -all`、`jmap -histo`（不带 `:live`）→ 只读零停顿，随手跑；
-   - `jmap -histo:live` → 会触发 Full GC 让进程停顿一会儿，生产必须先把话说明、用户点头再跑。
-3. 你来执行（生产首选零停顿口径；本地低峰想要「只算活对象」口径再换）：
+   - `jcmd <pid> VM.flags` → 只读，不遍历堆，随手跑；
+   - `jcmd <pid> GC.class_histogram -all`、`jmap -histo`（不带 `:live`）→ 不触发 Full GC，但要在安全点遍历整个堆，期间应用线程暂停，堆越大停得越久（大堆可能到秒级）；生产先说明、用户点头再跑；
+   - `jmap -histo:live` → 先做一次 Full GC 再遍历，停得更久，生产必须先把话说明、用户点头再跑。
+3. 用户同意后你来执行（生产首选不带 `:live` 的口径，停得最短；本地低峰想要「只算活对象」口径再换）：
 
 ```bash
 jcmd <pid> VM.flags > flags.txt
-jcmd <pid> GC.class_histogram -all > histo.txt     # 零停顿，但结果里含未回收垃圾
+jcmd <pid> GC.class_histogram -all > histo.txt     # 不触发 Full GC，短暂停顿；结果里含未回收垃圾
 ```
 
-> JDK 8 的 `jcmd` 没有 `-all`（JDK 9+ 才有）：JDK 8 上零停顿口径用 `jmap -histo <pid>`（不带 `:live`），JDK 9+ 用 `-all` 或 `jmap -histo` 均可。
+> JDK 8 的 `jcmd` 没有 `-all`（JDK 9+ 才有）：JDK 8 上不触发 Full GC 的口径用 `jmap -histo <pid>`（不带 `:live`），JDK 9+ 用 `-all` 或 `jmap -histo` 均可。
 
 本地 / 低峰期想要「活对象」口径：
 
 ```bash
-jmap -histo:live <pid> > histo.txt                 # 触发 Full GC，有停顿；生产先确认
-jmap -histo <pid> > histo.txt                      # 零停顿，含垃圾，同 -all 口径
+jmap -histo:live <pid> > histo.txt                 # 先做 Full GC，停顿更长；生产先确认
+jmap -histo <pid> > histo.txt                      # 不触发 Full GC，短暂停顿，含垃圾，同 -all 口径
 ```
 
 `jcmd`/`jmap` 都不可用时才用 `jhsdb`（最后手段，attach 运行中进程风险更大）：
@@ -109,7 +110,7 @@ jhsdb jmap --histo --pid <pid> > histo.txt
 
 `jhsdb` 没有「只抓活对象」，结果里会掺垃圾，解读时说一声。类名写法也不同：`jmap`/`jcmd` 打印 `[B`/`[I`，`jhsdb` 打印 `byte[]`/`int[]`——拿 jhsdb 的输出做类名比对或回代码检索时先换算，不要按 `[B` 口径直接搜。**同一轮排查里两次抓取用同一种工具**，混用会让 `--compare` 的类名对不上。
 
-4. **抓两份，对比增长**（确认泄漏的关键证据）：间隔 ≥10 分钟（10-30 分钟）再抓一份同样的直方图，`--compare` 对比。实例数持续增长的类才是泄漏候选；不涨的是缓存/业务大表的静态占用。生产用 `-all` 零停顿，可以放心抓；抓之前仍说明一声。
+4. **抓两份，对比增长**（确认泄漏的关键证据）：间隔 ≥10 分钟（10-30 分钟）再抓一份同样的直方图，`--compare` 对比。实例数持续增长的类才是泄漏候选；不涨的是缓存/业务大表的静态占用。生产用 `-all` 口径停得最短，但每抓一次都会暂停一下，抓之前说明并得到用户同意。
 5. 有了直方图 → Phase 2。
 
 #### attach 失败怎么办（jcmd/jmap/jhsdb 都报「拒绝访问 / Unable to open socket file / ptrace 不允许」）
@@ -146,7 +147,7 @@ JDK 8 用 `-XX:+PrintGCDetails -Xloggc=<路径>` 代替 `-Xlog:gc*`。
 
 | 报错分支 | 取什么材料 | 命令与前置条件 |
 |---|---|---|
-| `Metaspace` / `PermGen` | 元空间用量 + 启动参数上限 | `jcmd <pid> GC.heap_info`（只读零停顿，输出里有 Metaspace used/committed）；`jcmd <pid> GC.class_stats` 需先 `-XX:+UnlockDiagnosticVMOptions`（诊断命令、输出大，慎用）；查 `MaxMetaspaceSize`/`MetaspaceSize`。大量动态生成类 → 反射代理 / 热部署 / 模板编译 / 字节码增强 |
+| `Metaspace` / `PermGen` | 元空间用量 + 启动参数上限 | `jcmd <pid> GC.heap_info`（只读，不遍历堆，开销很小；输出里有 Metaspace used/committed）；`jcmd <pid> GC.class_stats` 需先 `-XX:+UnlockDiagnosticVMOptions`（诊断命令、输出大，慎用）；查 `MaxMetaspaceSize`/`MetaspaceSize`。大量动态生成类 → 反射代理 / 热部署 / 模板编译 / 字节码增强 |
 | `Direct buffer memory` | 直接内存用量 + 上限 | `jcmd <pid> VM.native_memory` 需**启动时** `-XX:NativeMemoryTracking=summary` 才有数据，没开就下次启动加（已死的进程补不上）；`-XX:MaxDirectMemorySize` 默认等于 `-Xmx`；查 NIO/Netty 的直接内存分配点 |
 | `unable to create native thread` | 线程/进程数上限 vs 当前值 | `ulimit -u`（每用户进程/线程上限）、`/proc/sys/kernel/threads-max`、`ps -eLf \| wc -l`（全系统线程数）、`jcmd <pid> Thread.print`（看线程数和栈，输出大） |
 | 退出码 137 / OOMKilled / dmesg 杀进程 | 容器/cgroup 内存上限 vs 进程总占用 | 见「服务器 / 容器场景」里的容器内存测量 |
@@ -176,10 +177,10 @@ ps -ef | grep java | grep -v grep
 | 用户处境 | 要什么 |
 |---|---|
 | 完全碰不到服务器 | 只要**现成文件**：报错原文、`dmesg`/`journalctl` 片段、`kubectl describe pod` 输出、遗留 `.hprof` 的路径。现场生成类材料全部放弃，走「改下次启动参数」+ 代码推断（标注是推断） |
-| 能登服务器，进程活着 | 第 1 层（只读，随手跑）：`jcmd <pid> VM.flags`、`jcmd <pid> GC.heap_info`；第 2 层（零停顿）：`jcmd <pid> GC.class_histogram -all`（或 `jmap -histo <pid>`，不带 `:live`）；第 3 层（有停顿，先确认）：`jmap -histo:live <pid>`、JFR、dump |
+| 能登服务器，进程活着 | 第 1 层（只读，不遍历堆，随手跑）：`jcmd <pid> VM.flags`、`jcmd <pid> GC.heap_info`；第 2 层（短暂停顿，先说明）：`jcmd <pid> GC.class_histogram -all`（或 `jmap -histo <pid>`，不带 `:live`）；第 3 层（停顿更久，先确认）：`jmap -histo:live <pid>`、JFR、dump |
 | 能登服务器，进程已死 | 先发找快照卡。服务器常有自动重启（systemd `Restart=always` / K8s 自愈），等用户找你时**出事现场早没了**，遗留的 `.hprof` 是唯一能救回那次的材料 |
 
-第 2 层不带 `:live` 是刻意的：不触发 Full GC、零停顿，结果是「对象 + 未回收垃圾」，多数时候已够初判；确需活对象再升级到第 3 层。
+第 2 层不带 `:live` 是刻意的：不触发 Full GC，停顿比第 3 层短，结果是「对象 + 未回收垃圾」，多数时候已够初判；确需活对象再升级到第 3 层。第 2 层仍要遍历整个堆、会短暂停顿，发卡时风险等级写「停顿几秒」。
 
 **找快照卡**（只读，进程已死时发）：
 
@@ -192,7 +193,7 @@ grep -rn 'HeapDumpOnOutOfMemoryError\|Xmx\|MaxRAMPercentage' /etc/systemd/system
 
 ### 生产上的优先级
 
-- **JFR 优先，jmap 谨慎**：`jmap -histo:live` 触发 Full GC 全程停顿，生产高峰期是事故放大器；JFR 采样开销 <1%，还能拿到分配栈。`VM.flags` / `GC.heap_info` 这类只读命令无感，随时可发。
+- **JFR 优先，jmap 谨慎**：`jmap -histo:live` 触发 Full GC 全程停顿，生产高峰期是事故放大器；JFR 采样开销 <1%，还能拿到分配栈。`VM.flags` / `GC.heap_info` 这类只读命令不遍历堆，开销很小，随时可发；类直方图哪怕不带 `:live` 也会短暂停顿，不算这一类。
 
 ### 容器内存怎么量（137 / OOMKilled 分支用）
 

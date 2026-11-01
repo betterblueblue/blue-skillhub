@@ -10,6 +10,8 @@
   V3: 每条 Then 有验证等级（V1/V2），V2 必须附命令输出
   V4: 标 done 的工单：所有 Then >= V2（用户确认 V1 标 done 除外）
 
+决策工单（类型「需拍板」）不写代码、不进 DEV-RECORD，V2 统计工单时把它排除。
+
 本脚本不能验证命令输出是否真实，也不能证明开发产物符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
 """
@@ -19,6 +21,11 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+
+_COMMON_DIR = Path(__file__).resolve().parent.parent.parent / "_common"
+if str(_COMMON_DIR) not in sys.path:
+    sys.path.insert(0, str(_COMMON_DIR))
+from issue_types import implementation_issue_numbers
 
 
 ISSUE_HEADING_RE = re.compile(r"^##\s+Issue\s+(\d+):\s*(.+)$", re.MULTILINE)
@@ -46,13 +53,6 @@ def _split_issues(content: str) -> list[str]:
             end = summary_pos if summary_pos != -1 else len(content)
         issues.append(content[start:end])
     return issues
-
-
-def _parse_issue_headings(issues_content: str) -> list[str]:
-    return [
-        m.group(0)
-        for m in re.finditer(r"^##\s+Issue\s+\d+:\s*.+$", issues_content, re.MULTILINE)
-    ]
 
 
 def _parse_issue_numbers(content: str) -> set[str]:
@@ -150,22 +150,22 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
         return results
 
     dev_issues = _split_issues(dev_content)
-    issues_headings = _parse_issue_headings(issues_content)
+    # 需要开发记录的工单：排除决策工单（它们不写代码）
+    issues_issue_nums = implementation_issue_numbers(issues_content)
 
     # V2: 每个工单有开发记录段（含 TDD 过程、验证结果、工单状态）
     if not dev_issues:
         results.append(("V2", "FAIL", "DEV-RECORD 中未找到工单开发记录"))
     else:
         dev_issue_count = len(dev_issues)
-        issues_count = len(issues_headings)
+        issues_count = len(issues_issue_nums)
         v2_errors: list[str] = []
         if dev_issue_count < issues_count:
             v2_errors.append(
-                f"工单文件有 {issues_count} 个工单，DEV-RECORD 只记录了 {dev_issue_count} 个"
+                f"工单文件有 {issues_count} 个需要开发的工单（不含决策工单），DEV-RECORD 只记录了 {dev_issue_count} 个"
             )
         # 检查 Issue 编号是否匹配
         dev_issue_nums = _parse_issue_numbers(dev_content)
-        issues_issue_nums = _parse_issue_numbers(issues_content)
         missing_issues = issues_issue_nums - dev_issue_nums
         if missing_issues:
             v2_errors.append(f"DEV-RECORD 缺少工单: Issue {sorted(missing_issues)}")

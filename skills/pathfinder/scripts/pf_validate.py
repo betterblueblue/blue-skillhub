@@ -453,6 +453,9 @@ def _read_budget_tier(repo_root: str) -> str:
         return ""
 
 
+SECTION_14_SKIP_WORDS = ("跳过", "未产出", "未输出", "skip")
+
+
 def check_section_14(text: str, repo_root: str = "") -> tuple[list[str], list[str]]:
     """V7: Section [14] must exist and have substantive content.
 
@@ -489,7 +492,9 @@ def check_section_14(text: str, repo_root: str = "") -> tuple[list[str], list[st
                 continue
             if re.match(r"^##\s", line):
                 break
-            if "跳过" in line and "14" in line:
+            # 跳过声明的写法：「跳过 14」，或 phase-3-depth-fill.md 给的原句
+            # 「【14】代码风格观察因预算耗尽未产出」——两种都要认
+            if "14" in line and any(word in line.lower() for word in SECTION_14_SKIP_WORDS):
                 skip_declared = True
                 skip_line = line
                 break
@@ -500,7 +505,7 @@ def check_section_14(text: str, repo_root: str = "") -> tuple[list[str], list[st
             budget_exhausted = any(
                 kw in skip_line for kw in (
                     "预算耗尽", "预算不足", "预算用尽", "预算已尽",
-                    "预算上限", "达到上限", "超出预算",
+                    "预算上限", "达到上限", "超出预算", "超预算",
                     "budget exhaust", "budget exceeded", "budget depleted",
                     "out of budget", "budget limit",
                 )

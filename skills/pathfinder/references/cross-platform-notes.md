@@ -43,7 +43,7 @@
 
 在 Windows Git Bash 中,`git rev-parse --show-toplevel` 返回 Windows 格式路径(如 `E:/agent/blue-skillhub`),而 `$(pwd)` 返回 Unix 格式(如 `/e/agent/blue-skillhub`)。两者字符串比较恒失败。**禁止**用字符串相等判断 Git 仓库归属。
 
-**推荐方案**:先 `test -d "$(pwd)/.git"` 检测 `.git` 目录是否存在;确认独立仓库后用 `git -C "$(pwd)" rev-parse --show-toplevel` 获取根路径(概览头部用),不依赖路径字符串比较。
+**推荐方案**:用 `git rev-parse --show-prefix` 判断当前目录是不是工作树顶层(输出为空即顶层),不依赖路径字符串比较;bash 和 PowerShell 写法见 `references/phase-1-sizing.md` Step 1.1。不要用 `test -d .git`:worktree 和 submodule 根目录下的 `.git` 是文件,会被误判成子目录。
 
 ## 维护注意
 

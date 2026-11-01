@@ -79,6 +79,18 @@ class TestChainValidate(unittest.TestCase):
         (chain / "dev-record.md").write_text("- 状态：done\n- 状态：未通过\n", encoding="utf-8")
         self.assertFalse(_dev_all_done(chain))
 
+    def test_decision_ticket_not_counted_as_pending_dev(self):
+        """决策工单不进 dev-record：实现工单全 done 时门禁必须生效，不能因决策工单退化成「跳过」。"""
+        chain = _make_chain_dir()
+        (chain / "issues.md").write_text(
+            "## Issue 1: A\n\n- **类型**：自动完成\n\n"
+            "## Issue 2: [D-01] 存储选型\n\n- **类型**：需拍板（决策，不写代码）\n\n"
+            "## 覆盖核对\n",
+            encoding="utf-8",
+        )
+        (chain / "dev-record.md").write_text("- 状态：done\n", encoding="utf-8")
+        self.assertTrue(_dev_all_done(chain))
+
     def test_dev_done_without_verify_record_exits_1(self):
         chain = _make_chain_dir()
         (chain / "issues.md").write_text("## Issue 1: A\n", encoding="utf-8")

@@ -2,9 +2,9 @@
 
 <!--
   本文件由 intent-verify skill 生成。
-  前置文件：intent-chain/{链路目录}/intent.md、prd.md、issues.md、dev-record.md
+  前置文件：intent-chain/{链路目录}/intent.md、prd.md、issues.md、dev-record.md、architecture.md、design.md、adversarial-record.md
   生成日期：{日期}
-  所有工单开发完成后，先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端验证，最后做条件性验证和最终复核。
+  所有工单开发完成、对抗性验证通过后，先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端验证，然后复核对抗性验证的结论，最后做最终复核。
 -->
 
 ## 验收概述
@@ -14,6 +14,7 @@
 - PRD：intent-chain/{链路目录}/prd.md
 - 工单文件：intent-chain/{链路目录}/issues.md
 - DEV-RECORD：intent-chain/{链路目录}/dev-record.md
+- 对抗性验证记录：intent-chain/{链路目录}/adversarial-record.md
 - 验收路径总数：{N}
 
 ---
@@ -81,7 +82,7 @@
 
 - INTENT.md/PRD 中是否有性能要求：是 / 否
 - 要求内容：{要求内容}
-- 验证方式：{运行性能测试 / 手动计时}
+- 验证方式：{引用 adversarial-record 第 5 节 / 改动后定向重跑（写明原因）}
 - 验证命令：`{命令}`
 - 输出摘要：{摘要}
 - 结果：通过 / 未通过 / 不适用
@@ -90,14 +91,14 @@
 
 - INTENT.md/PRD 中是否有安全要求：是 / 否
 - 要求内容：{要求内容}
-- 验证方式：{检查代码实现 / 运行安全扫描}
+- 验证方式：{引用 adversarial-record 第 3 节的攻击实测 / 改动后定向重跑（写明原因）}（只看代码不算验证）
 - 验证结果：{逐项结果}
 - 结果：通过 / 未通过 / 不适用
 
 ### 并发一致性验证
 
 - INTENT.md 第 15 节是否有并发一致性（CC）要求：是 / 否
-- 验证方式：{intent-adversarial 攻击实测复核 / 本环节真实并发实测}
+- 验证方式：{引用 adversarial-record 第 4 节 / 改动后定向重跑（写明原因）}
 - 验证结果：{CC01 通过 / CC02 未通过…}
 - 结果：通过 / 未通过 / 不适用
 

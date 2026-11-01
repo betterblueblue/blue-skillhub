@@ -1,6 +1,6 @@
 ---
 name: intent-dev
-description: 按 TDD 循环开发工单并记录 dev-record，完成后交接给 intent-verify 验收。
+description: 按 TDD 循环开发工单并记录 dev-record，完成后交给 intent-adversarial 做对抗性验证，再由 intent-verify 验收。
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ---
@@ -10,11 +10,12 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 ## 写入边界
 
 - 写入：业务源码、测试与 `dev-record`；遵循目标项目的确认流程。
+- 开发中才拍板的决策工单：按 intent-issues「决策工单」节，更新 issues.md 里该工单的状态，并回写设计文档里受影响的那一行。
 - 不写无关文件。
 
 ## 目标
 
-读取 `INTENT.md`、`PRD` 和工单文件，按依赖顺序逐个开发工单。每个工单用 TDD 循环开发：先写测试看到红灯，再写代码看到绿灯，最后重构。绿灯就是工单级验证通过的证据。全部工单开发完成后，交接给 intent-verify 做端到端验收。
+读取 `INTENT.md`、`PRD` 和工单文件，按依赖顺序逐个开发工单。每个工单用 TDD 循环开发：先写测试看到红灯，再写代码看到绿灯，最后重构。绿灯就是工单级验证通过的证据。全部工单开发完成后，交给 intent-adversarial 做对抗性验证，再由 intent-verify 做端到端验收。
 
 本 skill 只负责开发和工单级验证：
 
@@ -133,12 +134,14 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 
 **验证依据：工单文件里该工单的验收标准（Given/When/Then）。** 只验当前工单的 Then，不验整条用户路径。如果工单的 Acceptance criteria 包含性能要求（PF 编号）或安全要求（SF 编号），也必须验证这些条件。
 
+**决策工单不开发**：类型为「需拍板」的决策工单不写代码，也不写进 dev-record（dev_validate 不要求它有开发记录）。它只用来挡住依赖它的实现工单，见下面第 2 步。
+
 **AFK 工单批量授权**：类型为 AFK 的工单允许批量开发——开工前列出本批工单和预计创建/修改的文件清单，用户一次确认即构成对清单内文件写入的授权；批内逐工单走 TDD 循环并记录。但**每完成一个垂直切片（用户能实际操作的最小功能），必须停下来给用户看实际效果，用 ask_user_question（或等价的显式批准）得到确认后才继续下一个切片，并把批准记录进 dev-record**；不能一次性写完所有工单到末尾再统一展示。HITL 工单保持逐工单确认。超出已列文件清单的写入需要补充确认。轻量档的单工单即一批一单；构建/测试命令已在上游文档记录时并入开工确认，不单独提问。
 
 对每个工单，按依赖顺序执行：
 
 1. 用户声明开始某个工单（AFK 批量授权的批内工单无需再逐个声明）。
-2. 如果工单有 `Blocked by` 依赖，确认被依赖的工单已验证通过。未通过的不允许开始。
+2. 如果工单有 `Blocked by` 依赖：依赖的是实现工单，确认它已验证通过；依赖的是决策工单，确认它已拍板。还是「待拍板」时，停下来请用户拍板，按 intent-issues「决策工单」节回写后再开工。条件不满足的不允许开始。
 3. **按工单类型走 TDD 循环**：
    - **新功能工单**：
      - Red：根据工单的每条 Then 写测试，运行，确认失败，记录红灯输出。
@@ -162,11 +165,11 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 
 ### Phase 3：完成
 
-1. 确认所有工单都标 done。
-2. 如果任一工单未 done，停止，不允许交接。
+1. 确认所有实现工单都标 done，所有决策工单都已拍板。
+2. 如果任一实现工单未 done，或还有「待拍板」的决策工单，停止，不允许交接。
 3. 运行 `dev_validate.py` 确认 dev-record 结构通过（需传入 dev-record.md 和 issues.md 两个路径），校验器会交叉检查工单编号是否匹配。
 
-`dev-record.md` 已写入 `intent-chain/{链路目录}/`。下一步：运行 intent-verify，输入 intent.md、prd.md、issues.md、dev-record.md、architecture.md 和 design.md，做端到端验收。
+`dev-record.md` 已写入 `intent-chain/{链路目录}/`。下一步：运行 intent-adversarial，输入 intent.md、issues.md、dev-record.md 和 architecture.md，做对抗性验证；它通过后再运行 intent-verify 做端到端验收。
 
 **⚠ dev-record 全部 done 只代表工单级完成，不等于链路完成。** 交付前必须依次运行：
 
@@ -194,7 +197,7 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 5. **每条 Then 必须有验证等级和证据**：V0/V1/V2，不得留空。性能要求（PF 编号）和安全要求（SF 编号）的条目同样需要验证等级和证据。
 6. **修 bug 工单必须先写复现测试**：先修后补测试 → 不允许标 done。
 7. **有未通过项的工单不得进下一个工单**：修复后重新验证。
-8. **所有工单 done 后必须交接给 intent-verify**：不自己端到端验收。
+8. **所有工单 done 后先交给 intent-adversarial，再交给 intent-verify**：不自己做对抗性验证和端到端验收。
 9. **先确认再写文件**：在对话中展示验证结果草稿，得到确认后才写入。什么算确认见 `../_common/rules.md`「确认语义」。
 10. **结构校验必须通过**：写入后运行 `dev_validate.py`（需传入 dev-record.md 和 issues.md 两个路径），校验器会交叉检查工单编号是否匹配。
 11. **上游已答不重问**：用户已在 INTENT.md 或上游链路文档中明确记录的信息（技术偏好如"pytest 做测试"、无性能/安全要求等），直接引用记录使用，不再重复提问；仅当发现现状与记录冲突时才向用户确认。

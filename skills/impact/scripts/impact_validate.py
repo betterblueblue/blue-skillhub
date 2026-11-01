@@ -1437,6 +1437,14 @@ def check_phase5_preflight(req_dir: Path) -> tuple[list[str], list[str], list[st
 RE_EXECUTION_RECORD_REF = re.compile(r"090-execution-record\.md", re.I)
 RE_ACTIVE_STATE_REF = re.compile(r"_active-state\.md", re.I)
 
+# 工作区里常有用户自己没提交的改动。没有基线时它们会被当成 Impact 的改动，
+# 修复提示不能引导 agent 还原用户文件或替它们编执行记录。
+_V15_PREEXISTING_HINT = (
+    "  1. 先分清改动是谁做的：还没执行任何源码 Step 时，这些多半是 Impact 开始前就有的改动。"
+    "不要还原，也不要替它们编执行记录；在当前文档写入 Step 内补建 .git-baseline.json 后重跑"
+    "（源码 Step 开始执行后不能再补建，否则会把 Impact 的改动算成原有改动）\n"
+)
+
 
 def _changed_source_paths(repo_root: str, req_dir: Path | None = None) -> list[str]:
     """Return changed source/test/config-like paths from git status.
@@ -1547,8 +1555,8 @@ def check_phase5_record_state(req_dir: Path, repo_root: str) -> tuple[list[str],
                 f"090-execution-record.md is missing — "
                 f"Changed path(s): {'; '.join(changed_paths[:5])}.\n"
                 "  修复步骤:\n"
-                "  1. 创建 090-execution-record.md，为每个有源码改动的 Step 记录执行过程\n"
-                "  2. 在每个 Step 的执行记录中列出 changed path\n"
+                f"{_V15_PREEXISTING_HINT}"
+                "  2. 确实是本需求已执行的源码 Step 改的：创建 090-execution-record.md，按 Step 如实记录并列出 changed path\n"
                 "  3. 更新 _active-state.md 的 Step 状态和最近验证结果"
             )
             return passes, fails, warns
@@ -1566,9 +1574,9 @@ def check_phase5_record_state(req_dir: Path, repo_root: str) -> tuple[list[str],
             f"090-execution-record.md has no source/test/config write Step — "
             f"Changed path(s): {'; '.join(changed_paths[:5])}.\n"
             "  修复步骤:\n"
-            "  1. 在 090-execution-record.md 中添加执行 Step（标题含 'Step' 和步骤号）\n"
-            "  2. 在该 Step 中记录所有 changed path\n"
-            "  3. 在该 Step 中引用 090-execution-record.md 和 _active-state.md"
+            f"{_V15_PREEXISTING_HINT}"
+            "  2. 确实是本需求的源码 Step 改的：在 090-execution-record.md 中补上该 Step（标题含 'Step' 和步骤号），"
+            "列出所有 changed path，并引用 090-execution-record.md 和 _active-state.md"
         )
         return passes, fails, warns
 
@@ -1582,8 +1590,9 @@ def check_phase5_record_state(req_dir: Path, repo_root: str) -> tuple[list[str],
             f"listed in any source/test/config execution Step — "
             f"Unrecorded path(s): {'; '.join(unrecorded_paths[:5])}.\n"
             "  修复步骤:\n"
-            "  1. 在 090-execution-record.md 对应 Step 中补充缺少的 path\n"
-            "  2. 或如果该改动不在本需求范围内，用 git checkout 还原文件"
+            "  1. 是本需求的 Step 改的：在 090-execution-record.md 对应 Step 中补上这个路径\n"
+            "  2. 不是本需求改的（开始前就有，或用户自己在改）：不要还原用户的文件。向用户说明，"
+            "在当前源码 Step 的记录里列出该路径并注明「非本次需求改动」，附 git diff 证据和用户确认"
         )
         return passes, fails, warns
 

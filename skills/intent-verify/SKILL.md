@@ -11,10 +11,11 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 - 写入：验收记录 / 证据 / 缺陷清单（`verify-record`）。
 - 不改源码。
+- 目标项目之外不写任何文件；Phase 6 的改进回流要用户同意并确认路径后才写。
 
 ## 目标
 
-所有工单开发完成后，做整体验收。先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，确认用户可感知的路径全部能用。核对保留能力是否都有实现或验证证据，检查有没有偷偷丢掉或加上什么。如果 INTENT.md 有性能或安全要求，按要求验证。
+所有工单开发完成、intent-adversarial 通过之后，做整体验收。先跑全量测试确认老功能没被改坏，再按 INTENT.md 第 14 节的验收路径逐条端到端走通，确认用户可感知的路径全部能用。核对保留能力是否都有实现或验证证据，检查有没有偷偷丢掉或加上什么。性能、安全和并发一致性要求已由 intent-adversarial 实测，本环节复核它的结论，只对之后又改过的部分定向重跑。
 
 打个比方：intent-dev 检查的是每个零件合不合格，intent-verify 做的是把零件装成整机，通电试跑。
 
@@ -25,6 +26,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 - 不写 PRD（那是 intent-prd 的事）。
 - 不拆工单（那是 intent-issues 的事）。
 - 不重新验工单的验收标准（那是 intent-dev 已经做过的）。
+- 不重做对抗性验证（那是 intent-adversarial 的事；本环节复核它的记录）。
 
 ## 前置条件
 
@@ -33,7 +35,8 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 3. 必须存在通过 `issues_validate.py` 校验的工单文件。
 4. 必须存在通过 `dev_validate.py` 校验的 `dev-record.md`。
 5. 必须存在通过 `design_validate.py` 校验的 `architecture.md` 和 `design.md`。
-6. 六个前置文件缺一不可，且 dev-record 中所有工单必须标 done。
+6. 必须存在通过 `adversarial_validate.py` 校验的 `adversarial-record.md`（intent-adversarial 产出）。
+7. 七个前置文件缺一不可，且 dev-record 中所有工单必须标 done。
 
 ## 验证等级
 
@@ -49,10 +52,10 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 ### Phase 1：前置检查
 
-1. 确认 INTENT.md、PRD、工单文件、dev-record、`architecture.md` 和 `design.md` 路径。
+1. 确认 INTENT.md、PRD、工单文件、dev-record、`architecture.md`、`design.md` 和 `adversarial-record.md` 路径。
 2. 读取全部文件。
 3. 确认 `architecture.md` 和 `design.md` 存在，运行 `design_validate.py` 确认通过。缺失或 FAIL 则停止，提示用户先运行 intent-design。
-4. 运行 `intent_validate.py`、`prd_validate.py`、`issues_validate.py` 和 `dev_validate.py` 确认通过。任一 FAIL 则停止。
+4. 运行 `intent_validate.py`、`prd_validate.py`、`issues_validate.py`、`dev_validate.py` 和 `adversarial_validate.py` 确认通过。任一 FAIL 则停止；adversarial-record 缺失时提示用户先运行 intent-adversarial。
 5. 确认 dev-record 中所有工单标 done。有未完成工单则停止。
 6. 从输入文件路径推导链路目录，VERIFY-RECORD 写入同一目录下的 `verify-record.md`。不创建目录、不写文件。
 7. 如果 verify-record 已存在（跨会话恢复），读取现有记录，复述当前进度。
@@ -102,23 +105,17 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 3. 每页记录走查结果（通过 / 缺陷），发现的缺陷进入 Phase 4.5 缺陷闭环。
 4. 第 17 节缺失时（历史链路）标"无页面清单，页面走查不适用"，但必须提示用户补跑 intent-anchor。
 
-### Phase 4：条件性验证
+### Phase 4：条件性验证（复核对抗性验证结果）
 
-**验证依据：INTENT.md 中的性能、安全和并发一致性要求。** 有要求才验，没有就跳过。
+**验证依据：INTENT.md 的性能（PF）、安全（SF）、并发一致性（CC）要求，以及 intent-adversarial 产出的 `adversarial-record.md`。** 数据放大、压测、攻击用例和并发断言已经在 intent-adversarial 实测过，本环节不重做，逐条复核并把结论和出处写进 verify-record。
 
-1. **性能验证（三步法，空库计时不算验证）**：
-   - 检查 INTENT 第 15 节 PF 要求。
-   - 有要求 → 三步执行：①**数据放大**（按 PF 推导规模批量灌数据，如并发 1000 → 万级业务行）；②**基准采集**（核心接口串行 N 次记录 avg/p50/p95）；③**并发压测**（200 请求/20 并发，记录 rps、p95、5xx）。
-   - 对照 PF 阈值逐条判定，记录完整数据。
-   - 无要求 → 标"无性能要求，不适用"。
-2. **安全验证（攻击实测，静态确认不算）**：
-   - 检查 INTENT 第 16 节 SF 要求。
-   - 有要求 → 按攻击用例六类模板（垂直/横向/跨角色越权、未授权、业务逻辑攻击、暴力破解）实测，双身份构造。**"代码里有校验"不构成通过证据**——实战证明注册提权、缺失归属校验均通过静态确认漏检。
-   - 无要求 → 标"无安全要求，不适用"。
-3. **并发一致性验证**：INTENT 第 15 节 CC 类逐条攻击实测（真实并发执行 + DB 断言）。若已运行 intent-adversarial，此处复核 adversarial-record 的结论与缺陷关闭状态即可。
-4. 无对应要求时逐项标"不适用"。
+1. **性能**：有 PF 要求 → 引用 adversarial-record 第 5 节的基准数据（接口、avg/p50/p95、rps、5xx），逐条对照 PF 阈值判定；输出摘要写具体数字并注明出处。无要求 → 标"无性能要求，不适用"。
+2. **安全**：有 SF 要求 → 引用 adversarial-record 第 3 节，逐条确认每个 SF 都有实测用例且结果为防御成功。**"代码里有校验"不构成通过证据。** 无要求 → 标"无安全要求，不适用"。
+3. **并发一致性**：有 CC 要求 → 引用 adversarial-record 第 4 节，逐条确认真实并发实测通过。无要求 → 标"不适用"。
+4. **什么时候要定向重跑**：adversarial 之后又有 FIX 工单或其他改动碰过相关代码，或者记录里的接口、数据规模和当前代码对不上时，只重跑受影响的用例或接口（方法同 intent-adversarial），并在记录里写明重跑原因。
+5. 结论对不上、或 adversarial-record 里还有未关闭的缺陷 → 进入 Phase 4.5。
 
-输出：条件性验证结果（有要求的逐项验证，无要求的标不适用）。
+输出：条件性验证结果（有要求的逐项结论加出处，无要求的标不适用）。
 
 ### Phase 4.5：缺陷闭环
 
@@ -134,7 +131,7 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 1. **回归验证结果**：汇总 Phase 2 的结果。
 2. **保留能力逐项核对**：按 INTENT.md 第 4 节的保留能力列表，逐项检查是否有实现或验证证据。来源是 dev-record 和 Phase 3 的验证结果。
 3. **验收路径逐条验证**：汇总 Phase 3 的结果，每条路径标 V3 和证据。
-4. **条件性验证结果**：汇总 Phase 4 的性能和安全验证结果。
+4. **条件性验证结果**：汇总 Phase 4 的性能、安全和并发一致性复核结果。
 5. **漂移复核**：按 INTENT.md 第 7 节的 7 种漂移模式，检查是否有能力被静默降级、遗漏或重新加入。
 6. **技术漂移复核**：列出实际代码中的模块划分，与 architecture.md 第 2 节和 design.md 的涉及模块对照。表格四列：模块名 / 在 architecture.md 中 / 状态（一致 / 新增 / 缺失）/ 说明。新增模块必须显式列出（状态标"新增"，说明列写原因）；缺失模块状态标"缺失"并说明原因。标"新增""缺失"的行校验器不做存在性比对——如实报告漂移不会导致校验失败。
 7. **设计标准核对**：如果 INTENT.md 第 12 节有设计标准，检查 UI 是否对照设计文件通过；若发现设计标准被推翻或变更（含用户中途改需求），执行强制规则 13 回写重验。
@@ -148,11 +145,12 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 `verify-record.md` 已写入 `intent-chain/{链路目录}/`。**交接前必须运行链级校验器 `../_common/chain_validate.py`（与本技能目录同级；传入链路目录），全部 PASS 或合法跳过才允许结束；任一 FAIL 不得宣告链路走完。**
 
-**链路走完后，执行体系回流（Skill 自我进化环节，不可跳过）**：
+**改进回流（可选，先问用户）**：链路走完后，如果本次会话暴露了技能或校验器自身的问题（指引不清、误报漏报、模板缺失），在对话里整理成清单，然后问一句：
 
-1. 检查 `blue-skillhub/_improvements/verification-cards.md` 是否存在。存在 → 本次会话在推进项目时应已按 VALIDATION-PROMPT.md 执行了各卡验证；把结果按模板写入 `blue-skillhub/_improvements/verifications/{日期}-{项目名}.md`，并更新 STATUS.md 的条目状态与归因分布。
-2. 本次会话暴露的 SKILL/校验器自身问题（指引不清、校验器误报漏报、模板缺失），逐条登记进 `_improvements/` 的新 backlog（或追加到已有 backlog），按归因三分类标注。
-3. `_improvements` 不存在（如本 skill 被复制到其他仓库独立使用）→ 跳过回流，但在交接内容中提醒用户：这套链路有配套的改进验证体系，位于 blue-skillhub 仓库。
+> 这次跑完整条链路，发现了几处可以改进这套技能的地方。要把它们记到 blue-skillhub 仓库的改进记录里吗？要记的话，请告诉我 blue-skillhub 仓库在哪个目录。
+
+- 用户同意并给出仓库路径：按该仓库 `_improvements/REVIEW-PROMPT.md` 的流程登记。写入位置在目标项目之外，按 `../_common/rules.md`「改进记录的去向」单独确认后再写。
+- 用户不同意或没有回复：只保留对话里的清单，不写任何文件。
 
 链路走完后，后续如需变更，使用 impact 做影响分析；如需新增功能，从 intent-anchor 重新开始。
 
@@ -162,11 +160,11 @@ INTENT.md 第 2 节标注轻量档时，本 skill 流程不变——全量回归
 
 ## 强制规则
 
-1. **六个前置文件必须存在且通过校验**：不通过则不进入验收。
+1. **七个前置文件必须存在且通过校验**：不通过则不进入验收。
 2. **dev-record 中所有工单必须标 done**：有未完成工单则停止。
 3. **必须跑全量测试**：有测试命令就必须跑，不能跳过。没有测试命令才标不适用。
 4. **每条验收路径必须有 V3 证据**：实际走通的结果，不能只写"应该没问题"。
-5. **性能/安全要求有则必验**：INTENT.md 或 PRD 中写了性能或安全要求就必须验证，不能跳过。
+5. **性能/安全/并发一致性要求有则必须有实测证据**：默认引用 adversarial-record 的实测结果，之后改过相关代码的部分定向重跑；不能只写结论，也不能跳过。
 6. **保留能力必须逐项核对**：不能跳过。
 7. **漂移复核必须逐项检查**：7 种模式全部覆盖。
 8. **先确认再写文件**：在对话中展示结果草稿，得到确认后才写入。什么算确认见 `../_common/rules.md`「确认语义」。
@@ -190,9 +188,10 @@ INTENT.md 第 2 节标注轻量档时，本 skill 流程不变——全量回归
    - V3 证据
    - 通过/未通过
 4. 条件性验证结果
-   - 性能验证（三步法：数据放大 → 基准采集 → 并发压测；有要求则逐项验证，无要求则标不适用）
-   - 安全验证（攻击实测，静态确认不算；有要求则逐项验证，无要求则标不适用）
-   - 并发一致性验证（INTENT CC 类逐条实测，或复核 adversarial-record）
+   - 性能验证（引用 adversarial-record 第 5 节的基准数据，对照 PF 阈值逐条判定；无要求则标不适用）
+   - 安全验证（引用 adversarial-record 第 3 节的攻击实测，静态确认不算；无要求则标不适用）
+   - 并发一致性验证（引用 adversarial-record 第 4 节，逐条确认 CC 实测通过）
+   - 改动后定向重跑的条目写明原因
 4.5 页面走查结果（INTENT 第 17 节有页面清单时必填：每页真点交互 + JS 异常监听结果）
 4.6 缺陷清单（FIX-* / 严重度 / 状态；高危缺陷未全部修复 → 结论不得为通过）
 5. 最终复核
@@ -223,7 +222,7 @@ Intent-Verify 能够：
 - 跑全量测试确认老功能没被改坏。
 - 按 INTENT.md 的验收路径逐条端到端验证。
 - 以页面清单为清单做页面走查子模式（真点 + JS 异常监听 + 验收数据准备/清理）。
-- 按 INTENT.md 的性能（三步法）、安全（攻击实测）和并发一致性要求做条件性验证。
+- 复核 intent-adversarial 的性能、安全和并发一致性实测结论，之后改过的部分定向重跑。
 - 核对保留能力是否都有实现或验证证据。
 - 检查 7 种漂移模式是否命中。
 - 生成缺陷工单（FIX-*）并做定向复验，形成验收缺陷闭环。

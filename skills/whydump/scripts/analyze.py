@@ -3,7 +3,7 @@
 """whydump analyze — 解析 JDK 工具输出的堆分析脚本（单文件，零第三方依赖）。
 
 输入是 JDK 自带工具产生的文本，不是二进制：
-  - `jcmd <pid> GC.class_histogram -all`（JDK 9+，零停顿）/
+  - `jcmd <pid> GC.class_histogram -all`（JDK 9+，不触发 Full GC，遍历堆时短暂停顿）/
     `jmap -histo:live <pid>`（本地低峰）或 `jhsdb jmap --histo --pid <pid>` → 类直方图
   - `jcmd <pid> VM.flags` → 堆参数（可选，用于展示 MaxHeapSize 等）
 

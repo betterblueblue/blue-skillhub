@@ -8,14 +8,18 @@ mcps/
 skills/blue-interview/
 
 # === 测试产物（e2e fixtures + 克隆项目）===
+# 默认忽略、逐个放行：新增技能必须在下面加一行放行，否则测试文件会被静默忽略。
+# tests/test_skill_tests_tracked.py 会检查这件事。
 skills/*/tests/
 !skills/_common/tests/
 !skills/intent-anchor/tests/
 !skills/intent-anchor/tests/test_intent_validate.py
 !skills/intent-prd/tests/
 !skills/intent-design/tests/
+!skills/intent-visual/tests/
 !skills/intent-issues/tests/
 !skills/intent-dev/tests/
+!skills/intent-adversarial/tests/
 !skills/intent-verify/tests/
 !skills/pathfinder/tests/
 !skills/pathfinder/tests/fixtures/degradation-trap/.env

@@ -103,6 +103,32 @@ class TestIssueRecords(unittest.TestCase):
         self.assertEqual("FAIL", result[1])
         self.assertIn("缺少工单", result[2])
 
+    def test_decision_ticket_needs_no_dev_record(self):
+        """决策工单（需拍板）不写代码，DEV-RECORD 不记录它时 V2 仍通过。"""
+        decision = (
+            "## Issue 2: [D-01] 存储用 JSON 还是 SQLite？\n\n"
+            "- **类型**：需拍板（决策，不写代码）\n\n"
+            "### 决策问题\n\n存储选型。\n\n"
+            "### 选项\n\n- A：JSON——简单\n- B：SQLite——可查询\n\n"
+            "### 状态\n\n已拍板：A——够用；用户确认于 2026-11-01\n\n"
+            "### 决议去向\n\narchitecture.md 第 7 节\n\n"
+        )
+        issues = _issues_content().replace("## 覆盖核对", decision + "## 覆盖核对", 1)
+        self.assertIn("[D-01]", issues)
+        result = _result(_dev_content(), issues, "V2")
+        self.assertEqual("PASS", result[1], result)
+
+    def test_implementation_ticket_next_to_decision_still_required(self):
+        """排除决策工单不能顺带放过实现工单：实现工单缺记录仍然 FAIL。"""
+        extra = (
+            "## Issue 2: 导出交接记录\n\n- **类型**：自动完成\n\n"
+            "## Issue 3: [D-01] 导出格式\n\n- **类型**：需拍板（决策，不写代码）\n\n"
+        )
+        issues = _issues_content().replace("## 覆盖核对", extra + "## 覆盖核对", 1)
+        result = _result(_dev_content(), issues, "V2")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("Issue ['2']", result[2])
+
 
 class TestThenVerificationLevel(unittest.TestCase):
     def test_no_then_lines_fails(self):

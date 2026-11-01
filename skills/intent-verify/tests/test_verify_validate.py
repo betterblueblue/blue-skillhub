@@ -107,6 +107,21 @@ class TestDefectGate(unittest.TestCase):
         check_id, status, message = _result(content, "V10")
         self.assertEqual("PASS", status)
 
+    def test_unfixed_wording_still_blocks(self):
+        """子串判断时代 unfixed / not fixed 会被当成已修复放行。"""
+        for state in ("unfixed", "not fixed"):
+            with self.subTest(state=state):
+                content = self._with_defects(f"| FIX-001 | 高 | 超卖 | 50单/库存-40 | {state} |")
+                check_id, status, message = _result(content, "V10")
+                self.assertEqual("FAIL", status, message)
+
+    def test_chinese_and_transition_fixed_pass(self):
+        for state in ("已修复（复验 3/3 通过）", "open→fixed(复验通过)"):
+            with self.subTest(state=state):
+                content = self._with_defects(f"| FIX-001 | 高 | 超卖 | 50单/库存-40 | {state} |")
+                check_id, status, message = _result(content, "V10")
+                self.assertEqual("PASS", status, message)
+
 class TestNonEmpty(unittest.TestCase):
     def test_empty_file_fails(self):
         results = validate("", _intent())

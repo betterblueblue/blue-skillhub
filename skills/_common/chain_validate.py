@@ -13,7 +13,8 @@
   - 其余文件按流水线顺序校验；尚未产出的标「跳过」（链路做到一半是常态）
   - visual-design.md 是条件环节（intent-visual，仅无素材的 UI 项目产出）：
     已产出则校验（连带基线页），未产出标跳过，不影响退出码
-  - dev-record 全部工单 done 但 verify-record.md 未产出 → FAIL（验收不能被口头跳过）
+  - dev-record 全部工单 done 但 adversarial-record.md 或 verify-record.md 未产出 → FAIL
+    （对抗性验证和验收都不能被口头跳过；决策工单不写代码，不计入「全部工单」）
   - 已产出但前置文件缺失的组合标 FAIL
   - 退出码：任一 FAIL → 1；全部 PASS / 合法跳过 → 0
 """
@@ -27,6 +28,12 @@ import sys
 from pathlib import Path
 
 SKILLS_ROOT = Path(__file__).resolve().parent.parent
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    from issue_types import implementation_issue_numbers
+finally:
+    sys.path.pop(0)
 
 # (校验器相对路径, 显示名, 输入文件列表——第一个是被校验对象，其余是前置)
 PIPELINE = [
@@ -58,7 +65,8 @@ def _dev_all_done(chain_dir: Path) -> bool:
     dev_text = dev_path.read_text(encoding="utf-8", errors="replace")
     issues_text = issues_path.read_text(encoding="utf-8", errors="replace")
     done_count = len(re.findall(r"^-\s*状态[：:]\s*done", dev_text, re.MULTILINE | re.IGNORECASE))
-    issue_count = len(re.findall(r"^##\s+Issue\s+\d+", issues_text, re.MULTILINE))
+    # 决策工单不写代码、不进 dev-record，不计入需要 done 的工单数
+    issue_count = len(implementation_issue_numbers(issues_text))
     return issue_count > 0 and done_count >= issue_count
 
 

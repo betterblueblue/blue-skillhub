@@ -536,6 +536,21 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 - `python -m pytest skills/impact/tests/test_scripts/test_impact_validate.py`：100 passed（+4）
 - D21 两试次终态在修复后复跑仍 22 passed, 0 failed, 0 warnings；`check_delivery.py --run-validators` 均 PASS（11 checks）
 
+### v5.11（V15 基线时机与修复提示，2026-11-01 评审修复）
+
+用户工作区里常有自己没提交的改动。SKILL.md 要求在 Phase 2 写 `.git-baseline.json`，但 Phase 2 只读、需求目录也还没定，基线要么违规提前写、要么不写；不写时 V15 会把用户的改动当成 Impact 的改动，修复提示又引导"创建 090 记录这些改动"或"用 git checkout 还原文件"。
+
+**改了什么**
+
+- 基线快照改在 Phase 4 的第一个文档写入 Step 里生成（已获确认，仍早于任何源码写入）；强制规则 8 和 `references/phase-4-output.md` 同步写明
+- V15 三条修复提示改写：先分清改动是谁做的；没有基线且还没执行源码 Step 时补建基线；不是本需求改的不得还原、不得编记录，标注「非本次需求改动」并附证据和用户确认
+- `templates/090-execution-record.md` 的 Step 块补上 `090-execution-record.md` 一行：照模板写的源码 Step 以前缺这个文件名，必挂 V15
+
+**验证**
+
+- 新增 2 个测试：修复提示不得出现 `git checkout` 且要写明不要还原；090 模板 Step 块必须含两个文件名
+- `python -m pytest skills/impact/tests/test_scripts`：106 passed（+2）；`bash skills/impact/tests/run.sh`：177 PASS
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。

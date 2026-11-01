@@ -10,22 +10,28 @@
 
 **前置:Git 仓库归属检查**
 
-先确认当前目录是独立 Git 仓库,不是另一个仓库的子目录:
+先确认当前目录是 Git 工作树的顶层(普通仓库、worktree、submodule 的根目录都算),不是另一个仓库的子目录:
 
 ```bash
-# bash — 用 .git 目录检测,避免 msys2 路径格式不兼容
-test -d "$(pwd)/.git" && echo "独立仓库" || echo "子目录或非Git"
+# bash
+if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  [ -z "$(git rev-parse --show-prefix)" ] && echo "独立仓库" || echo "子目录"
+else
+  echo "非Git"
+fi
 ```
 ```powershell
 # PowerShell
-if (Test-Path (Join-Path (Get-Location) '.git')) { "独立仓库" } else { "子目录或非Git" }
+if (git rev-parse --is-inside-work-tree 2>$null) {
+  if ([string]::IsNullOrEmpty((git rev-parse --show-prefix))) { "独立仓库" } else { "子目录" }
+} else { "非Git" }
 ```
 
-> **注意**:原 `git rev-parse --show-toplevel` vs `$(pwd)` 字符串比较在 Git Bash (msys2) 上恒失败,因为前者返回 Windows 格式路径(`E:/...`),后者返回 Unix 格式(`/e/...`)。改用 `.git` 目录存在性检测后再用 `git -C "$(pwd)" rev-parse --show-toplevel` 获取根路径(概览头部用),不依赖路径字符串比较。
+> **注意**:`--show-prefix` 输出当前目录相对工作树顶层的路径,为空就是顶层,不涉及路径格式。不要用 `git rev-parse --show-toplevel` 和 `$(pwd)` 做字符串比较:Git Bash (msys2) 下前者是 Windows 格式路径(`E:/...`),后者是 Unix 格式(`/e/...`),恒不相等。也不要用 `test -d .git`:worktree 和 submodule 根目录下的 `.git` 是文件不是目录,会被误判成子目录,而 `pf_git.py` 把它们判为独立仓库,两边对不上时 Script Gate 的 V9/V11 会 FAIL。
 
 - 返回"独立仓库" → 正常记录 HEAD(`git -C "$(pwd)" rev-parse --short HEAD`)。
-- 返回"子目录或非Git" → 概览头部 `基于 commit` 写"非独立 Git 仓库(HEAD 来自父仓库)，以扫描时间为准"，不记录父仓库的 HEAD。
-- `.git` 目录不存在(非 Git) → 写"非 Git，以扫描时间为准"。
+- 返回"子目录" → 概览头部 `基于 commit` 写"非独立 Git 仓库(HEAD 来自父仓库)，以扫描时间为准"，不记录父仓库的 HEAD。
+- 返回"非Git" → 写"非 Git，以扫描时间为准"。
 
 | 指标 | bash 示例 | PowerShell 示例 |
 |------|-----------|------------------|
