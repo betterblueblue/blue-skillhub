@@ -63,11 +63,32 @@ jobs:
       - name: Check every validator skill has tests visible to git
         run: python tests/test_skill_tests_tracked.py
 
+      - name: Check intent-chain order is the same in every doc
+        run: python tests/test_chain_order_consistency.py
+
       - name: Run shared chain validator tests (_common)
         run: python -m unittest discover -s skills/_common/tests -p "test_*.py"
 
       - name: Run shared Skill improvement prompt tests
         run: python tests/test_skill_improvement_prompt.py
+
+      # run.sh 的场景检查要用两个开源项目当 fixture，test-projects/ 不入库，这里按场景 JSON 里
+      # fixture.commit 固定的版本取下来。改了场景里的 commit，这两步的 ref 要一起改。
+      - name: Check out RuoYi-Vue fixture
+        uses: actions/checkout@v4
+        with:
+          repository: yangzongzhuan/RuoYi-Vue
+          ref: 41720e624c5a668c7d3777835e4c87095a7a1dfd
+          path: test-projects/ruoyi-vue
+          persist-credentials: false
+
+      - name: Check out go-admin fixture
+        uses: actions/checkout@v4
+        with:
+          repository: go-admin-team/go-admin
+          ref: b83eef8670b09533213cdd29635e01842704ddd8
+          path: test-projects/go-admin
+          persist-credentials: false
 
       - name: Run tests/run.sh scripts
         run: |

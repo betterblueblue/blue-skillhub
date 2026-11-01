@@ -51,6 +51,8 @@ GitHub 上已有不少面向 0→1 新项目的 agent skill，但**"在已有系
 
 **GPT-5.6 二次评审修正（属实）**：Pathfinder 是纯只读 skill，没有必要预批准 `execute_sql`/`query`。把任意 SQL 工具移出 Pathfinder 的 `allowed-tools`，至少能恢复客户端权限提示这一层保护。当前 hook 主要保护 Claude Code 的文件/Bash 写入，不能自然覆盖 Codex，也不能保护所有 MCP SQL 调用。因此 P1-1 应归为"部分可修复 + 剩余架构风险"，不是纯设计权衡。
 
+**2026-11-01 后续**：经维护者同意，impact 也把 `mcp__dbhub__execute_sql`、`mcp__database__query` 移出 `allowed-tools`，代价是 impact 每次用这两个工具查库都会弹权限确认；只读的表结构工具（`describeTable`、`listTables`、`search_objects`）仍预批准。
+
 ---
 
 ### P1-2 Impact 把用户原有 Git 改动算到当前需求里

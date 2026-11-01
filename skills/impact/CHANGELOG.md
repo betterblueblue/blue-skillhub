@@ -551,6 +551,19 @@ R7 结果：O18 完全修复（S37 的 _active-state.md 从自创格式改为跟
 - 新增 2 个测试：修复提示不得出现 `git checkout` 且要写明不要还原；090 模板 Step 块必须含两个文件名
 - `python -m pytest skills/impact/tests/test_scripts`：106 passed（+2）；`bash skills/impact/tests/run.sh`：177 PASS
 
+### v5.12（文档说法统一、收紧 SQL 预批准，2026-11-01）
+
+前四条是文档里互相冲突的说法，模型照哪一处写都可能出错，这次按校验器和强制规则的实际要求统一。
+
+- 恢复冲突写到哪：`references/phase-5-execution.md` 写的是 `Resume Notes`，模板和 V16 认的是「恢复备注」，照这句写的内容 V16 读不到。改成「恢复备注」。
+- V8 管什么：校验器的 V8 只检查强制规则能不能自动执行，不扫代码，也不会因为代码违规报 FAIL；按规则搜变更文件的是 Phase 5 风格合规检查。`phase-5-execution.md` 和 `templates/_style-rules.md` 两张表原来把这一列标成「V8 行为」，改了列名并补一句说明；`phase-2-context-discovery.md` 和 README 各改一句。
+- 不涉及的节删不删：`templates/010-requirements.md` §2.4、`templates/020-design.md` §7 的注释让"不涉及整节删掉"，和强制规则 9「不得跳过模板的 ## 节」冲突。改成保留标题、写一行"不涉及"。`###` 级的可删小节（020 §3 各维度、040 接口一致性自检）不受规则 9 约束，没动。
+- 快速通道要写哪些文件：`references/phase-1-intent.md` 只写了 040-light.md，照做会漏 000 和 `_active-state.md`、挂 V1。补全清单，Git 项目还要生成 `.git-baseline.json`。
+- SKILL.md 补一行「脚本路径」：`{impact skill 目录}` 就是 `${CLAUDE_SKILL_DIR}`，Claude Code 会换成实际目录。放在强制规则之后，不占压缩后保留的前 5000 tokens。
+- `allowed-tools` 去掉 `mcp__dbhub__execute_sql`、`mcp__database__query`：这两个工具能执行任意 SQL，预批准等于写库也不弹确认。去掉后每次调用由客户端问用户，只读的表结构工具照旧预批准（推翻 2026-07-10 审计 P1-1 里「impact 保留」的决定）。
+- 写入边界和强制规则 4 写明唯一例外：用户明确要求保存的改进记录，确认路径后可写到目标项目外。原来正文允许、规则字面禁止，两边打架。
+- 测试场景 003 的文案改成固定版本里的「记住密码」：原来写的「7天免登录」是 eval 用例 R3 在本地 fixture 上改出来的，干净检出里没有，CI 必挂。
+
 ### 模型选型（v4 干净环境实测）
 
 完整模型能力评价见 [docs/model-eval-2026-06-25.md](../../docs/archive/2026-06/model-eval-2026-06-25.md)。

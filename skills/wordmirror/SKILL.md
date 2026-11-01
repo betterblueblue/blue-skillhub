@@ -12,6 +12,8 @@ allowed-tools: Read, Grep, Glob, Bash, Edit, Write
 
 **分工：判断归你，脚本只做管道。** 脚本负责提取存档、去重、算统计素材、把 MD 排成 HTML、记账写回、按意思搜。报告里的每一句话都由你读原话后写出来；统计和正则候选只是素材，不许直接上页。报告的目的是以言为镜：原话是主角，数字退到背景，没有证据就留白。
 
+> **脚本路径**：本技能目录是 `${CLAUDE_SKILL_DIR}`。下文命令里的 `scripts/…` 和引用的 `references/…` 都相对这个目录，不是当前项目目录；`data/…` 在数据目录里（见「数据在哪」）。这个路径没被替换成实际目录时（别的客户端），用本 SKILL.md 所在目录的绝对路径。
+
 ## 加载时先做
 
 1. 数据目录按 `references/data-locations.md` 定位，读 `data/profile/portrait.md`、`habits.md`、`current-context.md`。读不到 → 走 `references/init-protocol.md` 初始化。

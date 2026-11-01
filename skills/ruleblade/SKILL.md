@@ -16,6 +16,8 @@ allowed-tools: Read, Write, Edit
 
 规则正文只在这两个文件里，本文件只负责安装，不复述规则内容。v4.0 已退役，存档在 `archive/CLAUDE.v4.0.md`，不要再安装它。
 
+> **文件位置**：`CLAUDE.full.md`、`CLAUDE.lite.md` 在本技能目录 `${CLAUDE_SKILL_DIR}` 下，不在当前项目里。这个路径没被替换成实际目录时（别的客户端），用本 SKILL.md 所在目录的绝对路径。
+
 ## 安装步骤
 
 1. **确定用哪一份。** 问用户在这个项目里主要用哪个模型；用户已经说过就不用再问。

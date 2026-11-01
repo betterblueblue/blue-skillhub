@@ -57,7 +57,7 @@ Phase 1 意图捕获 → Phase 2 上下文发现（确认影响范围）→ Phas
 ### 快速通道仍需执行
 
 - Phase 2 完整上下文发现（技术栈检测 + 文件扫描 + 现状核查）
-- Phase 4 light 文档输出（040-light.md）
+- Phase 4 light 文档输出：000-context-pack.md、040-light.md、`_active-state.md`，和普通 light 模式一样，少一份 V1 就 FAIL；Git 项目还要在同一个文档写入 Step 里生成 `.git-baseline.json`
 - Phase 5 执行前检查（060-preflight.md）+ Step 确认
 - 输出验证脚本（impact_validate.py）
 

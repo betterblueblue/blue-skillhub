@@ -18,6 +18,8 @@ allowed-tools: Bash, pwsh, Read, Write, Grep, Glob
 - 取证 / 分析产出写入用户确认的路径；修改启动参数需先确认。
 - 其余内容只读。
 
+> **脚本路径**：本技能目录是 `${CLAUDE_SKILL_DIR}`，下文的 `<skill根>`、`<skill根目录>` 指的就是它。这个路径没被替换成实际目录时（别的客户端），用本 SKILL.md 所在目录的绝对路径。
+
 > utility，不是 pathfinder / impact 同类。用户对 OOM 没头绪时用。
 > **对用户说话用人话。** 不要一上来甩 `histo.txt`、MAT、HeapDump 这种词。
 > 要材料时说明：这是什么、谁来跑命令、跑完得到什么。

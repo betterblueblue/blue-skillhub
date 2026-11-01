@@ -9,7 +9,7 @@
     "url": "https://github.com/yangzongzhuan/RuoYi-Vue",
     "commit": "41720e624c5a668c7d3777835e4c87095a7a1dfd"
   },
-  "query": "把登录页 checkbox 文案从'7天免登录'改成'记住我'",
+  "query": "把登录页 checkbox 文案从'记住密码'改成'记住我'",
   "expected": {
     "phase_2_5_pre_classification": "可能 light",
     "phase_3_5_classification": "light",
@@ -31,7 +31,7 @@
     {
       "path": "ruoyi-ui/src/views/login.vue",
       "must_exist": true,
-      "must_contain": "7天免登录"
+      "must_contain": "记住密码"
     },
     {
       "path": "ruoyi-ui/src/views/login.vue",

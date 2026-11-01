@@ -2,7 +2,7 @@
 name: impact
 description: 面向现有系统的变更影响分析与受监督实施。支持多技术栈（Java/Spring/MyBatis、Node/Express/Prisma、Python/FastAPI、Go/Gin/GORM、前端框架等），通过靶向提问把模糊变更意图变成基于证据的影响分析，按 light/full 两档输出文档并协助执行。不用于从 0 到 1 搭建新系统。Use when user says '影响分析', '变更需求', '改个字段', '删张表', 'impact', 'impact-pro', 或要求在现有系统上做变更且需要先评估影响时.
 disable-model-invocation: false
-allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, mcp__dbhub__execute_sql, mcp__database__query, mcp__database__describeTable, mcp__database__listTables
+allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, mcp__database__describeTable, mcp__database__listTables
 ---
 
 ## 写入边界
@@ -10,12 +10,13 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, 
 - 写入：`change-impact/<需求>/` 多阶段文档；受 `确认 Step N` 授权的代码实施。
 - DB 写操作默认生成脚本、不直接执行；生产 DB 禁止 agent 直接 DDL/DML。
 - 其余现有代码只读。
+- 唯一例外：用户明确要求保存改进记录时，按 `../_common/rules.md`「改进记录的去向」确认路径后，写那一个文件（可以在目标项目外）。
 
 > **架构说明**：本文件是通用内核，不含任何栈专属规则。技术栈规则位于 `profiles/`，数据库规则位于 `db-adapters/`，可选结构化代码图规则位于 `code-graph-adapters/`。Phase 2 自动探测并按需加载。
 >
 > **MCP 能力说明**：工具能力以运行时探测为准。凡能执行任意 SQL 的工具一律视为「有写能力」,发现阶段遵守只读纪律;只有表结构类工具时走「受限发现」;都没有时回退到纯代码搜索。
 >
-> **机制警示**：`allowed-tools` 是预批准，不是白名单。真正的写保护由硬到软依次是：DB 账号权限 → settings deny / PreToolUse hook → skill 内确认检查点。
+> **机制警示**：`allowed-tools` 是预批准，不是白名单。真正的写保护由硬到软依次是：DB 账号权限 → settings deny / PreToolUse hook → skill 内确认检查点。能执行任意 SQL 的工具（`execute_sql` / `query`）不预批准，每次调用由客户端问用户；只读的表结构工具照旧预批准。
 >
 > **推荐启用 `impact-write-gate` hook**（`.claude/hooks/`）。hook 在 AI 执行写操作前拦截，检查对话中的真实用户确认消息，是 validator 无法替代的事中保护层。未启用时，V20/V18 等"事件真实性"检查仅靠 prompt 约束，弱模型可能绕过。
 
@@ -45,7 +46,7 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, 
 
 3. **DB 只读纪律 + DDL/DML 执行方式**：schema 发现阶段只允许 SELECT/SHOW/DESCRIBE/INFORMATION_SCHEMA。DDL/DML 默认生成脚本不直接执行；**生产 DB 默认禁止 Agent 直接执行 DDL/DML**。**详细执行方式见 `references/phase-5-execution.md`。**
 
-4. **写入目标边界**：绝对路径必须位于目标项目根目录内。`change-impact/` 也必须在目标项目根目录内。不能只写相对路径就执行。
+4. **写入目标边界**：绝对路径必须位于目标项目根目录内。`change-impact/` 也必须在目标项目根目录内。不能只写相对路径就执行。唯一例外是用户明确要求保存的改进记录（见「改进记录提示」），确认路径后才写。
 
 5. **破坏性请求保护 + 删除兼容岔路**：用户要求直接删/批量替换/DROP/RENAME 时，不执行写操作，先只读搜索引用和消费者，回显破坏面，追问兼容期/回滚/消费者/迁移策略。**删除对外契约字段（API response 字段、SDK 字段、公共类型、路由端点）时，"彻底删除"还是"保留兼容桩（空数组/null/空字符串）"是业务岔路，必须在 Phase 3 交用户确认，不能自行决定保留兼容桩。** 详见 `references/phase-5-execution.md`。
 
@@ -70,6 +71,9 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash, mcp__dbhub__search_objects, 
 15. **收尾使用记录**：每次完成 Phase 4 文档提交、Phase 5 执行验收、零改动确认,或因阻塞/失败结束时,最终回复必须追加一段简短使用记录。使用记录只输出在对话里,不默认写文件,不替代 `_active-state.md` 或 `090-execution-record.md`。字段见「收尾使用记录」节。
 
 16. **产物双读者，对用户说人话**：分析文档同时面向后续 agent 消费和人类用户阅读拍板——结论和风险要让没参与流程的人看得懂。面向用户的表述按 `../_common/rules.md`「面向用户表述」执行。
+
+> **脚本路径**：本技能目录是 `${CLAUDE_SKILL_DIR}`，命令里的 `{impact skill 目录}` 指的就是它，不是目标项目目录。这个路径没被替换成实际目录时（别的客户端），用本 SKILL.md 所在目录的绝对路径。
+<!-- 维护注意：这条放在强制规则之后，免得把强制规则挤出上下文压缩后保留的前 5000 tokens。 -->
 
 ## 自动 / 确认边界
 
