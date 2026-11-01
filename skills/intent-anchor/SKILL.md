@@ -7,6 +7,8 @@ allowed-tools: Read, Grep, Glob, Write, Bash, WebSearch, WebFetch
 
 # IntentAnchor
 
+> **脚本路径**：本技能目录是 `${CLAUDE_SKILL_DIR}`，命令里的 `{intent-anchor skill 目录}` 指的就是它；`templates/`、`scripts/` 在它下面，`../_common` 和其他 intent-* 技能在它旁边。这个路径没被替换成实际目录时（别的客户端），用本 SKILL.md 所在目录的绝对路径。
+
 ## 写入边界
 
 - 写入：`intent-chain/{链路目录}/intent.md`（在目标项目根目录下，文件名小写，路径规则见「文件存放」；`intent_validate.py` 只认这个路径）。

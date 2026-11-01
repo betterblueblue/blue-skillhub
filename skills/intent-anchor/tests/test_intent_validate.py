@@ -472,6 +472,31 @@ class TestPerformanceRequirements(unittest.TestCase):
     def test_explicit_no_perf_requirement_passes(self):
         self.assertEqual("PASS", _result(_valid_content(), "V13")[1])
 
+    def test_cc_rows_do_not_count_as_perf_requirements(self):
+        # 第 15 节只有并发一致性表、没确认「无性能要求」时，V13 不能把 CC 行当成性能要求放行
+        content = _replace_section(
+            _valid_content(),
+            "## 15. 性能要求",
+            "### 并发一致性要求\n\n"
+            "| 要求 ID | 一致性断言 | 对应能力 | 用户确认 |\n|---|---|---|---|\n"
+            "| CC01 | 并发保存两次只留一份完整记录 | C01 | “不能出现两份半截记录。” |",
+        )
+        result = _result(content, "V13")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("没有性能要求时", result[2])
+
+    def test_cc_rows_with_declared_no_perf_pass(self):
+        content = _replace_section(
+            _valid_content(),
+            "## 15. 性能要求",
+            "无性能要求。用户明确确认：“没有性能要求”。\n\n"
+            "### 并发一致性要求\n\n"
+            "| 要求 ID | 一致性断言 | 对应能力 | 用户确认 |\n|---|---|---|---|\n"
+            "| CC01 | 并发保存两次只留一份完整记录 | C01 | “不能出现两份半截记录。” |",
+        )
+        self.assertEqual("PASS", _result(content, "V13")[1])
+        self.assertEqual("PASS", _result(content, "V17")[1])
+
 
 class TestSecurityRequirements(unittest.TestCase):
     def test_missing_security_section_fails(self):

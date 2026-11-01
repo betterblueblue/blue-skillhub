@@ -15,6 +15,7 @@
   V8: 每条验收路径使用 Given/When/Then 结构描述验收条件
   V9: INTENT.md 有性能要求时，PRD 引用了性能要求 ID（交叉检查 INTENT.md）
   V10: INTENT.md 有安全要求时，PRD 引用了安全要求 ID（交叉检查 INTENT.md）
+  V11: INTENT.md 有并发一致性要求（第 15 节 CC 行）时，PRD「并发一致性要求」子节引用了每个 CC 编号
 
 本脚本不能验证 PRD 的技术方案是否合理，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -57,7 +58,8 @@ VERIFICATION_SUBSECTIONS = [
     "### 新增能力",
 ]
 
-CAPABILITY_ID_RE = re.compile(r"C\d{2,}")
+# 前面不能紧挨字母：否则 "CC01" 里会搜出能力 "C01"
+CAPABILITY_ID_RE = re.compile(r"(?<![A-Za-z])C\d{2,}")
 PATH_ID_RE = re.compile(r"P\d{2,}")
 
 
@@ -114,6 +116,15 @@ def _parse_non_negotiables(intent_content: str) -> set[str]:
 
 PERF_ID_RE = re.compile(r"PF\d{2,}")
 SECURITY_ID_RE = re.compile(r"SF\d{2,}")
+# 与 intent_validate V17 的 CC 编号规则一致（CC 加数字）
+CC_ID_RE = re.compile(r"CC\d+")
+
+
+def _parse_cc_requirements(intent_content: str) -> set[str]:
+    """从 INTENT.md 第 15 节「并发一致性要求」表提取 CC 编号。"""
+    section = _section(intent_content, "## 15. 性能要求")
+    rows = _table_rows(section, "要求 ID")
+    return {row[0] for row in rows if len(row) >= 1 and CC_ID_RE.fullmatch(row[0])}
 
 
 def _parse_perf_requirements(intent_content: str) -> set[str]:
@@ -308,6 +319,21 @@ def validate(prd_content: str, intent_content: str) -> list[tuple[str, str, str]
                 results.append(("V10", "PASS", f"引用了 {len(security_ids)} 个安全要求"))
     else:
         results.append(("V10", "PASS", "INTENT.md 无安全要求，不适用"))
+
+    # V11: 并发一致性要求引用检查
+    cc_ids = _parse_cc_requirements(intent_content)
+    if cc_ids:
+        cc_section = _subsection(impl_section, "并发一致性要求")
+        if not cc_section:
+            results.append(("V11", "FAIL", "INTENT.md 有并发一致性要求但 PRD 缺少「并发一致性要求」子节"))
+        else:
+            missing_cc = cc_ids - set(CC_ID_RE.findall(cc_section))
+            if missing_cc:
+                results.append(("V11", "FAIL", f"PRD 未引用并发一致性要求: {sorted(missing_cc)}"))
+            else:
+                results.append(("V11", "PASS", f"引用了 {len(cc_ids)} 个并发一致性要求"))
+    else:
+        results.append(("V11", "PASS", "INTENT.md 无并发一致性要求，不适用"))
 
     return results
 

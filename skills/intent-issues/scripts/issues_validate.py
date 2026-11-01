@@ -19,6 +19,7 @@
   V12: 数据管理类工单（标题/做什么含 档案/配置/模板/账号/角色/商品/规则）必须分条覆盖新增/编辑/删除，显式「不做什么」可豁免单动作
   V13: 真值追溯——INTENT 有页面清单时，「真值追溯」节必须把每个页面 ID 映射到存在的工单，且不得包含未知页面
   V14: 决策工单状态必须为「待拍板」或「已拍板：{决议}——{理由}；用户确认于 {日期}」；决议必须来自用户确认
+  V15: INTENT.md 有并发一致性要求（第 15 节 CC 行）时，每个 CC 编号被至少一个工单的验收标准引用
 
 本脚本不能验证工单的技术可行性，也不能证明内容一定符合
 用户真实想法。PASS 只表示文件满足当前结构契约。
@@ -59,10 +60,13 @@ COVERAGE_SUBSECTIONS = [
     "### 新增能力",
 ]
 
-CAPABILITY_ID_RE = re.compile(r"C\d{2,}")
+# 前面不能紧挨字母：否则 "CC01" 里会搜出能力 "C01"
+CAPABILITY_ID_RE = re.compile(r"(?<![A-Za-z])C\d{2,}")
 PATH_ID_RE = re.compile(r"P\d{2,}")
 PERF_ID_RE = re.compile(r"PF\d{2,}")
 SECURITY_ID_RE = re.compile(r"SF\d{2,}")
+# 与 intent_validate V17 的 CC 编号规则一致（CC 加数字）
+CC_ID_RE = re.compile(r"CC\d+")
 ISSUE_HEADING_RE = re.compile(r"^##\s+Issue\s+\d+", re.MULTILINE)
 REQUIRED_DECISION_SUBSECTIONS = [
     "### 决策问题",
@@ -135,6 +139,13 @@ def _parse_security_requirements(intent_content: str) -> set[str]:
     section = _section(intent_content, "## 16. 安全要求")
     rows = _table_rows(section, "要求 ID")
     return {row[0] for row in rows if len(row) >= 1 and SECURITY_ID_RE.fullmatch(row[0])}
+
+
+def _parse_cc_requirements(intent_content: str) -> set[str]:
+    """从 INTENT.md 第 15 节「并发一致性要求」表提取 CC 编号。"""
+    section = _section(intent_content, "## 15. 性能要求")
+    rows = _table_rows(section, "要求 ID")
+    return {row[0] for row in rows if len(row) >= 1 and CC_ID_RE.fullmatch(row[0])}
 
 
 def _split_issues(content: str) -> list[str]:
@@ -551,6 +562,26 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
             results.append(("V14", "FAIL", "; ".join(v14_errors)))
         else:
             results.append(("V14", "PASS", f"{len(decision_issues)} 个决策工单状态合法"))
+
+    # V15: 并发一致性要求传递检查
+    cc_ids = _parse_cc_requirements(intent_content)
+    if cc_ids:
+        found_cc: set[str] = set()
+        for issue in issues:
+            criteria_match = re.search(
+                r"### 验收标准\s*\n(.*?)(?=^###\s+|\Z)",
+                issue,
+                re.MULTILINE | re.DOTALL,
+            )
+            if criteria_match:
+                found_cc.update(CC_ID_RE.findall(criteria_match.group(1)))
+        missing_cc = cc_ids - found_cc
+        if missing_cc:
+            results.append(("V15", "FAIL", f"并发一致性要求未被任何工单引用: {sorted(missing_cc)}"))
+        else:
+            results.append(("V15", "PASS", f"全部 {len(cc_ids)} 个并发一致性要求被工单引用"))
+    else:
+        results.append(("V15", "PASS", "INTENT.md 无并发一致性要求，不适用"))
 
     return results
 

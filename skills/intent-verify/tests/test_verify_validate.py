@@ -359,6 +359,19 @@ class TestCrossValidation(unittest.TestCase):
         self.assertEqual("FAIL", result[1])
         self.assertIn("安全", result[2])
 
+    def test_cc_rows_are_not_perf_requirements(self):
+        """INTENT 第 15 节只有并发一致性表（CC 行）时，性能标「不适用」不算矛盾。"""
+        intent = _intent()
+        start, end = intent.index("## 15. 性能要求"), intent.index("## 16. 安全要求")
+        intent = intent[:start] + (
+            "## 15. 性能要求\n\n无性能要求。用户明确确认：“没有性能要求”。\n\n"
+            "### 并发一致性要求\n\n"
+            "| 要求 ID | 一致性断言 | 对应能力 | 用户确认 |\n|---|---|---|---|\n"
+            "| CC01 | 并发保存两次只留一份完整记录 | C01 | “不能出现两份半截记录。” |\n\n"
+        ) + intent[end:]
+        v7 = [r for r in validate(_content(), intent, _ARCH_CONTENT) if r[0] == "V7"][0]
+        self.assertEqual("PASS", v7[1], v7)
+
 
 class TestTechDriftCheck(unittest.TestCase):
     """V8: 最终复核必须包含技术漂移复核子节。"""

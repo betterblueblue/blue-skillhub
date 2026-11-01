@@ -7,6 +7,8 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 # Intent-Design
 
+> **脚本路径**：本技能目录是 `${CLAUDE_SKILL_DIR}`，命令里的 `{intent-design skill 目录}` 指的就是它；`templates/`、`scripts/` 在它下面，`../_common` 和其他 intent-* 技能在它旁边。这个路径没被替换成实际目录时（别的客户端），用本 SKILL.md 所在目录的绝对路径。
+
 ## 写入边界
 
 - 写入：`architecture.md` 与 `design.md`。

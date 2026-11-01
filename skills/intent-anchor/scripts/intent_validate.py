@@ -628,7 +628,9 @@ def validate(content: str) -> list[tuple[str, str, str]]:
 
     perf_section = _section(content, "## 15. 性能要求")
     perf_errors: list[str] = []
-    perf_rows = _table_rows(perf_section, "要求 ID")
+    # 第 15 节还有并发一致性表（CC 行，V17 校验），两张表首列都叫「要求 ID」，这里只看 PF 行；
+    # 否则有 CC 行时，没问性能要求也能通过
+    perf_rows = [row for row in _table_rows(perf_section, "要求 ID") if row and row[0].startswith("PF")]
     if perf_rows:
         for index, row in enumerate(perf_rows, 1):
             if len(row) != 4:

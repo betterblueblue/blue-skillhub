@@ -7,6 +7,8 @@ allowed-tools: Read, Grep, Glob, Write, Bash
 
 # Intent-Verify
 
+> **脚本路径**：本技能目录是 `${CLAUDE_SKILL_DIR}`，下文的 `verify_validate.py` 在它的 `scripts/` 下，`templates/` 也在它下面；`../_common` 和其他 intent-* 技能在它旁边。这个路径没被替换成实际目录时（别的客户端），用本 SKILL.md 所在目录的绝对路径。
+
 ## 写入边界
 
 - 写入：验收记录 / 证据 / 缺陷清单（`verify-record`）。

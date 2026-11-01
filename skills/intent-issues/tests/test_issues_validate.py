@@ -71,7 +71,7 @@ def _result(issues: str, intent: str, check_id: str, arch: str = _ARCH_CONTENT) 
 class TestValidFixture(unittest.TestCase):
     def test_valid_issues_passes_all_checks(self):
         results = validate(_issues_content(), _intent_content(), "", _ARCH_CONTENT)
-        self.assertEqual(14, len(results))
+        self.assertEqual(15, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -460,6 +460,49 @@ class TestCRUDCoverage(unittest.TestCase):
         )
         result = _result(content, _intent_content(), "V12")
         self.assertEqual("PASS", result[1])
+
+
+def _intent_with_cc() -> str:
+    intent = _intent_content()
+    start, end = intent.index("## 15. 性能要求"), intent.index("## 16. 安全要求")
+    section_15 = (
+        "## 15. 性能要求\n"
+        "无性能要求。用户明确确认：“没有性能要求”。\n\n"
+        "### 并发一致性要求\n\n"
+        "| 要求 ID | 一致性断言 | 对应能力 | 用户确认 |\n"
+        "|---|---|---|---|\n"
+        "| CC01 | 同一会话并发保存两次，只留下一份完整交接记录 | C01 | “不能出现两份半截记录。” |\n\n"
+    )
+    return intent[:start] + section_15 + intent[end:]
+
+
+class TestConcurrencyRequirements(unittest.TestCase):
+    """V15：INTENT 第 15 节的 CC 编号必须被工单验收标准引用。"""
+
+    def test_no_cc_in_intent_is_not_applicable(self):
+        result = _result(_issues_content(), _intent_content(), "V15")
+        self.assertEqual(("PASS", "INTENT.md 无并发一致性要求，不适用"), (result[1], result[2]))
+
+    def test_cc_not_referenced_fails(self):
+        result = _result(_issues_content(), _intent_with_cc(), "V15")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("CC01", result[2])
+
+    def test_cc_referenced_in_criteria_passes(self):
+        content = _issues_content().replace(
+            "### 验收标准\n",
+            "### 验收标准\n- [ ] 并发一致性 [CC01]: 同一会话并发保存两次，只留下一份完整交接记录\n",
+            1,
+        )
+        result = _result(content, _intent_with_cc(), "V15")
+        self.assertEqual("PASS", result[1], result)
+
+    def test_cc_id_does_not_count_as_capability(self):
+        # 「覆盖的用户故事」里只写了 CC01 时，V4 不能把 "CC01" 里的 "C01" 算成能力覆盖
+        content = _issues_content().replace("- Story 1 [C01]", "- Story 1 [CC01]")
+        result = _result(content, _intent_content(), "V4")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("C01", result[2])
 
 
 if __name__ == "__main__":

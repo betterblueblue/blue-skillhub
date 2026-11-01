@@ -7,6 +7,8 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 
 # Intent-Dev
 
+> **脚本路径**：本技能目录是 `${CLAUDE_SKILL_DIR}`，下文的 `dev_validate.py` 在它的 `scripts/` 下，`templates/` 也在它下面；`../_common` 和其他 intent-* 技能在它旁边。这个路径没被替换成实际目录时（别的客户端），用本 SKILL.md 所在目录的绝对路径。
+
 ## 写入边界
 
 - 写入：业务源码、测试与 `dev-record`；遵循目标项目的确认流程。
@@ -132,7 +134,7 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 
 ### Phase 2：工单开发（TDD 循环）
 
-**验证依据：工单文件里该工单的验收标准（Given/When/Then）。** 只验当前工单的 Then，不验整条用户路径。如果工单的 Acceptance criteria 包含性能要求（PF 编号）或安全要求（SF 编号），也必须验证这些条件。
+**验证依据：工单文件里该工单的验收标准（Given/When/Then）。** 只验当前工单的 Then，不验整条用户路径。如果工单的 Acceptance criteria 包含性能要求（PF 编号）、安全要求（SF 编号）或并发一致性要求（CC 编号），也必须验证这些条件。CC 要用真正并发的测试验证（同时发起多个请求或开多个线程），单线程跑通不算。
 
 **决策工单不开发**：类型为「需拍板」的决策工单不写代码，也不写进 dev-record（dev_validate 不要求它有开发记录）。它只用来挡住依赖它的实现工单，见下面第 2 步。
 
@@ -194,7 +196,7 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 2. **验证必须有真实输出**：可以是构建/测试命令、直接运行入口、或最小验证脚本，但不能只有代码审查。
 3. **每个工单完成后必须运行验证**：不得只凭代码审查标 done。
 4. **V2 必须附真实命令输出**：标 V2 但无输出 → 视为 V1 冒充，P0。
-5. **每条 Then 必须有验证等级和证据**：V0/V1/V2，不得留空。性能要求（PF 编号）和安全要求（SF 编号）的条目同样需要验证等级和证据。
+5. **每条 Then 必须有验证等级和证据**：V0/V1/V2，不得留空。性能要求（PF 编号）、安全要求（SF 编号）和并发一致性要求（CC 编号）的条目同样需要验证等级和证据。
 6. **修 bug 工单必须先写复现测试**：先修后补测试 → 不允许标 done。
 7. **有未通过项的工单不得进下一个工单**：修复后重新验证。
 8. **所有工单 done 后先交给 intent-adversarial，再交给 intent-verify**：不自己做对抗性验证和端到端验收。

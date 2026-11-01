@@ -43,7 +43,7 @@ def _result(prd: str, intent: str, check_id: str) -> tuple[str, str, str]:
 class TestValidFixture(unittest.TestCase):
     def test_valid_prd_passes_all_checks(self):
         results = validate(_prd_content(), _intent_content())
-        self.assertEqual(10, len(results))
+        self.assertEqual(11, len(results))
         self.assertTrue(
             all(status == "PASS" for _check_id, status, _message in results),
             results,
@@ -178,6 +178,62 @@ class TestGivenWhenThen(unittest.TestCase):
         result = _result(content, _intent_content(), "V8")
         self.assertEqual("FAIL", result[1])
         self.assertIn("场景块", result[2])
+
+
+_CC_SECTION_15 = (
+    "## 15. 性能要求\n"
+    "无性能要求。用户明确确认：“没有性能要求”。\n\n"
+    "### 并发一致性要求\n\n"
+    "| 要求 ID | 一致性断言 | 对应能力 | 用户确认 |\n"
+    "|---|---|---|---|\n"
+    "| CC01 | 同一会话并发保存两次，只留下一份完整交接记录 | C01 | “不能出现两份半截记录。” |\n\n"
+)
+
+_PRD_CC_SUBSECTION = (
+    "### 并发一致性要求\n\n"
+    "| 要求 ID | 一致性断言 | 对应能力 |\n"
+    "|---|---|---|\n"
+    "| CC01 | 同一会话并发保存两次，只留下一份完整交接记录 | C01 |\n\n"
+)
+
+
+def _intent_with_cc() -> str:
+    intent = _intent_content()
+    start, end = intent.index("## 15. 性能要求"), intent.index("## 16. 安全要求")
+    return intent[:start] + _CC_SECTION_15 + intent[end:]
+
+
+class TestConcurrencyRequirements(unittest.TestCase):
+    """V11：INTENT 第 15 节的 CC 编号必须带进 PRD「并发一致性要求」子节。"""
+
+    def test_no_cc_in_intent_is_not_applicable(self):
+        result = _result(_prd_content(), _intent_content(), "V11")
+        self.assertEqual("PASS", result[1])
+        self.assertIn("不适用", result[2])
+
+    def test_missing_cc_subsection_fails(self):
+        result = _result(_prd_content(), _intent_with_cc(), "V11")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("并发一致性要求", result[2])
+
+    def test_cc_cited_in_subsection_passes(self):
+        prd = _prd_content().replace("### 安全要求", _PRD_CC_SUBSECTION + "### 安全要求", 1)
+        result = _result(prd, _intent_with_cc(), "V11")
+        self.assertEqual("PASS", result[1], result)
+
+    def test_cc_missing_from_subsection_fails(self):
+        wrong = _PRD_CC_SUBSECTION.replace("CC01", "CC02")
+        prd = _prd_content().replace("### 安全要求", wrong + "### 安全要求", 1)
+        result = _result(prd, _intent_with_cc(), "V11")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("CC01", result[2])
+
+    def test_cc_id_does_not_count_as_capability(self):
+        # 用户故事里只写了 CC01、没写 C01 时，V3 不能把 "CC01" 里的 "C01" 算成能力覆盖
+        prd = _prd_content().replace("[C01]", "[CC01]")
+        result = _result(prd, _intent_content(), "V3")
+        self.assertEqual("FAIL", result[1])
+        self.assertIn("C01", result[2])
 
 
 class TestTemplateSync(unittest.TestCase):

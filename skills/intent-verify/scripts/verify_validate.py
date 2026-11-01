@@ -181,10 +181,13 @@ def _parse_acceptance_paths(intent_content: str) -> set[str]:
 
 
 def _intent_has_perf_requirements(intent_content: str) -> bool:
-    """INTENT.md 第 15 节是否有性能要求（有表格行而非"无性能要求"）。"""
+    """INTENT.md 第 15 节是否有性能要求（PF 行）。
+
+    第 15 节里还有并发一致性表（CC 行），两张表的首列都叫「要求 ID」，只按 PF 前缀算性能要求。
+    """
     section = _intent_section(intent_content, "## 15. 性能要求")
     rows = _table_rows(section, "要求 ID")
-    return bool(rows)
+    return any(row and row[0].startswith("PF") for row in rows)
 
 
 def _intent_has_security_requirements(intent_content: str) -> bool:
