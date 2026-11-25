@@ -31,7 +31,8 @@ allowed-tools: Read
 
 | 用户的情况 | 指到 | 之后 |
 |---|---|---|
-| 只有模糊想法，说不清做什么 | `/intent-anchor` | 想清楚后走 intent-chain |
+| 想把随口说的需求或已有提示词整理成给另一个 Agent 的指令 | `/prompt-refiner` | 复制提示词给目标 Agent，不走项目链路 |
+| 有个项目想法，还没想清为谁做、哪些能力要保留 | `/intent-anchor` | 想清楚后走 intent-chain |
 | 已有明确 PRD/规格，要从零实现 | 从 `/intent-issues` 或 `/intent-design` 接入（需补齐上游文件） | intent-chain 后半段 |
 | 刚接手陌生仓库，不知道是什么 | `/pathfinder` | 有改动需求时进 `/impact` |
 | 熟悉项目，要加功能/修 bug/重构 | `/impact` | 完成后独立验收 |

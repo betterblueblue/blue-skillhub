@@ -18,7 +18,7 @@
 | **既有**（已有系统，2 个） | pathfinder · impact |
 | **入口与规则**（2 个） | ask-blue（路由）· ruleblade（律刃安装） |
 | **工具**（utility，1 个） | whydump |
-| **独立**（个人画像，1 个） | wordmirror |
+| **独立**（2 个） | prompt-refiner（提示词打磨）· wordmirror（个人画像） |
 | **自用**（面试辅导，1 个，不提交 Git） | blue-interview |
 
 链路顺序：
@@ -35,7 +35,7 @@ intent-anchor → intent-prd → intent-design → intent-visual（仅 UI 项目
 - **省略或 `false`** = 模型可自动触发；`description` 常驻上下文，作为模型侧触发指针。
 - **`true`** = 仅用户手动触发；`description` 面向人，需压成一行摘要，去掉触发词表。
 
-当前状态：14 个 Skill 显式声明了该字段：`true` 10 个（链路 8 个 + ask-blue + ruleblade），`false` 4 个（impact / pathfinder / whydump / blue-interview）。wordmirror 的 frontmatter 没写这个字段（等同 `false`，模型可自动触发），是 4f60df2 入口瘦身时去掉的。
+当前状态：14 个 Skill 显式声明了该字段：`true` 10 个（链路 8 个 + ask-blue + ruleblade），`false` 4 个（impact / pathfinder / whydump / blue-interview）。prompt-refiner 和 wordmirror 省略该字段，等同 `false`。
 
 ## 契约矩阵
 
@@ -68,25 +68,26 @@ intent-anchor → intent-prd → intent-design → intent-visual（仅 UI 项目
 | ask-blue | 用户手动 `/ask-blue` | 用户的处境描述 | 指到对应技能和先后顺序（只在对话里） | 不写文件（allowed-tools 只有 Read）；没有「写入边界」节 | 0 | — | 只有 SKILL.md，没有 README；设为 `true`，description 却带触发词，和上面「`true` 去掉触发词表」的约定不一致 |
 | ruleblade | 用户手动 `/ruleblade` | 用户主要用的模型 | 把 `CLAUDE.full.md` 或 `CLAUDE.lite.md` 写进项目根 `CLAUDE.md`（Codex、dsh 写 `AGENTS.md`），或用户选的全局文件 | 征得同意后写；目标文件已存在时不直接覆盖；没有「写入边界」节 | 0 | — | description 带触发词，同 ask-blue |
 
-### 工具 / 独立 / 自用（3）
+### 工具 / 独立 / 自用（4）
 
 | Skill | 触发 | 输入 | 输出 | 写入边界 | refs | 校验器 | 备注 / 冲突 |
 |---|---|---|---|---|---|---|---|
 | whydump | OOM / 堆爆 | histo / GC 日志 | 取证结论 / 建议（写入已声明：确认路径、改参数先确认） | 已声明 | 0 | 无（仅 test） | `pwsh` 与别处工具命名不一致（环境映射）；显式 `disable-model-invocation: false` |
+| prompt-refiner | 明确要给 Agent 写或改提示词 | 口语需求、零散笔记或已有提示词 | 可复制到新会话的指令 | 仅对话输出 | 0 | — | 不执行原任务，不走 Intent 链 |
 | wordmirror | 「我之前说过 / 记住 / 更新画像」 | 本地话语 / 档案 | 检索答案 / 画像 / 报告 | 全局数据目录（`WORD_MIRROR_HOME` → `~/.wordmirror/bind.json` → `~/.wordmirror/`）和项目层 `.wordmirror/`；写在 SKILL.md「数据在哪」节，没有单独的「写入边界」节 | 15 | `check_quotes` / `self_check` | 本地数据，不上传；隐私依赖协议约束；frontmatter 没写 `disable-model-invocation` |
 | blue-interview | 面试 / 简历 / JD / 复盘（**自用，不提交 Git**） | 经历 / JD / 仓库 / 转写 | 回答 / 简历 / profile / 档案 | 已声明（profile / 训练档案 / 简历写入确认的训练目录） | 10 | `extended_validate` 等 | 写入边界已声明；无 README、工具声明过宽仍保留 |
 
 ## 横切发现
 
-1. **references 分层不统一**：有 refs 的 7 个（impact 10 / wordmirror 15 / blue-interview 10 / pathfinder 8 / intent-visual 5 / intent-anchor 3 / intent-design 1）；无 refs 的 8 个（intent-prd / issues / dev / adversarial / verify / whydump / ask-blue / ruleblade）。链路中 anchor、design、visual 有 references，其余 5 个全靠正文承担。
-2. **调用方式**：14 个显式声明（`true` 10 个，`false` 4 个）；wordmirror 没写，等同 `false`。
+1. **references 分层不统一**：有 refs 的 7 个（impact 10 / wordmirror 15 / blue-interview 10 / pathfinder 8 / intent-visual 5 / intent-anchor 3 / intent-design 1）；无 refs 的 9 个（intent-prd / issues / dev / adversarial / verify / whydump / ask-blue / ruleblade / prompt-refiner）。链路中 anchor、design、visual 有 references，其余 5 个全靠正文承担。
+2. **调用方式**：见上方「调用方式字段说明」。
 3. **工具声明与行为的边界已逐项声明，残余风险仍在**（`allowed-tools` 是预批准不是白名单，真正的写保护依赖确认 / hook / DB 权限）：
    - `pathfinder`：源码只读已声明；allowed 仍含 Write/Edit，仅地图/facts 可写（改进记录的例外见上表）。
    - `intent-adversarial`：写 `FIX-*` 工单已声明；allowed 无 Edit，靠 Write。
    - `intent-verify`：只写验收记录、不改源码；改进回流要用户同意并确认路径，已声明。
    - `impact`：DB 写保护依赖 prompt/hook + `确认 Step N`；任意 SQL 工具已移出 allowed，调用时客户端会问用户。
 4. **根 README 技能清单**：入库技能都已列出（whydump、wordmirror 在安装说明和仓库结构里）；只缺自用的 blue-interview，合理。
-5. **没有技能 README 的**：blue-interview（自用，合理）和 ask-blue（只有 SKILL.md）。
+5. **没有技能 README 的**：blue-interview（自用）、ask-blue 和 prompt-refiner；后两者有 `docs/skills/` 使用说明。
 6. **`skills/_common` 不是技能**，随插件分发（见 ADR-004）：共享规则 `rules.md`，以及链路各校验器引用的共享模块（`chain_validate` / `markdown_parser` / `issue_types` / `defect_status` / `d5_check` / `term_check`）。
 
 ## 维护约定

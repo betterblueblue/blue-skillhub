@@ -66,11 +66,12 @@ flowchart TD
 | **第三方** | 不属于本仓库，由各自作者维护，安装和用法以上游为准 | 节点里写的就是它的原名，见下文「想用第三方流程接手？」 |
 | **自带** | AI 客户端本身提供的命令，不用装 | 见后文[代码评审](#代码评审)一节 |
 
-最常见的六种处境，入口和去向如下：
+常见处境的入口和去向如下：
 
 | 你现在的处境 | 现在先做什么 | 用完以后 |
 |---|---|---|
-| 只有一个模糊想法，说不清给谁用、解决什么问题 | 用 [IntentAnchor](skills/intent-anchor/) 写出 `INTENT.md` | 按下方链路图走 intent-chain |
+| 想把随口说的任务整理成给其他 Agent 的提示词 | 用 [prompt-refiner](docs/skills/prompt-refiner.md) | 复制到目标 Agent，不进入项目流程 |
+| 有一个项目想法，说不清给谁用、解决什么问题 | 用 [IntentAnchor](skills/intent-anchor/) 写出 `INTENT.md` | 按下方链路图走 intent-chain |
 | 刚接手一个陌生仓库 | 用 [Pathfinder](skills/pathfinder/) 只读摸底 | 有具体改动时进入 [ImpactRadar](skills/impact/) |
 | 已经熟悉项目，要加功能、修 Bug 或重构 | 用 [ImpactRadar](skills/impact/) 分析影响并逐步实施 | 完成后做独立验收和提交前整理 |
 | 目标明确、方案不明 | 用 [开工前调研开源项目](prompt/open-source-project-research.md) | 看过证据并确认方案后再开发 |
@@ -94,7 +95,7 @@ claude plugin marketplace add betterblueblue/blue-skillhub
 claude plugin install blue-skillhub@blue-skillhub
 ```
 
-装好后就有：ask-blue（路由，不知道用哪个就问它）、律刃（ruleblade）、Pathfinder、ImpactRadar、intent-chain 八件套。
+装好后就有：ask-blue（路由）、prompt-refiner（提示词打磨）、律刃（ruleblade）、Pathfinder、ImpactRadar、intent-chain 八件套。
 
 **方式二：手动复制**。想直接改技能文件时用。克隆本仓库后在根目录执行：
 
@@ -247,6 +248,7 @@ intent-verify → verify-record.md（全量回归 + 端到端验收路径 + 页�
 | 技能 | 一句话 | 文档 |
 |---|---|---|
 | ask-blue | 路由：不知道用哪个就问它 | [docs/skills/ask-blue.md](docs/skills/ask-blue.md) |
+| prompt-refiner | 把口语需求或已有提示词写成能直接交给其他 Agent 的指令 | [docs/skills/prompt-refiner.md](docs/skills/prompt-refiner.md) |
 | IntentAnchor | 模糊想法 → `INTENT.md` | [docs/skills/intent-anchor.md](docs/skills/intent-anchor.md) |
 | IntentPRD | `INTENT.md` → PRD | [docs/skills/intent-prd.md](docs/skills/intent-prd.md) |
 | IntentDesign | PRD → 架构与功能设计文档 | [docs/skills/intent-design.md](docs/skills/intent-design.md) |
@@ -366,6 +368,7 @@ blue-skillhub/
 └── skills/
     ├── _common/              # 共享校验器与共享规则 rules.md
     ├── ask-blue/             # 路由：不知道用哪个就问它
+    ├── prompt-refiner/       # 口语需求 → 可复制的提示词
     ├── pathfinder/
     ├── impact/
     ├── intent-anchor/        # intent-chain 八件套（含 intent-prd / design /
