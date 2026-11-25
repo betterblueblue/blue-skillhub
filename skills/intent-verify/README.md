@@ -59,7 +59,7 @@ intent-dev 完成了每个工单的开发和工单级验证（零件合格），
 | V5 | 有条件性验证段（性能验证和安全验证，不适用也要标注） |
 | V6 | 最终复核完整（回归汇总、保留能力、验收路径含 Then 全通过、条件性汇总、漂移复核、结论） |
 | V7 | 与 INTENT.md 交叉校验（路径 ID、保留能力 ID、性能/安全结论一致） |
-| V8 | 最终复核包含技术漂移复核子节（architecture.md 和 design.md 都必传，模块名与两者交叉比对；状态标"新增/缺失"的行不做存在性比对，改查说明列是否写明原因） |
+| V8 | 逐行核对技术漂移记录，并从 architecture.md 反查漏项；每个架构模块都须列出。对标为「一致」的模块核对 design.md 中的引用，「新增」「缺失」必须说明原因。 |
 
 ```bash
 python skills/intent-verify/scripts/verify_validate.py intent-chain/{链路目录}/verify-record.md intent-chain/{链路目录}/intent.md intent-chain/{链路目录}/architecture.md intent-chain/{链路目录}/design.md

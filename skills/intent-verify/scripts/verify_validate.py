@@ -477,6 +477,9 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
                             token = token.strip()
                             if token and token != "无":
                                 design_modules.add(token)
+                reviewed_modules = {row[0] for row in drift_table_rows if row}
+                for omitted in sorted(arch_modules - reviewed_modules):
+                    v8_errors.append(f"技术漂移复核遗漏了架构模块 '{omitted}'（未实现也须列出，标记为缺失并说明原因）")
                 for row in drift_table_rows:
                     if len(row) < 2:
                         v8_errors.append(f"技术漂移复核表行列数不足: {' | '.join(row)}")
@@ -510,7 +513,7 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
             if v8_errors:
                 results.append(("V8", "FAIL", "; ".join(v8_errors)))
             else:
-                results.append(("V8", "PASS", "技术漂移复核模块与 architecture.md 和 design.md 均一致"))
+                results.append(("V8", "PASS", "架构模块均已复核，模块引用及漂移说明符合要求"))
 
     # V9: INTENT 有页面清单时，verify-record 必须逐页核对
     intent_page_section = _intent_section(intent_content, "## 17. 页面清单")

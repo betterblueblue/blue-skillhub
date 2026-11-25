@@ -35,7 +35,7 @@
 - 无
 
 ### 前置依赖
-None - can start immediately / {Issue 编号}
+无
 
 ### 覆盖的用户故事
 - Story {编号} [{能力 ID}]
@@ -62,7 +62,7 @@ None - can start immediately / {Issue 编号}
 - [ ] Then: {预期结果}
 
 ### 前置依赖
-{Issue 1}
+Issue 1
 
 ### 覆盖的用户故事
 - Story {编号} [{能力 ID}]

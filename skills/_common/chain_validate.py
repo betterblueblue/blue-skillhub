@@ -86,7 +86,8 @@ def main() -> int:
 
     for script_rel, label, inputs in PIPELINE:
         target = chain_dir / inputs[0]
-        if not target.exists():
+        design_stage = inputs[0] == "architecture.md"
+        if not target.exists() and not (design_stage and (chain_dir / "design.md").exists()):
             if inputs[0] == "intent.md":
                 rows.append((label, "FAIL", "intent.md 不存在——链路起点缺失"))
                 exit_code = 1
@@ -99,7 +100,8 @@ def main() -> int:
             else:
                 rows.append((label, "跳过", "尚未产出"))
             continue
-        missing = [name for name in inputs[1:] if not (chain_dir / name).exists()]
+        required = [*inputs, "prd.md"] if design_stage else inputs
+        missing = [name for name in required if not (chain_dir / name).is_file()]
         if missing:
             rows.append((label, "FAIL", f"前置文件缺失: {', '.join(missing)}"))
             exit_code = 1

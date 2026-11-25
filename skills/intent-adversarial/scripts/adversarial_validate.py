@@ -11,7 +11,7 @@
   A4: INTENT 第 15 节每条 CC 编号在并发一致性结果中有对应记录且通过
   A5: 缺陷清单中高危缺陷未全部修复 → FAIL（阻止交付）。状态判定见 _common/defect_status.py：
       只有最后状态以 fixed / 已修复 开头才算关闭，unfixed、not fixed 等一律算未修复
-  A6: 结论与缺陷状态一致——存在未修复的高危缺陷时结论不得为「通过」
+  A6: 结论须明确为「通过」且无未关闭高危缺陷；「不通过」或未定结论不得交接
 
 本脚本验证结构契约与交叉引用；攻击用例本身的质量由执行过程保证。
 """
@@ -118,12 +118,14 @@ def validate(content: str, intent_content: str) -> list[tuple[str, str, str]]:
     else:
         results.append(("A5", "PASS", "无未修复的高危缺陷"))
 
-    # A6: 结论与缺陷状态一致
-    conclusion = _section(content, "## 7. 结论")
-    if defect_rows and high_open and "通过" in conclusion and "不通过" not in conclusion:
+    conclusion = _section(content, "## 7. 结论").strip()
+    verdict = re.match(r"^(不通过|未通过|通过)(?:[。.]|\n|$)", conclusion)
+    if not verdict or _has_placeholder(conclusion):
+        results.append(("A6", "FAIL", "第 7 节须以独立结论「通过」或「不通过」开头，不能留占位符"))
+    elif verdict[1] != "通过":
+        results.append(("A6", "FAIL", "记录结论为不通过，不得交接"))
+    elif high_open:
         results.append(("A6", "FAIL", "存在未修复高危缺陷，但结论为「通过」"))
-    elif not conclusion.strip() or _has_placeholder(conclusion):
-        results.append(("A6", "FAIL", "结论缺失或含占位符"))
     else:
         results.append(("A6", "PASS", "结论与缺陷状态一致"))
 
@@ -163,7 +165,7 @@ def main() -> int:
     print(f"\n{'=' * 60}")
     if fail_count:
         print(f"  FAIL: {fail_count}")
-        print("  结论: 结构不符合当前契约或存在未关闭的高危缺陷，不得交接")
+        print("  结论: 记录未通过校验或明确要求阻止交付，不得交接")
         return 1
     print("  结论: 对抗性验证记录完整且通过")
     return 0

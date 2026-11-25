@@ -19,7 +19,7 @@ Intent-Issues 直接读取 INTENT.md 的验收路径，在工单的 Acceptance c
 用 intent-chain/todo-cli/ 下的文档拆工单。
 ```
 
-产出同一链路目录下的 `issues.md`，完整工单草稿经你确认后写入，写入前运行 `issues_validate.py` 的 11 项检查（见下文）。
+产出同一链路目录下的 `issues.md`，完整工单草稿经你确认后写入，写入前运行 `issues_validate.py`（见下文）。
 
 下一步：交给 [intent-dev](../intent-dev/) 逐工单开发。
 
@@ -51,12 +51,12 @@ Intent-Issues 直接读取 INTENT.md 的验收路径，在工单的 Acceptance c
 
 ## 校验
 
-`issues_validate.py` 运行 11 项检查：
+`issues_validate.py` 运行以下检查：
 
 | 检查项 | 检查内容 |
 |---|---|
 | V1 | 文件非空 |
-| V2 | 每个工单包含 4 个必需子节 |
+| V2 | 按工单类型检查必需子节；编号唯一，前置依赖存在，不自指、不成环 |
 | V3 | 所有验收路径被至少一个工单覆盖 |
 | V4 | 所有保留能力被至少一个工单覆盖 |
 | V5 | Coverage Verification 包含三个子节且与 INTENT.md 一致 |
@@ -66,6 +66,7 @@ Intent-Issues 直接读取 INTENT.md 的验收路径，在工单的 Acceptance c
 | V9 | INTENT.md 有安全要求时，所有安全要求 ID 被工单引用 |
 | V10 | PRD 中每条验收路径的 Then/And 条件被工单覆盖 |
 | V11 | 工单的"涉及模块"引用的模块名必须在 architecture.md 中定义（强制检查） |
+| V12–V15 | 管理类工单的写操作覆盖、页面到工单的追溯、决策状态、并发要求覆盖 |
 
 ```bash
 python skills/intent-issues/scripts/issues_validate.py intent-chain/{链路目录}/issues.md intent-chain/{链路目录}/intent.md intent-chain/{链路目录}/prd.md intent-chain/{链路目录}/architecture.md
@@ -80,7 +81,7 @@ intent-issues/
 ├── templates/
 │   └── issue-template.md             ← 工单模板
 ├── scripts/
-│   └── issues_validate.py            ← 11 项结构与交叉引用检查
+│   └── issues_validate.py            ← 工单结构、依赖与交叉引用检查
 └── tests/
     ├── fixtures/valid-issues.md       ← 有效样本
     └── test_issues_validate.py        ← 行为回归测试

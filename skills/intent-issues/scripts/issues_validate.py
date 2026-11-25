@@ -6,7 +6,7 @@
 
 检查项：
   V1: 文件非空
-  V2: 每个工单包含必需子节；类型字段不得使用内部术语 AFK/HITL（应写 自动完成 / 需人工参与）
+  V2: 每个工单包含必需子节；类型不得写 AFK/HITL；前置依赖必须指向存在的其他工单，且不能成环
   V3: 所有验收路径被至少一个工单覆盖（交叉检查 INTENT.md）
   V4: 所有保留能力被至少一个工单覆盖（交叉检查 INTENT.md）
   V5: Coverage Verification 节存在且包含三个子节
@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import re
 import sys
+from graphlib import CycleError, TopologicalSorter
 from pathlib import Path
 
 # 公共 Markdown 解析函数
@@ -40,11 +41,12 @@ from markdown_parser import (
     PRD_HEADING_ALIASES,
     normalize_legacy_headings,
     section as _section,
+    subsection as _subsection,
     table_rows as _table_rows,
     has_placeholder as _has_placeholder,
 )
 # 决策工单的识别规则与 dev_validate / chain_validate 共用一份
-from issue_types import DECISION_TYPE_MARKERS, ISSUE_TYPE_RE
+from issue_types import DECISION_TYPE_MARKERS, ISSUE_TYPE_RE, is_decision_issue, split_issue_sections
 
 
 REQUIRED_ISSUE_SUBSECTIONS = [
@@ -67,7 +69,7 @@ PERF_ID_RE = re.compile(r"PF\d{2,}")
 SECURITY_ID_RE = re.compile(r"SF\d{2,}")
 # 与 intent_validate V17 的 CC 编号规则一致（CC 加数字）
 CC_ID_RE = re.compile(r"CC\d+")
-ISSUE_HEADING_RE = re.compile(r"^##\s+Issue\s+\d+", re.MULTILINE)
+BLOCKER_RE = re.compile(r"(?:\bIssue\s*#?\s*|工单\s*#?\s*|#)(\d+)|(D-\d+)", re.IGNORECASE)
 REQUIRED_DECISION_SUBSECTIONS = [
     "### 决策问题",
     "### 选项",
@@ -148,20 +150,43 @@ def _parse_cc_requirements(intent_content: str) -> set[str]:
     return {row[0] for row in rows if len(row) >= 1 and CC_ID_RE.fullmatch(row[0])}
 
 
-def _split_issues(content: str) -> list[str]:
-    """按 ## Issue N: 标题 拆分工单段落。"""
-    issue_starts = [(m.start(), m.end()) for m in ISSUE_HEADING_RE.finditer(content)]
-    if not issue_starts:
-        return []
-    issues: list[str] = []
-    for i, (start, _end) in enumerate(issue_starts):
-        end = issue_starts[i + 1][0] if i + 1 < len(issue_starts) else None
-        if end is None:
-            # 最后一个 issue 到 Coverage Verification 或文件结尾
-            cov_match = re.search(r"^##\s+Coverage\s+Verification", content[start:], re.MULTILINE)
-            end = start + cov_match.start() if cov_match else len(content)
-        issues.append(content[start:end])
-    return issues
+def _dependency_errors(sections: list[tuple[str, str]]) -> list[str]:
+    errors: list[str] = []
+    dependencies: dict[str, set[str]] = {}
+    decisions: dict[str, str] = {}
+    for number, issue in sections:
+        if number in dependencies:
+            errors.append(f"Issue {number} 编号重复")
+        dependencies[number] = set()
+        if is_decision_issue(issue):
+            alias = re.search(r"\[(D-\d+)\]", issue.splitlines()[0], re.IGNORECASE)
+            if alias:
+                decision = alias[1].upper()
+                if decision in decisions:
+                    errors.append(f"决策编号 {decision} 重复")
+                decisions[decision] = number
+
+    for number, issue in sections:
+        if is_decision_issue(issue) and "### 前置依赖" not in issue:
+            continue
+        blockers = re.sub(r"<!--.*?-->", "", _subsection(issue, "前置依赖"), flags=re.DOTALL).strip()
+        refs = BLOCKER_RE.findall(blockers)
+        if not refs and not re.match(r"^[-*\s]*(?:无|没有|None\b|N/A\b)", blockers, re.IGNORECASE):
+            errors.append(f"Issue {number} 前置依赖须写「无」、Issue 编号或决策编号")
+        for other, decision in refs:
+            target = decisions.get(decision.upper()) if decision else other
+            if target not in dependencies:
+                errors.append(f"Issue {number} 前置依赖不存在：{decision or 'Issue ' + other}")
+            elif target == number:
+                errors.append(f"Issue {number} 不能依赖自己")
+            else:
+                dependencies[number].add(target)
+
+    try:
+        TopologicalSorter(dependencies).prepare()
+    except CycleError as exc:
+        errors.append("前置依赖成环：" + " → ".join(f"Issue {number}" for number in exc.args[1]))
+    return errors
 
 
 def _count_prd_thens_per_path(prd_content: str) -> dict[str, int]:
@@ -237,12 +262,13 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
         return results
 
     # V2: 每个工单包含必需子节
-    issues = _split_issues(issues_content)
+    sections = split_issue_sections(issues_content)
+    issues = [issue for _, issue in sections]
     if not issues:
         results.append(("V2", "FAIL", "未找到工单（需要 ## Issue N: 标题）"))
     else:
-        missing_subs: list[str] = []
-        for i, issue in enumerate(issues, 1):
+        missing_subs = _dependency_errors(sections)
+        for i, issue in sections:
             type_m = ISSUE_TYPE_RE.search(issue)
             is_decision = bool(type_m) and any(m in type_m.group(1) for m in DECISION_TYPE_MARKERS)
             for sub in (REQUIRED_DECISION_SUBSECTIONS if is_decision else REQUIRED_ISSUE_SUBSECTIONS):
@@ -255,7 +281,7 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
         if missing_subs:
             results.append(("V2", "FAIL", "; ".join(missing_subs)))
         else:
-            results.append(("V2", "PASS", f"全部 {len(issues)} 个工单包含必需子节"))
+            results.append(("V2", "PASS", f"全部 {len(issues)} 个工单包含必需子节，前置依赖有效"))
 
     # 解析 INTENT.md
     retained_caps = _parse_retained_capabilities(intent_content)

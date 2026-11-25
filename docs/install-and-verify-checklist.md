@@ -16,7 +16,7 @@ Resolve-Path .
 
 适用：Claude Code / Codex / 其他支持项目规则文件的 agent。
 
-先按主力模型选一份：Claude Opus 5.5、GPT-6 Astra 或同一档的旗舰模型用 `CLAUDE.lite.md`（精简版）；DeepSeek V4.1 Flash 等其他模型、几个模型混用或拿不准时，用 `CLAUDE.full.md`（完整版）。下面的命令以完整版为例，用精简版就把文件名换掉。
+需要明确检查动作和上限时选 `CLAUDE.full.md`（默认）；已有执行习惯、只想保留原则时选 `CLAUDE.lite.md`。不按模型名分档。下面以完整版为例。
 
 复制到 Claude Code 项目：
 
@@ -30,7 +30,7 @@ Copy-Item "skills\ruleblade\CLAUDE.full.md" "你的项目根目录\CLAUDE.md"
 Copy-Item "skills\ruleblade\CLAUDE.full.md" "你的项目根目录\AGENTS.md"
 ```
 
-目标位置已经有同名文件时不要直接覆盖，先合并。装了插件的话，也可以在对话里运行 `/ruleblade`，它会问你用什么模型再帮你写入。
+目标位置已经有同名文件时不要直接覆盖，先合并。也可以运行 `/ruleblade` 选择规则并确认写入。
 
 验证：
 
@@ -39,6 +39,8 @@ Copy-Item "skills\ruleblade\CLAUDE.full.md" "你的项目根目录\AGENTS.md"
 3. 应能看到"律刃 RuleBlade v5.0 完整版"或"精简版"的标题，以及"先思考再编码、简单优先、精准修改、上下文先行"等规则。
 
 ## 2. 安装 Pathfinder / Impact Skills
+
+要装路由 `ask-blue`、律刃和完整 intent 链，请用[仓库首页的完整安装清单](../README.md#3-分钟上手)。下面是仅安装部分技能的方案；升级前先备份已有定制。
 
 ### Codex
 

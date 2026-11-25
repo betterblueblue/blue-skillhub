@@ -149,7 +149,7 @@ JDK 8 用 `-XX:+PrintGCDetails -Xloggc=<路径>` 代替 `-Xlog:gc*`。
 
 | 报错分支 | 取什么材料 | 命令与前置条件 |
 |---|---|---|
-| `Metaspace` / `PermGen` | 元空间用量 + 启动参数上限 | `jcmd <pid> GC.heap_info`（只读，不遍历堆，开销很小；输出里有 Metaspace used/committed）；`jcmd <pid> GC.class_stats` 需先 `-XX:+UnlockDiagnosticVMOptions`（诊断命令、输出大，慎用）；查 `MaxMetaspaceSize`/`MetaspaceSize`。大量动态生成类 → 反射代理 / 热部署 / 模板编译 / 字节码增强 |
+| `Metaspace` / `PermGen` | 类元数据占用、加载器数量、实际内存上限 | 先看 `jcmd <pid> help`。支持 `GC.heap_info` 时读取用量；要按类加载器看占用，且目标列出了该命令时，用 `VM.classloader_stats`，不要当成逐类统计。HotSpot 17 没有 `GC.class_stats`，不要为此重启解锁诊断选项。按目标 JVM 核对上限（元空间看 `MaxMetaspaceSize`，旧永久代看 `MaxPermSize`）。 |
 | `Direct buffer memory` | 直接内存用量 + 上限 | `jcmd <pid> VM.native_memory` 需**启动时** `-XX:NativeMemoryTracking=summary` 才有数据，没开就下次启动加（已死的进程补不上）；`-XX:MaxDirectMemorySize` 默认等于 `-Xmx`；查 NIO/Netty 的直接内存分配点 |
 | `unable to create native thread` | 线程/进程数上限 vs 当前值 | `ulimit -u`（每用户进程/线程上限）、`/proc/sys/kernel/threads-max`、`ps -eLf \| wc -l`（全系统线程数）、`jcmd <pid> Thread.print`（看线程数和栈，输出大） |
 | 退出码 137 / OOMKilled / dmesg 杀进程 | 容器/cgroup 内存上限 vs 进程总占用 | 见「服务器 / 容器场景」里的容器内存测量 |

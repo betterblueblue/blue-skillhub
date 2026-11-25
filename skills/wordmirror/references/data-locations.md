@@ -20,7 +20,7 @@ python <skill目录>/scripts/wm.py bind E:\path\to\wordmirror-data
 
 之后所有命令（ingest / vec / monthly / promise / wb / open）都用绑定的数据；查旧话、看数据这种活你直接读绑定位置的文件就行。解绑：`wm.py bind --clear`。
 
-**项目层（欠账/写回专用）**：当前目录 `.wordmirror/promises.jsonl`——在哪个目录干活，账记哪，随项目走。⚠️ **账本存的是你的原话、可能含隐私，默认别进 git**——项目 `.gitignore` 加一行 `.wordmirror/`；真想跟着项目走，先把内容过一遍再手动挑出来。全局层和项目层开场都查；`wm.py promise` 也扫两层。
+**项目层（欠账/写回专用）**：当前目录 `.wordmirror/promises.jsonl`——在哪个目录干活，账记哪，随项目走。⚠️ **账本存的是你的原话、可能含隐私，默认别进 git**——项目 `.gitignore` 加一行 `.wordmirror/`；真想跟着项目走，先把内容过一遍再手动挑出来。只在用户要求处理承诺时查账；公开分享不用账本。
 
 ## 验证找对了
 
@@ -40,7 +40,7 @@ profile/corrections.jsonl  # 用户确认过的 Agent 纠正记录
 profile/note.md            # 首页"给现在的你"短笺（每期一件事）
 ```
 
-一个都没有 → 数据不存在或还没提取过：读 `references/ingest-protocol.md`，先跑 ingest。
+没有所需文件时说明缺什么。只有用户要求初始化或更新时才按对应协议提取；分享时只找公开层，不检查上述私档。
 
 ## Windows / macOS / Linux 路径差异
 

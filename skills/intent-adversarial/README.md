@@ -74,7 +74,7 @@ INTENT.md 第 16 节每条 SF 要求至少被一类中的用例覆盖；第 15 �
 | A3 | INTENT 第 16 节每条 SF 在安全攻击结果中有至少一条关联用例 |
 | A4 | INTENT 第 15 节每条 CC 有实测记录且通过 |
 | A5 | 缺陷清单中高危缺陷未全部修复 → FAIL（阻止交付）。状态以 fixed / 已修复 开头才算关闭，unfixed、not fixed 等一律算未修复 |
-| A6 | 结论与缺陷状态一致——存在未修复的高危缺陷时结论不得为「通过」 |
+| A6 | 第 7 节以「通过」或「不通过」开头，独占一行或用句号与说明分隔。只有明确通过且高危缺陷均已关闭才可交接；不通过、未定或含占位符时命令返回非零。 |
 
 ```bash
 python skills/intent-adversarial/scripts/adversarial_validate.py intent-chain/{链路目录}/adversarial-record.md intent-chain/{链路目录}/intent.md

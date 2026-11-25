@@ -99,22 +99,16 @@ claude plugin install blue-skillhub@blue-skillhub
 **方式二：手动复制**。想直接改技能文件时用。克隆本仓库后在根目录执行：
 
 ```powershell
-# 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
-"_common","ruleblade","pathfinder","impact","intent-anchor","intent-prd","intent-design","intent-visual","intent-issues","intent-dev","intent-adversarial","intent-verify" |
-  ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
-
-Copy-Item "skills\_common" "$env:USERPROFILE\.claude\skills\_common" -Recurse -Force
-Copy-Item "skills\ruleblade" "$env:USERPROFILE\.claude\skills\ruleblade" -Recurse -Force
-Copy-Item "skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
-Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
-Copy-Item "skills\intent-anchor" "$env:USERPROFILE\.claude\skills\intent-anchor" -Recurse -Force
-Copy-Item "skills\intent-prd" "$env:USERPROFILE\.claude\skills\intent-prd" -Recurse -Force
-Copy-Item "skills\intent-design" "$env:USERPROFILE\.claude\skills\intent-design" -Recurse -Force
-Copy-Item "skills\intent-visual" "$env:USERPROFILE\.claude\skills\intent-visual" -Recurse -Force
-Copy-Item "skills\intent-issues" "$env:USERPROFILE\.claude\skills\intent-issues" -Recurse -Force
-Copy-Item "skills\intent-dev" "$env:USERPROFILE\.claude\skills\intent-dev" -Recurse -Force
-Copy-Item "skills\intent-adversarial" "$env:USERPROFILE\.claude\skills\intent-adversarial" -Recurse -Force
-Copy-Item "skills\intent-verify" "$env:USERPROFILE\.claude\skills\intent-verify" -Recurse -Force
+$dest = "$env:USERPROFILE\.claude\skills"
+$skills = (Get-Content -Raw -Encoding UTF8 .claude-plugin/plugin.json | ConvertFrom-Json).skills
+New-Item -ItemType Directory -Path $dest -Force | Out-Null
+foreach ($source in @('./skills/_common') + $skills) {
+  $target = Join-Path $dest (Split-Path $source -Leaf)
+  if (Test-Path -LiteralPath $target) { throw "请先备份并移走旧目录，再重新安装：$target" }
+}
+foreach ($source in @('./skills/_common') + $skills) {
+  Copy-Item -LiteralPath $source -Destination $dest -Recurse -ErrorAction Stop
+}
 ```
 
 需要排查 Java OOM / 内存问题时，另装工具型 utility：
@@ -289,7 +283,7 @@ ImpactRadar 会生成分析文档、要求逐步确认并运行自动检查。�
 
 [skills/ruleblade/](skills/ruleblade/)
 
-写给 AI 编码助手的常驻行为规则，放进项目的 `CLAUDE.md`（Codex、DeepSeek Harness 用 `AGENTS.md`）。当前 v5.0 按模型能力分两份：完整版给 DeepSeek V4.1 Flash 这一档的模型，精简版给 Opus 5.5、GPT-6 Astra 这一档的旗舰模型。律刃最初参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)，后经多轮跨模型复测演进到 v5.0，记录见 [律刃 README](skills/ruleblade/README.md)。安装插件后在对话里运行 `/ruleblade`，它会按你用的模型选一份装进目标项目。
+写给 AI 编码助手的常驻行为规则，放进项目的 `CLAUDE.md`（Codex、DeepSeek Harness 用 `AGENTS.md`）。v5.0 完整版给出检查动作和上限，精简版只保留原则和停手条件，不按模型名选版。律刃最初参考了 multica-ai/andrej-karpathy-skills 的 [CLAUDE.md](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/CLAUDE.md)；对照结果见[律刃 README](skills/ruleblade/README.md)。运行 `/ruleblade` 选择适合项目的版本。
 
 ### 网搜 MCP
 

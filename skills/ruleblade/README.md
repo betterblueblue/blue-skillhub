@@ -1,6 +1,6 @@
 # 律刃 RuleBlade
 
-律刃是一组写给 AI 编码助手的通用行为规则。当前版本为 v5.0，按模型能力分成两份：完整版 [CLAUDE.full.md](CLAUDE.full.md) 给 DeepSeek V4.1 Flash 这一档的模型，保留 8 条编码规则、1 条评审与迭代纪律（第 9 条）和 1 条中文表达要求；精简版 [CLAUDE.lite.md](CLAUDE.lite.md) 给 Opus 5.5、GPT-6 Astra 这一档的旗舰模型，压成 6 段原则加中文表达要求。v4.0 已退役，存档在 [archive/CLAUDE.v4.0.md](archive/CLAUDE.v4.0.md)。
+律刃 v5.0 有两种写法：[完整版](CLAUDE.full.md) 给出 9 条规则、具体检查动作及中文表达要求；[精简版](CLAUDE.lite.md) 用 6 段原则说明什么时候行动、什么时候停。v4.0 已退役，原文见[存档](archive/CLAUDE.v4.0.md)。
 
 它解决的不是“模型会不会写代码”，而是更常见的执行问题：没有弄清需求就动手、漏查调用方、顺手修改无关代码、把测试失败归咎于环境，或者用生硬的内部术语向用户解释结果。
 
@@ -15,14 +15,14 @@
 
 ## 使用方法
 
-先按主力模型选一份：
+按项目需要选一份：
 
-| 你主要用的模型 | 用哪份 |
+| 你需要什么 | 用哪份 |
 |---|---|
-| Claude Opus 5.5、GPT-6 Astra 或同一档的旗舰模型 | [CLAUDE.lite.md](CLAUDE.lite.md) 精简版 |
-| DeepSeek V4.1 Flash、GLM、Kimi、MiMo、Haiku 等，几个模型混用，或者拿不准 | [CLAUDE.full.md](CLAUDE.full.md) 完整版 |
+| 只保留原则与停手条件 | [CLAUDE.lite.md](CLAUDE.lite.md) 精简版 |
+| 想要明确检查动作和上限，或者拿不准 | [CLAUDE.full.md](CLAUDE.full.md) 完整版 |
 
-然后放到对应位置：Claude Code 是项目根目录的 `CLAUDE.md`；Codex 和 DeepSeek Harness（dsh）是项目根目录的 `AGENTS.md`。装了插件的话，在对话里运行 `/ruleblade`，它会问你用什么模型，再帮你写进去。
+然后放到对应位置：Claude Code 是项目根目录的 `CLAUDE.md`；Codex 和 DeepSeek Harness（dsh）是项目根目录的 `AGENTS.md`。也可以运行 `/ruleblade`，确认后写入。
 
 这套规则管的是"改动范围"和"停手时机"，不追求"多检查几遍"。
 
@@ -251,14 +251,14 @@ v3.9 的正文开头有四段是文件元信息，不是规则：
 
 **边界不变：** v4.0 仍未按验证方案重跑场景。
 
-### v5.0：按模型能力拆成两个版本
+### v5.0：最初的分档假设（历史记录，不是安装要求）
 
 2026-10-26。两档模型在同一份规则下出的问题方向相反，一份文件没法同时照顾：
 
 - 强模型（Claude Opus 5.5、GPT-6 Astra）：两家的迁移指南都提到，为旧模型写的"先读文件""跑测试检查""必须先问"类指令，会导致过度验证、过早停下来请示；同时模型会自己扩大任务范围。见 [Prompting Claude Opus 5](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5)、[Rethinking skills and prompts for GPT-6 Astra](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra)。
 - DeepSeek V4.1 Flash 1017：改 bug 类任务接近 Opus 5，但事实可靠性和长链路终端任务明显弱一档（[WinBuzzer 转述的 Artificial Analysis 数据](https://winbuzzer.com/2026/10/24/deepseeks-flash-ai-improves-coding-but-still-lags-on-facts-xcxwbn/)）；有报道称它在基准测试里用沙盒中暴露的密钥调用其他模型刷分（[TechTarget](https://www.techtarget.com/ai/news/366652106/DeepSeek-and-what-enterprises-should-learn-from-AI-agent-exploits)）；实测中它会按仓库 CLAUDE.md 行事，即使提示词说了不要（[dev.to](https://dev.to/manpreet171/i-ran-claude-code-on-deepseek-v41-flash-it-cost-2-cents-claude-code-said-96-4coj)）。
 
-| 文件 | 适用模型 | 做法 | 字符数 |
+| 文件 | 最初设想的对象（非跨模型实测） | 做法 | 字符数 |
 |---|---|---|---:|
 | [CLAUDE.full.md](CLAUDE.full.md) | DeepSeek V4.1 Flash 这一档 | 保留 v4.0 的 9 条结构和全部检查动作；补上优先级、资源边界、测试完整性、汇报以事实为准、第三方库查源码、不可逆操作确认、临时文件清理；把按字面执行会出问题的条款改成条件式 | 4592 |
 | [CLAUDE.lite.md](CLAUDE.lite.md) | Opus 5.5、GPT-6 Astra 这一档 | 6 段原则，不再沿用 9 条编号；删掉模型默认会做的检查、轮数上限和覆盖表格式；写明哪些操作直接做、哪些情况才停下来，并要求做到验收标准满足为止 | 2095 |
@@ -284,7 +284,7 @@ v4.0 是 3488 字符（含标点和 Markdown）。
 
 - 13 项里有 9 项不放规则也全过。规则起作用的是三件事：用户说"再优化一轮"时模型不问就大改；测试需要真实服务时写一张只有测试那三句话的词表；测试本身写错时改掉正确的实现去迁就它。
 - 后两件第一版 v5 也没挡住，评测中改了两处条文：测试那一段原来开头是"测试不过就改实现"，等于直接让模型改实现；"用户要求优先"没有例外，用户说"让测试全部通过"，模型就照办。改完重跑，两版都是 39/39。
-- 精简版在 DeepSeek 上更费，主要是"做一个时钟动画页面"时会去找浏览器反复截图，完整版有自查次数上限，写完就交。所以非旗舰模型用完整版。
+- 精简版在这批 DeepSeek 任务上更费，主要是做动画时反复截图；这不是其他模型的选版依据。
 
 **边界：** 精简版没有在 Opus 5.5、GPT-6 Astra 上实测；每格只有 3 次；N2、N3 的条文是看着这两个场景的失败改出来的，有针对场景调优的风险。
 
@@ -301,7 +301,7 @@ v4.0 随 v5.0 发布退役，原文存档在 [archive/CLAUDE.v4.0.md](archive/CL
 
 第 9 条是目前唯一的例外：它管的不是"怎么改代码"，而是"改完什么时候停"和"怎么评审别人的产物"，无法并入 1-8 条中的任何一条。加入时同样执行了密度要求——v3.4 收编时从 12 个要点压缩到 7 个，删掉了与现有规则重复的部分。编码行为规则仍然是 8 条。
 
-v5.0 精简版不沿用这套编号。它给旗舰模型用，按"什么时候停、什么时候问"组织成 6 段，比逐条列动作更适合这类模型；完整版仍是 8 条加第 9 条。
+v5.0 精简版不沿用这套编号，按「什么时候停、什么时候问」组织成 6 段；完整版仍是 8 条加第 9 条。
 
 完整版第 8 条会根据影响面调整成本：
 
@@ -321,9 +321,9 @@ v5.0 精简版不沿用这套编号。它给旗舰模型用，按"什么时候�
 
 | 文件 | 内容 |
 |---|---|
-| [CLAUDE.full.md](CLAUDE.full.md) | v5.0 完整版，给 DeepSeek V4.1 Flash 这一档模型 |
-| [CLAUDE.lite.md](CLAUDE.lite.md) | v5.0 精简版，给 Opus 5.5、GPT-6 Astra 这一档旗舰模型 |
-| [SKILL.md](SKILL.md) | `/ruleblade` 的安装引导：按模型选文件、写入项目 |
+| [CLAUDE.full.md](CLAUDE.full.md) | v5.0 完整版，含具体检查动作和上限 |
+| [CLAUDE.lite.md](CLAUDE.lite.md) | v5.0 精简版，只保留原则和停手条件 |
+| [SKILL.md](SKILL.md) | `/ruleblade` 的安装引导：选版、确认、写入项目 |
 | [TASK_V5_VERIFY.md](TASK_V5_VERIFY.md) | v5.0 在 DeepSeek V4.1 Flash 上的四轮验证记录 |
 | [eval/ruleblade-v5/](../../eval/ruleblade-v5/) | v5.0 的评测工具、12 个场景和测试项目（放在技能目录外，不随插件打包） |
 | [archive/CLAUDE.v4.0.md](archive/CLAUDE.v4.0.md) | 已退役的 v4.0 原文 |
