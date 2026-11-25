@@ -29,12 +29,14 @@ Blue SkillHub 是一套面向 AI 编码助手的工作流工具。无论是把�
 
 ```mermaid
 flowchart TD
-    A["你现在在做什么？"] --> B["只有想法"]
+    A["你现在在做什么？"] --> B["准备做新项目"]
+    A --> F["要给另一个 Agent 写指令：/prompt-refiner（Skill）"]
+    A --> G["只要当前 Agent 直接给结果：直接交代任务"]
     A --> C["处理已有项目"]
     A --> D["开发遇到意外"]
     A --> E["准备结束或交付"]
 
-    B --> B1["需求模糊：IntentAnchor（Skill）"]
+    B --> B1["目标用户和功能取舍还没定：IntentAnchor（Skill）"]
     B --> B2["目标明确、方案不明：开源项目调研（Prompt）"]
     B1 --> B3["进入开发：IntentDev → IntentAdversarial → IntentVerify（Skill）或 Superpowers 等第三方"]
     B2 --> B3
@@ -70,8 +72,9 @@ flowchart TD
 
 | 你现在的处境 | 现在先做什么 | 用完以后 |
 |---|---|---|
-| 想把随口说的任务整理成给其他 Agent 的提示词 | 用 [prompt-refiner](docs/skills/prompt-refiner.md) | 复制到目标 Agent，不进入项目流程 |
-| 有一个项目想法，说不清给谁用、解决什么问题 | 用 [IntentAnchor](skills/intent-anchor/) 写出 `INTENT.md` | 按下方链路图走 intent-chain |
+| 想把随口说的任务整理成给其他 Agent 的提示词 | 用 [prompt-refiner](skills/prompt-refiner/README.md) | 复制给目标 Agent，无需先走 Intent 流程 |
+| 有一个项目想法，还没决定给谁用、哪些功能要保留 | 用 [IntentAnchor](skills/intent-anchor/) 把目标和取舍写进 `intent.md` | 交给后续 PRD 和开发使用 |
+| 只想让当前 Agent 分析材料、直接给结果 | 把任务和材料交给它 | 不必先写提示词或做意图锚定 |
 | 刚接手一个陌生仓库 | 用 [Pathfinder](skills/pathfinder/) 只读摸底 | 有具体改动时进入 [ImpactRadar](skills/impact/) |
 | 已经熟悉项目，要加功能、修 Bug 或重构 | 用 [ImpactRadar](skills/impact/) 分析影响并逐步实施 | 完成后做独立验收和提交前整理 |
 | 目标明确、方案不明 | 用 [开工前调研开源项目](prompt/open-source-project-research.md) | 看过证据并确认方案后再开发 |

@@ -18,6 +18,8 @@
 
 ## 常见问题
 
+**口语需求都要先用 IntentAnchor 吗？** 不用。想把要求写成给其他 Agent 的指令，用 `/prompt-refiner`；要定下项目为谁做、哪些功能保留，用 `/intent-anchor`；只想让当前 Agent 分析材料给结果，直接交代任务即可。见[同一场景的选择示例](../../skills/prompt-refiner/README.md)。
+
 **它和 README 里的场景表什么关系？**
 同一张决策逻辑，README 的表给人看，ask-blue 给 agent 看——装了插件后不用翻网页，在会话里问就行。
 

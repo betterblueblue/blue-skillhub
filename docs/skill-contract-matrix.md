@@ -87,7 +87,7 @@ intent-anchor → intent-prd → intent-design → intent-visual（仅 UI 项目
    - `intent-verify`：只写验收记录、不改源码；改进回流要用户同意并确认路径，已声明。
    - `impact`：DB 写保护依赖 prompt/hook + `确认 Step N`；任意 SQL 工具已移出 allowed，调用时客户端会问用户。
 4. **根 README 技能清单**：入库技能都已列出（whydump、wordmirror 在安装说明和仓库结构里）；只缺自用的 blue-interview，合理。
-5. **没有技能 README 的**：blue-interview（自用）、ask-blue 和 prompt-refiner；后两者有 `docs/skills/` 使用说明。
+5. **没有技能 README 的**：blue-interview（自用）和 ask-blue；ask-blue 有 `docs/skills/` 使用说明。
 6. **`skills/_common` 不是技能**，随插件分发（见 ADR-004）：共享规则 `rules.md`，以及链路各校验器引用的共享模块（`chain_validate` / `markdown_parser` / `issue_types` / `defect_status` / `d5_check` / `term_check`）。
 
 ## 维护约定
