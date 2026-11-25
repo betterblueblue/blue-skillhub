@@ -279,7 +279,11 @@ ImpactRadar 会生成分析文档、要求逐步确认并运行自动检查。�
 
 [prompt/](prompt/)
 
-遇到具体麻烦时可以直接发给 AI 的指令，覆盖开工前调研、开发卡住、需求变化、会话切换、独立验收和提交前整理。上方的场景表可以帮你找到入口；各 Prompt 的选择边界和复制方法见 [Prompt 工具箱说明](prompt/README.md)。
+在 [Prompt 工具箱](prompt/README.md) 按场景选一条，复制代码块即可。除了开工调研、需求对账、会话交接和提交验收，还有三个独立入口：
+
+- [项目终局评审与重构](prompt/project-review-and-refactor.md)：已有项目的哪些设计值得保留，哪些值得重做？
+- [Wi-Fi 与家庭网络诊断](prompt/home-network-diagnostics.md)：家里网慢或掉线，瓶颈在无线链路、路由器还是运营商？
+- [高保真复刻网站](prompt/website-replication.md)：把已有网站迁移到新技术栈，怎样验证外观和交互都没有走样？
 
 ### 律刃
 
