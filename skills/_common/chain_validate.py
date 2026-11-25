@@ -22,7 +22,6 @@
 from __future__ import annotations
 
 import os
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -31,7 +30,7 @@ SKILLS_ROOT = Path(__file__).resolve().parent.parent
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 try:
-    from issue_types import implementation_issue_numbers
+    from issue_types import implementation_issue_numbers, is_done, issue_status, split_issue_sections
 finally:
     sys.path.pop(0)
 
@@ -64,10 +63,10 @@ def _dev_all_done(chain_dir: Path) -> bool:
         return False
     dev_text = dev_path.read_text(encoding="utf-8", errors="replace")
     issues_text = issues_path.read_text(encoding="utf-8", errors="replace")
-    done_count = len(re.findall(r"^-\s*状态[：:]\s*done", dev_text, re.MULTILINE | re.IGNORECASE))
-    # 决策工单不写代码、不进 dev-record，不计入需要 done 的工单数
-    issue_count = len(implementation_issue_numbers(issues_text))
-    return issue_count > 0 and done_count >= issue_count
+    expected = implementation_issue_numbers(issues_text)
+    records = split_issue_sections(dev_text)
+    completed = {number for number, record in records if is_done(issue_status(record))}
+    return bool(expected) and len(records) == len(expected) and completed == expected
 
 
 def main() -> int:

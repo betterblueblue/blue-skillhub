@@ -223,19 +223,15 @@ def validate(verify_content: str, intent_content: str, architecture_content: str
         v2_errors: list[str] = []
         if "全量测试命令" not in regression_section:
             v2_errors.append("缺少全量测试命令")
-        result_match = re.search(
-            r"^-\s*结果[：:]\s*(.+)$", regression_section, re.MULTILINE
-        )
-        if not result_match:
+        regression_results = re.findall(r"^-[ \t]*结果[：:][ \t]*(.*)$", regression_section, re.MULTILINE)
+        if not regression_results:
             v2_errors.append("缺少结果行")
-        else:
-            result_value = result_match.group(1).strip()
-            if "不适用" in result_value:
-                pass
-            elif "未通过" in result_value:
-                v2_errors.append(f"回归测试结果未通过: {result_value}")
-            elif "通过" not in result_value:
-                v2_errors.append(f"回归测试结果不是通过或不适用: {result_value}")
+        for value in regression_results:
+            result_value = value.strip()
+            if result_value == "通过":
+                continue
+            if not re.fullmatch(r"不适用（[^（）{}\s][^（）{}]*）", result_value):
+                v2_errors.append(f"回归结果须为「通过」或「不适用（具体原因）」：{result_value}")
         if v2_errors:
             results.append(("V2", "FAIL", "; ".join(v2_errors)))
         else:

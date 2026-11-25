@@ -42,17 +42,18 @@ Copy-Item "skills\ruleblade\CLAUDE.full.md" "你的项目根目录\AGENTS.md"
 
 要装路由 `ask-blue`、律刃和完整 intent 链，请用[仓库首页的完整安装清单](../README.md#3-分钟上手)。下面是仅安装部分技能的方案；升级前先备份已有定制。
 
-### Codex
+### Codex / Claude Code
 
-复制到 Codex skills 目录：
+在仓库根目录执行。两项技能都引用同级的 `_common/rules.md`。首次安装复制三个目录；已有目录时先停下，比对并备份定制。若 `_common` 已是同一版本，只需复制缺少的技能。
 
 ```powershell
-# 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
-"pathfinder","impact" |
-  ForEach-Object { Remove-Item "$env:USERPROFILE\.codex\skills\$_" -Recurse -Force -ErrorAction Ignore }
-
-Copy-Item "skills\pathfinder" "$env:USERPROFILE\.codex\skills\pathfinder" -Recurse -Force
-Copy-Item "skills\impact" "$env:USERPROFILE\.codex\skills\impact" -Recurse -Force
+$dest = "$env:USERPROFILE\.codex\skills"  # Claude Code 改为 .claude\skills
+$names = '_common', 'pathfinder', 'impact'
+New-Item -ItemType Directory -Path $dest -Force | Out-Null
+foreach ($name in $names) {
+  if (Test-Path -LiteralPath (Join-Path $dest $name)) { throw "目标已有 $name，请先比对版本，勿覆盖定制。" }
+}
+foreach ($name in $names) { Copy-Item -LiteralPath "skills\$name" -Destination $dest -Recurse -ErrorAction Stop }
 ```
 
 重启 Codex 后验证：
@@ -64,20 +65,7 @@ Copy-Item "skills\impact" "$env:USERPROFILE\.codex\skills\impact" -Recurse -Forc
 
 `/pathfinder` 能进入陌生项目摸底流程，`/impact` 能进入变更意图捕获流程即可。
 
-### Claude Code
-
-复制到 Claude skills 目录：
-
-```powershell
-# 升级重装时必须先删旧目录再复制：Copy-Item 对已存在的目标目录会把新版嵌套进去，不会覆盖
-"pathfinder","impact" |
-  ForEach-Object { Remove-Item "$env:USERPROFILE\.claude\skills\$_" -Recurse -Force -ErrorAction Ignore }
-
-Copy-Item "skills\pathfinder" "$env:USERPROFILE\.claude\skills\pathfinder" -Recurse -Force
-Copy-Item "skills\impact" "$env:USERPROFILE\.claude\skills\impact" -Recurse -Force
-```
-
-验证：
+Claude Code 验证：
 
 ```powershell
 claude --print -- "/pathfinder 只做测试：请说明 pathfinder 的适用范围，不要写文件"
@@ -138,13 +126,18 @@ Copy-Item "skills\whydump" "$env:USERPROFILE\.claude\skills\whydump" -Recurse -F
 复制 hook 到目标项目：
 
 ```powershell
-New-Item "你的项目根目录\.claude" -ItemType Directory -Force
-# 升级重装时先删旧的 hooks 目录（同样的 Copy-Item 嵌套陷阱）
-Remove-Item "你的项目根目录\.claude\hooks" -Recurse -Force -ErrorAction Ignore
-Copy-Item ".claude\hooks" "你的项目根目录\.claude\hooks" -Recurse -Force
+$hooks = "你的项目根目录\.claude\hooks"
+New-Item -ItemType Directory -Path $hooks -Force | Out-Null
+$source = Get-Item -LiteralPath '.claude\hooks\impact-write-gate.py'
+$target = Join-Path $hooks $source.Name
+if (Test-Path -LiteralPath $target) {
+  if ((Get-FileHash -LiteralPath $target).Hash -ne (Get-FileHash -LiteralPath $source.FullName).Hash) {
+    throw "已有不同版本：$target。请先比对并手动合并，未覆盖。"
+  }
+} else { [System.IO.File]::Copy($source.FullName, $target, $false) }
 ```
 
-把 `.claude\hooks\impact-write-gate.settings.example.json` 的 `PreToolUse` 配置合并到目标项目的 `.claude/settings.json` 或 `.claude/settings.local.json`，然后在目标项目根目录放一个空文件：
+上面的安装使用 Python 入口，不需要复制整个 hooks 目录。把**本仓库** `.claude\hooks\impact-write-gate.settings.example.json` 里的 `PreToolUse` 项追加到目标项目的 `.claude/settings.json` 或 `.claude/settings.local.json`，保留其他 Hook，不重复添加同一项。然后在目标项目根目录放一个空文件：
 
 ```powershell
 New-Item "你的项目根目录\.impact-protected" -ItemType File
@@ -246,7 +239,7 @@ wrapper 内容见 `.cursor/codegraph-mcp.cmd`，核心是 `codegraph serve --mcp
 | Codegraph MCP 已连接但没有工具 | 不要用全局裸 `serve --mcp`；改用项目级 wrapper + `--path`，见 [下文排障](#codegraph-mcp-显示已连接但没有工具no-tools) 与 [§4](#4-安装-codegraph-mcp可选) |
 | MCP JSON 里还是旧路径 | 把 `args` 改成当前仓库的绝对路径 |
 | `/impact` 不生效 | 确认 skill 复制到了正确客户端目录，并重启客户端 |
-| 升级后 skill 行为还是旧版 | 目标目录已存在时 `Copy-Item` 会把新版嵌套进去而不是覆盖（产生 `skills\X\X\`）；先删旧目录再复制，各安装块已附删除命令 |
+| 升级后 skill 行为还是旧版 | 检查是否出现 `skills\X\X\` 双层目录。先比较、备份定制，再将新版放到正确层级；不要删除整个共享目录或 Hook 目录。 |
 | `/pathfinder` 不生效 | 确认 skill 复制到了正确客户端目录，并重启客户端 |
 | Claude Code `--print` 不识别 `/impact` | prompt 前加 `--`，例如 `claude --print -- "/impact ..."` |
 | 运行 MCP 缺 Chromium | 执行 `npx playwright install chromium` |

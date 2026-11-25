@@ -16,6 +16,15 @@ ISSUE_TYPE_RE = re.compile(r"^-\s*\*\*类型\*\*[：:]\s*(.+)$", re.MULTILINE)
 DECISION_TYPE_MARKERS = ("需拍板", "决策")
 
 
+def issue_status(issue_text: str) -> str | None:
+    values = re.findall(r"^-[ \t]*状态[：:][ \t]*(.*)$", issue_text, re.MULTILINE)
+    return values[0].strip() if len(values) == 1 else None
+
+
+def is_done(status: str | None) -> bool:
+    return bool(status and status.casefold() in {"done", "done（用户确认 v1 标 done）", "done(用户确认 v1 标 done)"})
+
+
 def is_decision_issue(issue_text: str) -> bool:
     """单个工单段落是否为决策工单（与 issues_validate 的 V2/V14 判定一致）。"""
     match = ISSUE_TYPE_RE.search(issue_text)

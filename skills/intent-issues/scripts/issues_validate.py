@@ -14,7 +14,7 @@
   V7: INTENT.md 有术语表时，至少一个工单的 Acceptance criteria 引用了术语表中的术语（交叉检查 INTENT.md）
   V8: INTENT.md 有性能要求时，所有性能要求 ID 被至少一个工单引用（交叉检查 INTENT.md）
   V9: INTENT.md 有安全要求时，所有安全要求 ID 被至少一个工单引用（交叉检查 INTENT.md）
-  V10: PRD 中每条验收路径的 Then/And 条件数量不少于工单中对应路径的条目数（交叉检查 PRD）
+  V10: 按路径核对 Then/And 数量，工单中的条目数不能少于 PRD
   V11: 工单的"涉及模块"引用的模块名必须在 architecture.md 第 2 节中定义（强制检查 architecture.md）
   V12: 数据管理类工单（标题/做什么含 档案/配置/模板/账号/角色/商品/规则）必须分条覆盖新增/编辑/删除，显式「不做什么」可豁免单动作
   V13: 真值追溯——INTENT 有页面清单时，「真值追溯」节必须把每个页面 ID 映射到存在的工单，且不得包含未知页面
@@ -193,16 +193,9 @@ def _count_prd_thens_per_path(prd_content: str) -> dict[str, int]:
     """从 PRD 的 Acceptance Criteria 中统计每条路径的 Then/And 条目数。"""
     criteria_section = _section(prd_content, "## 验收标准")
     result: dict[str, int] = {}
-    # 按 ### P01: ... 拆分
-    path_blocks = re.split(r"(?=^###\s+P\d{2,})", criteria_section, flags=re.MULTILINE)
-    for block in path_blocks:
-        path_match = PATH_ID_RE.match(block.strip())
-        if not path_match:
-            continue
-        path_id = path_match.group(0)
-        then_count = len(PRD_THEN_RE.findall(block)) + len(PRD_AND_RE.findall(block))
-        if then_count > 0:
-            result[path_id] = then_count
+    blocks = re.split(r"^###[ \t]+(P\d{2,})\b[^\n]*$", criteria_section, flags=re.MULTILINE)
+    for path_id, block in zip(blocks[1::2], blocks[2::2]):
+        result[path_id] = result.get(path_id, 0) + len(PRD_THEN_RE.findall(block)) + len(PRD_AND_RE.findall(block))
     return result
 
 
@@ -232,18 +225,10 @@ def _count_issue_thens_per_path(issues: list[str]) -> dict[str, int]:
     """从工单的 Acceptance criteria 中统计每条路径的 Then/And 条目数。"""
     result: dict[str, int] = {}
     for issue in issues:
-        criteria_match = re.search(
-            r"### 验收标准\s*\n(.*?)(?=^###\s+|\Z)",
-            issue,
-            re.MULTILINE | re.DOTALL,
-        )
-        if not criteria_match:
-            continue
-        criteria_text = criteria_match.group(1)
-        path_ids = PATH_ID_RE.findall(criteria_text)
-        then_count = len(ISSUE_THEN_RE.findall(criteria_text)) + len(ISSUE_AND_RE.findall(criteria_text))
-        for pid in set(path_ids):
-            result[pid] = result.get(pid, 0) + then_count
+        criteria = _subsection(issue, "验收标准")
+        blocks = re.split(r"^\*\*\[(P\d{2,})\][^\n]*$", criteria, flags=re.MULTILINE)
+        for path_id, block in zip(blocks[1::2], blocks[2::2]):
+            result[path_id] = result.get(path_id, 0) + len(ISSUE_THEN_RE.findall(block)) + len(ISSUE_AND_RE.findall(block))
     return result
 
 
@@ -455,16 +440,22 @@ def validate(issues_content: str, intent_content: str, prd_content: str = "", ar
         prd_then_counts = _count_prd_thens_per_path(prd_content)
         issue_then_counts = _count_issue_thens_per_path(issues)
         v10_errors: list[str] = []
+        if not prd_then_counts:
+            v10_errors.append("未从 PRD 验收标准解析到路径标题（如 ### P01: 路径名称）")
+        for missing_path in sorted(acceptance_paths - prd_then_counts.keys()):
+            v10_errors.append(f"PRD 缺少验收路径 {missing_path}")
         for path_id, prd_count in prd_then_counts.items():
             issue_count = issue_then_counts.get(path_id, 0)
-            if issue_count < prd_count:
+            if not prd_count:
+                v10_errors.append(f"PRD 路径 {path_id} 没有可核对的 Then/And")
+            elif issue_count < prd_count:
                 v10_errors.append(
                     f"路径 {path_id} 在 PRD 中有 {prd_count} 条 Then/And，但工单中只有 {issue_count} 条"
                 )
         if v10_errors:
             results.append(("V10", "FAIL", "; ".join(v10_errors)))
         else:
-            results.append(("V10", "PASS", "PRD 中所有验收路径的 Then/And 条件被工单覆盖"))
+            results.append(("V10", "PASS", "逐路径核对通过：各工单合计的 Then/And 条目数不少于对应 PRD 路径"))
     else:
         results.append(("V10", "PASS", "未提供 PRD，跳过 Then 覆盖检查"))
 

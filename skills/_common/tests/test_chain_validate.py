@@ -70,13 +70,13 @@ class TestChainValidate(unittest.TestCase):
     def test_dev_all_done_detection(self):
         chain = _make_chain_dir()
         (chain / "issues.md").write_text("## Issue 1: A\n## Issue 2: B\n", encoding="utf-8")
-        (chain / "dev-record.md").write_text("- 状态：done\n- 状态：done\n", encoding="utf-8")
+        (chain / "dev-record.md").write_text("## Issue 1: A\n- 状态：done\n## Issue 2: B\n- 状态：done\n", encoding="utf-8")
         self.assertTrue(_dev_all_done(chain))
 
     def test_dev_not_all_done(self):
         chain = _make_chain_dir()
         (chain / "issues.md").write_text("## Issue 1: A\n## Issue 2: B\n", encoding="utf-8")
-        (chain / "dev-record.md").write_text("- 状态：done\n- 状态：未通过\n", encoding="utf-8")
+        (chain / "dev-record.md").write_text("## Issue 1: A\n- 状态：done\n## Issue 2: B\n- 状态：not done\n", encoding="utf-8")
         self.assertFalse(_dev_all_done(chain))
 
     def test_decision_ticket_not_counted_as_pending_dev(self):
@@ -88,13 +88,13 @@ class TestChainValidate(unittest.TestCase):
             "## 覆盖核对\n",
             encoding="utf-8",
         )
-        (chain / "dev-record.md").write_text("- 状态：done\n", encoding="utf-8")
+        (chain / "dev-record.md").write_text("## Issue 1: A\n- 状态：done\n", encoding="utf-8")
         self.assertTrue(_dev_all_done(chain))
 
     def test_dev_done_without_verify_record_exits_1(self):
         chain = _make_chain_dir()
         (chain / "issues.md").write_text("## Issue 1: A\n", encoding="utf-8")
-        (chain / "dev-record.md").write_text("- 状态：done\n", encoding="utf-8")
+        (chain / "dev-record.md").write_text("## Issue 1: A\n- 状态：done\n", encoding="utf-8")
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf):
             code = _run_main(str(chain))

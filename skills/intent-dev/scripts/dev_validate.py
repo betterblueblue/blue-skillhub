@@ -25,7 +25,7 @@ from pathlib import Path
 _COMMON_DIR = Path(__file__).resolve().parent.parent.parent / "_common"
 if str(_COMMON_DIR) not in sys.path:
     sys.path.insert(0, str(_COMMON_DIR))
-from issue_types import implementation_issue_numbers
+from issue_types import implementation_issue_numbers, is_done, issue_status, split_issue_sections
 
 
 ISSUE_HEADING_RE = re.compile(r"^##\s+Issue\s+(\d+):\s*(.+)$", re.MULTILINE)
@@ -33,31 +33,11 @@ THEN_RE = re.compile(
     r"^\s*-\s*\[([ xX])\]\s*(?:Then|And):\s*(.+)$",
     re.MULTILINE,
 )
-STATUS_RE = re.compile(r"^-\s*状态[：:]\s*(.+)$", re.MULTILINE)
 LEVEL_RE = re.compile(r"V([0-2])")
 SCENARIO_RE = re.compile(r"^\*\*\[P\d{2,}\]", re.MULTILINE)
 TDD_RE = re.compile(r"###\s+TDD\s+过程")
 RED_RE = re.compile(r"####\s+Red")
 GREEN_RE = re.compile(r"####\s+Green")
-
-
-def _split_issues(content: str) -> list[str]:
-    issue_starts = [(m.start(), m.end()) for m in ISSUE_HEADING_RE.finditer(content)]
-    if not issue_starts:
-        return []
-    issues: list[str] = []
-    for i, (start, _end) in enumerate(issue_starts):
-        end = issue_starts[i + 1][0] if i + 1 < len(issue_starts) else None
-        if end is None:
-            summary_pos = content.find("## 开发总结", start)
-            end = summary_pos if summary_pos != -1 else len(content)
-        issues.append(content[start:end])
-    return issues
-
-
-def _parse_issue_numbers(content: str) -> set[str]:
-    """从内容中提取所有 Issue 编号。"""
-    return {m.group(1) for m in re.finditer(r"^##\s+Issue\s+(\d+):", content, re.MULTILINE)}
 
 
 def _parse_then_lines(issue_content: str) -> list[tuple[str, str, str]]:
@@ -75,11 +55,6 @@ def _parse_then_lines(issue_content: str) -> list[tuple[str, str, str]]:
         level = level_match.group(0) if level_match else ""
         results.append((check, text, level))
     return results
-
-
-def _parse_issue_status(issue_content: str) -> str | None:
-    m = STATUS_RE.search(issue_content)
-    return m.group(1).strip() if m else None
 
 
 def _has_scenario_block(issue_content: str) -> bool:
@@ -149,7 +124,8 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
         results.append(("V1", "FAIL", "文件为空"))
         return results
 
-    dev_issues = _split_issues(dev_content)
+    records = split_issue_sections(dev_content)
+    dev_issues = [record for _, record in records]
     # 需要开发记录的工单：排除决策工单（它们不写代码）
     issues_issue_nums = implementation_issue_numbers(issues_content)
 
@@ -165,7 +141,11 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
                 f"工单文件有 {issues_count} 个需要开发的工单（不含决策工单），DEV-RECORD 只记录了 {dev_issue_count} 个"
             )
         # 检查 Issue 编号是否匹配
-        dev_issue_nums = _parse_issue_numbers(dev_content)
+        dev_issue_nums = {number for number, _ in records}
+        if len(dev_issue_nums) != len(records):
+            v2_errors.append("DEV-RECORD 中有重复的工单编号")
+        if unexpected := dev_issue_nums - issues_issue_nums:
+            v2_errors.append(f"DEV-RECORD 包含非实现工单: {sorted(unexpected)}")
         missing_issues = issues_issue_nums - dev_issue_nums
         if missing_issues:
             v2_errors.append(f"DEV-RECORD 缺少工单: Issue {sorted(missing_issues)}")
@@ -180,8 +160,8 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
                 v2_errors.append(f"Issue {issue_num} 缺少 Red 段")
             elif not _has_green_section(issue):
                 v2_errors.append(f"Issue {issue_num} 缺少 Green 段")
-            if not _parse_issue_status(issue):
-                v2_errors.append(f"Issue {issue_num} 缺少状态行")
+            if not issue_status(issue):
+                v2_errors.append(f"Issue {issue_num} 缺少状态行、状态为空或状态行重复")
         if v2_errors:
             results.append(("V2", "FAIL", "; ".join(v2_errors)))
         else:
@@ -212,12 +192,16 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
 
     # V4: 标 done 的工单：所有 Then >= V2（用户确认 V1 标 done 除外）
     v4_errors: list[str] = []
-    for issue in dev_issues:
+    done_numbers: set[str] = set()
+    v1_confirmed = False
+    for number, issue in records:
         heading_match = ISSUE_HEADING_RE.search(issue)
         issue_label = heading_match.group(0) if heading_match else "未知工单"
-        status = _parse_issue_status(issue)
-        if status and "done" in status.lower():
-            user_confirmed_v1 = "用户确认 V1 标 done" in status
+        status = issue_status(issue)
+        if is_done(status):
+            done_numbers.add(number)
+            user_confirmed_v1 = status.casefold() != "done"
+            v1_confirmed |= user_confirmed_v1
             then_lines = _parse_then_lines(issue)
             for check, text, level in then_lines:
                 if check != "x":
@@ -232,16 +216,7 @@ def validate(dev_content: str, issues_content: str) -> list[tuple[str, str, str]
     if v4_errors:
         results.append(("V4", "FAIL", "; ".join(v4_errors)))
     else:
-        done_count = sum(
-            1
-            for issue in dev_issues
-            if (status := _parse_issue_status(issue)) and "done" in status.lower()
-        )
-        v1_confirmed = any(
-            "用户确认 V1 标 done" in (status or "")
-            for issue in dev_issues
-            if (status := _parse_issue_status(issue)) and "done" in status.lower()
-        )
+        done_count = len(done_numbers)
         if v1_confirmed:
             results.append(("V4", "PASS", f"{done_count} 个工单标 done（含用户确认 V1 标 done）"))
         else:
