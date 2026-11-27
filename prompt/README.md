@@ -19,6 +19,7 @@
 | 实现会话说任务已经完成，想换个会话从头检查 | [生成独立验收指令](independent-review-request.md) | 把生成的验收指令交给能访问同一工作区的新会话 |
 | 准备提交，但正式修改、调试残留和原有改动混在一起 | [提交前整理改动](pre-commit-cleanup.md) | 用户确认分类结果后，再决定清理、暂存和提交 |
 | 家里网速慢、常掉线，或一有人上传视频通话就卡 | [Wi-Fi 与家庭网络诊断](home-network-diagnostics.md) | 按实测瓶颈一次改一项，用同样的基准复测 |
+| Codex 里的 GPT 说话官话重、爱列清单、不像人聊天 | [Codex 中文表达规范（AGENTS.md）](codex-agents-md/AGENTS.md) | 复制到 `~/.codex/AGENTS.md` 并新开会话生效 |
 
 ## 开工之前
 
@@ -87,6 +88,10 @@
 ## 家庭网络排障
 
 使用 [Wi-Fi 与家庭网络诊断](home-network-diagnostics.md)。它依次检查无线环境、空闲延迟、DNS 和负载表现，区分是该动本机、调路由器，还是找运营商。如果 AI 不在出问题的设备上，它会给出本机采样方法，而不是拿云端测速当作你家的结果。
+
+## 客户端长期表达规范
+
+使用 [Codex 中文表达规范（AGENTS.md）](codex-agents-md/AGENTS.md)。复制到全局 `~/.codex/AGENTS.md` 后长期生效，用来压住 Codex 中 GPT 模型的汇报腔、翻译腔、纯聊翻目录与审计免责尾注，同时保留工程准确性与基本人情味；五轮实测踩坑与调优过程见配套的 [OPTIMIZATION_STORY.md](codex-agents-md/OPTIMIZATION_STORY.md)。
 
 ## 容易选错时看这里
 
